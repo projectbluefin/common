@@ -12,7 +12,7 @@ permissions:
 jobs:
   release:
     name: Create monthly snapshot release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -24,7 +24,7 @@ jobs:
         id: tag
         run: |
           TAG="v$(date +'%Y.%m')"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Release tag: ${TAG}"
 
       - name: Generate release notes
@@ -35,7 +35,7 @@ jobs:
 
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "First release - no previous tag found"
-            cat >> $GITHUB_OUTPUT <<EOF
+            cat >> "$GITHUB_OUTPUT" <<EOF
           notes<<NOTES_EOF
           Monthly snapshot release ${TAG}
 
@@ -44,13 +44,13 @@ jobs:
           EOF
           else
             echo "Generating notes since ${PREVIOUS_TAG}"
-            cat >> $GITHUB_OUTPUT <<EOF
+            cat >> "$GITHUB_OUTPUT" <<EOF
           notes<<NOTES_EOF
           Monthly snapshot release ${TAG}
 
           ## Changes since ${PREVIOUS_TAG}
 
-          $(git log ${PREVIOUS_TAG}..HEAD --pretty=format:'- %s (%h)' --no-merges)
+          $(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:'- %s (%h)' --no-merges)
 
           ---
           *This is an automated monthly snapshot of bluefin-common configuration files.*
