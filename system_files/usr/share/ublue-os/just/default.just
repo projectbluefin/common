@@ -15,10 +15,12 @@ bios:
 # Show BIOS info
 bios-info:
     #!/usr/bin/bash
-    echo "Manufacturer: $(sudo dmidecode -s baseboard-manufacturer)"
-    echo "Product Name: $(sudo dmidecode -s baseboard-product-name)"
-    echo "Version: $(sudo dmidecode -s bios-version)"
-    echo "Release Date: $(sudo dmidecode -s bios-release-date)"
+    sudo bash <<'EOF'
+    echo "Manufacturer: $(dmidecode -s baseboard-manufacturer)"
+    echo "Product Name: $(dmidecode -s baseboard-product-name)"
+    echo "Version: $(dmidecode -s bios-version)"
+    echo "Release Date: $(dmidecode -s bios-release-date)"
+    EOF
 
 # Show all messages from this boot
 logs-this-boot:
@@ -90,4 +92,8 @@ device-info:
 # Measure Idle Power Draw
 check-idle-power-draw:
     #!/usr/bin/bash
+    if grep -i centos "/etc/os-release" ; then
+        echo "Powerstat is not available yet."
+        exit 1
+    fi
     sudo powerstat -a -r
