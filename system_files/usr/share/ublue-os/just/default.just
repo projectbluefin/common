@@ -47,16 +47,16 @@ enroll-secure-boot-key:
 toggle-user-motd:
     #!/usr/bin/bash
     if [ -e "${HOME}/.config/no-show-user-motd" ] ; then
-      if gum confirm "Would you like to disable the MOTD?" ; then
+      if gum confirm "Would you like to enable the MOTD?" ; then
         rm -f "${HOME}/.config/no-show-user-motd"
-        echo "MOTD will not be shown anymore"
+        echo "MOTD will now be shown on login."
         exit 0
       fi
     fi
-    if gum confirm "Would you like to enable the MOTD?" ; then
+    if gum confirm "Would you like to DISABLE the MOTD?" ; then
       mkdir -p "${HOME}/.config"
       touch "${HOME}/.config/no-show-user-motd"
-      echo "MOTD will be shown now"
+      echo "MOTD will not be shown anynow"
       exit 0
     fi
 
