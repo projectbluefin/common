@@ -7,8 +7,8 @@ RUN install -d /out/usr/share/bash-completion/completions /out/usr/share/zsh/sit
   just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/usr/share/fish/vendor_completions.d/ujust.fish
 
 FROM scratch AS ctx
-COPY /system_files /system_files
+COPY /system_files/bluefin /system_files/bluefin
 
-COPY /shared /shared
+COPY /system_files/shared /system_files/shared/
 
-COPY --from=build /out/ /shared
+COPY --from=build /out/ /system_files/shared
