@@ -3,7 +3,7 @@ build:
     buildah build -t localhost/bluefin-common:latest -f ./Containerfile .
 
 # Inspect the directory structure of an OCI image
-tree IMAGE="localhost/aurora-common:latest":
+tree IMAGE="localhost/bluefin-common:latest":
     echo "FROM alpine:latest" > TreeContainerfile
     echo "RUN apk add --no-cache tree" >> TreeContainerfile
     echo "COPY --from={{IMAGE}} / /mnt/root" >> TreeContainerfile

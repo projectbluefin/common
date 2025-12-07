@@ -1,4 +1,4 @@
-FROM alpine:latest AS build
+FROM docker.io/library/alpine:latest AS build
 
 RUN apk add just
 RUN install -d /out/usr/share/bash-completion/completions /out/usr/share/zsh/site-functions /out/usr/share/fish/vendor_completions.d/ && \
@@ -8,4 +8,7 @@ RUN install -d /out/usr/share/bash-completion/completions /out/usr/share/zsh/sit
 
 FROM scratch AS ctx
 COPY /system_files /system_files
-COPY --from=build /out/ /system_files/
+
+COPY /shared /shared
+
+COPY --from=build /out/ /shared
