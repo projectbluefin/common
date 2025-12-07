@@ -2,5 +2,16 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>ublue-os/renovate-config:org-inherited-config"
+  ],
+
+  "regexManagers": [
+    {
+      "fileMatch": ["^Containerfile$"],
+      "matchStrings": [
+        "https://github\\.com/ublue-os/artwork/releases/download/bluefin-v(?<version>[0-9\\-]+)/bluefin-wallpapers\\.tar\\.zstd"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "ublue-os/artwork"
+    }
   ]
 }
