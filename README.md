@@ -14,6 +14,9 @@ This layer contains two main configuration directories:
 ### `/usr/share/ublue-os/` - User-Space Configuration
 - Firefox defaults - Pre-configured Firefox settings
 - Flatpak overrides - Application-specific Flatpak configurations
+- Homebrew Brewfiles - Curated application bundles installable via `bbrew`
+  - `full-desktop.Brewfile` - Full collection of GNOME Circle and community flatpak applications
+  - Other specialized Brewfiles for fonts, CLI tools, AI tools, etc.
 - Just recipes - Additional command recipes for system management
 - MOTD templates - Message of the day and tips
 - Setup hooks - Scripts for privileged, system, and user setup stages
@@ -48,6 +51,21 @@ FROM ghcr.io/ublue-os/bluefin-common:latest AS bluefin-common
 # Copy only /usr/share configuration
 COPY --from=bluefin-common /system_files/usr /usr
 ```
+
+## Brewfiles
+
+The `/usr/share/ublue-os/homebrew/` directory contains curated application bundles installable via [bbrew](https://github.com/Valkyrie00/homebrew-bbrew):
+
+- **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community flatpak applications for a full desktop experience
+- **`fonts.Brewfile`** - Additional monospace fonts for development
+- **`cli.Brewfile`** - CLI tools and utilities
+- **`ai-tools.Brewfile`** - AI and machine learning tools
+- **`cncf.Brewfile`** - Cloud Native Computing Foundation tools
+- **`k8s-tools.Brewfile`** - Kubernetes tools
+- **`ide.Brewfile`** - Integrated development environments
+- **`artwork.Brewfile`** - Design and artwork applications
+
+Users can install these bundles using the `ujust bbrew` command, which will prompt them to select a Brewfile.
 
 ## Building Locally
 

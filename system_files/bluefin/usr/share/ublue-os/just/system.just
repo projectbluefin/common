@@ -107,21 +107,12 @@ install-system-flatpaks $dx="dynamic":
         xargs flatpak --system -y install --or-update < $TARGET_DEVMODE_FILE
     fi
 
-# Install extra system flatpaks for rebasers
-[group('System')]
-install-system-flatpaks-extra:
-    #!/usr/bin/bash
-    TARGET_FLATPAK_EXTRA_FILE="${TARGET_FLATPAK_EXTRA_FILE:-/etc/ublue-os/system-flatpaks-extra.list}"
-    flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo
-    xargs flatpak --system -y install --or-update < $TARGET_FLATPAK_EXTRA_FILE
-
-# Alias to install both system flatpaks and extra flatpaks
+# Install default system flatpaks (alias for install-system-flatpaks)
+# For additional applications, use: ujust bbrew
 [group('System')]
 bluefin-apps:
     echo "Installing default system flatpaks..."
     @ujust install-system-flatpaks
-    echo "Installing some extra awesome applications..."
-    @ujust install-system-flatpaks-extra
 
 alias switch-stream := rebase-helper
 alias switch-streams := rebase-helper

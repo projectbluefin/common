@@ -128,6 +128,7 @@ alias install-resolve-studio := install-resolve
 alias install-davinci := install-resolve
 alias install-davinci-resolve := install-resolve
 
+# Install applications from curated Brewfiles (includes full-desktop.Brewfile with GNOME Circle apps)
 bbrew:
     #!/usr/bin/env bash
     if ! command -v bbrew &>/dev/null ; then

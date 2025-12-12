@@ -1,3 +1,14 @@
+# full-desktop.Brewfile
+# Comprehensive collection of GNOME Circle and community flatpak applications
+# 
+# This Brewfile contains a curated list of high-quality flatpak applications
+# that provide a full desktop experience on Bluefin. Install with:
+#   ujust bbrew
+# and select "full-desktop" from the menu.
+#
+# These applications are all available from Flathub and include GNOME Circle
+# apps and other well-maintained community applications.
+
 flatpak "app.drey.Biblioteca"
 flatpak "app.drey.Damask"
 flatpak "app.drey.Dialect"
