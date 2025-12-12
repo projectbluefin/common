@@ -1,6 +1,6 @@
 # Build the bluefin-common container locally
 build:
-    buildah build -t localhost/bluefin-common:latest -f ./Containerfile .
+    podman build -t localhost/bluefin-common:latest -f ./Containerfile .
 
 # Inspect the directory structure of an OCI image
 tree IMAGE="localhost/bluefin-common:latest":
