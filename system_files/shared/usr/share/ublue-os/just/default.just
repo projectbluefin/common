@@ -53,7 +53,7 @@ toggle-user-motd:
         exit 0
       fi
     fi
-    if gum confirm "Would you like to DISABLE the MOTD?" ; then
+    if gum confirm "Would you like to disable the MOTD?" ; then
       mkdir -p "${HOME}/.config"
       touch "${HOME}/.config/no-show-user-motd"
       echo "MOTD will not be shown anynow"
