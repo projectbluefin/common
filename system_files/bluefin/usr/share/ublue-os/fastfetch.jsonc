@@ -20,7 +20,7 @@
     {
       "type": "command",
       "key": "󱋩",
-      "text": "/usr/libexec/ublue-image-info.sh"
+      "text": "/usr/bin/ublue-image-info.sh"
     },
     {
       "type": "os",
