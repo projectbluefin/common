@@ -123,14 +123,7 @@ alias rollback-helper := rebase-helper
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
 
-# FIXME: apparently this is broken since F43
-# Enable automatic LUKS unlock via TPM
-setup-luks-tpm-unlock:
-    #!/usr/bin/bash
-    sudo /usr/libexec/luks-enable-tpm2-autounlock
-
-# Disable automatic LUKS unlock via TPM
-remove-luks-tpm-unlock:
-    #!/usr/bin/bash
-    sudo /usr/libexec/luks-disable-tpm2-autounlock
-
+# TPM2 auto-unlock toggle
+[group('System')]
+toggle-tpm2:
+    @/usr/bin/luks-tpm2-autounlock
