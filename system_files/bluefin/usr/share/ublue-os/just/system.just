@@ -6,6 +6,12 @@
 bluefin-cli:
     @/usr/bin/ublue-bling
 
+# Install AI tools bundle with Brew
+[group('System')]
+bluefin-ai:
+    #!/usr/bin/env bash
+    brew bundle install --file=/usr/share/ublue-os/homebrew/ai-tools.Brewfile
+
 # alias for toggle-devmode
 devmode:
     @ujust toggle-devmode
