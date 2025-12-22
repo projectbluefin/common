@@ -24,3 +24,4 @@ COPY /system_files/bluefin /system_files/bluefin
 
 COPY --from=build /out/shared /system_files/shared
 COPY --from=build /out/bluefin /system_files/bluefin
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /system_files/shared
