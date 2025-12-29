@@ -385,6 +385,7 @@ rows:
             - page.codeberg.lo_vely.Nucleus
             - org.turbowarp.TurboWarp
             - as.may.moat
+            - app.drey.MultiplicationPuzzle
 
   - sections:
       - expand-horizontally: true
