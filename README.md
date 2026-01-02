@@ -73,6 +73,52 @@ Users can install these bundles using the `ujust bbrew` command, which will prom
 just build
 ```
 
+## Rechunking for Bootc Images
+
+If you're building a bootc (bootable container) image that uses bluefin-common as a base layer, it's recommended to rechunk your final image for optimal update performance. Rechunking reorganizes the image layers to improve download resumability and reduce update sizes.
+
+### Using bootc-base-imagectl
+
+After building your bootc image, add a rechunk step before pushing to the registry. Here's an example based on the workflow used by [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium):
+
+```yaml
+- name: Build image
+  id: build
+  run: sudo podman build -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
+
+- name: Rechunk Image
+  run: |
+    sudo podman run --rm --privileged \
+      -v /var/lib/containers:/var/lib/containers \
+      --entrypoint /usr/libexec/bootc-base-imagectl \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+      rechunk --max-layers 67 \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+
+- name: Push to Registry
+  run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+```
+
+### Parameters
+
+- `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
+- The first image reference is the source (input)
+- The second image reference is the destination (output)
+
+### Benefits
+
+- **Smaller updates**: 5-10x reduction in update size by removing replaced files from previous layers
+- **Better resumability**: Evenly sized layers improve download resume capability
+- **Optimized layer distribution**: Files are reorganized for efficient updates
+
+### References
+
+- [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
+- [bootc documentation](https://containers.github.io/bootc/)
+
+**Note**: Rechunking is only applicable for bootc images. The bluefin-common layer itself does not need rechunking as it's only a configuration layer.
+
 ## Contributor Metrics
 
 ![Alt](https://repobeats.axiom.co/api/embed/45dffc43196101fdeb340b462af3f7babe39eee3.svg "Repobeats analytics image")
