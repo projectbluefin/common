@@ -21,8 +21,8 @@ function fish_prompt --description 'Default prompt with container detection'
         set -g prompt_host "[$CONTAINER_ID]"
         set -g prefix_icon "📦 "
     else
-    	set -g prompt_host "$hostname"
-    	set -g prefix_icon ""
+        set -g prompt_host "$hostname"
+        set -g prefix_icon ""
     end
 
     # Write pipestatus
