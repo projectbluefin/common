@@ -100,11 +100,31 @@ After building your bootc image, add a rechunk step before pushing to the regist
   run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
 ```
 
+Alternative approach using a temporary tag for clarity:
+
+```yaml
+- name: Rechunk Image
+  run: |
+    sudo podman run --rm --privileged \
+      -v /var/lib/containers:/var/lib/containers \
+      --entrypoint /usr/libexec/bootc-base-imagectl \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+      rechunk --max-layers 67 \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
+    
+    # Tag the rechunked image with the original tag
+    sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+    sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
+```
+
 ### Parameters
 
 - `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
 - The first image reference is the source (input)
 - The second image reference is the destination (output)
+  - When using the same reference for both, the image is rechunked in-place
+  - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
 
 ### Benefits
 
