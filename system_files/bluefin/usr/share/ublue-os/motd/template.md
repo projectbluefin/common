@@ -13,4 +13,4 @@ ${MOTD_TIP}
 
 - **󰊤** [Issues](https://issues.projectbluefin.io)
 - **󰊤** [Ask Bluefin](https://ask.projectbluefin.io)
-- **󰈙** [Documentation](http://docs.projectbluefin.io)
+- **󰈙** [Documentation](https://docs.projectbluefin.io)
