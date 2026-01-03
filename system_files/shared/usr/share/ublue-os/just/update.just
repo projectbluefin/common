@@ -47,39 +47,18 @@ toggle-updates ACTION="prompt":
     fi
 
     echo "Automatic updates are currently ${CURRENT_STATE}"
-    gum confirm --affirmative="Enable" --negative="Disable" "Toggle automatic updates?"
-    EXIT_CODE="$?"
+    SELECTED_OPTION="$(gum choose --header="Toggle automatic updates?" "Enable" "Disable" "Cancel")"
+    [[ "${SELECTED_OPTION}" == "Cancel" || "${SELECTED_OPTION}" == "" ]] && exit 0
 
     if systemctl cat -- uupd.timer &> /dev/null; then
         TIMER="uupd.timer"
     else
         TIMER="rpm-ostreed-automatic.timer"
     fi
-    if [ "${EXIT_CODE}" == 0 ] ; then
+    if [ "${SELECTED_OPTION}" == "Enable" ] ; then
         sudo systemctl enable "$TIMER"
-    elif [ "${EXIT_CODE}" == 1 ] ; then
+        echo "Updates have been enabled"
+    elif [ "${SELECTED_OPTION}" == "Disable" ] ; then
         sudo systemctl disable "$TIMER"
-    fi
-
-alias changelog := changelogs
-
-# Show the changelog
-changelogs:
-    #!/usr/bin/bash
-
-    # Get Image Tag
-    TAG="$(jq -r '.["image-tag"]' < /usr/share/ublue-os/image-info.json)"
-
-    # If stable or gts, get changelogs from Github Releases
-    if [[ "$TAG" =~ gts$|stable$ ]]; then
-        DATE="$(grep -oP "OSTREE_VERSION=.*\d{2}\.\K\d{8}[.0-9]*" /etc/os-release)"
-        CONTENT="$(curl -Ls "https://api.github.com/repos/ublue-os/bluefin/releases" | jq -r ".[] | select(.tag_name==\"${TAG}-${DATE}\") | .body")"
-    fi
-
-    # Display Content with Glow, otherwise fallback to rpm-ostree changelogs (stable-daily/latest/desynced)
-    if [[ -n "${CONTENT:-}" ]]; then
-        echo "$CONTENT" | glow -p
-    else
-        echo "WARN: Could not find a release specific to your image"
-        curl -Ls "https://api.github.com/repos/ublue-os/bluefin/releases/latest" | jq -r ".body" | glow -p
+        echo "Updates have been disabled"
     fi

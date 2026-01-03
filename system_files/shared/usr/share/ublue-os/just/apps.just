@@ -51,7 +51,9 @@ bbrew:
     #!/usr/bin/env bash
     if ! command -v bbrew &>/dev/null ; then
         if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
+            set -e
             brew install Valkyrie00/homebrew-bbrew/bbrew
+            set +e
         else
             exit 0
         fi
