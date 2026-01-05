@@ -11,6 +11,11 @@ bluefin-cli:
 devmode:
     @ujust toggle-devmode
 
+# Configure GNOME Remote Desktop
+[group('System')]
+setup-remote-desktop:
+    /usr/bin/ublue-setup-gnome-remote-desktop
+
 # Toggle between Bluefin and the Developer Experience
 [group('System')]
 toggle-devmode:

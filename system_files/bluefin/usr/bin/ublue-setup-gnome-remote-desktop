@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# ublue-setup-gnome-remote-desktop
+# Automates the setup of GNOME Remote Desktop (RDP) on Linux.
+
+set -e
+
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}Starting GNOME Remote Desktop Setup...${NC}"
+
+# --- 1. SELinux Configuration ---
+echo -e "${GREEN}[1/4] Configuring SELinux...${NC}"
+
+# Create a temporary directory for SELinux files
+SELINUX_TMP=$(mktemp -d)
+trap 'rm -rf "$SELINUX_TMP"' EXIT
+
+# Define the policy module content
+cat <<EOF > "$SELINUX_TMP/my-gnomeremote.te"
+module my-gnomeremote 1.0;
+
+require {
+	type gnome_remote_desktop_t;
+	type unreserved_port_t;
+	class tcp_socket name_connect;
+}
+
+#============= gnome_remote_desktop_t ==============
+allow gnome_remote_desktop_t unreserved_port_t:tcp_socket name_connect;
+EOF
+
+# Check for checkmodule availability
+if ! command -v checkmodule &> /dev/null; then
+    echo "Installing policycoreutils-python-utils (required for SELinux compilation)..."
+    sudo dnf install -y policycoreutils-python-utils
+fi
+
+# Compile and install the module
+echo "Compiling SELinux module..."
+pushd "$SELINUX_TMP" > /dev/null
+checkmodule -M -m -o my-gnomeremote.mod my-gnomeremote.te
+semodule_package -o my-gnomeremote.pp -m my-gnomeremote.mod
+popd > /dev/null
+
+echo "Installing SELinux module (requires sudo)..."
+sudo semodule -i "$SELINUX_TMP/my-gnomeremote.pp"
+echo "SELinux module installed."
+
+# --- 2. Firewall Configuration ---
+echo -e "${GREEN}[2/4] Configuring Firewall...${NC}"
+
+# Enable RDP service permanently
+if sudo firewall-cmd --state &> /dev/null; then
+    echo "Adding RDP service to firewall..."
+    sudo firewall-cmd --permanent --add-service=rdp
+    sudo firewall-cmd --reload
+    echo "Firewall configured."
+else
+    echo "Firewalld is not running. Skipping."
+fi
+
+# --- 3. User Session RDP Configuration ---
+echo -e "${GREEN}[3/4] Configuring User RDP Settings...${NC}"
+
+# Prompt for credentials
+echo "Please set the credentials for your Remote Desktop connection."
+read -p "Enter RDP Username: " RDP_USER
+while true; do
+    read -s -p "Enter RDP Password: " RDP_PASS
+    echo
+    read -s -p "Confirm RDP Password: " RDP_PASS_CONFIRM
+    echo
+    [ "$RDP_PASS" = "$RDP_PASS_CONFIRM" ] && break
+    echo "Passwords do not match. Please try again."
+done
+
+# Set credentials using grdctl
+echo "Setting credentials..."
+grdctl rdp set-credentials "$RDP_USER" "$RDP_PASS"
+
+# Enable RDP and disable view-only mode
+echo "Enabling RDP and allowing control..."
+grdctl rdp enable
+gsettings set org.gnome.desktop.remote-desktop.rdp view-only false
+
+# --- 4. Service Management ---
+echo -e "${GREEN}[4/4] Restarting Services...${NC}"
+
+systemctl --user enable --now gnome-remote-desktop
+systemctl --user restart gnome-remote-desktop
+
+echo -e "${GREEN}Setup Complete!${NC}"
+echo "You can now connect to this machine via RDP."
+if ip link show tailscale0 &> /dev/null; then
+    echo "IP Address (Tailscale): $(ip -4 addr show tailscale0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')"
+else
+    echo "Tailscale is not active. Check you local IP address for connection."
+fi
