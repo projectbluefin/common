@@ -143,6 +143,66 @@ The build workflow automatically:
 
 There are no complex build systems, no package management, no multi-stage builds beyond the scratch→ctx pattern.
 
+## GitHub Label Structure
+
+This repository follows the CNCF label pattern with `/` separators and color-coded groups.
+
+### Label Categories
+
+**kind/** - Issue types (color: `#61D6C3` teal)
+- `kind/bug` - Something isn't working
+- `kind/enhancement` - New feature requests
+- `kind/documentation` - Documentation improvements
+- `kind/question` - Support questions
+- `kind/tech-debt` - Refactoring and maintenance
+- `kind/duplicate` - Duplicate issues
+- `kind/invalid` - Invalid issues
+- `kind/wontfix` - Won't be implemented
+- `kind/github-action` - CI/CD automation
+- `kind/renovate` - Dependency updates
+- `kind/parity` - LTS/Bluefin differences
+- `kind/automation` - Workflow automation
+
+**area/** - Configuration areas (color: `#D786DA` purple)
+- `area/gnome` - GNOME-specific configs
+- `area/aurora` - KDE/Aurora-related configs
+- `area/bling` - Terminal theming and MOTD
+- `area/bluespeed` - AI/ML integration
+- `area/brew` - Homebrew/Brewfile configs
+- `area/just` - Just recipes
+- `area/services` - Systemd services
+- `area/iso` - Installation image configs
+- `area/buildstream` - Buildstream integration
+- `area/dx` - Developer experience
+- `area/finpilot` - Custom image automation
+- `area/policy` - OS policy and behavior
+- `area/upstream` - Upstream issue tracking
+
+**size/** - PR size (automated, various colors)
+- `size/XS`, `size/S`, `size/M`, `size/L`, `size/XL`, `size/XXL`
+
+**Other labels** (keep original colors)
+- `good first issue` (#7057ff)
+- `help wanted` (#008672)
+- `lgtm` (#238636)
+- `dependencies` (#0366d6)
+- `stale` (#dadada)
+- `aarch64` (#a8f908)
+
+### Modifying Labels
+
+Use `gh label edit` to rename or recolor labels:
+
+```bash
+# Rename and recolor
+gh label edit "old-name" --name "new-name" --color "61D6C3"
+
+# Update only color
+gh label edit "label-name" --color "D786DA"
+```
+
+When adding new labels, follow the prefix/color pattern above.
+
 ## Other Rules
 
 - Use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) for all commits and PR titles
