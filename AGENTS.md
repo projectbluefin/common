@@ -160,7 +160,7 @@ NEVER touch the issues themselves, only rename the labels.
 
 ### Label Categories
 
-**kind/** - Issue types (color: `#61D6C3` teal)
+**kind/** - Issue types (color: `#a6e3a1` light green)
 - `kind/bug` - Something isn't working
 - `kind/enhancement` - New feature requests
 - `kind/documentation` - Documentation improvements
@@ -174,22 +174,14 @@ NEVER touch the issues themselves, only rename the labels.
 - `kind/parity` - LTS/Bluefin differences
 - `kind/automation` - Workflow automation
 
-**area/** - Configuration areas (color: `#D786DA` purple)
-- `area/gnome` - GNOME-specific configs
-- `area/aurora` - KDE/Aurora-related configs
-- `area/bling` - Terminal theming and MOTD
-- `area/bluespeed` - AI/ML integration
-- `area/brew` - Homebrew/Brewfile configs
-- `area/just` - Just recipes
-- `area/services` - Systemd services
-- `area/iso` - Installation image configs
-- `area/buildstream` - Buildstream integration
-- `area/dx` - Developer experience
-- `area/finpilot` - Custom image automation
-- `area/policy` - OS policy and behavior
-- `area/upstream` - Upstream issue tracking
+**area/** - Configuration areas (Catppuccin Mocha colors by domain)
+- Desktop (pink `#f5c2e7`): `area/gnome`, `area/aurora`, `area/bling`
+- Development (sky `#89dceb`): `area/dx`, `area/buildstream`, `area/finpilot`
+- Package management (peach `#eba0ac`): `area/brew`, `area/just`
+- System services (lavender `#b4befe`): `area/services`, `area/policy`
+- Infrastructure (teal `#94e2d5`): `area/iso`, `area/upstream`, `area/bluespeed`
 
-**size/** - PR size (automated, various colors)
+**size/** - PR size (color: `#3fb950` dark green)
 - `size/XS`, `size/S`, `size/M`, `size/L`, `size/XL`, `size/XXL`
 
 **Other labels** (keep original colors)
@@ -206,13 +198,19 @@ Use `gh label edit` to rename or recolor labels:
 
 ```bash
 # Rename and recolor
-gh label edit "old-name" --name "new-name" --color "61D6C3"
+gh label edit "old-name" --name "new-name" --color "a6e3a1"
 
-# Update only color
-gh label edit "label-name" --color "D786DA"
+# Update only color for kind/ labels
+gh label edit "kind/example" --color "a6e3a1"
+
+# Update area/ label with appropriate domain color
+gh label edit "area/example" --color "f5c2e7"  # Use domain color
 ```
 
-When adding new labels, follow the prefix/color pattern above.
+When adding new labels, follow the prefix/color pattern above:
+- All `kind/` labels use `#a6e3a1` (light green)
+- All `size/` labels use `#3fb950` (dark green)
+- `area/` labels use domain-specific Catppuccin Mocha colors
 
 ## Other Rules
 
