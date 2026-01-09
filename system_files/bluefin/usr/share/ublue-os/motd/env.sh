@@ -6,7 +6,7 @@
 export CURRENT_LANG=${LANG:0:2}
 
 # Check if language is available, if not,fallback to English
-if ! grep -q "^${CURRENT_LANG}$" lang.list 2>/dev/null; then
+if ! grep -q "^${CURRENT_LANG}$" /usr/share/ublue-os/motd/lang.list 2>/dev/null; then
     export CURRENT_LANG="en"
 fi
 
