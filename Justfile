@@ -33,3 +33,33 @@ tree IMAGE="localhost/bluefin-common:latest":
     podman run --rm tree-temp
     rm TreeContainerfile
     podman rmi tree-temp
+
+overlay $BLUEFIN_MERGE="1":
+    #!/usr/bin/env bash
+    ROOTFS_DIR="$(mktemp -d --tmpdir="${ROOTFS_BASE:-/tmp}")"
+    trap 'rm -rf "${ROOTFS_DIR}"' EXIT
+    NAME_TRIMMED=bfincommon
+    crane export ghcr.io/projectbluefin/common:latest - | tar -xvf - -C "${ROOTFS_DIR}"
+    install -d -m0755 "${ROOTFS_DIR}/usr/lib/extension-release.d"
+    tee "${ROOTFS_DIR}/usr/lib/extension-release.d/extension-release.${NAME_TRIMMED}" <<EOF
+    ID="_any"
+    ARCHITECTURE="$(sed 's/_/-/g' <<< "$(arch)")"
+    EOF
+    cp -a "${ROOTFS_DIR}/system_files/shared/." "${ROOTFS_DIR}"
+    if [ "${BLUEFIN_MERGE}" == "1" ] ; then
+        cp -a "${ROOTFS_DIR}/system_files/bluefin/." "${ROOTFS_DIR}"
+    fi
+    rm -r "${ROOTFS_DIR}/system_files"
+    if [ -d "${ROOTFS_DIR}/etc" ] ; then
+        mv --no-clobber "${ROOTFS_DIR}/etc" "${ROOTFS_DIR}/usr/etc"
+    fi
+    for dir in "var" "run"; do
+        if [ -d "${ROOTFS_DIR}"/"${dir}" ] ; then
+            rm -r "${ROOTFS_DIR:?}/${dir}"
+        fi
+    done
+    filecontexts="/etc/selinux/targeted/contexts/files/file_contexts"
+    sudo setfiles -r "${ROOTFS_DIR}" "${filecontexts}" "${ROOTFS_DIR}"
+    sudo chcon --user=system_u --recursive "${ROOTFS_DIR}"
+    mkfs.erofs "${NAME_TRIMMED}.raw" "${ROOTFS_DIR}"
+
