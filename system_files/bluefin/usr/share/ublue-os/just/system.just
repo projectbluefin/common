@@ -83,6 +83,7 @@ install-system-flatpaks $confirm="1" $dx_only="0":
     brew bundle --file="${TARGET_FLATPAK_FILE:-/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile}"
 
 # Install default system flatpaks (alias for install-system-flatpaks)
+
 # For additional applications, use: ujust bbrew
 [group('System')]
 bluefin-apps:
