@@ -4,8 +4,13 @@ IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_NAME="$(jq -r '."image-name"' < "$IMAGE_INFO")"
 IMAGE_TAG="$(jq -r '."image-tag"' < "$IMAGE_INFO")"
 IMAGE_VENDOR="$(jq -r '."image-vendor"' < "$IMAGE_INFO")"
-FEDORA_VERSION="$(jq -r '."fedora-version"' < "$IMAGE_INFO")"
 IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
+
+set -x
+
+if grep -qe "lts" <<< "${IMAGE_TAG}" ; then
+  LTS_MODE="1"
+fi
 
 function list_tags() {
   local filter="$1"
@@ -15,54 +20,54 @@ function list_tags() {
     | sort -rV | head -n 31
 }
 
-gum confirm "Choose·your·action" --affirmative="Rebase" --negative="Cancel" || exit 0
-
-echo -ne "Current image: ${IMAGE_NAME}:${IMAGE_TAG} (Fedora ${FEDORA_VERSION})\n"
-IMAGE_NAME="$(gum choose --header="Select your Bluefin image:" bluefin bluefin-dx bluefin-nvidia-open bluefin-dx-nvidia-open cancel)"
+echo -ne "Current image: ${IMAGE_NAME}:${IMAGE_TAG}\n"
+declare -a IMAGES
+if [ "${LTS_MODE}" == "1" ] ; then
+  IMAGES=(bluefin bluefin-dx bluefin-gdx)
+else 
+  IMAGES=(bluefin bluefin-dx bluefin-nvidia-open bluefin-dx-nvidia-open)
+fi
+IMAGE_NAME="$(gum choose --header="Select your image:" "${IMAGES[@]}" cancel)"
 [[ "$IMAGE_NAME" == "cancel" || "$IMAGE_NAME" == "" ]] && exit 0
 
 base_image="${IMAGE_REGISTRY}/${IMAGE_NAME}"
 declare -a CHANNELS
-CHANNELS=(gts stable stable-daily latest)
-echo "The default selection is gts, stable (weekly builds) and stable-daily (daily builds) are for enthusiasts, and latest is for testers"
+if [ "${LTS_MODE}" == "1" ] ; then
+  CHANNELS=(lts lts-hwe)
+  if grep -q -e "gdx" <<< "${IMAGE_NAME}" ; then
+    CHANNELS=(lts)
+  fi
+else 
+  CHANNELS=(gts stable stable-daily latest)
+  echo "The default selection is gts, stable (weekly builds) and stable-daily (daily builds) are for enthusiasts, and latest is for testers"
+fi
 
-# Fetch Fedora version per channel and build display list
-declare -a CHANNELS_DISPLAY
-declare -a CHANNELS_RAW
-
-for channel in "${CHANNELS[@]}"; do
-  version="$(skopeo inspect --no-tags "docker://${base_image}:${channel}" | jq -r '.Labels["org.opencontainers.image.version"]' | sed 's/.*-//' | cut -c 1-2)"
-  CHANNELS_DISPLAY+=("${channel} (F${version})")
-  CHANNELS_RAW+=("${channel}")
-done
-
-channel_choice="$(gum choose "${CHANNELS_DISPLAY[@]}" cancel)"
+channel_choice="$(gum choose "${CHANNELS[@]}" cancel)"
 [[ "$channel_choice" == "cancel" || "$channel_choice" == "" ]] && exit 0
 channel_selected=${channel_choice%% *}
 
 rebase_target="${base_image}:${channel_selected}"
 
-if gum confirm "Would you like to pin to a specific build date?" ; then
+if gum confirm --default=no "Would you like to pin to a specific build date?" ; then
   echo "Fetching available tags for channel: $channel_selected..."
-  filter="${channel_selected}-[0-9]{8}"
+  filter="${channel_selected}.[0-9]{8}"
 
-  valid_tags=( $(list_tags "$filter") )
-  [[ "${#valid_tags[@]}" -eq 0 ]] && { echo "No tags found for filter: $filter"; exit 1; }
+  if [ "${LTS_MODE}" == 1 ] ; then
+    if grep -q -e "hwe" -e "gdx" <<< "${channel_selected}" ; then
+      filter="lts.[0-9]{8}"
+      valid_tags=( $(list_tags "$filter" | grep hwe) )
+    else
+      valid_tags=( $(list_tags "$filter" | grep -v hwe) )
+    fi
+  else 
+    valid_tags=( $(list_tags "$filter") )
+  fi
+  [[ "${#valid_tags[@]}" -eq 0 ]] && { echo "No tags found for $filter"; exit 1; }
 
   selected_tag="$(gum choose cancel "${valid_tags[@]}")"
   [[ "$selected_tag" == "cancel" || "$selected_tag" == "" ]] && exit 0
 
   rebase_target="${base_image}:${selected_tag}"
-fi
-
-# GTS rollback warnings
-if [[ "$channel_selected" == "gts" && "$IMAGE_TAG" != "gts" ]]; then
-  echo "Warning: Rolling back Major Fedora Versions may not work as expected."
-fi
-
-if [[ "$channel_selected" != "gts" && "$IMAGE_TAG" == "gts" ]]; then
-  echo "Rebase to a non-GTS version is a one-way operation. You will not be able to rollback to GTS."
-  gum confirm "Are you sure you want to proceed?" || exit 0
 fi
 
 gum confirm "Confirm rebase to ${rebase_target}?" || exit 1
