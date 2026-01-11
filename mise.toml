@@ -1,0 +1,5 @@
+[tools]
+cosign = "latest"
+gh = "latest"
+just = "latest"
+podman = "latest"

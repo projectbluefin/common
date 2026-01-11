@@ -12,6 +12,17 @@ This document provides essential information for coding agents working with the 
 - **Languages**: Configuration files (JSON, shell scripts, markdown)
 - **Build System**: GitHub Actions with podman/buildah
 
+## Development tools
+
+`mise` and it's config file `mise.toml`
+assist with loading the development tools needed.
+If the user requests tools to be added that apply only to them,
+create and use the `mise.local.toml` file instead,
+if you are unsure,
+ask the user if they want that program or task enabled for all developers.
+
+You can search and grep with `mise registry` to confirm if that package is available
+
 ## Repository Structure
 
 ### Root Directory Files

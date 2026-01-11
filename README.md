@@ -129,6 +129,10 @@ Users can install these bundles using the `ujust bbrew` command, which will prom
 
 ## Building Locally
 
+### Mise
+
+If you are using `mise`, run `mise install`, then.
+
 ```bash
 just build
 ```
