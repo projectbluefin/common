@@ -464,7 +464,7 @@ rows:
             pl: "SI i uczenie maszynowe"
           subtitle: 
             en: "Explore the best of open source AI"
-            pl: "Odkrywaj najlepsze open sourcowe rozwiązania SI"
+            pl: "Odkrywaj open sourcowe rozwiązania SI"
           light-banner: file:///run/host/etc/bazaar/08-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/08-bluefin-night.jxl
           banner-fit: cover
