@@ -30,5 +30,6 @@ jobs:
       - name: Generate and post report
         working-directory: scripts/weekly-report
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use ORG_PROJECT_TOKEN if available, fallback to GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.ORG_PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
         run: node generate-report.js

@@ -30,6 +30,19 @@ Reports include:
 ### Automated (GitHub Actions)
 Reports run automatically every Saturday at 23:00 UTC via `.github/workflows/weekly-report.yml`.
 
+**Important**: The workflow requires organization project read access. To enable this:
+
+1. **Create a Personal Access Token (Classic)** or **GitHub App**:
+   - For PAT (Classic): Go to GitHub Settings → Developer Settings → Personal Access Tokens → Tokens (classic)
+   - Required scopes: `read:org`, `read:project`, `write:discussion`, `repo`
+
+2. **Add as Repository Secret**:
+   - Go to repository Settings → Secrets and variables → Actions
+   - Create a new secret named `ORG_PROJECT_TOKEN`
+   - Paste the token
+
+3. The workflow will automatically use `ORG_PROJECT_TOKEN` if available, otherwise falls back to `GITHUB_TOKEN` (which will fail for org projects).
+
 ### Manual Trigger
 1. Go to [Actions](../../actions/workflows/weekly-report.yml)
 2. Click "Run workflow"
