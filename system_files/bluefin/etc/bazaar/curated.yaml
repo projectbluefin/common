@@ -166,9 +166,11 @@ rows:
         category:
           title:
             en: "Bluefin Recommends"
+            fr: "Recommandations"
             pl: "Bluefin poleca"
           subtitle:
             en: "Our Favorite Applications"
+            fr: "Nos applications préférées"
             pl: "Nasze ulubione aplikacje"
           light-banner: file:///run/host/etc/bazaar/11-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/11-bluefin-night.jxl
@@ -199,13 +201,15 @@ rows:
         light-classes:
           - browser-section
         dark-classes:
-        - browser-section-dark
+          - browser-section-dark
         category:
           title:
             en: "Browsers"
+            fr: "Navigateurs"
             pl: "Przeglądarki"
           subtitle:
             en: "Use the web with your favorite browser"
+            fr: "Surfez sur le web avec votre navigateur préféré"
             pl: "Surfuj po sieci swoją ulubioną przeglądarką"
           light-banner: file:///run/host/etc/bazaar/01-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/01-bluefin-night.jxl
@@ -232,9 +236,11 @@ rows:
         category:
           title:
             en: "Media"
+            fr: "Média"
             pl: "Multimedia"
           subtitle:
             en: "The Freedom of Music"
+            fr: "La liberté de la musique"
             pl: "Wolność muzyki"
           light-banner: file:///run/host/etc/bazaar/02-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/02-bluefin-night.jxl
@@ -242,7 +248,7 @@ rows:
           banner-text-halign: end
           banner-text-valign: end
           banner-height: 400
-          
+
           appids:
             - com.spotify.Client
             - app.ytmdesktop.ytmdesktop
@@ -267,9 +273,11 @@ rows:
         category:
           title:
             en: "Office & Productivity"
+            fr: "Bureautique"
             pl: "Biuro i produktywność"
           subtitle:
             en: "Work Smarter"
+            fr: "Travaillez malin"
             pl: "Pracuj mądrzej"
           light-banner: file:///run/host/etc/bazaar/03-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/03-bluefin-night.jxl
@@ -306,9 +314,11 @@ rows:
         category:
           title:
             en: "Games"
+            fr: "Jeux"
             pl: "Gry"
           subtitle:
             en: "Protocol Three: Protect the Pilot"
+            fr: "Protocole 3: Protégez le pilote"
             pl: "Protokół trzeci: Chronić pilota"
           light-banner: file:///run/host/etc/bazaar/04-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/04-bluefin-night.jxl
@@ -344,9 +354,11 @@ rows:
         category:
           title:
             en: "Utilities"
+            fr: "Utilitaires"
             pl: "Narzędzia"
           subtitle:
             en: "Gear up and kit out"
+            fr: "Équipé pour toute éventualité"
             pl: "Przygotuj i zaopatrz się"
           light-banner: file:///run/host/etc/bazaar/05-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/05-bluefin-night.jxl
@@ -387,9 +399,11 @@ rows:
         category:
           title:
             en: "Developers"
+            fr: "Développeurs"
             pl: "Programiści"
           subtitle:
             en: "Unleash the power of Cloud Native"
+            fr: "Déchainez la puissance du Cloud Native"
             pl: "Uwolnij moc dystrybucji Cloud Native"
           light-banner: file:///run/host/etc/bazaar/06-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/06-bluefin-night.jxl
@@ -430,9 +444,11 @@ rows:
         category:
           title:
             en: "Sustainability & Education"
+            fr: "Éducation"
             pl: "Rozwój i edukacja"
           subtitle:
             en: "Invest in the Future"
+            fr: "Investissez dans l'avenir"
             pl: "Zainwestuj w przyszłość"
           light-banner: file:///run/host/etc/bazaar/10-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/10-bluefin-night.jxl
@@ -461,11 +477,13 @@ rows:
         dark-classes:
           - ai-section-dark
         category:
-          title: 
+          title:
             en: "AI and Machine Learning"
+            fr: "IA et Machine Learning"
             pl: "SI i uczenie maszynowe"
-          subtitle: 
+          subtitle:
             en: "Explore the best of open source AI"
+            fr: "Explorez le meilleur de l'IA open source"
             pl: "Odkrywaj open sourcowe rozwiązania SI"
           light-banner: file:///run/host/etc/bazaar/08-bluefin-day.jxl
           dark-banner: file:///run/host/etc/bazaar/08-bluefin-night.jxl
