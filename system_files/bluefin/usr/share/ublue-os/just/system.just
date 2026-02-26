@@ -43,6 +43,51 @@ toggle-devmode:
     fi
     echo "Use ujust dx-group to add your user to the correct groups and complete the installation after rebooting into the development image"
 
+# Toggle between stable and testing images (LTS only)
+[group('System')]
+toggle-testing:
+    #!/usr/bin/env bash
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    IMAGE_TAG="$(jq -rc '."image-tag"' "${IMAGE_INFO_FILE}")"
+
+    # Guard: only LTS images have testing variants
+    if ! grep -q "^lts" <<< "${IMAGE_TAG}" ; then
+        echo "toggle-testing is only available on Bluefin LTS images."
+        echo "Current image tag: ${IMAGE_TAG}"
+        exit 0
+    fi
+
+    # Detect current booted image reference via bootc
+    BOOTED_IMAGE="$(sudo bootc status --json | jq -rc '.status.booted.image.image.image')"
+    if [ -z "${BOOTED_IMAGE}" ] || [ "${BOOTED_IMAGE}" == "null" ] ; then
+        echo "Error: Could not determine current booted image from bootc status."
+        exit 1
+    fi
+
+    # Split into registry/name and tag
+    IMAGE_BASE="${BOOTED_IMAGE%%:*}"
+    CURRENT_TAG="${BOOTED_IMAGE##*:}"
+
+    if grep -q "\-testing" <<< "${CURRENT_TAG}" ; then
+        STABLE_TAG="${CURRENT_TAG%-testing}"
+        TARGET="${IMAGE_BASE}:${STABLE_TAG}"
+        echo "You are currently on a testing image."
+        echo "  Current: ${BOOTED_IMAGE}"
+        echo "  Target:  ${TARGET}"
+        gum confirm "Switch from testing to stable?" || exit 0
+    else
+        TESTING_TAG="${CURRENT_TAG}-testing"
+        TARGET="${IMAGE_BASE}:${TESTING_TAG}"
+        echo "You are currently on a stable image."
+        echo "  Current: ${BOOTED_IMAGE}"
+        echo "  Target:  ${TARGET}"
+        gum confirm "Switch from stable to testing? Testing images may be less stable." || exit 0
+    fi
+
+    # --enforce-container-sigpolicy is MANDATORY for security (container signature verification)
+    pkexec bootc switch --enforce-container-sigpolicy "${TARGET}"
+    echo "Reboot to apply the change."
+
 # Configure docker,incus-admin,libvirt, container manager, serial permissions
 [group('System')]
 dx-group:
@@ -84,6 +129,7 @@ install-system-flatpaks $confirm="1" $dx_only="0":
     brew bundle --file="${TARGET_FLATPAK_FILE:-/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile}"
 
 # Install default system flatpaks (alias for install-system-flatpaks)
+
 # For additional applications, use: ujust bbrew
 [group('System')]
 bluefin-apps:

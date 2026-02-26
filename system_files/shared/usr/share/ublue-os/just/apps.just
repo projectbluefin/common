@@ -12,7 +12,6 @@ install-jetbrains-toolbox:
     brew tap ublue-os/homebrew-tap
     brew install --cask jetbrains-toolbox-linux
 
-
 # Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
 [group('Apps')]
 install-opentabletdriver:
