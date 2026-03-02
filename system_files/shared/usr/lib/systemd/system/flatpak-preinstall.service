@@ -4,6 +4,7 @@ After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/usr/bin/flatpak
 Documentation=man:flatpak-preinstall(1)
+StartLimitIntervalSec=600
 
 [Service]
 Type=oneshot
@@ -12,7 +13,6 @@ RemainAfterExit=true
 Restart=on-failure
 RestartSec=30
 
-StartLimitIntervalSec=600
 StartLimitBurst=3
 
 [Install]

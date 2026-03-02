@@ -49,3 +49,18 @@ fi
 # [ "$(command -v atuin)" ] && eval "$(atuin init "${BLING_SHELL}" ${ATUIN_INIT_FLAGS})"
 [ "$(command -v starship)" ] && eval "$(starship init "${BLING_SHELL}")"
 [ "$(command -v zoxide)" ] && eval "$(zoxide init "${BLING_SHELL}")"
+
+if command -v mise >/dev/null 2>&1; then
+  # Check for Bash
+  if [ "${BLING_SHELL}" = "bash" ]; then
+    if [ "$MISE_BASH_AUTO_ACTIVATE" != "0" ]; then
+      eval "$(mise activate bash)"
+    fi
+
+    # Check for Zsh
+  elif [ "${BLING_SHELL}" = "zsh" ]; then
+    if [ "$MISE_ZSH_AUTO_ACTIVATE" != "0" ]; then
+      eval "$(mise activate zsh)"
+    fi
+  fi
+fi

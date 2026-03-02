@@ -3,9 +3,17 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
   push:
     branches:
       - main
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
   merge_group:
   workflow_dispatch:
 
