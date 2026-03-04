@@ -57,6 +57,47 @@ Changes here propagate to ALL downstream Bluefin variants. Keep changes surgical
 `bluefin-branding` → projectbluefin/branding (wallpapers, logos).
 `just build` initializes it automatically.
 
+## Ecosystem Fork Discipline
+
+All `ublue-os` and `projectbluefin` repos worked on must have a fork in the `castrojo` namespace.
+
+**Known bluefin ecosystem repos:**
+
+| Upstream | Fork | Local path |
+|---|---|---|
+| `ublue-os/bluefin` | `castrojo/bluefin` | `~/src/bluefin` |
+| `ublue-os/bluefin-lts` | `castrojo/bluefin-lts` | `~/src/bluefin-lts` |
+| `ublue-os/bluefin-docs` | `castrojo/bluefin-docs` | `~/src/bluefin-docs` |
+| `projectbluefin/common` | `castrojo/common` | `~/src/bluefin-common` |
+
+Fork `main` (and `lts` where applicable) must always be **at most 1 commit ahead of upstream** — that commit being the fork-only `AGENTS.md` + `.gitattributes` commit.
+
+For any repo not yet forked, run the `onboarding-a-repository` skill first.
+
+### Sync after upstream moves
+
+```bash
+git fetch upstream
+git rebase upstream/main
+git push origin main --force-with-lease
+```
+
+Work branches are rebased onto freshly-synced `main` — never merged.
+
+### Signs a fork needs cleanup (hard-reset if any are true)
+
+- `git log upstream/main..main` shows more than 1 commit
+- Renovate bot commits appear on fork `main`
+- Old merge commits (`Merge branch 'ublue-os:main' into main`) are present
+
+```bash
+git fetch upstream
+git reset --hard upstream/main
+# re-apply fork-only commit
+git cherry-pick <agents-md-commit-sha>   # or re-create it
+git push origin main --force
+```
+
 ## Extended Notes
 
 > Full architecture, label schema, drift inventory, and session reference:
