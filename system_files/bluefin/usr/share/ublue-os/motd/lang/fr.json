@@ -3,7 +3,7 @@
   "cmd": "Commande",
   "desc": "Description",
   "choose": "Affiche les commandes disponibles",
-  "toggle": "Active/Désactive cette banière",
+  "toggle": "Active/Désactive cette bannière",
   "bling": "Active le bling du terminal",
   "brew": "Gère les paquets du terminal",
   "issues": "Signaler un problème",
