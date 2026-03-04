@@ -1,0 +1,12 @@
+{
+  "welcome": "Welcome to Bluefin !",
+  "cmd": "Command",
+  "desc": "Description",
+  "choose": "Show available commands",
+  "toggle": "Toggle this banner on/off",
+  "bling": "Enable terminal bling",
+  "brew": "Manage command line packages",
+  "issues": "Issues",
+  "askbluefin": "Ask Bluefin",
+  "docs": "Documentation"
+}

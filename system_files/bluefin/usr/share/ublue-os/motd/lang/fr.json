@@ -1,0 +1,12 @@
+{
+  "welcome": "Bienvenue sur Bluefin !",
+  "cmd": "Commande",
+  "desc": "Description",
+  "choose": "Affiche les commandes disponibles",
+  "toggle": "Active/Désactive cette banière",
+  "bling": "Active le bling du terminal",
+  "brew": "Gère les paquets du terminal",
+  "issues": "Signaler un problème",
+  "askbluefin": "Consulter Bluefin",
+  "docs": "Documentation "
+}
