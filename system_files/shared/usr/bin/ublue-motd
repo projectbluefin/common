@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-. "${MOTD_ENV_SCRIPT:-./env.sh}"
+. "${MOTD_ENV_SCRIPT:-/usr/share/ublue-os/motd/env.sh}"
 
 # Resolve language
 LANG_CODE="${LANG:0:2}"
