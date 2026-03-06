@@ -22,7 +22,7 @@ echo -ne "Current image: ${IMAGE_NAME}:${IMAGE_TAG}\n"
 declare -a IMAGES
 if [ "${LTS_MODE}" == "1" ] ; then
   IMAGES=(bluefin bluefin-dx bluefin-gdx)
-else 
+else
   IMAGES=(bluefin bluefin-dx bluefin-nvidia-open bluefin-dx-nvidia-open)
 fi
 IMAGE_NAME="$(gum choose --header="Select your image:" "${IMAGES[@]}" cancel)"
@@ -35,9 +35,9 @@ if [ "${LTS_MODE}" == "1" ] ; then
   if grep -q -e "gdx" <<< "${IMAGE_NAME}" ; then
     CHANNELS=(lts)
   fi
-else 
-  CHANNELS=(gts stable stable-daily latest)
-  echo "The default selection is gts, stable (weekly builds) and stable-daily (daily builds) are for enthusiasts, and latest is for testers"
+else
+  CHANNELS=(stable stable-daily latest)
+  echo "The default selection is stable (weekly builds) and stable-daily (daily builds) are for enthusiasts, and latest is for testers"
 fi
 
 channel_choice="$(gum choose "${CHANNELS[@]}" cancel)"
@@ -57,7 +57,7 @@ if gum confirm --default=no "Would you like to pin to a specific build date?" ; 
     else
       valid_tags=( $(list_tags "$filter" | grep -v hwe) )
     fi
-  else 
+  else
     valid_tags=( $(list_tags "$filter") )
   fi
   [[ "${#valid_tags[@]}" -eq 0 ]] && { echo "No tags found for $filter"; exit 1; }
