@@ -31,9 +31,9 @@ IMAGE_NAME="$(gum choose --header="Select your image:" "${IMAGES[@]}" cancel)"
 base_image="${IMAGE_REGISTRY}/${IMAGE_NAME}"
 declare -a CHANNELS
 if [ "${LTS_MODE}" == "1" ] ; then
-  CHANNELS=(lts lts-hwe)
+  CHANNELS=(lts lts-testing lts-hwe lts-hwe-testing)
   if grep -q -e "gdx" <<< "${IMAGE_NAME}" ; then
-    CHANNELS=(lts)
+    CHANNELS=(lts lts-testing)
   fi
 else 
   CHANNELS=(gts stable stable-daily latest)
@@ -51,7 +51,10 @@ if gum confirm --default=no "Would you like to pin to a specific build date?" ; 
   filter="${channel_selected}.[0-9]{8}"
 
   if [ "${LTS_MODE}" == 1 ] ; then
-    if grep -q -e "hwe" -e "gdx" <<< "${channel_selected}" ; then
+    if grep -q -e "testing" <<< "${channel_selected}" ; then
+      # Testing channels: filter is already correct (e.g., lts-testing.[0-9]{8})
+      valid_tags=( $(list_tags "$filter") )
+    elif grep -q -e "hwe" -e "gdx" <<< "${channel_selected}" ; then
       filter="lts.[0-9]{8}"
       valid_tags=( $(list_tags "$filter" | grep hwe) )
     else
