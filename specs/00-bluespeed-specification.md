@@ -1902,6 +1902,8 @@ graph TD
 
 The `ujust troubleshooting` installer should **auto-detect hardware** and select the appropriate model tier. The user can override this, but the default should just work.
 
+**Potential integration: [`llmfit`](https://github.com/AlexsJones/llmfit)** — a Rust CLI that detects hardware and recommends models with quantization selection, memory estimates, and speed scoring. Rather than hardcoding the decision tree above, `ujust` could delegate to `llmfit recommend --json --limit 1` and get a dynamically computed recommendation. This would also handle edge cases (multi-GPU, MoE architectures, unusual VRAM configurations) that the static tree doesn't cover. Available via Homebrew (`brew install llmfit`). See [Open Questions](#open-questions) for evaluation status.
+
 ---
 
 ## Local-First AI with Optional Frontier
@@ -3445,9 +3447,9 @@ End-to-end scenarios should be validated on at least three hardware profiles:
 
 ### Model & Inference
 1. **Default model**: The candidate list needs real benchmarks on the Bluespeed tool-selection test suite (10 queries + multi-step composition). Qwen 3 is the leading candidate but unvalidated.
-2. **Hardware auto-detection**: How does `ujust` detect VRAM and select the right model tier? ramalama may already expose this — needs investigation.
-3. **Quality-adjusted context**: What's the empirical quality cliff for each candidate model? Need to establish the effective context percentage (stated vs. usable).
-4. **Quantization tradeoffs**: `Q4_K_M` is the assumed default. Does `Q5_K_M` meaningfully improve tool-calling accuracy at the cost of ~20% more VRAM?
+2. **Hardware auto-detection and model selection**: [`llmfit`](https://github.com/AlexsJones/llmfit) is a Rust CLI/TUI that detects hardware (CPU, RAM, GPU, VRAM) and scores models across quality, speed, fit, and context dimensions. It answers "what runs well on this machine?" with concrete recommendations, quantization selection, and memory estimates. Supports Ollama, llama.cpp, and other runtimes. Available via Homebrew. This could replace the hand-rolled hardware detection in `ujust troubleshooting` and the static model tier table in this spec — instead of hardcoding "8GB VRAM → Qwen 3-7B-Q4_K_M," `ujust` could run `llmfit recommend --json --use-case general --limit 1` and get a hardware-appropriate recommendation dynamically. Evaluate whether to integrate `llmfit` as a dependency or use its scoring approach as a reference for our own selection logic.
+3. **Quality-adjusted context**: What's the empirical quality cliff for each candidate model? Need to establish the effective context percentage (stated vs. usable). `llmfit` includes context-length capping for memory estimation — investigate whether its per-model metadata captures effective context vs. stated.
+4. **Quantization tradeoffs**: `Q4_K_M` is the assumed default. Does `Q5_K_M` meaningfully improve tool-calling accuracy at the cost of ~20% more VRAM? `llmfit` does dynamic quantization selection per model based on available VRAM — this may make the question moot if we delegate selection to it.
 5. **Multi-model serving**: Can ramalama serve chat + embedding models simultaneously without GPU contention? If the embedding model runs on CPU, this is a non-issue — needs confirmation.
 
 ### Knowledge & Search
