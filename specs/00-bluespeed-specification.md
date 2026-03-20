@@ -6,12 +6,15 @@
 **Date**: 2026-03-19
 **Upstream**: [projectbluefin/common#100](https://github.com/projectbluefin/common/issues/100)
 
+This system is optimized for **reliability and clarity on local desktop environments**, not maximum automation or scale.
+
 ---
 
 ## Table of Contents
 
 1. [Design Principles](#design-principles)
-2. [Architecture Overview](#architecture-overview)
+2. [Non-Goals](#non-goals)
+3. [Architecture Overview](#architecture-overview)
 3. [Component Stack](#component-stack)
 4. [Knowledge Architecture](#knowledge-architecture)
 5. [bluefin-mcp](#bluefin-mcp)
@@ -39,6 +42,18 @@
 4. **Read before write** — diagnostics are safe by default. Agentic actions that modify system state require explicit escalation.
 5. **Feature-forward naming** — we ship "Ask Bluefin" and "troubleshooting", not "AI". The value is the capability, not the buzzword.
 6. **Clean exits** — uninstall leaves no orphaned services, configs, or containers. What `ujust` installs, `ujust` removes.
+
+---
+
+## Non-Goals
+
+These are explicit choices, not gaps. They bound the design space and prevent scope creep.
+
+- **Not a fully autonomous agent** — Bluespeed suggests actions, it does not execute them unsupervised. Power mode adds supervised execution with per-action approval, not autonomy.
+- **Not a distributed system** — single-node, single-user. No cluster coordination, no multi-machine orchestration. MCP servers communicate via unix pipes, not network protocols. Kubernetes, operators, and service meshes are out of scope.
+- **Not a general-purpose LLM framework** — this is not LangChain, not a toolkit for building arbitrary AI applications. It's an opinionated integration of specific components for a specific use case: desktop troubleshooting and learning on Bluefin.
+- **Not designed for massive-scale vector search** — the knowledge base targets <100k chunks. sqlite-vec handles this cleanly with no daemon process. If multi-image ecosystems (Bluefin + Bazzite + corporate) eventually push past this, the vector store is behind an abstraction that can swap without changing the MCP interface.
+- **Not a replacement for human expertise** — the agent surfaces information and suggests actions. It does not make decisions. Every destructive command is labeled, explained, and requires the user to act. The system is designed to make users more capable, not to replace their judgment.
 
 ---
 
