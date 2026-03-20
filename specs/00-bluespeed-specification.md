@@ -2298,6 +2298,60 @@ Prompt changes should be tested against the [Model Evaluation Suite](#layer-3-mo
 4. **Audit trail** — every executed command is logged with timestamp, what was run, and the output. The user can review the full history.
 5. **Kill switch** — the user can revoke power mode mid-session. Any pending actions are cancelled immediately.
 
+### Read-Only Enforcement via Goose Recipe Tool Filtering
+
+The two-tier safety model depends on standard mode tools being read-only. Today this is true by convention — the MCP servers we ship happen to expose only diagnostic tools. But Goose runs in normal mode, and **normal mode does not constrain which tools the agent can call**. If a server exposes a write tool (intentionally or by accident), the agent can and will call it without asking. Goose's plan mode strips *all* tools, which is too restrictive — the planner can't even gather context. We need a middle ground: **structurally enforced read-only access, without patching Goose**.
+
+**Goose already provides this primitive.** Recipes support an [`available_tools`](https://github.com/block/goose/issues/2927) parameter that whitelists exactly which tools the agent can see per extension. Tools not in the list are excluded from the tool list sent to the LLM — the agent never knows they exist.
+
+**Enforcement strategy — Bluespeed recipe with tool whitelisting:**
+
+The Bluespeed recipe shipped via `ujust` explicitly lists every permitted tool per MCP server. Only read-only diagnostic tools are included. Write-capable tools (if any server exposes them) are omitted.
+
+```yaml
+# Bluespeed standard mode recipe (shipped via ujust)
+extensions:
+  linux-mcp-server:
+    available_tools:
+      - read_journal
+      - list_processes
+      - network_info
+      - disk_usage
+      - system_info
+      # ... exhaustive list of read-only tools
+
+  okp-mcp:
+    available_tools:
+      - search_docs
+      - get_cve
+      - get_errata
+
+  bluefin-mcp:
+    available_tools:
+      - search_units
+      - get_unit
+      - system_context
+      - search_community_docs  # planned
+```
+
+As a second layer, Goose's [tool permissions](https://block.github.io/goose/docs/guides/managing-tools/tool-permissions/) allow individual tools to be set to `Never Allow`, `Ask Before`, or `Always Allow`. The Bluespeed config sets any known write-capable tools (e.g., future `gnome-mcp-server` write tools) to `Never Allow` by default.
+
+**Why this works:**
+
+| Property | How it's achieved |
+|----------|------------------|
+| **No Goose patches** | Uses built-in recipe `available_tools` and tool permissions. No fork, no custom code. |
+| **No extra infrastructure** | No proxy process, no middleware. Just Goose config. |
+| **Structural, not behavioral** | The agent never sees write tools — they aren't in the tool list. This is a capability constraint, not a prompt instruction the model can ignore. |
+| **Fail-closed** | New tools added upstream don't appear until explicitly added to the `available_tools` whitelist. |
+| **Composable** | Standard mode recipe whitelists read-only tools. Power mode recipe includes write tools with `Ask Before` permissions. Two recipes, same MCP servers. |
+
+**Annotation requirements for Bluespeed MCP servers:**
+
+All MCP servers in the Bluespeed stack SHOULD annotate every tool with the MCP [tool annotation](https://spec.modelcontextprotocol.io/specification/2025-03-26/server/tools/#annotations) set (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). This is a contribution requirement for `bluefin-mcp` and a request-to-upstream for `linux-mcp-server`, `okp-mcp`, and `gnome-mcp-server`. Annotations serve as documentation and enable future Goose versions to filter automatically, but the `available_tools` whitelist is the enforcement mechanism today.
+
+**Maintenance rule:** When upgrading an MCP server version, check `tools/list` for new tools. New tools are blocked by default (not in the whitelist). Add them to the recipe only after confirming they are read-only.
+
 ### Security Boundaries
 
 - MCP servers run with **user permissions** — they cannot access anything the user can't
@@ -2466,6 +2520,49 @@ This risk exists regardless of injection — it's inherent to LLM-generated cont
 | **Version-aware retrieval** | Chunks tagged with the OS/product version they apply to. The agent knows the user's OS version (from `system_info`) and can deprioritize chunks for other versions. |
 | **OKP freshness boost** | okp-mcp already applies `recip(ms(NOW,lastModifiedDate))` freshness weighting in Solr queries, naturally deprioritizing old content. |
 
+### Risk 8: Runaway Agent Execution in Normal Mode
+
+**The problem**: Goose's plan mode strips all tools, preventing the agent from gathering context during planning. The natural workaround is to run in normal mode with planning-oriented instructions. But normal mode has no structural constraint on tool execution — the agent receives the full tool set and can call any tool at any time. An LLM that decides to be "helpful" will skip past planning and start implementing: writing files, running commands, calling write-capable MCP tools. Prompt-level guardrails ("please just plan, don't execute") are not reliable enforcement — they depend on model compliance, which varies by model, temperature, and context length.
+
+**Attack scenario**:
+```
+1. User asks: "Why is my network slow?"
+
+2. Agent queries linux-mcp-server for network diagnostics (expected)
+
+3. Agent identifies a misconfigured DNS resolver (correct diagnosis)
+
+4. Agent calls gnome-mcp-server to modify /etc/resolv.conf or
+   NetworkManager settings (UNEXPECTED — user didn't ask for a fix)
+
+5. Agent breaks DNS resolution, user loses connectivity
+
+6. User didn't approve, wasn't warned, has no undo path
+```
+
+This is not an adversarial attack — it's the default behavior of a capable agent. The model genuinely believes it's being helpful. The risk increases with model capability: smarter models are *more* likely to take initiative, not less.
+
+**Why Goose plan mode doesn't solve this**: Plan mode strips the tool list entirely (`format_tools(&[])`), which means the planner can't read files, query system state, or search documentation. It can only reason over what the user pastes into the chat. This makes plan mode useless for diagnostic workflows where the whole point is to *gather context before deciding what to do*.
+
+**Why we don't patch Goose**: Maintaining a fork of Goose couples Bluespeed releases to Goose releases, creates merge conflicts on every upstream update, and requires Rust build infrastructure the Bluefin community doesn't want to own. Configuration-level solutions are strictly preferred.
+
+**Mitigation — Goose recipe tool whitelisting:**
+
+The primary mitigation is the [recipe-level tool filtering](#read-only-enforcement-via-goose-recipe-tool-filtering) described in the Safety Model. The Bluespeed recipe uses Goose's built-in `available_tools` parameter to whitelist only read-only tools per extension. Write tools are omitted from the tool list — the agent never sees them.
+
+This converts a behavioral constraint ("the model should only read") into a capability constraint ("the model can only read"). The distinction matters:
+
+| Approach | Enforcement | Failure mode |
+|----------|-------------|-------------|
+| Prompt instruction ("don't write") | Model compliance | Model ignores instruction, writes anyway |
+| Goose plan mode | Tool list stripping | Too aggressive — strips read tools too |
+| Goose approve mode | Per-call user approval | Approval fatigue — user clicks "yes" without reading |
+| **Recipe `available_tools` (our approach)** | **Tool list whitelisting** | **Write tools don't exist — nothing to approve or ignore** |
+
+No custom proxy, no Goose patches — just config.
+
+**Residual risk**: The recipe prevents the agent from calling write-capable MCP tools, but it does not prevent the agent from *suggesting* destructive commands in conversation. A user who copy-pastes a bad suggestion is still at risk (see [Risk 3: Hallucinated Commands](#risk-3-hallucinated-commands)). The whitelist addresses *agent-initiated execution*, not *user-initiated execution of agent advice*.
+
 ### Risk Summary
 
 ```
@@ -2479,13 +2576,18 @@ This risk exists regardless of injection — it's inherent to LLM-generated cont
 │ 5. Supply chain compromise        │ Critical │ Low          │ Low          │
 │ 6. Resource exhaustion            │ Medium   │ Medium       │ Low          │
 │ 7. Stale knowledge                │ Medium   │ High         │ Low          │
+│ 8. Runaway agent execution        │ High     │ High         │ Low          │
 └───────────────────────────────────┴──────────┴──────────────┴──────────────┘
 
 Severity × Likelihood = Priority for mitigation investment
 
-Top priority: Risk 1 (knowledge injection) — highest combination of
-severity and likelihood. Invest in source trust tiers, build-time
-canary queries, and runtime instruction boundaries first.
+Top priorities:
+- Risk 1 (knowledge injection) — highest severity with medium
+  likelihood. Invest in source trust tiers, build-time canary queries,
+  and runtime instruction boundaries first.
+- Risk 8 (runaway agent execution) — high severity AND high likelihood
+  (it's the default agent behavior, not an edge case). Mitigated
+  structurally by the bluespeed-ro-proxy — no prompt-level workarounds.
 ```
 
 ---
