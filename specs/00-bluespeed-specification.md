@@ -1039,8 +1039,8 @@ The agent (Goose + LLM) decides which MCP tools to call based on the query. The 
 | User Query | Agent Strategy |
 |-----------|---------------|
 | "Why is my fan loud?" | `linux-mcp-server` → CPU/thermal tools |
-| "How do I set up podman rootless?" | `okp-mcp` → search_documentation, `bluefin-knowledge` → semantic search |
-| "Is there a CVE for openssh?" | `okp-mcp` → search_cves |
+| "How do I set up podman rootless?" | `okp-mcp` → `search_documentation`, `bluefin-knowledge` → semantic search |
+| "Is there a CVE for openssh?" | `okp-mcp` → `search_cves` |
 | "How do I install a Flatpak?" | `bluefin-knowledge` → semantic search (Bluefin-specific docs) |
 | "My bluetooth won't connect" | `linux-mcp-server` → service status + logs, `okp-mcp` → search for solutions |
 
@@ -1542,7 +1542,7 @@ The default local model must meet all of these:
 | **Context window** | ≥8k tokens (effective) | System prompt (~2k) + tool results (~3-4k) + history + output |
 | **Parameter size** | ≤14B (quantized to fit in 8GB VRAM) | Must run on consumer laptops (integrated/discrete GPU) |
 | **Inference speed** | ≥15 tokens/sec on target hardware | Interactive conversation — users won't wait 30s for a response |
-| **Quantization** | Q4_K_M or better | Balance between size, speed, and quality |
+| **Quantization** | `Q4_K_M` or better | Balance between size, speed, and quality |
 | **License** | OSS-compatible (Apache 2.0, MIT, or similar) | Non-negotiable for the project's values |
 | **Tool-use format** | OpenAI function-calling compatible | ramalama serves OpenAI-compatible API; model must speak this format |
 
@@ -1621,8 +1621,8 @@ These are **not recommendations** — they are the models we should benchmark ag
 | Hardware Class | Target Model | Context Budget | Expected UX |
 |---------------|-------------|---------------|-------------|
 | **Integrated GPU / CPU only** (8GB RAM) | Qwen 2.5-3B-Q4 or Phi-4-mini | 4k effective | Single-tool turns, aggressive history summarization, slower but functional |
-| **Entry discrete GPU** (8GB VRAM) | Qwen 3-7B-Q4_K_M or Command-R-7B | 8k effective | 2-3 tool calls per turn, moderate history, good interactivity |
-| **Mid-range GPU** (16GB VRAM) | Qwen 2.5-14B-Q4_K_M or Mistral Nemo | 16k+ effective | Full multi-step diagnosis, rich history, fast |
+| **Entry discrete GPU** (8GB VRAM) | Qwen 3-7B-`Q4_K_M` or Command-R-7B | 8k effective | 2-3 tool calls per turn, moderate history, good interactivity |
+| **Mid-range GPU** (16GB VRAM) | Qwen 2.5-14B-`Q4_K_M` or Mistral Nemo | 16k+ effective | Full multi-step diagnosis, rich history, fast |
 | **High-end GPU** (24GB+ VRAM) | Llama 3.3-70B-Q4 or Qwen 2.5-32B | 32k+ effective | Near-frontier quality, local |
 
 #### Embedding Models
@@ -2195,7 +2195,7 @@ This risk exists regardless of injection — it's inherent to LLM-generated cont
 | **Daily CI rebuilds** | Knowledge pipeline runs daily, limiting staleness to ~24 hours for most sources. |
 | **Freshness metadata** | Each chunk carries a `last_crawled` timestamp. The MCP server can flag results older than a threshold: "Note: this information was last verified on [date]." |
 | **Live system as ground truth** | For anything about the current system state, linux-mcp-server is authoritative — it queries the real system, not cached docs. The agent should prefer live data over knowledge base results for system-specific questions. |
-| **Version-aware retrieval** | Chunks tagged with the OS/product version they apply to. The agent knows the user's OS version (from system_info) and can deprioritize chunks for other versions. |
+| **Version-aware retrieval** | Chunks tagged with the OS/product version they apply to. The agent knows the user's OS version (from `system_info`) and can deprioritize chunks for other versions. |
 | **OKP freshness boost** | okp-mcp already applies `recip(ms(NOW,lastModifiedDate))` freshness weighting in Solr queries, naturally deprioritizing old content. |
 
 ### Risk Summary
@@ -2384,9 +2384,9 @@ Concrete numbers for what Bluespeed costs to run.
 
 | Component | Size | Notes |
 |-----------|------|-------|
-| **Chat model (7B Q4_K_M)** | ~4.1 GB | Largest single component |
+| **Chat model (7B `Q4_K_M`)** | ~4.1 GB | Largest single component |
 | **Chat model (3B Q4, CPU tier)** | ~1.8 GB | Low-end hardware |
-| **Chat model (14B Q4_K_M)** | ~8.0 GB | High-end hardware |
+| **Chat model (14B `Q4_K_M`)** | ~8.0 GB | High-end hardware |
 | **Embedding model (nomic-embed-text-v1.5)** | ~275 MB | Same across all tiers |
 | **OKP Solr index** | ~2.5-3.5 GB | Red Hat knowledge corpus + Solr overhead |
 | **bluefin-knowledge.db** | ~150-250 MB | Embeddings (768-dim × ~45k chunks) + text |
@@ -2935,8 +2935,8 @@ Measured passively during other tests:
 
 | Metric | Target | How Measured |
 |--------|--------|-------------|
-| Avg tool calls per simple query | ≤2 | Count tool calls for tool_selection_tests |
-| Avg tool calls per complex query | ≤5 | Count tool calls for composition_tests |
+| Avg tool calls per simple query | ≤2 | Count tool calls for `tool_selection_tests` |
+| Avg tool calls per complex query | ≤5 | Count tool calls for `composition_tests` |
 | Duplicate tool calls per session | 0 | Flag any tool called twice with same params |
 | Avg tokens consumed per answer | ≤4,000 | Sum tool result tokens + output tokens |
 | Context utilization | ≤70% of window | Peak context usage during test suite |
@@ -3122,7 +3122,7 @@ End-to-end scenarios should be validated on at least three hardware profiles:
 1. **Default model**: The candidate list needs real benchmarks on the Bluespeed tool-selection test suite (10 queries + multi-step composition). Qwen 3 is the leading candidate but unvalidated.
 2. **Hardware auto-detection**: How does `ujust` detect VRAM and select the right model tier? ramalama may already expose this — needs investigation.
 3. **Quality-adjusted context**: What's the empirical quality cliff for each candidate model? Need to establish the effective context percentage (stated vs. usable).
-4. **Quantization tradeoffs**: Q4_K_M is the assumed default. Does Q5_K_M meaningfully improve tool-calling accuracy at the cost of ~20% more VRAM?
+4. **Quantization tradeoffs**: `Q4_K_M` is the assumed default. Does `Q5_K_M` meaningfully improve tool-calling accuracy at the cost of ~20% more VRAM?
 5. **Multi-model serving**: Can ramalama serve chat + embedding models simultaneously without GPU contention? If the embedding model runs on CPU, this is a non-issue — needs confirmation.
 
 ### Knowledge & Search
