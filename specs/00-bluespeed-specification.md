@@ -163,7 +163,7 @@ ramalama serve --port 8080   # Custom port
 **Default model selection**: Target a small, capable model that runs on laptop hardware (4-8GB VRAM). Current candidate: **qwen3.5** (per SCaLE discussion). The model must handle:
 - Natural language Q&A about system administration
 - Tool-use / function-calling for MCP orchestration
-- Reasonable latency on consumer GPUs and Apple Silicon
+- Reasonable latency on consumer GPUs
 
 ### MCP Server: linux-mcp-server
 
@@ -215,7 +215,8 @@ All tools are **strictly read-only**. This is the safety boundary — an agent w
 **Deployment:**
 ```bash
 podman login registry.redhat.io   # One-time auth
-podman-compose up -d              # Pulls OKP Solr + builds MCP server
+# Quadlet unit installed by ujust — manages OKP Solr container lifecycle via systemd
+systemctl --user start bluespeed-solr.service
 ```
 
 Fully offline once the Solr container image is pulled. Index updates are new container image pulls — same update path as everything else in Bluefin.
@@ -414,7 +415,7 @@ graph TD
 
 | Trigger | When | Why |
 |---------|------|-----|
-| **Scheduled (cron)** | Daily at 02:00 UTC | Catch web source changes (brew docs, flathub metadata, external project docs) |
+| **Scheduled (systemd timer)** | Daily at 02:00 UTC | Catch web source changes (brew docs, flathub metadata, external project docs) |
 | **Webhook (push)** | On merge to main in doc repos | Immediate update when Bluefin's own docs change |
 | **Manual dispatch** | On-demand | Emergency updates, new source additions, testing |
 
@@ -551,7 +552,7 @@ name: Build Knowledge Base
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 02:00 UTC
+    - systemd-timer: 'OnCalendar=*-*-* 02:00:00 UTC'  # Daily at 02:00 UTC
   push:
     branches: [main]
     paths: ['sources.yaml', 'transforms/**']
@@ -1807,12 +1808,12 @@ ujust troubleshooting
 This single command:
 1. Installs goose (CLI + desktop) via Homebrew tap
 2. Installs linux-mcp-server
-3. Pulls and starts OKP Solr container
+3. Installs OKP Solr quadlet (`~/.config/containers/systemd/bluespeed-solr.container`)
 4. Installs okp-mcp
 5. Pulls the default chat model via ramalama
 6. Pulls the embedding model via ramalama
 7. Writes goose config (`~/.config/goose/config.yaml`) with all MCP extensions
-8. Enables systemd user units for model serving (stopped by default, socket-activated or on-demand)
+8. Installs quadlet files for model serving (stopped by default, socket-activated or on-demand)
 9. Registers keyboard shortcut (`Ctrl-Alt-Shift-G`, Copilot key if present)
 
 **Step 2: Use it**
@@ -1840,7 +1841,7 @@ Removes:
 - OKP Solr container and image
 - Model files (with confirmation, these can be large)
 - Configuration files
-- Systemd units
+- Quadlet files (`~/.config/containers/systemd/bluespeed-*.container`)
 - Keyboard shortcut bindings
 
 No orphans. The system returns to its pre-Bluespeed state.
@@ -2251,17 +2252,17 @@ graph LR
     style Host fill:#a6e3a1,color:#000
 ```
 
-### Systemd User Units
+### Systemd Quadlets
 
-All services run as **systemd user units** — no root, no system-wide daemons.
+All container services are defined as **systemd quadlets** (`~/.config/containers/systemd/`) — no root, no system-wide daemons, no compose files. Podman generates systemd units from `.container` quadlet files automatically.
 
-| Unit | Type | Description |
-|------|------|-------------|
-| `bluespeed-chat.service` | on-demand | ramalama serve for chat model |
-| `bluespeed-embed.service` | on-demand | ramalama serve for embedding model |
-| `bluespeed-solr.service` | on-demand | OKP Solr container |
+| Quadlet File | Unit | Type | Description |
+|--------------|------|------|-------------|
+| `bluespeed-chat.container` | `bluespeed-chat.service` | on-demand | ramalama serve for chat model |
+| `bluespeed-embed.container` | `bluespeed-embed.service` | on-demand | ramalama serve for embedding model |
+| `bluespeed-solr.container` | `bluespeed-solr.service` | on-demand | OKP Solr container |
 
-Services are **socket-activated or started on first use** — they do not run at boot. When Goose is closed and no queries are active, services can idle-stop after a configurable timeout.
+Services are **socket-activated or started on first use** — they do not run at boot. When Goose is closed and no queries are active, services can idle-stop after a configurable timeout. Quadlets are the native systemd-integrated way to manage containers on Bluefin — no separate orchestrator needed.
 
 ### Update Path
 
@@ -2989,8 +2990,8 @@ End-to-end tests for the `ujust` workflow on real (or VM) Bluefin images.
 
 | Test | Steps | Pass Criteria |
 |------|-------|--------------|
-| **Clean uninstall** | Run `ujust troubleshooting --remove` | All packages removed, all containers stopped and removed, config files deleted, systemd units removed, keyboard shortcut unbound. |
-| **No orphans** | After uninstall, check for leftover processes, files, containers | `podman ps -a` shows no bluespeed containers. No systemd units remain. No config files in `~/.config/goose/` (or only user's own pre-existing config). |
+| **Clean uninstall** | Run `ujust troubleshooting --remove` | All packages removed, all containers stopped and removed, config files deleted, quadlet files removed, keyboard shortcut unbound. |
+| **No orphans** | After uninstall, check for leftover processes, files, containers | `podman ps -a` shows no bluespeed containers. No quadlet files remain in `~/.config/containers/systemd/`. No config files in `~/.config/goose/` (or only user's own pre-existing config). |
 | **Reinstall after uninstall** | Uninstall then install again | Clean install succeeds. No conflicts from previous install. |
 
 #### Upgrade Tests
