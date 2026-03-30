@@ -4,18 +4,18 @@ blocklists:
     - com.visualstudio.code-oss
     - com.vscodium.codium
     - com.vscodium.codium-insiders
-    - com.jetbrains.CLion
-    - com.jetbrains.DataGrip
-    - com.jetbrains.GoLand
-    - com.jetbrains.IntelliJ-IDEA-Community
-    - com.jetbrains.IntelliJ-IDEA-Ultimate
-    - com.jetbrains.PyCharm-Professional
-    - com.jetbrains.WebStorm
-    - com.jetbrains.PhpStorm
-    - com.jetbrains.PyCharm-Community
-    - com.jetbrains.Rider
-    - com.jetbrains.RubyMine
-    - com.jetbrains.RustRover
+#    - com.jetbrains.CLion
+#    - com.jetbrains.DataGrip
+#    - com.jetbrains.GoLand
+#    - com.jetbrains.IntelliJ-IDEA-Community
+#    - com.jetbrains.IntelliJ-IDEA-Ultimate
+#    - com.jetbrains.PyCharm-Professional
+#    - com.jetbrains.WebStorm
+#    - com.jetbrains.PhpStorm
+#    - com.jetbrains.PyCharm-Community
+#    - com.jetbrains.Rider
+#    - com.jetbrains.RubyMine
+#    - com.jetbrains.RustRover
     - com.google.AndroidStudio
     - io.neovim.nvim
     - org.vim.Vim
