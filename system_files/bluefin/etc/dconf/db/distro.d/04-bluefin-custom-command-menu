@@ -1,0 +1,50 @@
+# Custom Command Menu extension configuration
+# https://github.com/StorageB/custom-command-menu
+
+[org/gnome/shell/extensions/custom-command-list]
+command-order=[1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+entryrow1a-setting='Terminal'
+entryrow1b-setting='ptyxis --new-window'
+entryrow1c-setting='utilities-terminal-symbolic'
+visible1-setting=true
+
+entryrow2a-setting='Files'
+entryrow2b-setting='nautilus'
+entryrow2c-setting='system-file-manager-symbolic'
+visible2-setting=true
+
+entryrow3a-setting='---'
+entryrow3b-setting=''
+entryrow3c-setting=''
+visible3-setting=true
+
+entryrow4a-setting='System Monitor'
+entryrow4b-setting='flatpak run io.missioncenter.MissionCenter'
+entryrow4c-setting='resources-symbolic'
+visible4-setting=true
+
+entryrow5a-setting='Settings'
+entryrow5b-setting='gnome-control-center'
+entryrow5c-setting='emblem-system-symbolic'
+visible5-setting=true
+
+entryrow6a-setting='Extension Manager'
+entryrow6b-setting='flatpak run com.mattjakeman.ExtensionManager'
+entryrow6c-setting='application-x-addon-symbolic'
+visible6-setting=true
+
+entryrow7a-setting='---'
+entryrow7b-setting=''
+entryrow7c-setting=''
+visible7-setting=true
+
+entryrow8a-setting='Software'
+entryrow8b-setting='flatpak run io.github.kolunmi.Bazaar'
+entryrow8c-setting='system-software-install-symbolic'
+visible8-setting=true
+
+entryrow9a-setting='BoxBuddy'
+entryrow9b-setting='flatpak run io.github.dvlv.boxbuddyrs'
+entryrow9c-setting='preferences-other-symbolic'
+visible9-setting=true
