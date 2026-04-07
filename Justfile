@@ -76,4 +76,3 @@ overlay $BLUEFIN_MERGE="1" $SOURCE="dir":
     sudo setfiles -r "${ROOTFS_DIR}" "${filecontexts}" "${ROOTFS_DIR}"
     sudo chcon --user=system_u --recursive "${ROOTFS_DIR}"
     mkfs.erofs "${NAME_TRIMMED}.raw" "${ROOTFS_DIR}"
-
