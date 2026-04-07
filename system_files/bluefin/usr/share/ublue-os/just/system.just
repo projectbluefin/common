@@ -20,6 +20,7 @@ toggle-devmode:
     IMAGE_NAME="$(jq -rc '."image-name"' "${IMAGE_INFO_FILE}")"
     IMAGE_REF="$(jq -rc '."image-ref"' "${IMAGE_INFO_FILE}" | sed "s/.*ghcr/ghcr/")"
     CURRENT_IMAGE="${IMAGE_REF}:$(jq -rc '."image-tag"' "${IMAGE_INFO_FILE}")"
+    IMAGE_BASE_NAME="$(cut -f1 -d\- <<< "${IMAGE_NAME}")"
     set +e
 
     if grep -q -E -e "dx$" <<< "${IMAGE_NAME}" ; then
@@ -32,15 +33,15 @@ toggle-devmode:
 
     gum confirm "Would you like to enable developer mode?" || exit 0
     echo "Rebasing to a developer image"
-    NEW_IMAGE="$(sed "s/${IMAGE_NAME}/${IMAGE_NAME}-dx/" <<< "${CURRENT_IMAGE}")"
+    NEW_IMAGE="$(sed "s/${IMAGE_BASE_NAME}/${IMAGE_BASE_NAME}-dx/" <<< "${CURRENT_IMAGE}")"
     pkexec bootc switch --enforce-container-sigpolicy "${NEW_IMAGE}"
     if gum confirm "Do you want to also install the default development flatpaks?" ; then
-        ujust install-system-flatpaks 0 1
+        ADD_DEVMODE=1 ujust install-system-flatpaks 0 1
     fi
     if gum confirm "Do you want to install extra monospace fonts?" ; then
         brew bundle install --file=/usr/share/ublue-os/homebrew/fonts.Brewfile
     fi
-    echo "Use ujust dx-group to add your user to the correct groups and complete the installation"
+    echo "Use ujust dx-group to add your user to the correct groups and complete the installation after rebooting into the development image"
 
 # Configure docker,incus-admin,libvirt, container manager, serial permissions
 [group('System')]
@@ -96,12 +97,7 @@ alias rollback-helper := rebase-helper
 # Rebase assistant
 [group('System')]
 rebase-helper:
-    #!/usr/bin/env bash
-    if grep -q centos "/etc/os-release" ; then
-        echo "The rebase helper is currently disabled for Bluefin LTS"
-        exit 1
-    fi
-    /usr/bin/ublue-rollback-helper
+    @/usr/bin/ublue-rollback-helper
 
 # Factory reset this device (experimental)
 [group('System')]

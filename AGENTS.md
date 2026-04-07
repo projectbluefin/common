@@ -1,234 +1,104 @@
-# Bluefin-Common Copilot Instructions
+# bluefin-common — Fork Workflow Notes
 
-This document provides essential information for coding agents working with the bluefin-common repository.
+> Project instructions (build, structure, labels): see upstream AGENTS.md (injected from system_files context).
+> This file adds fork-specific workflow context for castrojo/common.
 
-## Repository Overview
+## Fork Identity
 
-**Bluefin-Common** is a shared OCI layer containing common configuration files used across all Bluefin variants (bluefin, bluefin-dx, bluefin-lts).
+- **Upstream:** projectbluefin/common
+- **Fork:** castrojo/common
+- **Role:** Primary planning hub and label authority for ALL bluefin ecosystem repos
 
-- **Type**: Minimal OCI container layer (system files only)
-- **Purpose**: Centralize shared configuration to reduce duplication across bluefin and bluefin-lts
-- **Base**: Built from scratch with COPY directive
-- **Languages**: Configuration files (JSON, shell scripts, markdown)
-- **Build System**: GitHub Actions with podman/buildah
+## Critical Context
 
-## Repository Structure
+This repo is the **source of truth** for:
+1. GitHub label schema across `projectbluefin/*` and `ublue-os/bluefin*` repos
+2. The GitHub Projects planning board for the entire Bluefin ecosystem
+3. Shared OCI configuration layer consumed by all Bluefin image variants
 
-### Root Directory Files
-- `Containerfile` - Multi-stage build (scratch → ctx stage with system_files)
-- `cosign.pub` - Container signing public key (shared with bluefin/bluefin-lts)
-- `README.md` - Basic repository description
+**Label management scope** (only these repos — no others):
+- @projectbluefin/common
+- @projectbluefin/dakota (formerly distroless)
+- @ublue-os/bluefin
+- @ublue-os/bluefin-lts
 
-### Key Directories
-- `system_files/` - All configuration files that get copied into bluefin images
-  - `etc/ublue-os/` - System configuration files (bling.json, fastfetch.json, setup.json)
-  - `usr/share/ublue-os/` - User-space configurations
-    - `firefox-config/` - Firefox default settings
-    - `flatpak-overrides/` - Flatpak app overrides
-    - `just/` - Just recipe additions
-    - `motd/` - Message of the day templates and tips
-    - `privileged-setup.hooks.d/` - Privileged setup hooks
-    - `system-setup.hooks.d/` - System setup hooks
-    - `user-setup.hooks.d/` - User setup hooks
+**Label rules:**
+- NEVER touch issues themselves — only labels
+- Colors must remain consistent across all four repos
+- `projectbluefin/common` is canonical; sync others to match it
+- Known drift exists — see project-notes.md for the full inventory
 
-### GitHub Actions
-- `.github/workflows/build.yml` - Simple build workflow using podman/buildah
+## Session Start
 
-## Build Instructions
-
-### Prerequisites
-This repository requires minimal tooling:
-- **podman** and **buildah** (usually pre-installed on development systems)
-- No Just, no pre-commit, no complex build dependencies
-
-### Build Commands
-
-**Build locally:**
 ```bash
-# Build the container
-buildah build -t bluefin-common:latest -f ./Containerfile .
-
-# Inspect the built image
-podman images bluefin-common
+git fetch upstream
+git log --oneline upstream/main..main   # must show ≤1 commit (this file)
+git rebase upstream/main && git push origin main --force-with-lease
+git submodule update --init --recursive
 ```
-
-**Test the image:**
-```bash
-# Copy files from the container to verify structure
-podman create --name test bluefin-common:latest
-podman cp test:/system_files ./test-output
-podman rm test
-tree ./test-output
-```
-
-### Build Process
-1. GitHub Actions triggers on push to main or PR
-2. `buildah build` creates image from `Containerfile`
-3. Image is pushed to `ghcr.io/projectbluefin/bluefin-common:latest`
-4. Bluefin and bluefin-lts reference this image with `COPY --from=ghcr.io/ublue-os/bluefin-common:latest`
-
-## Usage in Downstream Projects
-
-Bluefin and bluefin-lts use this layer in their Containerfiles:
-
-```dockerfile
-FROM ghcr.io/ublue-os/bluefin-common:latest AS bluefin-common
-
-# Later in the build:
-COPY --from=bluefin-common /system_files /desired/destination
-```
-
-## Making Changes
-
-### Modifying Configuration Files
-
-1. **Edit files in `system_files/`** - Maintain the existing directory structure
-2. **Test locally** with buildah to ensure no syntax errors
-3. **Create PR** - GitHub Actions will build and validate
-
-### Adding New Configuration Files
-
-1. Place files in the appropriate subdirectory under `system_files/`
-2. Follow the existing path conventions:
-   - System configs: `system_files/etc/ublue-os/`
-   - User configs: `system_files/usr/share/ublue-os/`
-3. Ensure file permissions are correct (executables for scripts)
-
-### Common Modification Patterns
-- **Firefox configs**: Edit `system_files/usr/share/ublue-os/firefox-config/`
-- **Setup hooks**: Modify scripts in `system_files/usr/share/ublue-os/*-setup.hooks.d/`
-- **System settings**: Update JSON files in `system_files/etc/ublue-os/`
-- **Just recipes**: Add/modify `.just` files in `system_files/usr/share/ublue-os/just/`
 
 ## Validation
 
-### Manual Validation
 ```bash
-# Check Containerfile syntax
-buildah build --dry-run -f ./Containerfile .
-
-# Validate JSON files
-find system_files -name "*.json" -exec sh -c 'echo "Checking {}"; cat {} | jq . > /dev/null' \;
-
-# Check shell script syntax
-find system_files -name "*.sh" -exec bash -n {} \;
+just check      # lint Justfile and all .just files
+just build      # full container build (slow — requires podman + network)
 ```
 
-### GitHub Actions
-The build workflow automatically:
-- Builds the container with buildah
-- Pushes to GHCR on merge to main
-- Validates build succeeds on PRs
-
-## Development Guidelines
-
-### Making Changes
-1. **Keep it simple** - This repo contains only configuration files
-2. **Maintain structure** - Follow existing directory patterns
-3. **Test locally** - Build with buildah before pushing
-4. **No complex dependencies** - This is intentionally minimal
-
-### File Editing Best Practices
-- **JSON files**: Validate syntax with `jq` before committing
-- **Shell scripts**: Check syntax with `bash -n script.sh`
-- **Keep files small** - Each file should have a single, clear purpose
-- **Document changes** - Update comments in configuration files
-
-## Trust These Instructions
-
-**This repository is intentionally simple.** It contains only:
-- Configuration files in `system_files/`
-- A minimal Containerfile
-- A simple GitHub Actions workflow
-
-There are no complex build systems, no package management, no multi-stage builds beyond the scratch→ctx pattern.
-
-## GitHub Label Structure
-
-This repository follows the CNCF label pattern with `/` separators and color-coded groups.
-
-- When asked to make github labels consistent across bluefin use this set of repositories. Do not touch any other repos:
-  - @projectbluefin/common
-  - @projectbluefin/distroless
-  - @ublue-os/bluefin
-  - @ublue-os/bluefin-lts 
-  - Ensure that the colors remain consistent
-
-This file is the source of truth for labels in Bluefin.
-
-NEVER touch the issues themselves, only rename the labels.
-
-### Label Categories
-
-**kind/** - Issue types (color: `#a6e3a1` light green)
-- `kind/bug` - Something isn't working
-- `kind/enhancement` - New feature requests
-- `kind/documentation` - Documentation improvements
-- `kind/question` - Support questions
-- `kind/tech-debt` - Refactoring and maintenance
-- `kind/duplicate` - Duplicate issues
-- `kind/invalid` - Invalid issues
-- `kind/wontfix` - Won't be implemented
-- `kind/github-action` - CI/CD automation
-- `kind/renovate` - Dependency updates
-- `kind/parity` - LTS/Bluefin differences
-- `kind/automation` - Workflow automation
-
-**area/** - Configuration areas (Catppuccin Mocha colors by domain)
-- Desktop (pink `#f5c2e7`): `area/gnome`, `area/aurora`, `area/bling`
-- Development (sky `#89dceb`): `area/dx`, `area/buildstream`, `area/finpilot`
-- Package management (peach `#eba0ac`): `area/brew`, `area/just`
-- System services (lavender `#b4befe`): `area/services`, `area/policy`
-- Infrastructure (teal `#94e2d5`): `area/iso`, `area/upstream`, `area/bluespeed`
-
-**size/** - PR size (color: `#3fb950` dark green)
-- `size/XS`, `size/S`, `size/M`, `size/L`, `size/XL`, `size/XXL`
-
-**Other labels** (keep original colors)
-- `good first issue` (#7057ff)
-- `help wanted` (#008672)
-- `lgtm` (#238636)
-- `dependencies` (#0366d6)
-- `stale` (#dadada)
-- `aarch64` (#a8f908)
-
-### Modifying Labels
-
-Use `gh label edit` to rename or recolor labels:
+## Work Branch Flow
 
 ```bash
-# Rename and recolor
-gh label edit "old-name" --name "new-name" --color "a6e3a1"
-
-# Update only color for kind/ labels
-gh label edit "kind/example" --color "a6e3a1"
-
-# Update area/ label with appropriate domain color
-gh label edit "area/example" --color "f5c2e7"  # Use domain color
+git worktree add .worktrees/<branch> -b <type>/description
 ```
 
-When adding new labels, follow the prefix/color pattern above:
-- All `kind/` labels use `#a6e3a1` (light green)
-- All `size/` labels use `#3fb950` (dark green)
-- `area/` labels use domain-specific Catppuccin Mocha colors
+Changes here propagate to ALL downstream Bluefin variants. Keep changes surgical.
 
-## Other Rules
+## Submodule
 
-- Use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) for all commits and PR titles
-- Keep changes minimal and surgical
-- This layer is used by both bluefin (ublue-os/bluefin) and bluefin-lts (ublue-os/bluefin-lts)
-- Changes here affect all downstream Bluefin variants
+`bluefin-branding` → projectbluefin/branding (wallpapers, logos).
+`just build` initializes it automatically.
 
-## Attribution Requirements
+## Ecosystem Fork Discipline
 
-AI agents must disclose what tool and model they are using in the "Assisted-by" commit footer:
+All `ublue-os` and `projectbluefin` repos worked on must have a fork in the `castrojo` namespace.
 
-```text
-Assisted-by: [Model Name] via [Tool Name]
+**Known bluefin ecosystem repos:**
+
+| Upstream | Fork | Local path |
+|---|---|---|
+| `ublue-os/bluefin` | `castrojo/bluefin` | `~/src/bluefin` |
+| `ublue-os/bluefin-lts` | `castrojo/bluefin-lts` | `~/src/bluefin-lts` |
+| `ublue-os/bluefin-docs` | `castrojo/bluefin-docs` | `~/src/bluefin-docs` |
+| `projectbluefin/common` | `castrojo/common` | `~/src/bluefin-common` |
+
+Fork `main` (and `lts` where applicable) must always be **at most 1 commit ahead of upstream** — that commit being the fork-only `AGENTS.md` + `.gitattributes` commit.
+
+For any repo not yet forked, run the `onboarding-a-repository` skill first.
+
+### Sync after upstream moves
+
+```bash
+git fetch upstream
+git rebase upstream/main
+git push origin main --force-with-lease
 ```
 
-Example:
+Work branches are rebased onto freshly-synced `main` — never merged.
 
-```text
-Assisted-by: Claude 3.5 Sonnet via GitHub Copilot
+### Signs a fork needs cleanup (hard-reset if any are true)
+
+- `git log upstream/main..main` shows more than 1 commit
+- Renovate bot commits appear on fork `main`
+- Old merge commits (`Merge branch 'ublue-os:main' into main`) are present
+
+```bash
+git fetch upstream
+git reset --hard upstream/main
+# re-apply fork-only commit
+git cherry-pick <agents-md-commit-sha>   # or re-create it
+git push origin main --force
 ```
+
+## Extended Notes
+
+> Full architecture, label schema, drift inventory, and session reference:
+> `~/.config/opencode/plans/common/project-notes.md`

@@ -22,9 +22,9 @@ export DEFAULT_THEME # Gets passed to `ublue-bling-fastfetch`
 DEFAULT_THEME="$(get_config '."default-theme"' "slate")"
 if [ "$SHUFFLE_LOGO" == "true" ] ; then
   FETCH_LOGO="$(find "$LOGO_DIRECTORY" -type f | shuf -n 1)"
-  fastfetch --logo "$FETCH_LOGO" --color "$(ublue-bling-fastfetch)" --config "${FASTFETCH_CONFIG}" "${@}"
+  exec fastfetch --logo "$FETCH_LOGO" --color "$(ublue-bling-fastfetch)" --config "${FASTFETCH_CONFIG}" "${@}"
 else
-  fastfetch --color "$(ublue-bling-fastfetch)" --config "${FASTFETCH_CONFIG}" "${@}"
+  exec fastfetch --color "$(ublue-bling-fastfetch)" --config "${FASTFETCH_CONFIG}" "${@}"
 fi
 
 

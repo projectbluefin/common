@@ -2,7 +2,7 @@
 
 alias upgrade := update
 
-# Update system, flatpaks, and containers all at once
+# Update system, flatpaks and homebrew packages all at once
 update:
     #!/usr/bin/bash
     if systemctl cat -- uupd.timer &> /dev/null; then

@@ -4,11 +4,12 @@
     "github>ublue-os/renovate-config:org-inherited-config"
   ],
 
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^Containerfile$"],
+      "customType": "regex",
+      "managerFilePatterns": ["^Containerfile$"],
       "matchStrings": [
-        "https://github\\.com/ublue-os/artwork/releases/download/bluefin-v(?<version>[0-9\\-]+)/bluefin-wallpapers\\.tar\\.zstd"
+        "https://github\\.com/ublue-os/artwork/releases/download/bluefin-v(?<currentValue>[0-9\\-]+)/bluefin-wallpapers\\.tar\\.zstd"
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "ublue-os/artwork"

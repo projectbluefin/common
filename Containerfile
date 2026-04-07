@@ -1,6 +1,6 @@
-FROM docker.io/library/alpine:latest AS build
+FROM docker.io/library/alpine:latest@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS build
 
-COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest / /out/bluefin/usr/share
+COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:4a9b0b771a7e927308cf1240ad1b512b61f2a91954be799bc6e1b5045fea2942 / /out/bluefin/usr/share
 
 RUN apk add just curl
 
@@ -22,6 +22,7 @@ FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
 COPY /bluefin-branding/system_files /system_files/bluefin
 COPY /system_files/bluefin /system_files/bluefin
+COPY /system_files/nvidia /system_files/nvidia/
 
 COPY --from=build /out/shared /system_files/shared
 COPY --from=build /out/bluefin /system_files/bluefin

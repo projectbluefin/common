@@ -1,6 +1,5 @@
 tap "ublue-os/experimental-tap"
 cask "ublue-os/experimental-tap/cursor-linux"
-cask "ublue-os/experimental-tap/antigravity-linux"
 cask "ublue-os/experimental-tap/clion-linux"
 cask "ublue-os/experimental-tap/datagrip-linux"
 cask "ublue-os/experimental-tap/dataspell-linux"
