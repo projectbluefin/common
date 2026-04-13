@@ -4,7 +4,7 @@
 [org/gnome/shell/extensions/custom-command-list]
 command-order=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-entryrow1a-setting='---Bluefin'
+entryrow1a-setting='---$(hostname)'
 entryrow1b-setting=''
 entryrow1c-setting=''
 visible1-setting=true
