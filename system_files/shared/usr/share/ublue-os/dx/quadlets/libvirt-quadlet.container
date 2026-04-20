@@ -4,6 +4,7 @@ After=network-online.target
 
 [Container]
 Image=ghcr.io/jumpyvi/qemu-box:latest
+AutoUpdate=registry
 Network=host
 
 PodmanArgs=--privileged --cgroupns=host --security-opt label=disable --pid=host
