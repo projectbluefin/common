@@ -122,5 +122,5 @@ dx-next:
     gum style --border normal --border-foreground 212 \
         "You are now testing the experimental DX mode. Please report any issues to the GitHub, or come talk with us on Discord!
         
-󰙯  https://discord.gg/8RZGC3uFzA
-  https://github.com/projectbluefin/common"
+    󰙯  https://discord.gg/8RZGC3uFzA
+      https://github.com/projectbluefin/common"
