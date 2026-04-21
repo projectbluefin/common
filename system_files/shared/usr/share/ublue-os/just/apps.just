@@ -113,9 +113,10 @@ dx-next:
     sudo firewall-cmd --reload
 
     sudo mkdir -p /etc/containers/systemd/
+    sudo mkdir -p /var/lib/libvirt/images/
     sudo cp /usr/share/ublue-os/dx/quadlets/* /etc/containers/systemd/
     sudo systemctl daemon-reload
-    sudo systemctl enable libvirt-quadlet
+    sudo systemctl start libvirt-quadlet
 
     gum style --foreground 39 "  Incus is available, but not started by default."
     gum format -- "Use \`systemctl start incus-quadlet\` to start it."
@@ -125,3 +126,6 @@ dx-next:
         
     󰙯  https://discord.gg/8RZGC3uFzA
       https://github.com/projectbluefin/common"
+
+     flatpak override --user --filesystem=/run/libvirt-quadlet org.virt_manager.VirtManager
+     flatpak run org.virt_manager.virt-manager -c "qemu:///system?socket=/run/libvirt-quadlet/libvirt-sock"
