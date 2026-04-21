@@ -112,6 +112,7 @@ dx-next:
     sudo firewall-cmd --permanent --zone=libvirt --set-target=ACCEPT
     sudo firewall-cmd --reload
 
+    sudo mkdir -p /etc/containers/systemd/
     sudo cp /usr/share/ublue-os/dx/quadlets/* /etc/containers/systemd/
     sudo systemctl daemon-reload
     sudo systemctl enable libvirt-quadlet
