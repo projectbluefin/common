@@ -15,16 +15,14 @@ Mount=type=bind,source=/var/run/dbus/system_bus_socket,destination=/run/dbus/sys
 # UDev
 Mount=type=bind,source=/var/run/udev,destination=/run/udev,ro
 
-# KVM & USB Devices
+# KVV, USB Devices and OpenGL
 AddDevice=/dev/kvm
 AddDevice=/dev/bus/usb
+Mount=type=bind,source=/dev/dri,destination=/dev/dri
 Mount=type=bind,source=/var/run/libvirt-quadlet,destination=/run/libvirt
 
 # Storage
-Mount=type=bind,source=/var/lib/libvirt/images,destination=/var/lib/libvirt/images
 Mount=type=bind,source=/var/lib/libvirt-quadlet,destination=/var/lib/libvirt
-# Removed for now, causes issues 
-#Mount=type=bind,source=/etc/libvirt-quadlet,destination=/etc/libvirt
 
 Exec=sh -c "virtlogd -d && libvirtd"
 
