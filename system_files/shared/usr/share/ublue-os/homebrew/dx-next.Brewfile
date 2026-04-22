@@ -13,7 +13,7 @@ brew "p7zip"
 brew "podman-compose"
 brew "podman-tui"
 #brew "sysprof"
-brew "ublue-os/experimental-tap/ydotool"
+#brew "ublue-os/experimental-tap/ydotool"
 flatpak "org.virt_manager.virt-manager"
 flatpak "org.virt_manager.virt_manager.Extension.Qemu"
 
