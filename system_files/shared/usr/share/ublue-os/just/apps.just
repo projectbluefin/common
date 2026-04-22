@@ -117,7 +117,7 @@ dx-next:
     sudo firewall-cmd --reload
 
     sudo mkdir -p /etc/containers/systemd/
-    sudo mkdir -p /var/lib/libvirt/images/
+    sudo mkdir -p /var/lib/libvirt-dx/images/
     sudo cp /usr/share/ublue-os/dx/quadlets/* /etc/containers/systemd/
     sudo systemctl daemon-reload
     sudo systemctl start libvirt-dx
