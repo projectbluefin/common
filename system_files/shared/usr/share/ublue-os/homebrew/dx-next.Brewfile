@@ -1,8 +1,8 @@
 tap "ublue-os/experimental-tap"
 tap "ublue-os/tap"
 
-brew "ublue-os/experimental-tap/dockerd-linux"
-brew "ublue-os/tap/visual-studio-code-linux"
+#brew "ublue-os/experimental-tap/dockerd-linux"
+#brew "ublue-os/tap/visual-studio-code-linux"
 cask "android-platform-tools"
 flatpak "org.flatpak.Builder"
 brew "git-svn"

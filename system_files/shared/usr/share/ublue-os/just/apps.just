@@ -83,6 +83,8 @@ dx-next:
 
     gum style --foreground 212 "󱗼 Initializing DX-Next environment..."
     brew bundle --file=/usr/share/ublue-os/homebrew/dx-next.Brewfile
+    brew install --cask ublue-os/tap/visual-studio-code-linux
+    brew install --cask ublue-os/experimental-tap/dockerd-linux
 
     sudo cp /usr/share/ublue-os/dx/units/* /etc/systemd/system/
     sudo systemctl daemon-reload
@@ -108,7 +110,10 @@ dx-next:
     echo 'SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", MODE="0664", GROUP="libvirt"' | sudo tee /etc/udev/rules.d/50-spice-usb.rules
     sudo mkdir -p /var/lib/images /var/lib/libvirt-quadlet /etc/libvirt-quadlet "$SOCKET_DIR"
     sudo chmod 775 "$SOCKET_DIR"
+
+    if ! sudo firewall-cmd --permanent --get-zones | grep -qw libvirt; then
     sudo firewall-cmd --permanent --new-zone=libvirt
+    fi
     sudo firewall-cmd --permanent --zone=libvirt --set-target=ACCEPT
     sudo firewall-cmd --reload
 
