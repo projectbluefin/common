@@ -23,6 +23,7 @@ Mount=type=bind,source=/var/run/libvirt-quadlet,destination=/run/libvirt
 
 # Storage
 Mount=type=bind,source=/var/lib/libvirt-quadlet,destination=/var/lib/libvirt
+Volume=libvirt-conf:/etc/libvirt:Z
 
 Exec=sh -c "virtlogd -d && libvirtd"
 
