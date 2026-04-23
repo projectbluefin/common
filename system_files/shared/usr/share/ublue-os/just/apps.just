@@ -84,14 +84,24 @@ dx-next:
     gum style --foreground 212 "󱗼 Initializing DX-Next environment..."
     brew bundle --file=/usr/share/ublue-os/homebrew/dx-next.Brewfile
     brew install --cask ublue-os/tap/visual-studio-code-linux
-    brew install --cask ublue-os/experimental-tap/dockerd-linux
+    brew install docker-engine iptables rootlesskit slirp4netns docker
 
-    sudo cp /usr/share/ublue-os/dx/units/* /etc/systemd/system/
+    mkdir -p /.config/systemd/user/
+    sudo cp /usr/share/ublue-os/dx/units/system/* /etc/systemd/system/
+    cp /usr/share/ublue-os/dx/units/user/* ~/.config/systemd/user/
+
+    DOCKER_CLI="${HOMEBREW_PREFIX:-/usr/local}/bin/docker"
+    DOCKER_SOCKET="unix:///run/user/$(id -u)/docker.sock"
+
+    CONTEXT_CREATE_CMD="$DOCKER_CLI context create rootless --docker host=$DOCKER_SOCKET"
+
+    $DOCKER_CLI context inspect rootless >/dev/null 2>&1 || $CONTEXT_CREATE_CMD
+
     sudo systemctl daemon-reload
-    sudo systemctl enable brew-containerd
-    sudo systemctl enable brew-dockerd
+    sudo systemctl enable --now dockerd-dx
 
-    /home/linuxbrew/.linuxbrew/bin/docker context use default
+    systemctl --user daemon-reload
+    systemctl start dockerd-rootless-dx
 
     current=$(groups "$USER")
     missing=()
