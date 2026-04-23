@@ -88,6 +88,7 @@ dx-virt:
 dx-incus:
     #!/usr/bin/env bash
     gum style --foreground "#cc3d19" "  Enabling and Starting Incus..."
+    brew install incus
     sudo cp /usr/share/ublue-os/dx/quadlets/incus-dx.container /etc/containers/systemd/
     sudo systemctl daemon-reload
     sudo systemctl enable --now incus-dx
