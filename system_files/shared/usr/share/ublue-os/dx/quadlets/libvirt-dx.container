@@ -25,7 +25,7 @@ Mount=type=bind,source=/var/run/libvirt-dx,destination=/run/libvirt
 Mount=type=bind,source=/var/lib/libvirt-dx,destination=/var/lib/libvirt
 Volume=libvirt-conf:/etc/libvirt:Z
 
-Exec=sh -c "virtlogd -d && libvirtd"
+Exec=sh -c "chgrp kvm /dev/kvm && virtlogd -d && libvirtd"
 
 [Install]
 WantedBy=multi-user.target
