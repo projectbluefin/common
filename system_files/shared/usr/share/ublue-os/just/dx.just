@@ -76,6 +76,8 @@ dx-virt:
     sudo mkdir -p /etc/containers/systemd/
     sudo mkdir -p /var/lib/libvirt-dx/images/
     sudo cp /usr/share/ublue-os/dx/quadlets/libvirt-dx.container /etc/containers/systemd/
+    sudo chown -R root:libvirt /var/lib/libvirt-dx/images
+    sudo chmod -R 775 /var/lib/libvirt-dx/images
     sudo systemctl daemon-reload
     sudo systemctl start libvirt-dx
 
