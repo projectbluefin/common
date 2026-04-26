@@ -3,18 +3,19 @@ dx_justfile := "/usr/share/ublue-os/just/dx.just"
 # Add user to all DX group with sysusers, this is always ran
 dx-groups:
     #!/usr/bin/env bash
-    current=$(groups "$USER")
-    missing=()
-    for group in libvirt docker incus-admin; do
-        echo "$current" | grep -qw "$group" || missing+=("$group")
-    done
+    sudo groupmod -g 5679 libvirt 2>/dev/null || true
+    SYSUSERS_CONF="/etc/sysusers.d/dx-groups.conf"
 
-    if [ ${#missing[@]} -ne 0 ]; then
-        gum format -- "Adding $USER to: **${missing[*]}**"
-        sudo mkdir -p /etc/sysusers.d/
-        for group in "${missing[@]}"; do echo "m $USER $group"; done | sudo tee /etc/sysusers.d/dx-groups.conf > /dev/null
-        sudo systemd-sysusers /etc/sysusers.d/dx-groups.conf
-    fi
+    sudo mkdir -p /etc/sysusers.d/
+    cat <<EOF | sudo tee $SYSUSERS_CONF > /dev/null
+    g libvirt 5679
+    g docker -
+    g incus-admin -
+    
+    m $USER libvirt
+    m $USER docker
+    m $USER incus-admin
+    EOF
 
 # A developper's essential toolkit such as VSCode, podman-tui, etc
 dx-tools:
