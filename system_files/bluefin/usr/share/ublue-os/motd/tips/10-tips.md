@@ -14,7 +14,7 @@ Tailscale is included, check out [their docs](https://tailscale.com/kb/1017/inst
 Don't forget to check the [release notes](https://github.com/ublue-os/bluefin/releases)
 Help keep Bluefin alive and healthy, consider [donating](https://docs.projectbluefin.io/donations)
 Develop with devcontainers! Use `devcontainer.json` files in your projects for isolated, reproducible environments
-Use DistroShelf (in the logo menu under "Containers") to create pet containers for different distros
+Use DistroShelf to create pet containers for different distros
 `ujust jetbrains-toolbox` installs JetBrains tools in your home directory, all ready to go!
 Performance profiling tools are built-in: try `sysprof`, `bpftrace`, and other debugging tools
 Switch shells safely: change your shell in Terminal settings instead of system-wide

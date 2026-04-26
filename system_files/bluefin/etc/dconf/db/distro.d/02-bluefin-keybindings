@@ -3,13 +3,13 @@
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
 binding='<Control><Alt>t'
-command='/usr/bin/ptyxis --new-window'
-name='Ptyxis'
+command='xdg-terminal-exec'
+name='Terminal'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1]
 binding='<Control><Alt>Return'
-command='/usr/bin/ptyxis --new-window'
-name='Ptyxis Alt'
+command='xdg-terminal-exec'
+name='Terminal Alt'
 
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2]
 binding='<Control><Shift>Escape'

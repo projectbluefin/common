@@ -4,6 +4,10 @@
     "github>ublue-os/renovate-config:org-inherited-config"
   ],
 
+  "git-submodules": {
+    "enabled": true
+  },
+
   "customManagers": [
     {
       "customType": "regex",
