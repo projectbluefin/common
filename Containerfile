@@ -2,7 +2,7 @@ FROM docker.io/library/alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f09
 
 COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:e4d74fa741ce9ff03a6a60440a58c31cef6c0fc145182357d243580ba239f810 / /out/bluefin/usr/share
 
-RUN apk add just curl
+RUN apk add just curl xz
 
 # artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
@@ -17,6 +17,11 @@ RUN install -d /out/shared/usr/share/bash-completion/completions /out/shared/usr
 RUN curl -fsSLo - https://codeberg.org/fabiscafe/game-devices-udev/archive/0.25.tar.gz | tar xzvf - -C /tmp/ && \
   install -Dpm0644 -t /out/shared/usr/lib/udev/rules.d/ /tmp/game-devices-udev/*.rules && \
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/refs/heads/main/udev/70-u2f.rules
+
+RUN install -d /out/shared/usr/share/fonts/AdwaitaMono && \
+  curl -fsSLo /tmp/AdwaitaMono.tar.xz https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/AdwaitaMono.tar.xz && \
+  tar -xJf /tmp/AdwaitaMono.tar.xz -C /out/shared/usr/share/fonts/AdwaitaMono && \
+  rm /tmp/AdwaitaMono.tar.xz
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
