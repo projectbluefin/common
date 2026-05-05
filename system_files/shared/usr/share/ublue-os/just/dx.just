@@ -41,6 +41,7 @@ dx-docker:
 dx-docker-dakota:
     #!/usr/bin/env bash
     gum style --foreground 212 "󰡨 Setting up Docker for Dakota..."
+    sudo mkdir -p /etc/extensions/
     sudo mkdir -p /opt/extensions/
     sudo mkdir -p /etc/sysupdate.docker.d/
     curl -sSL "https://github.com/flatcar/sysext-bakery/releases/download/docker/docker.conf" \
