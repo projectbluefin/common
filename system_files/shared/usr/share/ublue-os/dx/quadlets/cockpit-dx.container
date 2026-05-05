@@ -1,0 +1,15 @@
+[Unit]
+Description=Cockpit Web Service
+After=network-online.target
+Wants=network-online.target sshd.service
+
+[Container]
+Image=quay.io/cockpit/ws:latest
+ContainerName=cockpit-ws
+Volume=/:/host:rslave
+PodmanArgs=--privileged --pid=host
+
+Network=host
+
+[Install]
+WantedBy=multi-user.target

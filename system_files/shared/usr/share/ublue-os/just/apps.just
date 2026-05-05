@@ -73,3 +73,75 @@ cncf:
         fi
     fi
     bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+
+dx_justfile := "/usr/share/ublue-os/just/dx.just"
+# Experimental DX mode
+dx-next:
+    #!/usr/bin/env bash
+    if ! gum confirm "Enter experimental DX mode?"; then
+        exit 0
+    fi
+
+    gum style \
+        --border rounded \
+        --border-foreground 212 \
+        --padding "0 2" \
+        --margin "1 0" \
+        "DX-Next Environment Setup" "Please select your installation path."
+
+    MODE=$(gum choose "Default" "Customize" --header "Installation Mode")
+
+    if [ -z "$MODE" ]; then
+        gum style --foreground 196 "Setup cancelled."
+        exit 0
+    fi
+
+    if [ "$MODE" = "Default" ]; then
+        CHOICES="Virt Docker DX-Tools"
+        gum style --foreground 242 "Proceeding with Default options: $CHOICES"
+    else
+        echo ""
+        gum style --foreground 242 "  Use <space> to select/deselect, <enter> to confirm"
+        CHOICES=$(gum choose --no-limit \
+            --selected="Virt,Docker,DX-Tools" \
+            --header="--- Select Components ---" \
+            --cursor.foreground 212 --selected.foreground 212 \
+            "Virt" "Docker" "DX-Tools" "Incus")
+    fi
+
+    if [ -z "$CHOICES" ]; then
+        gum style --foreground 196 "No options selected. Exiting."
+        exit 0
+    fi
+
+    gum style --foreground 212 "󱗼 Initializing DX-Next environment..."
+
+    # Always run group setup
+    just -f {{dx_justfile}} dx-groups
+
+    # All subchoices
+    if echo "$CHOICES" | grep -q "DX-Tools"; then
+        just -f {{dx_justfile}} dx-tools
+    fi
+
+    if echo "$CHOICES" | grep -q "Docker"; then
+        just -f {{dx_justfile}} dx-docker
+    fi
+
+    if echo "$CHOICES" | grep -q "Virt"; then
+        just -f {{dx_justfile}} dx-virt
+    fi
+
+    if echo "$CHOICES" | grep -q "Incus"; then
+        just -f {{dx_justfile}} dx-incus
+    fi
+
+    # Final Banner
+    echo ""
+    gum style --border normal --border-foreground 212 \
+        "You are now testing the experimental DX mode. Please report any issues to the GitHub, or come talk with us on Discord!
+        
+    󰙯  https://discord.gg/8RZGC3uFzA
+      https://github.com/projectbluefin/common"
+
+    gum style --foreground 220 "⏻ Please reboot to fully apply changes."

@@ -1,0 +1,26 @@
+[Unit]
+Description=Incus Container Service
+After=network-online.target
+
+[Container]
+Image=ghcr.io/cmspam/incus-docker:nightly
+AutoUpdate=registry
+ContainerName=incus
+PodmanArgs=--privileged --cgroupns=host --security-opt unmask=/sys/fs/cgroup --pid=host
+Network=host
+
+# Volume mappings
+Volume=/dev:/dev
+Volume=/var/lib/incus:/var/lib/incus
+Volume=/lib/modules:/lib/modules:ro
+
+AddDevice=/dev/kvm
+AddDevice=/dev/bus/usb
+Mount=type=bind,source=/dev/dri,destination=/dev/dri
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+StateDirectory=incus
+ExecStartPost=bash -c 'until [ -S /var/lib/incus/unix.socket ]; do sleep 0.2; done; chgrp incus-admin /var/lib/incus/unix.socket'
