@@ -266,6 +266,7 @@ rows:
             - tv.plex.PlexDesktop
             - com.plexamp.Plexamp
             - com.rafaelmardojai.Blanket
+            - org.nickvision.tubeconverter
 
   - sections:
       - expand-horizontally: true
@@ -398,6 +399,7 @@ rows:
             - io.github.plrigaux.sysd-manager
             - org.mozilla.vpn
             - org.cryptomator.Cryptomator
+            - io.github.zarestia_dev.rclone-manager
 
   - sections:
       - expand-horizontally: true
