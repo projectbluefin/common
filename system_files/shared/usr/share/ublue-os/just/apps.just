@@ -12,7 +12,6 @@ install-jetbrains-toolbox:
     brew tap ublue-os/homebrew-tap
     brew install --cask jetbrains-toolbox-linux
 
-
 # Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
 [group('Apps')]
 install-opentabletdriver:
@@ -73,3 +72,23 @@ cncf:
         fi
     fi
     bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+
+# Install ASUS laptop tools (asusctl daemon + ROG Control Center) | https://gitlab.com/asus-linux/asusctl
+[group('Apps')]
+install-asus:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Installing ASUS laptop tools..."
+    brew install --cask ublue-os/tap/asusctl-linux
+    brew install --cask ublue-os/tap/rog-control-center-linux
+    echo ""
+    echo "Enabling system services..."
+    sudo systemctl enable --now asusd.service asus-shutdown.service
+    sudo udevadm control --reload
+    sudo udevadm trigger
+    echo ""
+    echo "Enabling user daemon..."
+    systemctl --user daemon-reload
+    systemctl --user enable --now asusd-user.service
+    echo ""
+    echo "ASUS tools installed! Run 'rog-control-center' or find it in your app launcher."
