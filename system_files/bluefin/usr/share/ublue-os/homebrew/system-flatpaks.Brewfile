@@ -1,4 +1,5 @@
 # Default system-wide flatpaks for Bluefin
+flatpak "be.alexandervanhee.gradia"
 flatpak "com.github.PintaProject.Pinta"
 flatpak "com.github.tchx84.Flatseal"
 flatpak "com.mattjakeman.ExtensionManager"
