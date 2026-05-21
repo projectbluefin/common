@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Used by ujust dx-* recipes (_ensure-sudo). Same sudo session as dx-next (dx-ui-lib.sh).
+set -euo pipefail
+
+DX_SHARE="${DX_SHARE:-/usr/share/ublue-os/dx}"
+# shellcheck source=/usr/share/ublue-os/dx/dx-ui-lib.sh
+source "${DX_SHARE}/dx-ui-lib.sh"
+dx_acquire_sudo

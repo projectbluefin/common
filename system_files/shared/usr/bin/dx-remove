@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Standalone DX-Next removal (sources shared lib; prompts for sudo once).
+set -euo pipefail
+
+DX_REMOVE_LIB="${DX_REMOVE_LIB:-/usr/share/ublue-os/dx/dx-remove-lib.sh}"
+# shellcheck source=/usr/share/ublue-os/dx/dx-remove-lib.sh
+source "$DX_REMOVE_LIB"
+
+# dx_remove_main acquires sudo once (parent dx-next should source this lib, not exec dx-remove)
+dx_remove_main "$@"

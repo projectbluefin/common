@@ -47,6 +47,7 @@ This layer contains two main configuration directories:
   - `system-dx-flatpaks.Brewfile` - Additional flatpaks for DX (Developer Experience) mode
   - Other specialized Brewfiles for fonts, CLI tools, AI tools, etc.
 - Just recipes - Additional command recipes for system management
+- **DX-Next** - Experimental developer stack (Virt, Docker, tools, Incus, Cockpit) — see [docs/dx-next.md](docs/dx-next.md)
 - MOTD templates - Message of the day and tips
 - Setup hooks - Scripts for privileged, system, and user setup stages
 

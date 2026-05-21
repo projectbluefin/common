@@ -1,5 +1,5 @@
-set allow-duplicate-recipes := true
-set ignore-comments := true
+set allow-duplicate-recipes
+set ignore-comments
 
 _default:
     #!/usr/bin/bash

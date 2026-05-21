@@ -33,3 +33,10 @@ tree IMAGE="localhost/bluefin-common:latest":
     podman run --rm tree-temp
     rm TreeContainerfile
     podman rmi tree-temp
+
+# Build and install the dx-next system extension image locally
+build-dx-next:
+    just -f system_files/shared/usr/share/ublue-os/just/dx.just build-dx-next
+
+install-dx-next:
+    just -f system_files/shared/usr/share/ublue-os/just/dx.just install-dx-next
