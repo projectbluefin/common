@@ -26,8 +26,8 @@ install-opentabletdriver:
       OTD_TMPDIR="$(mktemp -d)"
 
       curl -s "https://api.github.com/repos/OpenTabletDriver/OpenTabletDriver/releases/latest" \
-        | jq -r '.assets | sort_by(.created_at) | .[] | select (.name|test("opentabletdriver.*tar.gz$")) | .browser_download_url' \
-        | wget -qi - -O - \
+        | jq -r '.assets[] | select(.name | test("opentabletdriver.*tar.gz$")) | .browser_download_url' \
+        | xargs curl -L -s \
         | tar --strip-components=1 -xvzf - -C "${OTD_TMPDIR}"
 
       # https://opentabletdriver.net/Wiki/Documentation/RequiredPermissions
