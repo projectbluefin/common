@@ -50,9 +50,10 @@ toggle-devmode:
     set -e
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     IMAGE_NAME="$(jq -rc '."image-name"' "${IMAGE_INFO_FILE}")"
-    IMAGE_REF="$(jq -rc '."image-ref"' "${IMAGE_INFO_FILE}" | sed "s/.*ghcr/ghcr/")"
-    CURRENT_IMAGE="${IMAGE_REF}:$(jq -rc '."image-tag"' "${IMAGE_INFO_FILE}")"
     IMAGE_BASE_NAME="$(cut -f1 -d\- <<< "${IMAGE_NAME}")"
+    # Use the booted deployment reference so stable-daily images get the correct tag
+    # Strip transport prefix (ostree-image-signed:docker://, ostree-unverified-registry:, etc.)
+    CURRENT_IMAGE="$(rpm-ostree status -b --json | jq -rc '.deployments[0]."container-image-reference"' | sed -E 's|^.*://||; s|^[a-z-]+:||')"
     set +e
 
     if grep -q -E -e "dx$" <<< "${IMAGE_NAME}" ; then
