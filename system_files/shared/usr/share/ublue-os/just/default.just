@@ -42,9 +42,9 @@ clean-system:
 
     flatpak uninstall --unused
     rpm-ostree cleanup -bm
-    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-        brew autoremove
-        brew cleanup
+    if [ -x /var/home/linuxbrew/.linuxbrew/bin/brew ]; then
+        /var/home/linuxbrew/.linuxbrew/bin/brew autoremove
+        /var/home/linuxbrew/.linuxbrew/bin/brew cleanup
     fi
 
 # Show all messages from this boot
