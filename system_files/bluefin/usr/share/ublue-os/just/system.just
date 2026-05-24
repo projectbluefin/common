@@ -100,4 +100,3 @@ alias rollback-helper := rebase-helper
 [group('System')]
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
-

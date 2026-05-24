@@ -27,7 +27,7 @@ def spawn_ujust(id):
     spawn_and_detach(['flatpak-spawn', '--host', 'xdg-terminal-exec', '-x', f'ujust {id}'])
 
 def spawn_brew(app):
-    brew = '/home/linuxbrew/.linuxbrew/bin/brew'
+    brew = '/var/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
         'bash', '-c', f'{brew} install --cask {app}'
@@ -95,9 +95,9 @@ def handle_code():
         case 'action':
             try:
                 if transaction_appid == ('com.vscodium.codium'):
-                    spawn_brew('ublue/tap/vscodium-linux')
+                    spawn_brew('ublue-os/tap/vscodium-linux')
                 else:
-                    spawn_brew('ublue/tap/visual-studio-code-linux')
+                    spawn_brew('ublue-os/tap/visual-studio-code-linux')
             except:
                 pass
             return ''
@@ -116,4 +116,3 @@ match hook_id:
 
 print(response)
 sys.exit(0)
-

@@ -28,15 +28,19 @@ bios-info:
 
 clean-system:
     #!/usr/bin/bash
-    if gum confirm "Prune all Podman images and volumes?"; then
+    if gum confirm "Prune unused Podman images?"; then
         podman image prune -af
+    fi
+    if gum confirm "Prune Podman volumes? WARNING: removes all volumes not attached to a container."; then
         podman volume prune -f
     fi
 
     if command -v docker >/dev/null 2>&1; then
-      if gum confirm "Prune all Docker images and volumes?"; then
+      if gum confirm "Prune unused Docker images?"; then
         docker image prune -af
-        docker volume prune -f
+      fi
+      if gum confirm "Prune Docker volumes? WARNING: removes all volumes not in use by a running container."; then
+        docker volume prune -f --filter label!=com.docker.compose.project
       fi
     fi
 
@@ -54,6 +58,26 @@ logs-this-boot:
 # Show all messages from last boot
 logs-last-boot:
     sudo journalctl --no-hostname -b -1
+
+# Enroll Nvidia driver & KMOD signing key for secure boot - Enter password "universalblue" if prompted
+
+# Check if the ublue secure boot key is enrolled in the MOK database
+[group('System')]
+check-sb-key:
+    #!/usr/bin/bash
+    KEY="/etc/pki/akmods/certs/akmods-ublue.der"
+    if [ ! -f "$KEY" ]; then
+        echo "Secure boot key not found at $KEY"
+        echo "This system may not support secure boot or the key is not installed."
+        exit 1
+    fi
+    if mokutil --test-key "$KEY" &>/dev/null; then
+        echo "✓ ublue secure boot key is enrolled"
+    else
+        echo "✗ ublue secure boot key is NOT enrolled"
+        echo "Run: ujust enroll-secure-boot-key"
+        exit 1
+    fi
 
 # Enroll Nvidia driver & KMOD signing key for secure boot - Enter password "universalblue" if prompted
 enroll-secure-boot-key:
