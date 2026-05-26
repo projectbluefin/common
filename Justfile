@@ -37,7 +37,12 @@ tree IMAGE="localhost/bluefin-common:latest":
 overlay $BLUEFIN_MERGE="1" $SOURCE="dir":
     #!/usr/bin/env bash
     ROOTFS_DIR="$(mktemp -d --tmpdir="${ROOTFS_BASE:-/tmp}")"
-    trap 'rm -rf "${ROOTFS_DIR}"' EXIT
+    OVERLAY_CID=""
+    cleanup_overlay() {
+        [ -n "${OVERLAY_CID}" ] && podman rm -f "${OVERLAY_CID}" >/dev/null 2>&1 || true
+        sudo rm -rf "${ROOTFS_DIR}" 2>/dev/null || rm -rf "${ROOTFS_DIR}" 2>/dev/null || true
+    }
+    trap cleanup_overlay EXIT
     NAME_TRIMMED=bfincommon
 
     if [ "$SOURCE" == "dir" ] ; then
@@ -46,14 +51,15 @@ overlay $BLUEFIN_MERGE="1" $SOURCE="dir":
             cp -a ./system_files/bluefin/. "${ROOTFS_DIR}"
         fi
     elif [ "$SOURCE" == "image" ] ; then
-        podman export "$(podman create ghcr.io/projectbluefin/common:latest)" -o - | tar -xvf - -C "${ROOTFS_DIR}"
+        OVERLAY_CID="$(podman create ghcr.io/projectbluefin/common:latest)"
+        podman export "${OVERLAY_CID}" -o - | tar -xvf - -C "${ROOTFS_DIR}"
     fi
 
     install -d -m0755 "${ROOTFS_DIR}/usr/lib/extension-release.d"
     tee "${ROOTFS_DIR}/usr/lib/extension-release.d/extension-release.${NAME_TRIMMED}" <<EOF
-    ID="_any"
-    ARCHITECTURE="$(sed 's/_/-/g' <<< "$(arch)")"
-    EOF
+ID="_any"
+ARCHITECTURE="$(sed 's/_/-/g' <<< "$(arch)")"
+EOF
 
     if [ -e "${ROOTFS_DIR}/system_files" ] ; then
         cp -a "${ROOTFS_DIR}/system_files/shared/." "${ROOTFS_DIR}"

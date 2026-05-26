@@ -27,4 +27,4 @@ LimitCORE=infinity
 TasksMax=infinity
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
