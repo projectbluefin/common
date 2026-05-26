@@ -408,7 +408,8 @@ Removal of `dx-next.raw` is included in `dx_remove_all_full` when the file exist
 
 - **libvirt GID:** DX-Next never runs `groupmod` on an existing host `libvirt` group; it only creates the group when missing, then adds your user via `/etc/sysusers.d/dx-groups.conf`.
 - **Firewall:** Virt setup configures the dedicated `libvirt` zone only; it does not remove services from `FedoraWorkstation`.
-- **Docker static binaries:** Downloads go to a temp file (`curl -fSL`), with `tar -tzf` integrity checks; optional `DX_DOCKER_STATIC_SHA256` / `DX_DOCKER_ROOTLESS_STATIC_SHA256` env vars pin SHA256 when bumping versions.
+- **Docker static binaries:** Downloads go to a temp file (`curl -fsSL`, quiet), with `tar -tzf` integrity checks; optional `DX_DOCKER_STATIC_SHA256` / `DX_DOCKER_ROOTLESS_STATIC_SHA256` env vars pin SHA256 when bumping versions.
+- **DX-Tools brew bundle:** Core formulas run via `brew bundle`; `lima`, `kind`, `podman-compose`, `podman-tui`, and `ydotool` install **after** bundle with `podman` unlinked first (avoids `podman-system-generator` link conflicts on reinstall). Removal uninstalls `podman-tui`/`podman-compose` then `podman` and unlinks `podman`. Sudo ticket is refreshed before long steps (`dx_sudo_touch_before_long_task`; keepalive every 60s).
 - **Removal:** `dx_remove_tools_body` uninstalls the same Brewfile, flatpak, and npm packages as install; sysext removal uses `systemd-sysext refresh` after deleting `dx-next.raw` (not `unmerge`).
 - **build-dx-next:** Refuses to stage when `SOURCE_DIR` resolves to `/`, `/usr`, etc. (installed image path).
 

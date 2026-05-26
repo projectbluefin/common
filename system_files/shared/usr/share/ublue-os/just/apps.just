@@ -144,9 +144,11 @@ dx-next:
                 if echo "$CHOICES" | grep -q "Cockpit"; then REMOVE_FLAGS="$REMOVE_FLAGS --cockpit"; fi
 
                 source "${DX_REMOVE_LIB:-/usr/share/ublue-os/dx/dx-remove-lib.sh}"
-                export DX_REMOVE_FLAGS="$REMOVE_FLAGS"
-                dx_spin_run "󱗼 Removing selected components..." dx_remove_with_flags
-
+                dx_msg "󱗼 Removing selected components..."
+                # shellcheck disable=SC2086
+                if ! dx_remove_main ${REMOVE_FLAGS}; then
+                    dx_msg_warn "Some removal steps reported errors; see messages above."
+                fi
                 dx_msg_ok "Cleanup complete for selected components."
                 exit 0
             fi

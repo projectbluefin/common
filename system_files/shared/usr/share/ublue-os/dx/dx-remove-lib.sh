@@ -30,21 +30,27 @@ dx_brew_bin() {
 dx_remove_safe_brew_uninstall() {
     local tool=$1 brew_bin
     brew_bin=$(dx_brew_bin) || return 0
-    if "$brew_bin" list --formula "$tool" &>/dev/null || \
-       "$brew_bin" list --cask "$tool" &>/dev/null; then
+    if "$brew_bin" list --formula "$tool" &>/dev/null 2>&1 || \
+       "$brew_bin" list "$tool" &>/dev/null 2>&1 || \
+       "$brew_bin" list --cask "$tool" &>/dev/null 2>&1; then
         echo "  - Uninstalling $tool..."
         "$brew_bin" uninstall --ignore-dependencies "$tool" >/dev/null 2>&1 || true
     fi
 }
 
-# Mirrors dx_run_tools_body + dx-next.Brewfile (flatpaks/npm installed outside bundle).
+# Mirrors dx_run_tools_body (uninstall dependents before podman; unlink podman when done).
 dx_remove_tools_body() {
-    local tool
-    for tool in kind lima podman-tui ublue-os/experimental-tap/ydotool \
+    local tool brew_bin
+    # podman-tui/compose before podman; lima before podman-linked state matters less on remove
+    for tool in podman-tui podman-compose podman kind lima ydotool ublue-os/experimental-tap/ydotool \
         android-platform-tools visual-studio-code-linux git-svn git-subrepo bpftop numactl \
-        p7zip podman-compose podman; do
+        p7zip; do
         dx_remove_safe_brew_uninstall "$tool"
     done
+    if brew_bin=$(dx_brew_bin); then
+        dx_msg_muted "  → Unlinking podman after DX-Tools removal..."
+        "$brew_bin" unlink podman >/dev/null 2>&1 || true
+    fi
     if command -v npm &>/dev/null; then
         echo "  - Removing @devcontainers/cli (npm global)..."
         npm uninstall -g @devcontainers/cli >/dev/null 2>&1 || true
@@ -134,6 +140,15 @@ dx_remove_groups_body() {
     dx_sudo_run "rm -f /etc/sysusers.d/dx-groups.conf"
 }
 
+# Acquire sudo only before the first step that needs it (DX-Tools does not).
+dx_remove_maybe_acquire_sudo() {
+    if [ -n "${DX_SUDO_READY:-}" ]; then
+        dx_extend_sudo_ticket
+        return 0
+    fi
+    dx_acquire_sudo
+}
+
 # Usage: dx_remove_main [--all] [--tools] [--docker] [--virt] [--incus] [--cockpit]
 dx_remove_main() {
     local remove_tools=false remove_docker=false remove_virt=false
@@ -153,34 +168,36 @@ dx_remove_main() {
         esac
     done
 
-    dx_acquire_sudo
-
     if [ "$remove_tools" = true ]; then
         dx_spin_run "󱗼 Uninstalling DX-Tools & Base Apps..." dx_remove_tools_body
-        dx_extend_sudo_ticket
     fi
 
     if [ "$remove_docker" = true ]; then
+        dx_remove_maybe_acquire_sudo
         dx_ensure_sudo_before_privileged_step
         dx_spin_run "󱗼 Removing Docker components..." dx_remove_docker_body
     fi
 
     if [ "$remove_virt" = true ]; then
+        dx_remove_maybe_acquire_sudo
         dx_ensure_sudo_before_privileged_step
         dx_spin_run "󱗼 Removing Libvirt/QEMU components..." dx_remove_virt_body
     fi
 
     if [ "$remove_incus" = true ]; then
+        dx_remove_maybe_acquire_sudo
         dx_ensure_sudo_before_privileged_step
         dx_spin_run "󱗼 Removing Incus components..." dx_remove_incus_body
     fi
 
     if [ "$remove_cockpit" = true ]; then
+        dx_remove_maybe_acquire_sudo
         dx_ensure_sudo_before_privileged_step
         dx_spin_run "󱗼 Removing Cockpit components..." dx_remove_cockpit_body
     fi
 
     if [ "$remove_groups" = true ]; then
+        dx_remove_maybe_acquire_sudo
         dx_ensure_sudo_before_privileged_step
         dx_spin_run "󱗼 Removing DX groups configuration..." dx_remove_groups_body
     fi
@@ -191,6 +208,7 @@ dx_remove_main() {
 dx_remove_all_full() {
     dx_remove_main --all
     if [ -f /var/lib/extensions/dx-next.raw ]; then
+        dx_remove_maybe_acquire_sudo
         dx_sudo_run "
             rm -f /var/lib/extensions/dx-next.raw
             systemd-sysext refresh

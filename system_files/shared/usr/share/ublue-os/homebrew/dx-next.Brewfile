@@ -13,14 +13,10 @@ brew "git-subrepo"
 brew "bpftop"
 brew "numactl"
 brew "p7zip"
-brew "podman-compose"
-brew "podman-tui"
+# lima/kind/ydotool/podman-* installed in dx_run_tools (podman link order conflicts during bundle)
 #brew "sysprof"
-brew "ublue-os/experimental-tap/ydotool"
 
 # New (incus is installed via the Incus menu option / dx_run_incus, not DX-Tools)
-brew "lima"
-brew "kind"
 # brew "squashfs" (macOS only, use system mksquashfs)
 # brew "devcontainer" (Fails on Linux, installed via npm)
 # vscode extensions: installed via `code` CLI in dx_run_tools (brew bundle needs a GUI)

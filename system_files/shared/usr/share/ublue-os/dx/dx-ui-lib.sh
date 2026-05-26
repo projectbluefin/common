@@ -41,7 +41,7 @@ dx_acquire_sudo() {
             if sudo -n true 2>/dev/null; then
                 sudo -v 2>/dev/null || true
             fi
-            sleep 10
+            sleep "${DX_SUDO_KEEPALIVE_SECS:-60}"
         done) 2>/dev/null &
         export DX_SUDO_KEEPALIVE_STARTED=1
     fi
@@ -52,6 +52,11 @@ dx_extend_sudo_ticket() {
     if [ -n "${DX_SUDO_READY:-}" ] && sudo -n true 2>/dev/null; then
         sudo -v 2>/dev/null || true
     fi
+}
+
+# Call before/after long steps that do not use sudo (brew, curl) to reduce re-prompts.
+dx_sudo_touch_before_long_task() {
+    dx_extend_sudo_ticket
 }
 
 dx_refresh_sudo() {

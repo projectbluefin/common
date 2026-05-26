@@ -53,7 +53,9 @@ dx_vscode_bin() {
 dx_brew_link_if_installed() {
     local pkg
     for pkg in "$@"; do
-        if brew list --formula "$pkg" &>/dev/null; then
+        if brew list --formula "$pkg" &>/dev/null 2>&1; then
+            brew link --overwrite "$pkg" 2>/dev/null || true
+        elif brew list "$pkg" &>/dev/null 2>&1; then
             brew link --overwrite "$pkg" 2>/dev/null || true
         fi
     done
@@ -62,7 +64,7 @@ dx_brew_link_if_installed() {
 # Download static tarball to a file; optional SHA256 pin (set when bumping docker_ver).
 dx_fetch_verified_tgz() {
     local url=$1 dest=$2 expected_sha=${3:-}
-    if ! curl -fSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
+    if ! curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
         echo "DX-Next: failed to download $url" >&2
         return 1
     fi
@@ -133,15 +135,80 @@ dx_run_groups() {
     dx_spin_run "󰒕 Configuring DX groups..." dx_run_groups_body
 }
 
+dx_run_ydotool_install() {
+    # Installed outside brew bundle (see dx-next.Brewfile).
+    dx_msg_muted "  → ydotool (ublue-os/experimental-tap)..."
+    if brew list --formula ydotool &>/dev/null 2>&1; then
+        brew link --overwrite ydotool 2>/dev/null || true
+        return 0
+    fi
+    if ! brew install ublue-os/experimental-tap/ydotool 2>/dev/null; then
+        brew install ublue-os/experimental-tap/ydotool || true
+    fi
+    brew link --overwrite ydotool 2>/dev/null || true
+}
+
+# Brewfile formulas (lima/kind/podman-*/ydotool installed outside bundle).
+dx_brewfile_formulas() {
+    printf '%s\n' git-svn git-subrepo bpftop numactl p7zip podman-compose podman-tui lima kind
+}
+
+# Installed after core bundle so podman is not linked while lima dependencies pour/link.
+dx_run_lima_kind_podman_install() {
+    local pkg
+    dx_msg_muted "  → lima, kind, podman-compose, podman-tui..."
+    dx_brew_unlink_if_installed podman
+    for pkg in lima kind podman-compose podman-tui; do
+        if brew list --formula "$pkg" &>/dev/null 2>&1; then
+            brew link --overwrite "$pkg" 2>/dev/null || true
+        else
+            brew install "$pkg" 2>/dev/null || brew install "$pkg" || true
+            brew link --overwrite "$pkg" 2>/dev/null || true
+        fi
+    done
+    dx_brew_link_if_installed podman
+}
+
+dx_brew_repair_dx_tools_links() {
+    local pkg
+    dx_msg_muted "  → Relinking brew formulas (overwrite)..."
+    dx_brew_link_if_installed podman
+    while IFS= read -r pkg; do
+        [ -n "$pkg" ] && dx_brew_link_if_installed "$pkg"
+    done < <(dx_brewfile_formulas)
+}
+
+dx_brew_bundle_dx_tools_ok() {
+    local pkg
+    while IFS= read -r pkg; do
+        if ! brew list --formula "$pkg" &>/dev/null 2>&1; then
+            return 1
+        fi
+    done < <(dx_brewfile_formulas)
+    brew list --cask android-platform-tools &>/dev/null 2>&1
+}
+
 dx_run_tools_body() {
     export HOMEBREW_NO_AUTO_UPDATE="${HOMEBREW_NO_AUTO_UPDATE:-1}"
-    dx_msg_muted "  → Unlinking conflicting brew formulas (podman, ydotool)..."
-    dx_brew_unlink_if_installed podman ydotool
+    local bundle_ret=0
+    dx_sudo_touch_before_long_task
     dx_require_file "${DX_UBLUE_ROOT}/homebrew/dx-next.Brewfile"
-    dx_msg_muted "  → brew bundle (may take several minutes; downloading packages)..."
-    brew bundle --file="${DX_UBLUE_ROOT}/homebrew/dx-next.Brewfile" || true
-    dx_msg_muted "  → Linking podman / ydotool..."
-    dx_brew_link_if_installed podman ydotool
+    # Linked podman blocks other formulas from linking (systemd generator path); unlink for bundle.
+    dx_msg_muted "  → Preparing brew (unlink podman during install)..."
+    dx_brew_unlink_if_installed podman
+    dx_msg_muted "  → brew bundle (core DX-Tools; may take several minutes)..."
+    brew bundle --file="${DX_UBLUE_ROOT}/homebrew/dx-next.Brewfile" || bundle_ret=$?
+    dx_run_lima_kind_podman_install
+    dx_brew_repair_dx_tools_links
+    dx_run_ydotool_install
+    if [ "$bundle_ret" -ne 0 ]; then
+        if dx_brew_bundle_dx_tools_ok; then
+            dx_msg_warn "  brew bundle reported link errors; formulas were relinked and look complete."
+            bundle_ret=0
+        else
+            dx_msg_warn "  brew bundle failed; check output above. Some DX-Tools packages may be missing."
+        fi
+    fi
     dx_msg_muted "  → VS Code (Homebrew cask)..."
     brew install --cask ublue-os/tap/visual-studio-code-linux || true
     if command -v npm &>/dev/null; then
@@ -162,7 +229,8 @@ dx_run_tools_body() {
     dx_msg_muted "  → Flatpak: Builder, Podman Desktop..."
     flatpak install --user -y flathub org.flatpak.Builder || true
     flatpak install --user -y flathub io.podman_desktop.PodmanDesktop || true
-    dx_extend_sudo_ticket
+    dx_sudo_touch_before_long_task
+    return "$bundle_ret"
 }
 
 dx_run_tools() {
@@ -173,6 +241,7 @@ dx_run_tools() {
 
 dx_run_docker_rootless_body() {
     export PATH="$(brew --prefix)/bin:${PATH}"
+    dx_sudo_touch_before_long_task
 
     if systemctl --user is-active --quiet docker.service 2>/dev/null \
         && docker -H "unix:///run/user/$(id -u)/docker.sock" info &>/dev/null; then
@@ -182,6 +251,7 @@ dx_run_docker_rootless_body() {
 
     dx_brew_install_if_missing docker slirp4netns fuse-overlayfs iproute2 iptables
     dx_brew_link_if_installed docker slirp4netns fuse-overlayfs iproute2 iptables
+    dx_sudo_touch_before_long_task
 
     local docker_ver="29.5.2" setup_tool
     # Optional pins — update when bumping docker_ver (docker.com does not publish .sha256 files).
@@ -204,6 +274,7 @@ dx_run_docker_rootless_body() {
     dx_msg_muted "  → Downloading static Docker binaries v${docker_ver}..."
     dx_fetch_verified_tgz "${docker_base}/docker-${docker_ver}.tgz" "$docker_tgz" "$docker_tgz_sha"
     dx_fetch_verified_tgz "${docker_base}/docker-rootless-extras-${docker_ver}.tgz" "$rootless_tgz" "$docker_rootless_sha"
+    dx_sudo_touch_before_long_task
     tar xzf "$docker_tgz" -C "$temp_dir" --strip-components=1
     tar xzf "$rootless_tgz" -C "$temp_dir" --strip-components=1
 
@@ -220,6 +291,7 @@ dx_run_docker_rootless_body() {
     rm -rf "$temp_dir"
     trap - RETURN
 
+    dx_sudo_touch_before_long_task
     if ! "$setup_tool" "${setup_args[@]}"; then
         if systemctl --user is-active --quiet docker.service 2>/dev/null; then
             dx_msg_warn "Rootless setup tool reported an error, but user docker.service is active."
@@ -228,7 +300,7 @@ dx_run_docker_rootless_body() {
             return 1
         fi
     fi
-    dx_extend_sudo_ticket
+    dx_sudo_touch_before_long_task
 }
 
 dx_run_docker_rootless() {
@@ -272,6 +344,7 @@ dx_run_docker_root() {
 }
 
 dx_run_docker() {
+    dx_sudo_touch_before_long_task
     dx_run_docker_rootless
     dx_ensure_sudo_before_privileged_step
     dx_run_docker_root
@@ -287,6 +360,7 @@ dx_run_virt_body() {
     fi
     flatpak install --user -y flathub org.virt_manager.virt-manager
     flatpak install --user -y flathub org.virt_manager.virt_manager.Extension.Qemu
+    dx_sudo_touch_before_long_task
 
     local quadlet="${DX_SHARE}/quadlets/libvirt-dx.container"
     dx_require_file "$quadlet"
