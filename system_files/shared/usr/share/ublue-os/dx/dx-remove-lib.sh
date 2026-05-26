@@ -42,7 +42,7 @@ dx_remove_safe_brew_uninstall() {
 dx_remove_tools_body() {
     local tool brew_bin
     # podman-tui/compose before podman; lima before podman-linked state matters less on remove
-    for tool in podman-tui podman-compose podman kind lima ydotool ublue-os/experimental-tap/ydotool \
+    for tool in podman-tui podman-compose kind lima ydotool ublue-os/experimental-tap/ydotool \
         android-platform-tools visual-studio-code-linux git-svn git-subrepo bpftop numactl \
         p7zip; do
         dx_remove_safe_brew_uninstall "$tool"
@@ -87,6 +87,7 @@ dx_remove_docker_body() {
         systemctl disable dockerd-dx.service 2>/dev/null || true
         systemctl reset-failed dockerd-dx.service 2>/dev/null || true
         rm -f /etc/systemd/system/dockerd-dx.service
+        rm -rf /usr/local/libexec/dx-next/docker
         systemctl daemon-reload
     "
 }
@@ -99,12 +100,16 @@ dx_remove_virt_body() {
         systemctl stop libvirt-dx.service 2>/dev/null || true
         systemctl disable libvirt-dx.service 2>/dev/null || true
         systemctl reset-failed libvirt-dx.service 2>/dev/null || true
-        flatpak uninstall --system -y --noninteractive org.virt_manager.virt-manager \
-            org.virt_manager.virt_manager.Extension.Qemu >/dev/null 2>&1 || true
         rm -f /etc/containers/systemd/libvirt-dx.container
         rm -f /etc/udev/rules.d/50-spice-usb.rules
-        if firewall-cmd --permanent --get-zones | grep -qw libvirt; then
+        if [ -f /var/lib/dx-next/firewall-libvirt-zone-created ]; then
             firewall-cmd --permanent --delete-zone=libvirt >/dev/null 2>&1 || true
+            rm -f /var/lib/dx-next/firewall-libvirt-zone-created
+            rm -f /var/lib/dx-next/firewall-libvirt-target-set
+            firewall-cmd --reload >/dev/null 2>&1 || true
+        elif [ -f /var/lib/dx-next/firewall-libvirt-target-set ]; then
+            firewall-cmd --permanent --zone=libvirt --set-target=default >/dev/null 2>&1 || true
+            rm -f /var/lib/dx-next/firewall-libvirt-target-set
             firewall-cmd --reload >/dev/null 2>&1 || true
         fi
         systemctl daemon-reload

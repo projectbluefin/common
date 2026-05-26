@@ -20,6 +20,9 @@ export HOMEBREW_NO_AUTO_UPDATE="${HOMEBREW_NO_AUTO_UPDATE:-1}"
 export HOMEBREW_NO_ENV_HINTS="${HOMEBREW_NO_ENV_HINTS:-1}"
 export HOMEBREW_NO_INSTALL_CLEANUP="${HOMEBREW_NO_INSTALL_CLEANUP:-1}"
 
+# Rootfull dockerd must not run from Homebrew prefix (SELinux blocks exec from user_tmp_t).
+DX_DOCKER_LIBEXEC="${DX_DOCKER_LIBEXEC:-/usr/local/libexec/dx-next/docker}"
+
 # --- Homebrew helpers (DX-Tools + Docker formulas) ---
 
 dx_require_file() {
@@ -61,6 +64,30 @@ dx_brew_link_if_installed() {
     done
 }
 
+# Install/link without brew's noisy relink hints; skip link when already linked.
+dx_brew_ensure_formula() {
+    local pkg=${1:?dx_brew_ensure_formula: package name required} brew_prefix
+    brew_prefix="$(brew --prefix 2>/dev/null)" || return 1
+    if brew list --formula "$pkg" &>/dev/null; then
+        if [ -e "${brew_prefix}/opt/${pkg}" ] || brew link -n "$pkg" 2>&1 | grep -qi 'already linked'; then
+            dx_msg_muted "  brew: ${pkg} ready"
+            return 0
+        fi
+        dx_msg_muted "  brew: linking ${pkg}..."
+        brew link --overwrite "$pkg" >/dev/null 2>&1 || true
+        return 0
+    fi
+    if [ "$pkg" = "docker" ] && [ -e "${brew_prefix}/bin/docker" ]; then
+        dx_msg_muted "  brew: replacing existing docker binary before install"
+        rm -f "${brew_prefix}/bin/docker"
+    fi
+    dx_msg_muted "  brew: installing ${pkg}..."
+    if ! timeout 600 brew install "$pkg" >/dev/null 2>&1; then
+        timeout 600 brew install "$pkg"
+    fi
+    brew link --overwrite "$pkg" >/dev/null 2>&1 || true
+}
+
 # Download static tarball to a file; optional SHA256 pin (set when bumping docker_ver).
 dx_fetch_verified_tgz() {
     local url=$1 dest=$2 expected_sha=${3:-}
@@ -100,7 +127,7 @@ dx_brew_install_if_missing() {
                 dx_msg_muted "  brew: replacing existing docker binary before install"
                 rm -f "$(brew --prefix)/bin/docker"
             fi
-            brew install "$pkg" 2>/dev/null || brew install "$pkg" || true
+            brew install "$pkg" 2>/dev/null || brew install "$pkg"
             brew link --overwrite "$pkg" 2>/dev/null || true
         fi
     done
@@ -128,6 +155,7 @@ dx_run_groups_body() {
             echo 'm ${USER} docker'
             echo 'm ${USER} incus-admin'
         } > '${sysusers_conf}'
+        systemd-sysusers
     "
 }
 
@@ -143,7 +171,7 @@ dx_run_ydotool_install() {
         return 0
     fi
     if ! brew install ublue-os/experimental-tap/ydotool 2>/dev/null; then
-        brew install ublue-os/experimental-tap/ydotool || true
+        brew install ublue-os/experimental-tap/ydotool
     fi
     brew link --overwrite ydotool 2>/dev/null || true
 }
@@ -162,7 +190,7 @@ dx_run_lima_kind_podman_install() {
         if brew list --formula "$pkg" &>/dev/null 2>&1; then
             brew link --overwrite "$pkg" 2>/dev/null || true
         else
-            brew install "$pkg" 2>/dev/null || brew install "$pkg" || true
+            brew install "$pkg" 2>/dev/null || brew install "$pkg"
             brew link --overwrite "$pkg" 2>/dev/null || true
         fi
     done
@@ -254,9 +282,13 @@ dx_run_docker_rootless_body() {
     dx_sudo_touch_before_long_task
 
     local docker_ver="29.5.2" setup_tool
-    # Optional pins — update when bumping docker_ver (docker.com does not publish .sha256 files).
-    local docker_tgz_sha="${DX_DOCKER_STATIC_SHA256:-}"
-    local docker_rootless_sha="${DX_DOCKER_ROOTLESS_STATIC_SHA256:-}"
+    # Pinned with docker_ver — override via env only when testing a different tarball.
+    local docker_tgz_sha="${DX_DOCKER_STATIC_SHA256:-6d81a5be56232d9cc047e60b7110a087793536ae5a8b465719cd303f05fc56ec}"
+    local docker_rootless_sha="${DX_DOCKER_ROOTLESS_STATIC_SHA256:-a74f5df15ca3c9f8f2ae33ca23a0d674513f4ec8af0c0c12354a2185eb085072}"
+    if [ -z "$docker_tgz_sha" ] || [ -z "$docker_rootless_sha" ]; then
+        echo "DX-Next: set DX_DOCKER_STATIC_SHA256 and DX_DOCKER_ROOTLESS_STATIC_SHA256 for docker_ver=${docker_ver}" >&2
+        return 1
+    fi
     local docker_base="https://download.docker.com/linux/static/stable/x86_64"
     setup_tool="$(brew --prefix)/bin/dockerd-rootless-setuptool.sh"
     local -a setup_args=(install --skip-iptables)
@@ -307,6 +339,33 @@ dx_run_docker_rootless() {
     dx_spin_run "󰡨 Setting up Rootless Docker..." dx_run_docker_rootless_body
 }
 
+# Copy static dockerd stack to /usr/local so systemd can exec under SELinux (see dockerd-dx.service).
+dx_install_rootfull_docker_libexec() {
+    local brew_prefix
+    brew_prefix="$(brew --prefix 2>/dev/null)" || return 1
+    if [ ! -x "${brew_prefix}/bin/dockerd" ]; then
+        echo "DX-Next: ${brew_prefix}/bin/dockerd missing — complete rootless Docker setup first" >&2
+        return 1
+    fi
+    dx_msg_muted "  → Installing rootfull dockerd to ${DX_DOCKER_LIBEXEC}..."
+    dx_sudo_run "
+        mkdir -p '${DX_DOCKER_LIBEXEC}'
+        for bin in dockerd docker docker-init docker-proxy containerd containerd-shim-runc-v2 ctr runc; do
+            src='${brew_prefix}/bin/'\"\$bin\"
+            if [ -f \"\$src\" ]; then
+                install -m755 \"\$src\" '${DX_DOCKER_LIBEXEC}/'
+            fi
+        done
+        if ! [ -x '${DX_DOCKER_LIBEXEC}/dockerd' ]; then
+            echo 'DX-Next: failed to install dockerd under ${DX_DOCKER_LIBEXEC}' >&2
+            exit 1
+        fi
+        if command -v restorecon >/dev/null 2>&1; then
+            restorecon -RF /usr/local/libexec/dx-next 2>/dev/null || true
+        fi
+    "
+}
+
 dx_run_docker_root_body() {
     local brew_prefix docker_bin unit_dest="/etc/systemd/system/dockerd-dx.service"
     brew_prefix="$(brew --prefix 2>/dev/null)"
@@ -315,27 +374,35 @@ dx_run_docker_root_body() {
     if [ -f "$unit_dest" ] && systemctl is-enabled dockerd-dx &>/dev/null; then
         if systemctl is-active --quiet dockerd-dx 2>/dev/null && "$docker_bin" info &>/dev/null 2>&1; then
             dx_msg_muted "Rootfull dockerd-dx is already running."
-        else
-            dx_msg_muted "Rootfull dockerd-dx is installed; starting service..."
-            dx_ensure_sudo_before_privileged_step
-            dx_sudo_run "systemctl enable --now dockerd-dx"
+            "$docker_bin" context use default 2>/dev/null || true
+            return 0
+        fi
+        dx_msg_muted "Rootfull dockerd-dx installed but not active; repairing..."
+        dx_install_rootfull_docker_libexec
+        dx_require_file "${DX_SHARE}/units/system/dockerd-dx.service"
+        dx_sudo_run "cp '${DX_SHARE}/units/system/dockerd-dx.service' /etc/systemd/system/dockerd-dx.service"
+        if ! dx_systemctl_enable_start dockerd-dx.service; then
+            dx_msg_warn "Rootfull dockerd-dx failed to start; defaulting CLI to rootless context."
+            "$docker_bin" context use rootless 2>/dev/null || true
+            return 1
         fi
         "$docker_bin" context use default 2>/dev/null || true
         return 0
     fi
 
-    dx_msg_muted "  → Checking Homebrew docker / iptables..."
-    dx_brew_install_if_missing iptables docker
-    dx_brew_link_if_installed docker iptables
-    dx_msg_muted "  → Installing systemd unit dockerd-dx..."
+    dx_msg_muted "  → Checking Homebrew docker / iptables (no sudo)..."
+    dx_brew_ensure_formula iptables
+    dx_brew_ensure_formula docker
+    dx_install_rootfull_docker_libexec
+    dx_msg_muted "  → Installing systemd unit dockerd-dx (sudo)..."
     dx_require_file "${DX_SHARE}/units/system/dockerd-dx.service"
     local unit_src="${DX_SHARE}/units/system/dockerd-dx.service"
-    dx_ensure_sudo_before_privileged_step
-    dx_sudo_run "
-        cp '${unit_src}' /etc/systemd/system/dockerd-dx.service
-        systemctl daemon-reload
-        systemctl enable --now dockerd-dx
-    "
+    dx_sudo_run "cp '${unit_src}' /etc/systemd/system/dockerd-dx.service"
+    if ! dx_systemctl_enable_start dockerd-dx.service; then
+        dx_msg_warn "Rootfull dockerd-dx failed to start; defaulting CLI to rootless context."
+        "$docker_bin" context use rootless 2>/dev/null || true
+        return 1
+    fi
     "$docker_bin" context use default 2>/dev/null || true
 }
 
@@ -346,7 +413,8 @@ dx_run_docker_root() {
 dx_run_docker() {
     dx_sudo_touch_before_long_task
     dx_run_docker_rootless
-    dx_ensure_sudo_before_privileged_step
+    # Rootless setup can take several minutes; refresh ticket before rootfull (sudo only for unit install).
+    dx_sudo_touch_before_long_task
     dx_run_docker_root
 }
 
@@ -370,10 +438,13 @@ dx_run_virt_body() {
             > /etc/udev/rules.d/50-spice-usb.rules
         mkdir -p /var/lib/libvirt-dx /run/libvirt-dx
         chmod 775 /run/libvirt-dx
+        mkdir -p /var/lib/dx-next
         if ! firewall-cmd --permanent --get-zones | grep -qw libvirt; then
             firewall-cmd --permanent --new-zone=libvirt
+            touch /var/lib/dx-next/firewall-libvirt-zone-created
         fi
         firewall-cmd --permanent --zone=libvirt --set-target=ACCEPT
+        touch /var/lib/dx-next/firewall-libvirt-target-set
         firewall-cmd --reload || true
         mkdir -p /etc/containers/systemd/ /var/lib/libvirt-dx/images/
         cp '${quadlet}' /etc/containers/systemd/libvirt-dx.container

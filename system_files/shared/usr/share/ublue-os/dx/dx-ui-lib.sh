@@ -39,9 +39,9 @@ dx_acquire_sudo() {
     if [ -z "${DX_SUDO_KEEPALIVE_STARTED:-}" ]; then
         (while kill -0 "$$" 2>/dev/null; do
             if sudo -n true 2>/dev/null; then
-                sudo -v 2>/dev/null || true
+                sudo -v -n 2>/dev/null || true
             fi
-            sleep "${DX_SUDO_KEEPALIVE_SECS:-60}"
+            sleep "${DX_SUDO_KEEPALIVE_SECS:-15}"
         done) 2>/dev/null &
         export DX_SUDO_KEEPALIVE_STARTED=1
     fi
@@ -75,6 +75,34 @@ dx_refresh_sudo() {
 dx_sudo_run() {
     dx_refresh_sudo
     sudo bash -euo pipefail -c "$1"
+}
+
+# Start a system unit with a bounded wait (avoids hanging forever on Type=notify + TimeoutSec=0).
+dx_systemctl_enable_start() {
+    local unit=$1
+    local wait_secs=${2:-90}
+    dx_refresh_sudo
+    sudo bash -euo pipefail -c "
+        systemctl daemon-reload
+        systemctl enable '${unit}'
+        if systemctl is-active --quiet '${unit}'; then
+            exit 0
+        fi
+        if ! timeout '${wait_secs}' systemctl start '${unit}'; then
+            :
+        elif systemctl is-active --quiet '${unit}'; then
+            exit 0
+        else
+            for _ in \$(seq 1 30); do
+                systemctl is-active --quiet '${unit}' && exit 0
+                sleep 1
+            done
+        fi
+        echo 'DX-Next: ${unit} did not become active' >&2
+        systemctl --no-pager status '${unit}' >&2 || true
+        journalctl -u '${unit}' -n 30 --no-pager >&2 || true
+        exit 1
+    "
 }
 
 # Refresh or extend sudo ticket before a step that calls dx_sudo_run (install and remove).

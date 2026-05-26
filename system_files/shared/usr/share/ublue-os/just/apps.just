@@ -89,8 +89,12 @@ dx-next:
     # Non-interactive: DX_NONINTERACTIVE=1 DX_NEXT_ACTION=install|remove DX_NEXT_CHOICES="Virt Docker"
     if [ "${DX_NONINTERACTIVE:-}" = "1" ] && [ "${DX_NEXT_ACTION:-install}" = "remove" ]; then
         source "${DX_REMOVE_LIB:-/usr/share/ublue-os/dx/dx-remove-lib.sh}"
-        # shellcheck disable=SC2086
-        dx_remove_main ${DX_NEXT_REMOVE_FLAGS:---all}
+        if [ "${DX_NEXT_REMOVE_FLAGS:---all}" = "--all" ]; then
+            dx_remove_all_full
+        else
+            # shellcheck disable=SC2086
+            dx_remove_main ${DX_NEXT_REMOVE_FLAGS}
+        fi
         exit 0
     fi
 
