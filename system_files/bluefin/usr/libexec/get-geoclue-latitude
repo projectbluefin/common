@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly LOCATION_TIMEOUT_SECONDS=30
+readonly POLL_INTERVAL=0.5
+readonly MAX_ATTEMPTS=$(( LOCATION_TIMEOUT_SECONDS * 2 ))
+
+CLIENT_PATH=""
+
+cleanup() {
+    if [[ -n "$CLIENT_PATH" ]]; then
+        gdbus call --system \
+            --dest org.freedesktop.GeoClue2 \
+            --object-path "$CLIENT_PATH" \
+            --method org.freedesktop.GeoClue2.Client.Stop &>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+if ! command -v gdbus &>/dev/null; then
+    echo "error: gdbus not found" >&2
+    exit 1
+fi
+
+CREATE_OUTPUT="$(gdbus call --system \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path /org/freedesktop/GeoClue2/Manager \
+    --method org.freedesktop.GeoClue2.Manager.CreateClient 2>&1)" || {
+    if [[ "$CREATE_OUTPUT" == *"org.freedesktop.DBus.Error.AccessDenied"* ]]; then
+        echo "error: location services disabled or denied" >&2
+        exit 2
+    fi
+    echo "error: failed to create GeoClue2 client: $CREATE_OUTPUT" >&2
+    exit 1
+}
+
+CLIENT_PATH="$(sed -n "s|.*'\(/org/freedesktop/GeoClue2/Client/[0-9]*\)'.*|\1|p" <<< "$CREATE_OUTPUT")"
+if [[ -z "$CLIENT_PATH" ]]; then
+    echo "error: failed to parse client path from: $CREATE_OUTPUT" >&2
+    exit 1
+fi
+
+run_gdbus() {
+    local description="$1"
+    shift
+    local output
+
+    output="$(gdbus call --system "$@" 2>&1)" || {
+        if [[ "$output" == *"org.freedesktop.DBus.Error.AccessDenied"* ]]; then
+            echo "error: location services disabled or denied" >&2
+            exit 2
+        fi
+        echo "error: failed to $description: $output" >&2
+        exit 1
+    }
+
+    printf '%s\n' "$output"
+}
+
+run_gdbus "set GeoClue2 DesktopId" \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path "$CLIENT_PATH" \
+    --method org.freedesktop.DBus.Properties.Set \
+    org.freedesktop.GeoClue2.Client DesktopId \
+    "<'bluefin-dynamic-wallpaper'>" >/dev/null
+
+run_gdbus "set GeoClue2 RequestedAccuracyLevel" \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path "$CLIENT_PATH" \
+    --method org.freedesktop.DBus.Properties.Set \
+    org.freedesktop.GeoClue2.Client RequestedAccuracyLevel \
+    "<uint32 4>" >/dev/null
+
+run_gdbus "start GeoClue2 client" \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path "$CLIENT_PATH" \
+    --method org.freedesktop.GeoClue2.Client.Start >/dev/null
+
+ATTEMPT=0
+LOCATION_PATH=""
+while (( ATTEMPT < MAX_ATTEMPTS )); do
+    LOC_OUTPUT="$(gdbus call --system \
+        --dest org.freedesktop.GeoClue2 \
+        --object-path "$CLIENT_PATH" \
+        --method org.freedesktop.DBus.Properties.Get \
+        org.freedesktop.GeoClue2.Client Location 2>/dev/null)" || true
+
+    LOCATION_PATH="$(sed -n "s|.*'\(/org/freedesktop/GeoClue2/Location/[0-9]*\)'.*|\1|p" <<< "$LOC_OUTPUT")"
+    if [[ -n "$LOCATION_PATH" ]]; then
+        break
+    fi
+
+    sleep "$POLL_INTERVAL"
+    (( ATTEMPT += 1 ))
+done
+
+if [[ -z "$LOCATION_PATH" ]]; then
+    echo "error: location unavailable after ${LOCATION_TIMEOUT_SECONDS}s timeout" >&2
+    exit 1
+fi
+
+LAT_OUTPUT="$(run_gdbus "read latitude" \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path "$LOCATION_PATH" \
+    --method org.freedesktop.DBus.Properties.Get \
+    org.freedesktop.GeoClue2.Location Latitude)"
+
+LATITUDE="$(sed -n 's|.*<\(double \)\?\(-\?[0-9][0-9]*\.\?[0-9]*\)>.*|\2|p' <<< "$LAT_OUTPUT")"
+if [[ -z "$LATITUDE" ]]; then
+    echo "error: failed to parse latitude from: $LAT_OUTPUT" >&2
+    exit 1
+fi
+
+LON_OUTPUT="$(run_gdbus "read longitude" \
+    --dest org.freedesktop.GeoClue2 \
+    --object-path "$LOCATION_PATH" \
+    --method org.freedesktop.DBus.Properties.Get \
+    org.freedesktop.GeoClue2.Location Longitude)"
+
+LONGITUDE="$(sed -n 's|.*<\(double \)\?\(-\?[0-9][0-9]*\.\?[0-9]*\)>.*|\2|p' <<< "$LON_OUTPUT")"
+if [[ -z "$LONGITUDE" ]]; then
+    echo "error: failed to parse longitude from: $LON_OUTPUT" >&2
+    exit 1
+fi
+
+if [[ "$LATITUDE" =~ ^-?0+(\.0+)?$ ]] && [[ "$LONGITUDE" =~ ^-?0+(\.0+)?$ ]]; then
+    echo "error: coordinates are (0.0, 0.0), likely uninitialized" >&2
+    exit 1
+fi
+
+echo "$LATITUDE"
