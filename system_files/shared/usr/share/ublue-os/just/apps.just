@@ -30,9 +30,15 @@ install-opentabletdriver:
         | tar --strip-components=1 -xvzf - -C "${OTD_TMPDIR}"
 
       # https://opentabletdriver.net/Wiki/Documentation/RequiredPermissions
+      # Clean up any old rules files from previous installs that may conflict
+      sudo rm -f /etc/udev/rules.d/90-opentabletdriver.rules /etc/udev/rules.d/99-opentabletdriver.rules
       sudo cp "${OTD_TMPDIR}/etc/udev/rules.d/70-opentabletdriver.rules" /etc/udev/rules.d/71-opentabletdriver.rules
       echo -ne "blacklist hid_uclogic\nblacklist wacom\n" | sudo tee /etc/modprobe.d/blacklist-opentabletdriver.conf
       rm -rf "${OTD_TMPDIR}"
+      # Reload udev rules and immediately unload conflicting drivers so a reboot is not required
+      sudo udevadm control --reload-rules && sudo udevadm trigger
+      sudo modprobe uinput
+      sudo rmmod wacom hid_uclogic 2>/dev/null || true
 
       flatpak --system install -y flathub net.opentabletdriver.OpenTabletDriver
 
@@ -43,7 +49,8 @@ install-opentabletdriver:
       systemctl enable --user --now opentabletdriver.service
     elif [ "${EXIT_CODE}" == 1 ] ; then
       echo "Uninstalling OpenTabletDriver..."
-      sudo rm -f /etc/modprobe.d/blacklist-opentabletdriver.rules /etc/udev/rules.d/71-opentabletdriver.rules
+      sudo rm -f /etc/modprobe.d/blacklist-opentabletdriver.conf /etc/udev/rules.d/71-opentabletdriver.rules
+      sudo udevadm control --reload-rules && sudo udevadm trigger
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
