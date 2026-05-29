@@ -59,6 +59,26 @@ clean-system:
         brew cleanup
     fi
 
+# Prevent the system from sleeping, like macOS caffeinate
+# Usage: ujust caffeinate           (hold indefinitely, Ctrl+C to release)
+# ujust caffeinate -- sleep 60  (hold while command runs)
+caffeinate *args:
+    #!/usr/bin/env bash
+    if [ -z "{{ args }}" ]; then
+        echo "Preventing system sleep. Press Ctrl+C to allow sleep again."
+        exec systemd-inhibit \
+            --what=sleep:idle:handle-lid-switch \
+            --who=caffeinate \
+            --why="User requested no sleep" \
+            sleep infinity
+    else
+        exec systemd-inhibit \
+            --what=sleep:idle \
+            --who=caffeinate \
+            --why="Running: {{ args }}" \
+            {{ args }}
+    fi
+
 # Show all messages from this boot
 logs-this-boot:
     sudo journalctl --no-hostname -b 0
