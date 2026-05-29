@@ -3,7 +3,20 @@
   "display": {
     "separator": "  ",
     "color": {
-      "keys": "38;2;87;160;198"
+      "keys": "38;2;53;132;228"
+    }
+  },
+  "logo": {
+    "type": "small",
+    "color": {
+      "1": "38;2;53;132;228",
+      "2": "38;2;53;132;228",
+      "3": "38;2;53;132;228",
+      "4": "38;2;53;132;228",
+      "5": "38;2;53;132;228",
+      "6": "38;2;53;132;228",
+      "7": "38;2;53;132;228",
+      "8": "38;2;53;132;228"
     }
   },
   "modules": [
@@ -11,7 +24,7 @@
       "type": "title",
       "key": "",
       "color": {
-        "user": "38;2;87;160;198",
+        "user": "38;2;53;132;228",
         "at": "white",
         "host": "bright_green"
       }
@@ -20,25 +33,30 @@
     {
       "type": "command",
       "key": "󱋩",
-      "text": "/usr/bin/ublue-image-info.sh"
+      "keyColor": "38;2;53;132;228",
+      "text": "/usr/bin/ublue-image-info.sh",
+      "format": "\u001b[1m{1}\u001b[0m"
     },
     {
       "type": "os",
       "key": "󱍢",
-      "format": "{pretty-name}"
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "kernel",
       "key": "",
+      "keyColor": "38;2;53;132;228",
       "format": "{1} {2}"
     },
     {
       "type": "uptime",
-      "key": "󰅐"
+      "key": "󰅐",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "command",
       "key": "󰔠",
+      "keyColor": "38;2;53;132;228",
       "text": "date -d$(ls -alct /var/log --time-style=full-iso|tail -1|awk '{print $6}') +'Forged on %b %d %G'",
       "shell": "/bin/bash"
     },
@@ -62,57 +80,70 @@
     "break",
     {
       "type": "host",
-      "key": "󰾰"
+      "key": "󰾰",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "cpu",
-      "key": "󰻠"
+      "key": "󰻠",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "gpu",
-      "key": "󰍛"
+      "key": "󰍛",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "memory",
-      "key": "󰧑"
+      "key": "󰧑",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "disk",
       "key": "",
+      "keyColor": "38;2;53;132;228",
       "hideFS": "overlay"
     },
     {
       "type": "display",
-      "key": "󰍹"
+      "key": "󰍹",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "battery",
-      "key": ""
+      "key": "",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "gamepad",
-      "key": "󰖺"
+      "key": "󰖺",
+      "keyColor": "38;2;53;132;228"
     },
     "break",
     {
       "type": "de",
-      "key": "󰕮"
+      "key": "󰕮",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "wm",
-      "key": ""
+      "key": "",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "shell",
-      "key": ""
+      "key": "",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "terminal",
-      "key": ""
+      "key": "",
+      "keyColor": "38;2;53;132;228"
     },
     {
       "type": "packages",
       "key": "󰏖",
+      "keyColor": "38;2;53;132;228",
       "disabled": ["rpm"]
     },
     "break",
