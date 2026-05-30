@@ -127,6 +127,19 @@ The `/usr/share/ublue-os/homebrew/` directory contains curated application bundl
 
 Users can install these bundles using the `ujust bbrew` command, which will prompt them to select a Brewfile.
 
+## CI / Testing
+
+Changes are validated in two stages:
+
+**On every PR** — lightweight checks only (no VM boot):
+- `validate-just` — lints the Justfile and all `.just` recipes
+- `build` — builds the OCI image with `buildah`
+
+**On merge to main** — full layer validation via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite):
+- Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin LTS, Bluefin Stable, and Dakota
+- SSH-mode: behave runs from the GHA runner over SSH into a QEMU VM — no full GNOME session needed, completes in ~15 min
+- Validates dconf defaults, locked keys, `ujust`, setup scripts, desktop entries, and shell configuration as they land in the composed images
+
 ## Building Locally
 
 ```bash
