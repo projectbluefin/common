@@ -1,6 +1,6 @@
 [Unit]
 Description=Bazaar background service
-Documentation=https://github.com/kolunmi/bazaar
+Documentation=https://github.com/bazaar-org/bazaar
 After=graphical-session.target
 StartLimitBurst=10
 

@@ -29,14 +29,26 @@ bios-info:
 clean-system:
     #!/usr/bin/bash
     if gum confirm "Prune all Podman images and volumes?"; then
-        podman image prune -af
-        podman volume prune -f
+        echo "Images that would be pruned:"
+        podman image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
+        echo "Volumes that would be pruned:"
+        podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+        if gum confirm "Proceed with pruning Podman images and volumes?"; then
+            podman image prune -af
+            podman volume prune -f
+        fi
     fi
 
     if command -v docker >/dev/null 2>&1; then
       if gum confirm "Prune all Docker images and volumes?"; then
-        docker image prune -af
-        docker volume prune -f
+        echo "Images that would be pruned:"
+        docker image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
+        echo "Volumes that would be pruned:"
+        docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+        if gum confirm "Proceed with pruning Docker images and volumes?"; then
+            docker image prune -af
+            docker volume prune -f
+        fi
       fi
     fi
 
@@ -78,7 +90,7 @@ toggle-user-motd:
     if gum confirm "Would you like to disable the MOTD?" ; then
       mkdir -p "${HOME}/.config"
       touch "${HOME}/.config/no-show-user-motd"
-      echo "MOTD will not be shown anynow"
+      echo "MOTD will not be shown anymore."
       exit 0
     fi
 
