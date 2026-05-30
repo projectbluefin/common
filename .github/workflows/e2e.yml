@@ -1,0 +1,46 @@
+# E2E PR Gate — smoke tests on all three image families
+#
+# Calls the reusable e2e workflow from projectbluefin/testsuite, which boots
+# each OCI image in QEMU/KVM on ubuntu-latest and runs behave smoke tests
+# against a live GNOME session. No self-hosted runners required.
+#
+# All three jobs are required status checks for the merge queue.
+
+name: E2E
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".github/workflows/**"
+  merge_group:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  e2e-bluefin-lts:
+    name: "E2E — Bluefin LTS"
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    with:
+      image: ghcr.io/ublue-os/bluefin:lts
+      suites: smoke
+
+  e2e-bluefin-stable:
+    name: "E2E — Bluefin Stable"
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    with:
+      image: ghcr.io/ublue-os/bluefin:latest
+      suites: smoke
+
+  e2e-dakota:
+    name: "E2E — Dakota"
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    with:
+      image: ghcr.io/projectbluefin/dakota:latest
+      suites: smoke
