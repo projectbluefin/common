@@ -131,3 +131,35 @@ alias rollback-helper := rebase-helper
 [group('System')]
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
+
+# Check Secure Boot status and key enrollment
+[group('System')]
+check-sb-key:
+    #!/usr/bin/bash
+    echo "== Secure Boot Status =="
+    if [ -d /sys/firmware/efi ]; then
+        if command -v mokutil &> /dev/null; then
+            mokutil --sb-state
+        else
+            echo "mokutil not available — checking EFI vars..."
+            if [ -f /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c ]; then
+                SB=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c | awk '{print $NF}')
+                [ "$SB" = "1" ] && echo "SecureBoot is enabled" || echo "SecureBoot is disabled"
+            else
+                echo "Cannot determine Secure Boot status"
+            fi
+        fi
+        echo ""
+        echo "== Machine Owner Key (MOK) Status =="
+        if command -v mokutil &> /dev/null; then
+            mokutil --list-enrolled 2>/dev/null | head -6 || echo "No MOK keys enrolled or mokutil requires sudo"
+        fi
+        echo ""
+        echo "== Kernel Signature =="
+        uname -r
+        if command -v sbverify &> /dev/null; then
+            sbverify --list /boot/vmlinuz-$(uname -r) 2>/dev/null || echo "sbverify not available (install sbsigntools)"
+        fi
+    else
+        echo "Not an EFI system — Secure Boot does not apply."
+    fi
