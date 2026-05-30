@@ -44,9 +44,10 @@ BLING_MESSAGE_DISABLE="${BLING_MESSAGE_DISABLE:-Disable bling for ${shell}?}"
 if is-bling-installed "${shell}" ; then
     gum confirm "${BLING_MESSAGE_DISABLE}"
     if ! sed -i "/### ${BLING_SCRIPT_SOURCE} source start/,/### ${BLING_SCRIPT_SOURCE} source end/d" "${TARGET_CONFIG_FILE}" ; then
-        sed -i "$(grep -n "source ${BLING_SCRIPT_SOURCE}" "${TARGET_CONFIG_FILE}" | grep -Eo '^[^:]+')"d "${HOME}/.bashrc"
+        sed -i "$(grep -n "source ${BLING_SCRIPT_SOURCE}" "${TARGET_CONFIG_FILE}" | grep -Eo '^[^:]+')"d "${TARGET_CONFIG_FILE}"
     fi
     echo "Bling removed. Reopen your terminal so that the configurations may be removed"
+    exit 1
 else
     gum confirm "${BLING_MESSAGE_ENABLE}" --affirmative="Bling me up!" --negative "No, I'm boring"
     echo "Adding bling to your $(basename "${TARGET_CONFIG_FILE}")"
@@ -56,4 +57,5 @@ test -f ${BLING_CLI_DIRECTORY}/${BLING_SCRIPT_SOURCE} && source ${BLING_CLI_DIRE
 ### ${BLING_SCRIPT_SOURCE} source end
 EOF
     echo "Installation complete. Reopen your terminal so that the configurations may be applied"
+    exit 0
 fi
