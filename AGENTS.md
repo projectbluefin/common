@@ -1,104 +1,92 @@
-# bluefin-common — Fork Workflow Notes
+# bluefin-common — Agent & Copilot Instructions
 
-> Project instructions (build, structure, labels): see upstream AGENTS.md (injected from system_files context).
-> This file adds fork-specific workflow context for castrojo/common.
+**bluefin-common** is the shared OCI layer consumed by all Bluefin image variants. Changes here propagate to `bluefin`, `bluefin-lts`, and `dakota`. Stay surgical.
 
-## Fork Identity
+Home repo: [projectbluefin/common](https://github.com/projectbluefin/common)
 
-- **Upstream:** projectbluefin/common
-- **Fork:** castrojo/common
-- **Role:** Primary planning hub and label authority for ALL bluefin ecosystem repos
+## Org pipeline — projectbluefin
 
-## Critical Context
+### Repo map
 
-This repo is the **source of truth** for:
-1. GitHub label schema across `projectbluefin/*` and `ublue-os/bluefin*` repos
-2. The GitHub Projects planning board for the entire Bluefin ecosystem
-3. Shared OCI configuration layer consumed by all Bluefin image variants
-
-**Label management scope** (only these repos — no others):
-- @projectbluefin/common
-- @projectbluefin/dakota (formerly distroless)
-- @ublue-os/bluefin
-- @ublue-os/bluefin-lts
-
-**Label rules:**
-- NEVER touch issues themselves — only labels
-- Colors must remain consistent across all four repos
-- `projectbluefin/common` is canonical; sync others to match it
-- Known drift exists — see project-notes.md for the full inventory
-
-## Session Start
-
-```bash
-git fetch upstream
-git log --oneline upstream/main..main   # must show ≤1 commit (this file)
-git rebase upstream/main && git push origin main --force-with-lease
-git submodule update --init --recursive
+```
+common ──────────────────────────┐
+(shared OCI layer)               │
+                                 ▼
+bluefin  (main→stable)       ←── images ──→ testsuite (e2e gate)
+bluefin-lts (main→lts)       ←── images ──→ testsuite (e2e gate)
+dakota  (main→:latest)       ←── images ──→ testsuite (e2e gate)
+                                 │
+                                 ▼
+                                iso (installation media)
 ```
 
-## Validation
+Each image repo pulls `ghcr.io/projectbluefin/common:latest` as a base layer.
+testsuite gates `:latest` promotion in all three image repos.
+
+### Issue lifecycle
+
+`filed → approved → queued → claimed → done`
+
+| Stage | How |
+|---|---|
+| `filed` | Issue opened |
+| `approved` | Maintainer adds `status/approved` or comments `/approve` |
+| `queued` | `queue/agent-ready` auto-added alongside approval |
+| `claimed` | Comment `/claim` — assigned, removed from pool |
+| `done` | Fix shipped + 3× `ujust verify` or maintainer override |
+
+No PR activity in 7 days returns a claimed issue to the queue automatically.
+
+### PR comment policy
+
+One comment per PR event, max. Combine all findings. Never post a follow-up — edit the existing comment.
+Never duplicate GitHub UI state (approvals, CI status).
+Test reports: what ran + pass/fail + blockers only. No diff summaries.
+@ mentions only when asking someone to do something specific. Never standalone.
+When in doubt, post nothing.
+
+### Mandatory gates
+
+- `just check` before every commit
+- PR title: Conventional Commits format (`feat:`, `fix:`, `chore(deps):`, etc.)
+- Attribution on every AI-authored commit: `Assisted-by: <Model> via <Tool>`
+- Max 4 open PRs at a time per agent
+- No WIP PRs
+
+## Repo layout
+
+```
+Containerfile              # OCI image build
+Justfile                   # Build automation
+system_files/
+  shared/                  # Config applied to ALL Bluefin variants (and Aurora)
+  bluefin/                 # Config applied to Bluefin-specific variants only
+.github/workflows/
+  build.yml                # Build + push on merge to main
+  e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
+  validate-just.yml        # PR gate: just check
+  validate-brewfiles.yaml  # PR gate: Brewfile validation
+```
+
+## CODEOWNERS
+
+```
+system_files/shared/**   @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
+system_files/bluefin/**  @castrojo @hanthor @ahmedadan
+```
+
+## Build and validate
 
 ```bash
-just check      # lint Justfile and all .just files
+just check      # lint Justfile
 just build      # full container build (slow — requires podman + network)
+pre-commit run --all-files   # hygiene checks (json/yaml/toml + actionlint)
 ```
-
-## Work Branch Flow
-
-```bash
-git worktree add .worktrees/<branch> -b <type>/description
-```
-
-Changes here propagate to ALL downstream Bluefin variants. Keep changes surgical.
 
 ## Submodule
 
-`bluefin-branding` → projectbluefin/branding (wallpapers, logos).
-`just build` initializes it automatically.
+`bluefin-branding` → projectbluefin/branding (wallpapers, logos). `just build` initializes it automatically.
 
-## Ecosystem Fork Discipline
+## Scope warning
 
-All `ublue-os` and `projectbluefin` repos worked on must have a fork in the `castrojo` namespace.
-
-**Known bluefin ecosystem repos:**
-
-| Upstream | Fork | Local path |
-|---|---|---|
-| `ublue-os/bluefin` | `castrojo/bluefin` | `~/src/bluefin` |
-| `ublue-os/bluefin-lts` | `castrojo/bluefin-lts` | `~/src/bluefin-lts` |
-| `ublue-os/bluefin-docs` | `castrojo/bluefin-docs` | `~/src/bluefin-docs` |
-| `projectbluefin/common` | `castrojo/common` | `~/src/bluefin-common` |
-
-Fork `main` (and `lts` where applicable) must always be **at most 1 commit ahead of upstream** — that commit being the fork-only `AGENTS.md` + `.gitattributes` commit.
-
-For any repo not yet forked, run the `onboarding-a-repository` skill first.
-
-### Sync after upstream moves
-
-```bash
-git fetch upstream
-git rebase upstream/main
-git push origin main --force-with-lease
-```
-
-Work branches are rebased onto freshly-synced `main` — never merged.
-
-### Signs a fork needs cleanup (hard-reset if any are true)
-
-- `git log upstream/main..main` shows more than 1 commit
-- Renovate bot commits appear on fork `main`
-- Old merge commits (`Merge branch 'ublue-os:main' into main`) are present
-
-```bash
-git fetch upstream
-git reset --hard upstream/main
-# re-apply fork-only commit
-git cherry-pick <agents-md-commit-sha>   # or re-create it
-git push origin main --force
-```
-
-## Extended Notes
-
-> Full architecture, label schema, drift inventory, and session reference:
-> `~/.config/opencode/plans/common/project-notes.md`
+Changes here flow into ALL downstream Bluefin variants at next build. A broken `system_files/shared/` change will break bluefin, bluefin-lts, AND dakota simultaneously. Test locally before pushing.

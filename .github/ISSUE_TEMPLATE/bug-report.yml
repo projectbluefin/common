@@ -1,0 +1,79 @@
+name: "Bug report"
+description: "Something is broken. You are the only person who can confirm it."
+labels: ["bug"]
+type: "Bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## You are the most important person in this process
+
+        No agent can reproduce what happened on your machine. You are the ground truth.
+
+        Run this before filling out the form:
+
+        ```bash
+        ujust report
+        ```
+
+        It captures your image, kernel, extensions, hardware, and failed units. Paste the gist URL below.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Before submitting"
+      options:
+        - label: "I searched existing issues and this is not a duplicate"
+          required: true
+        - label: "I ran ujust report (or am about to — paste the URL below)"
+          required: false
+
+  - type: input
+    id: report-link
+    attributes:
+      label: "ujust report gist URL"
+      description: "Paste the URL here."
+      placeholder: "https://gist.github.com/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "What did you see? What did you expect? Be specific."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: "Steps to reproduce"
+      description: "Exact steps. If intermittent, say so."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Affected area"
+      options:
+        - "GNOME / desktop"
+        - "bootc / image updates"
+        - "install / ISO"
+        - "nvidia"
+        - "just recipes / ujust"
+        - "flatpak / apps"
+        - "brew / CLI tools"
+        - "CI / automation"
+        - "other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: "Extra context"
+      description: "Optional."
+    validations:
+      required: false

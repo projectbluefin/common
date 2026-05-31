@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "Bluefin Flow — work queue"
+    url: https://github.com/orgs/projectbluefin/projects/2
+    about: "Left-to-right board showing every issue from New to Shipped. Find something to work on."
+  - name: "Contribution guide"
+    url: https://github.com/projectbluefin/common/blob/main/AGENTS.md
+    about: "Build, validation, and workflow rules — read before opening a PR."
