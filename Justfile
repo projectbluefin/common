@@ -7,21 +7,25 @@ build:
 
 check:
     #!/usr/bin/bash
-    find . -type f -name "*.just" | while read -r file; do
+    failed=0
+    while read -r file; do
       echo "Checking syntax: $file"
-      {{ just }} --unstable --fmt --check -f $file
-    done
+      {{ just }} --unstable --fmt --check -f "$file" || failed=1
+    done < <(find . -type f -name "*.just")
     echo "Checking syntax: Justfile"
-        {{ just }} --unstable --fmt --check -f Justfile
+    {{ just }} --unstable --fmt --check -f Justfile || failed=1
+    exit "$failed"
 
 fix:
     #!/usr/bin/bash
-    find . -type f -name "*.just" | while read -r file; do
+    failed=0
+    while read -r file; do
       echo "Fixing syntax: $file"
-      {{ just }} --unstable --fmt -f $file
-    done
+      {{ just }} --unstable --fmt -f "$file" || failed=1
+    done < <(find . -type f -name "*.just")
     echo "Fixing syntax: Justfile"
-    {{ just }} --unstable --fmt -f Justfile || { exit 1; }
+    {{ just }} --unstable --fmt -f Justfile || failed=1
+    exit "$failed"
 
 # Inspect the directory structure of an OCI image
 tree IMAGE="localhost/bluefin-common:latest":

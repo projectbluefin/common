@@ -30,7 +30,7 @@ clean-system:
     #!/usr/bin/bash
     if gum confirm "Prune all Podman images and volumes?"; then
         echo "Images that would be pruned:"
-        podman image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
+        podman image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
         echo "Volumes that would be pruned:"
         podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Podman images and volumes?"; then
@@ -42,7 +42,7 @@ clean-system:
     if command -v docker >/dev/null 2>&1; then
       if gum confirm "Prune all Docker images and volumes?"; then
         echo "Images that would be pruned:"
-        docker image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
+        docker image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
         echo "Volumes that would be pruned:"
         docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Docker images and volumes?"; then
