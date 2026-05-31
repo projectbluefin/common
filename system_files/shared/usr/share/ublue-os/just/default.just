@@ -29,10 +29,14 @@ bios-info:
 clean-system:
     #!/usr/bin/bash
     if gum confirm "Prune all Podman images and volumes?"; then
-        echo "Images that would be pruned:"
-        podman image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
-        echo "Volumes that would be pruned:"
+        echo "Images that would be pruned (showing up to 20):"
+        # Fixed the format error, changed filter to match 'prune -a' (all unused, not just dangling)
+        podman image ls --filter "dangling=false" --filter "readonly=false" --format "{{.ID}} - {{.Repository}}:{{.Tag}}" 2>/dev/null | head -20
+        podman image ls --filter "dangling=true" --format "{{.ID}} - <dangling>" 2>/dev/null | head -20
+
+        echo -e "\nVolumes that would be pruned:"
         podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+
         if gum confirm "Proceed with pruning Podman images and volumes?"; then
             podman image prune -af
             podman volume prune -f
@@ -41,10 +45,13 @@ clean-system:
 
     if command -v docker >/dev/null 2>&1; then
       if gum confirm "Prune all Docker images and volumes?"; then
-        echo "Images that would be pruned:"
-        docker image ls --filter dangling=true --format "{{.Repository}}:{{.Tag}}  {{.ID}}" 2>/dev/null | head -20
-        echo "Volumes that would be pruned:"
+        echo "Images that would be pruned (showing up to 20):"
+        # Fixed Docker template to safely display dangling and non-dangling alike
+        docker image ls --format "{{.ID}}   {{.Repository}}:{{.Tag}}" 2>/dev/null | head -20
+
+        echo -e "\nVolumes that would be pruned:"
         docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+
         if gum confirm "Proceed with pruning Docker images and volumes?"; then
             docker image prune -af
             docker volume prune -f
