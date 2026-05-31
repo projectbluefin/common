@@ -1,0 +1,185 @@
+# Canonical source: /var/home/jorge/src/dakota/files/otel/ujust-report-config.yaml
+# OTel collector config for `ujust report`
+# Collects system telemetry for 35s then exits (driven by `timeout` in the recipe).
+# Writes spec-compliant OTLP JSON Lines to:
+#   /output/metrics.otlp.jsonl  — host + process + container metrics
+#   /output/logs.otlp.jsonl     — journald service errors + kernel (dmesg)
+# The OTel file format spec requires one signal type per file.
+# All privacy scrubbing happens in processors before export — raw data never hits disk.
+# Processor ordering follows OTel best practice: memory_limiter → transforms → batch.
+
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      load: {}
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      disk: {}
+      filesystem:
+        exclude_mount_points:
+          mount_points:
+            - ^/proc(/|$)
+            - ^/sys(/|$)
+            - ^/dev(/|$)
+            - ^/run(/|$)
+          match_type: regexp
+      network: {}
+      paging: {}
+      processes: {}
+      process:
+        mute_process_user_error: true
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.command_line:
+            enabled: false
+          process.executable.path:
+            enabled: false
+
+  journald:
+    directory: /var/log/journal
+    units:
+      - gnome-shell.service
+      - gdm.service
+      - bluetooth.service
+      - NetworkManager.service
+      - systemd-coredump.service
+    priority: warning
+    all: false
+
+  journald/kernel:
+    directory: /var/log/journal
+    dmesg: true
+    priority: warning
+
+  # docker_stats works against the Podman socket via Docker-compatible API.
+  # Socket path /run/user/1000/ assumes UID 1000; the recipe patches this at runtime.
+  # If the socket is absent the receiver fails silently (optional).
+  docker_stats:
+    endpoint: unix:///run/user/1000/podman/podman.sock
+    collection_interval: 10s
+    timeout: 5s
+
+processors:
+  # 0. Memory limiter — must be first in every pipeline to protect the collector.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # 1. Detect and attach host resource attributes (OTel semantic conventions).
+  resourcedetection:
+    detectors: [system, env]
+    system:
+      hostname_sources: [os]
+      resource_attributes:
+        host.id:
+          enabled: false
+        host.arch:
+          enabled: true
+        host.cpu.vendor.id:
+          enabled: true
+        host.cpu.model.name:
+          enabled: true
+        host.cpu.family:
+          enabled: true
+        host.cpu.stepping:
+          enabled: true
+        os.type:
+          enabled: true
+        os.description:
+          enabled: true
+    override: false
+
+  # 2a. Strip personally identifying resource-level attributes.
+  #     Must use a resource processor — attributes processors only target
+  #     per-record (span/metric/log) attributes, not resource attributes.
+  resource/privacy:
+    attributes:
+      - key: host.name
+        action: delete
+      - key: host.hostname
+        action: delete
+      - key: host.ip
+        action: delete
+      - key: host.mac
+        action: delete
+      - key: container.name
+        action: delete
+      - key: process.owner
+        action: delete
+      - key: process.command_line
+        action: delete
+      - key: process.executable.path
+        action: delete
+      - key: process.command
+        action: delete
+
+  # 2b. Strip personally identifying log record attributes (journald fields).
+  attributes/privacy_logs:
+    actions:
+      - key: _HOSTNAME
+        action: delete
+      - key: SYSLOG_IDENTIFIER
+        action: delete
+      - key: _MACHINE_ID
+        action: delete
+      - key: _BOOT_ID
+        action: delete
+      - key: _UID
+        action: delete
+      - key: _GID
+        action: delete
+      - key: _CMDLINE
+        action: delete
+      - key: _EXE
+        action: delete
+      - key: _COMM
+        action: delete
+
+  # 3. Scrub usernames and personal paths from log message bodies.
+  transform/scrub_logs:
+    log_statements:
+      - context: log
+        statements:
+          - replace_pattern(body, "/home/[^/\\s\"']+/", "/home/[REDACTED]/")
+          - replace_pattern(body, "/var/home/[^/\\s\"']+/", "/var/home/[REDACTED]/")
+          - replace_pattern(body, "USER=[^\\s\"']+", "USER=[REDACTED]")
+          - replace_pattern(body, "LOGNAME=[^\\s\"']+", "LOGNAME=[REDACTED]")
+          - replace_pattern(body, "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}", "[REDACTED-email]")
+
+  # 4. Batch — must be last before exporters for efficient writes.
+  batch: {}
+
+exporters:
+  # Two separate files: the OTel file format spec requires one signal type per file.
+  # Extension is .jsonl — the format is NDJSON (one JSON object per line), not valid JSON.
+  file/metrics:
+    path: /output/metrics.otlp.jsonl
+    format: json
+  file/logs:
+    path: /output/logs.otlp.jsonl
+    format: json
+
+service:
+  telemetry:
+    logs:
+      level: error
+  pipelines:
+    metrics:
+      receivers: [hostmetrics, docker_stats]
+      processors: [memory_limiter, resourcedetection, resource/privacy, batch]
+      exporters: [file/metrics]
+    logs:
+      receivers: [journald, journald/kernel]
+      processors: [memory_limiter, resourcedetection, resource/privacy, attributes/privacy_logs, transform/scrub_logs, batch]
+      exporters: [file/logs]

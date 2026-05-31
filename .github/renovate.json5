@@ -22,6 +22,24 @@
       "matchManagers": ["github-actions"],
       "matchDepTypes": ["action"],
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["^Containerfile$"],
+      "matchStrings": [
+        "COPY --from=(?<depName>ghcr\\.io/ublue-os/bluefin-wallpapers-gnome):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["^system_files/bluefin/usr/share/ublue-os/just/60-bonedigger\\.just$"],
+      "matchStrings": [
+        "BONEDIGGER_VERSION\\s*:=\\s*\"(?<currentValue>v?[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "projectbluefin/bonedigger"
     }
   ]
 }
