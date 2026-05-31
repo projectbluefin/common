@@ -53,7 +53,7 @@ install-opentabletdriver:
       systemctl enable --user --now opentabletdriver.service
     elif [ "${EXIT_CODE}" == 1 ] ; then
       echo "Uninstalling OpenTabletDriver..."
-      sudo rm -f /etc/modprobe.d/blacklist-opentabletdriver.rules /etc/udev/rules.d/71-opentabletdriver.rules
+      sudo rm -f /etc/modprobe.d/blacklist-opentabletdriver.conf /etc/udev/rules.d/71-opentabletdriver.rules
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
