@@ -47,7 +47,7 @@ clean-system:
       if gum confirm "Prune all Docker images and volumes?"; then
         echo "Images that would be pruned (showing up to 20):"
         # Fixed Docker template to safely display dangling and non-dangling alike
-        docker image ls --format "{{.ID}}   {{.Repository}}:{{.Tag}}" 2>/dev/null | head -20
+        docker image ls --format "{{.ID}} - {{.Repository}}:{{.Tag}}" 2>/dev/null | head -20
 
         echo -e "\nVolumes that would be pruned:"
         docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
