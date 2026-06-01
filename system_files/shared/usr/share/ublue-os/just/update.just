@@ -14,7 +14,7 @@ update:
         echo "automatic updates are currently running, use \`journalctl -fexu $SERVICE\` to see logs"
         exit 1
     fi
-    if grep -q -E -e "^[[:space:]]*LockLayering[[:space:]]*=[[:space:]]*false([[:space:]]*(#.*)?)?$" /etc/rpm-ostreed.conf ; then
+    if [ -f /etc/rpm-ostreed.conf ] && grep -q -E -e "^[[:space:]]*LockLayering[[:space:]]*=[[:space:]]*false([[:space:]]*(#.*)?)?$" /etc/rpm-ostreed.conf ; then
         rpm-ostree upgrade
     else
         sudo bootc upgrade

@@ -70,7 +70,7 @@ fi
 
 gum confirm "Confirm rebase to ${rebase_target}?" || exit 1
 
-if grep -q "^LockLayering=true" /etc/rpm-ostreed.conf; then
+if [ -f /etc/rpm-ostreed.conf ] && grep -q "^LockLayering=true" /etc/rpm-ostreed.conf; then
   pkexec bootc switch --enforce-container-sigpolicy "${rebase_target}"
 else
   rpm-ostree rebase ostree-image-signed:docker://"${rebase_target}"
