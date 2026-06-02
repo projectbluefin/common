@@ -1,0 +1,342 @@
+name: Hive Status Sync
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Fetch Hive snapshot and post project status
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          python3 << 'PYEOF'
+          import re, json, subprocess, urllib.request, sys, os
+          from datetime import datetime, timezone
+
+          SNAPSHOT_URL  = "https://raw.githubusercontent.com/kubestellar/docs/main/public/live/hive/bluefin/index.html"
+          PROJECT_ID    = "PVT_kwDOCCE0ds4BLZBC"
+          DASHBOARD_URL = "https://kubestellar.io/live/hive/bluefin/"
+          REPO          = "projectbluefin/common"
+          ISSUES_URL    = f"https://github.com/{REPO}/issues"
+
+          # Fetch snapshot
+          req = urllib.request.Request(SNAPSHOT_URL, headers={"User-Agent": "hive-status-sync/1.0"})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              html = r.read().decode("utf-8", errors="replace")
+
+          # Extract embedded agents JSON
+          m = re.search(r'"agents":\s*(\[.*?\])\s*,\s*"(?:governor|repos|token)', html, re.DOTALL)
+          if not m:
+              print("ERROR: could not find agents JSON in snapshot", file=sys.stderr)
+              sys.exit(1)
+
+          agents = json.loads(m.group(1))
+
+          # Summarize agent states
+          active  = [a for a in agents if a.get("state") == "running"]
+          working = [a for a in active  if a.get("busy") == "working"]
+          stopped = [a for a in agents  if a.get("state") != "running"]
+          total    = len(agents)
+          n_active = len(active)
+
+          # Determine project status
+          if n_active >= 3:
+              status = "ON_TRACK"
+          elif n_active >= 1:
+              status = "AT_RISK"
+          else:
+              status = "OFF_TRACK"
+
+          # Formation health bar (colorblind-safe: shape + fill)
+          filled      = round((n_active / total) * 10) if total > 0 else 0
+          health_bar  = "█" * filled + "░" * (10 - filled)
+
+          # Formation headline
+          if n_active >= 3:
+              formation_status = "Formation coherent"
+          elif n_active >= 1:
+              formation_status = "Coverage reduced"
+          else:
+              formation_status = "Formation broken"
+
+          # Relative time helper
+          def rel_time(ts_str):
+              if not ts_str:
+                  return "—"
+              try:
+                  ts    = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                  delta = datetime.now(timezone.utc) - ts
+                  s     = int(delta.total_seconds())
+                  if s < 60:    return f"{s}s ago"
+                  if s < 3600:  return f"{s // 60}m ago"
+                  if s < 86400: return f"{s // 3600}h ago"
+                  return f"{s // 86400}d ago"
+              except Exception:
+                  return ts_str
+
+          # Clean liveSummary (strip box-drawing, compress blank lines)
+          def clean_summary(text):
+              if not text:
+                  return ""
+              cleaned = re.sub(r'[┃│╔╗╚╝╠╣═─┌┐└┘├┤┬┴┼|]', '', text)
+              cleaned = re.sub(r'/data/agents/\S+', '', cleaned)
+              cleaned = re.sub(r'─+\s*\n\s*❯\s*\n\s*─+', '', cleaned)
+              cleaned = re.sub(r'v[\d.]+ available.*', '', cleaned)
+              cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+              lines   = [l.rstrip() for l in cleaned.splitlines()]
+              lines   = [l for l in lines if len(l.strip()) > 2]
+              return '\n'.join(lines).strip()
+
+          # Get supervisor summary (most informative)
+          supervisor   = next((a for a in agents if a.get("role") == "supervisor"), None)
+          summary_text = clean_summary(supervisor.get("liveSummary", "")) if supervisor else ""
+
+          # Fetch CI status and issue counts
+          def gh_json(*args):
+              r = subprocess.run(["gh"] + list(args), capture_output=True, text=True)
+              if r.returncode != 0:
+                  return None
+              try:
+                  return json.loads(r.stdout)
+              except Exception:
+                  return None
+
+          ci_label = "⏳ pending"
+          ci_runs  = gh_json("run", "list", "--repo", REPO, "--workflow", "build.yml",
+                             "--limit", "1", "--json", "conclusion,url")
+          if ci_runs:
+              run        = ci_runs[0]
+              conclusion = run.get("conclusion", "")
+              url        = run.get("url", "")
+              if conclusion == "success":
+                  ci_label = f"[✅ build stable]({url})"
+              elif conclusion in ("failure", "startup_failure"):
+                  ci_label = f"[❌ build degraded]({url})"
+              else:
+                  ci_label = f"[⏳ build running]({url})"
+
+          def count_label(label):
+              raw = gh_json("issue", "list", "--repo", REPO,
+                            "--label", label, "--state", "open", "--json", "number")
+              return len(raw) if raw else 0
+
+          n_p0 = count_label("P0")
+
+          # Fireteam — unique contributors from merged PRs (last 50), excluding bots
+          BOT_SUFFIXES = ("[bot]", "-bot", "copilot", "renovate", "dependabot")
+          fireteam_raw = gh_json("pr", "list", "--repo", REPO, "--state", "merged",
+                                 "--limit", "50", "--json", "author,body")
+          ghosts = set()
+          humans = set()
+          if fireteam_raw:
+              for pr in fireteam_raw:
+                  login = (pr.get("author") or {}).get("login", "")
+                  if not login:
+                      continue
+                  low = login.lower()
+                  if any(low.endswith(s) or s in low for s in BOT_SUFFIXES):
+                      continue
+                  body = pr.get("body") or ""
+                  if "[x] I am using an agent" in body or "[X] I am using an agent" in body:
+                      ghosts.add(login)
+                  else:
+                      humans.add(login)
+          humans -= ghosts
+          fireteam_names = (
+              [f"👻 {u}" for u in sorted(ghosts)] +
+              [u for u in sorted(humans)]
+          )
+
+          # Agent roster table
+          roster_rows = []
+          for a in sorted(agents, key=lambda x: x.get("sortOrder", 99)):
+              emoji     = a.get("emoji", "")
+              name      = a.get("displayName", a.get("name", ""))
+              state     = a.get("state", "unknown")
+              busy      = a.get("busy", "")
+              model     = a.get("model", "")
+              last_seen = rel_time(a.get("lastKick", ""))
+              next_ck   = a.get("nextKick", "—")
+
+              if state == "running" and busy == "working":
+                  status_icon = "🔵 ▶ active"
+              elif state == "running":
+                  status_icon = "🟡 ⏸ standby"
+              else:
+                  status_icon = "⬛ ✕ offline"
+
+              roster_rows.append(f"| {emoji} {name} | {status_icon} | {model} | {last_seen} | {next_ck} |")
+
+          roster_table = "\n".join([
+              "| Agent | Status | Model | Last Active | Next |",
+              "|---|---|---|---|---|",
+          ] + roster_rows)
+
+          # Timestamp
+          now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+          # Status bar
+          p0_fragment = f" · ▲ {n_p0} P0" if n_p0 > 0 else ""
+          status_bar  = f"`[{health_bar}]` {formation_status} · {n_active}/{total} active · {ci_label}{p0_fragment}"
+
+          # Active agent names for header
+          header = f"**{n_active}/{total} active**"
+          if working:
+              working_names = " · ".join(
+                  f"{a.get('emoji', '')} {a.get('name', '')}" for a in working
+              )
+              header += f" — {working_names} working"
+
+          # Assemble body
+          body_parts = [status_bar, "", header, ""]
+
+          if summary_text:
+              body_parts += ["### What the team is working on", "", summary_text, ""]
+
+          body_parts += ["### Agent roster", "", roster_table, ""]
+
+          if fireteam_names:
+              fireteam_line = "**The Fireteam:** " + " · ".join(fireteam_names)
+              if ghosts:
+                  fireteam_line += "  _(👻 agent-assisted)_"
+              body_parts += ["", fireteam_line]
+
+          body_parts += [
+              f"_Updated hourly · {now_utc} · [Live dashboard]({DASHBOARD_URL}) · [Issue queue]({ISSUES_URL})_",
+          ]
+
+          body = "\n".join(body_parts)
+
+          print(f"Status: {status}")
+          print(f"Body preview ({len(body)} chars):")
+          print(body[:500])
+          print("...")
+
+          # Guard: skip posting if PROJECT_TOKEN is not configured
+          if not os.environ.get("GH_TOKEN"):
+              print("WARNING: PROJECT_TOKEN secret is not set — skipping project status post", file=sys.stderr)
+              sys.exit(0)
+
+          # Post to GitHub Project status update
+          mutation = """
+          mutation($projectId: ID!, $body: String!, $status: ProjectV2StatusUpdateStatus!) {
+            createProjectV2StatusUpdate(input: {
+              projectId: $projectId
+              body: $body
+              status: $status
+            }) {
+              statusUpdate {
+                id
+                createdAt
+              }
+            }
+          }
+          """
+
+          result = subprocess.run(
+              ["gh", "api", "graphql",
+               "-f", f"query={mutation}",
+               "-f", f"projectId={PROJECT_ID}",
+               "-f", f"body={body}",
+               "-f", f"status={status}"],
+              capture_output=True, text=True
+          )
+
+          if result.returncode != 0 or '"errors"' in result.stdout:
+              print("ERROR posting status update:", file=sys.stderr)
+              print(result.stdout, file=sys.stderr)
+              print(result.stderr, file=sys.stderr)
+              sys.exit(1)
+
+          resp = json.loads(result.stdout)
+          update_id = resp["data"]["createProjectV2StatusUpdate"]["statusUpdate"]["id"]
+          print(f"Posted status update: {update_id}")
+          PYEOF
+        shell: bash
+
+      - name: Update project title with live stats
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, sys, os
+
+          PROJECT_ID = "PVT_kwDOCCE0ds4BLZBC"
+          REPO = "projectbluefin/common"
+
+          if not os.environ.get("GH_TOKEN"):
+              print("WARNING: PROJECT_TOKEN not set — skipping title update", file=sys.stderr)
+              sys.exit(0)
+
+          def gh(*args):
+              r = subprocess.run(["gh"] + list(args), capture_output=True, text=True)
+              if r.returncode != 0:
+                  print(f"ERROR: gh {' '.join(args)}\n{r.stderr}", file=sys.stderr)
+                  sys.exit(1)
+              return r.stdout.strip()
+
+          # CI status: latest completed build.yml run
+          ci_raw = gh("run", "list", "--repo", REPO, "--workflow", "build.yml",
+                      "--limit", "1", "--json", "conclusion")
+          ci_runs = json.loads(ci_raw)
+          if ci_runs and ci_runs[0].get("conclusion") == "success":
+              ci = "CI ✅"
+          elif ci_runs and ci_runs[0].get("conclusion") in ("failure", "startup_failure"):
+              ci = "CI ❌"
+          else:
+              ci = "CI ⏳"
+
+          # Issue queue counts
+          def count_label(label):
+              raw = gh("issue", "list", "--repo", REPO,
+                       "--label", label, "--state", "open", "--json", "number")
+              return len(json.loads(raw))
+
+          n_ready   = count_label("queue/agent-ready")
+          n_claimed = count_label("queue/claimed")
+          n_p0      = count_label("P0")
+
+          # Build title
+          parts = [ci, f"{n_ready} ready", f"{n_claimed} claimed"]
+          if n_p0 > 0:
+              parts.append(f"{n_p0} P0 🔥")
+          title = "todo.projectbluefin.io — " + " · ".join(parts)
+
+          print(f"Setting title: {title}")
+
+          mutation = """
+          mutation($projectId: ID!, $title: String!) {
+            updateProjectV2(input: { projectId: $projectId, title: $title }) {
+              projectV2 { title }
+            }
+          }
+          """
+
+          result = subprocess.run(
+              ["gh", "api", "graphql",
+               "-f", f"query={mutation}",
+               "-f", f"projectId={PROJECT_ID}",
+               "-f", f"title={title}"],
+              capture_output=True, text=True
+          )
+
+          if result.returncode != 0 or '"errors"' in result.stdout:
+              print("ERROR updating title:", file=sys.stderr)
+              print(result.stdout, file=sys.stderr)
+              print(result.stderr, file=sys.stderr)
+              sys.exit(1)
+
+          resp = json.loads(result.stdout)
+          new_title = resp["data"]["updateProjectV2"]["projectV2"]["title"]
+          print(f"Title updated to: {new_title}")
+          PYEOF
+        shell: bash
