@@ -1,3 +1,6 @@
 [submodule "bluefin-branding"]
 	path = bluefin-branding
 	url = https://github.com/projectbluefin/branding.git
+[submodule "aurorafin-shared"]
+	path = aurorafin-shared
+	url = https://github.com/ublue-os/aurorafin-shared.git

@@ -1,3 +1,0 @@
-docker:
-  quay.io/toolbx-images:
-    use-sigstore-attachments: true
