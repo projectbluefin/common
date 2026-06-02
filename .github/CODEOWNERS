@@ -5,6 +5,10 @@ system_files/shared/** @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
 system_files/bluefin/** @castrojo @hanthor @ahmedadan
 
 # BEGIN TRIAGERS — managed by projectbluefin/common, do not edit manually in downstream repos
-docs/**  @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
-*.md     @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
+# @repires
+# @KiKaraage
 # END TRIAGERS
+
+# Docs and design — triagers can approve
+docs/**  @repires @KiKaraage @projectbluefin/maintainers
+*.md     @repires @KiKaraage @projectbluefin/maintainers
