@@ -15,40 +15,15 @@ Files specific to Bluefin
 - GNOME Initial Setup configuration
 
 ### `system_files/shared/` - Shared Configuration
-Files that are Bluefin agnostic, so that other images like [Aurora](https://getaurora.dev) can use them.
+Files that are shared with [Aurora](https://getaurora.dev) are in [aurorafin-shared](https://github.com/ublue-os/aurorafin-shared), other images can use this as a git submodule or copying or as part of a container build, see below.
 
+This includes:
 - `Just` recipes for system management
 - Brewfiles for application bundles
 - Setup hooks (privileged, system, user)
 - Container policies and security settings
 - MOTD templates and CLI bling
 - Common shell configurations
-
-**When adding new files:** Place in `bluefin/` if desktop/GNOME-specific, otherwise use `shared/`.
-
-## What's Inside
-
-This layer contains two main configuration directories:
-
-### `/etc/ublue-os/` - System Configuration
-- Bling - CLI theming settings
-- Fastfetch settings - System information display configuration
-- Setup configuration - First-boot and system setup parameters
-
-### `/usr/share/ublue-os/` - User-Space Configuration
-- Firefox defaults - Pre-configured Firefox settings
-- **Flatpak customization** - Multiple levels of flatpak configuration:
-  - System-level flatpak overrides in `flatpak-overrides/` (e.g., Bazaar)
-  - User-level flatpak overrides in `/etc/skel/.local/share/flatpak/overrides/` (e.g., VSCode, Chrome)
-  - System flatpak Brewfiles for default application installation
-- Homebrew Brewfiles - Curated application bundles installable via `bbrew`
-  - `full-desktop.Brewfile` - Full collection of GNOME Circle and community flatpak applications
-  - `system-flatpaks.Brewfile` - Default system-wide flatpaks for all Bluefin variants
-  - `system-dx-flatpaks.Brewfile` - Additional flatpaks for DX (Developer Experience) mode
-  - Other specialized Brewfiles for fonts, CLI tools, AI tools, etc.
-- Just recipes - Additional command recipes for system management
-- MOTD templates - Message of the day and tips
-- Setup hooks - Scripts for privileged, system, and user setup stages
 
 ## Usage in Containerfile
 
@@ -63,8 +38,6 @@ COPY --from=bluefin-common /system_files /
 ```
 
 ### Copy only system configuration:
-
-This is what Aurora should use, gives shares the common set of files and keeps the images opinions seperate.
 
 ```dockerfile
 FROM ghcr.io/projectbluefin/common:latest AS bluefin-common
