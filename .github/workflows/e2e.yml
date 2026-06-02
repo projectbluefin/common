@@ -28,21 +28,21 @@ on:
 jobs:
   e2e-bluefin-lts:
     name: "E2E — Bluefin LTS"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
     with:
       image: ghcr.io/ublue-os/bluefin:lts
       suites: common
 
   e2e-bluefin-stable:
     name: "E2E — Bluefin Stable"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
     with:
       image: ghcr.io/ublue-os/bluefin:latest
       suites: common
 
   e2e-dakota:
     name: "E2E — Dakota"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
     with:
       image: ghcr.io/projectbluefin/dakota:latest
       suites: common
