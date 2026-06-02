@@ -3,3 +3,7 @@ system_files/shared/** @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
 
 # Bluefin
 system_files/bluefin/** @castrojo @hanthor @ahmedadan
+
+# Docs and design — triagers can approve
+docs/**  @projectbluefin/triagers @projectbluefin/maintainers
+*.md     @projectbluefin/triagers @projectbluefin/maintainers
