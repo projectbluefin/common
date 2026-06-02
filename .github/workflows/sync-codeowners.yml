@@ -1,0 +1,112 @@
+name: Sync CODEOWNERS triagers block
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/CODEOWNERS
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          owner: projectbluefin
+
+      - name: Checkout common
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Sync triagers block to downstream repos
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          TRIAGE_BLOCK=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS)
+
+          if [[ -z "$TRIAGE_BLOCK" ]]; then
+            echo "No TRIAGERS block found in .github/CODEOWNERS — nothing to sync."
+            exit 0
+          fi
+
+          for repo in bluefin bluefin-lts dakota; do
+            echo "--- Syncing CODEOWNERS for $repo ---"
+
+            RESPONSE=$(gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS)
+            SHA=$(echo "$RESPONSE" | jq -r '.sha')
+            CURRENT=$(echo "$RESPONSE" | jq -r '.content' | base64 -d)
+
+            EXISTING_BLOCK=$(echo "$CURRENT" | sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p')
+            if [[ "$EXISTING_BLOCK" == "$TRIAGE_BLOCK" ]]; then
+              echo "$repo: already up to date, skipping."
+              continue
+            fi
+
+            NEW=$(echo "$CURRENT" | sed '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/d')
+            NEW=$(printf '%s\n%s\n' "${NEW%$'\n'}" "$TRIAGE_BLOCK")
+
+            ENCODED=$(printf '%s' "$NEW" | base64 -w0)
+            gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS \
+              --method PUT \
+              --field message="chore: sync triagers block from projectbluefin/common" \
+              --field content="$ENCODED" \
+              --field sha="$SHA"
+
+            echo "$repo: updated."
+          done
+
+      - name: Reconcile triager collaborator permissions
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # Parse usernames from "# @username" lines inside the sentinel block
+          DESIRED=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS \
+            | grep '^# @' | sed 's/^# @//')
+
+          if [[ -z "$DESIRED" ]]; then
+            echo "No triagers listed in sentinel block — skipping permission reconciliation."
+            exit 0
+          fi
+
+          echo "Desired triagers: $(echo "$DESIRED" | tr '\n' ' ')"
+
+          for repo in common bluefin bluefin-lts dakota; do
+            echo "--- Reconciling permissions for $repo ---"
+
+            # Get direct collaborators with exactly triage access (triage=true, push=false)
+            CURRENT=$(gh api "repos/projectbluefin/$repo/collaborators?affiliation=direct" \
+              --paginate --jq '.[] | select(.permissions.triage == true and .permissions.push == false) | .login' \
+              2>/dev/null || echo "")
+
+            # Add users in desired list that are not yet collaborators
+            while IFS= read -r user; do
+              [[ -z "$user" ]] && continue
+              if ! echo "$CURRENT" | grep -qx "$user"; then
+                echo "Adding @$user to $repo with triage"
+                gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                  --method PUT \
+                  --field permission=triage > /dev/null
+              else
+                echo "@$user already has triage on $repo"
+              fi
+            done <<< "$DESIRED"
+
+            # Remove triage collaborators no longer in the desired list
+            while IFS= read -r user; do
+              [[ -z "$user" ]] && continue
+              if ! echo "$DESIRED" | grep -qx "$user"; then
+                echo "Removing @$user from $repo"
+                gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                  --method DELETE > /dev/null
+              fi
+            done <<< "$CURRENT"
+          done

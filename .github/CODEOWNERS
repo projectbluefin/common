@@ -4,6 +4,11 @@ system_files/shared/** @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
 # Bluefin
 system_files/bluefin/** @castrojo @hanthor @ahmedadan
 
+# BEGIN TRIAGERS
+# @repires
+# @KiKaraage
+# END TRIAGERS
+
 # Docs and design — triagers can approve
-docs/**  @projectbluefin/triagers @projectbluefin/maintainers
-*.md     @projectbluefin/triagers @projectbluefin/maintainers
+docs/**  @repires @KiKaraage @projectbluefin/maintainers
+*.md     @repires @KiKaraage @projectbluefin/maintainers
