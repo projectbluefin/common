@@ -1,6 +1,14 @@
 # docs/skills — Index
 
-Agent skill docs for the `projectbluefin/common` repo.
+Agent-agnostic skill docs for the `projectbluefin/common` repo. These apply to any agent (Copilot, Claude, etc.) working in this repository.
+
+## What belongs here
+
+Workflow knowledge, architectural context, and operational runbooks that any agent needs to work effectively in this repo.
+
+## What does NOT belong here
+
+Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`, `.cursorrules`, etc.) are loaded separately by their respective tools and must not be listed here.
 
 | File | What it covers |
 |---|---|
