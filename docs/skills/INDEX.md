@@ -18,8 +18,5 @@ Agent skill docs for the `projectbluefin/common` repo.
 | [rollback-helper.md](rollback-helper.md) | `ublue-rollback-helper` TUI state machine — three-way coordinated arrays, LTS/non-LTS branches, registry path derivation, testing guidance |
 | [skill-drift.md](skill-drift.md) | How to satisfy the PR skill-drift check and what counts as a real skill update |
 | [acmm-audit-level1.md](acmm-audit-level1.md) | ACMM Level 1 audit (2026-06-04) — blindspots, feedback mechanisms, structural obstacles, Level 2 recommendations and issue batch |
+| [../../.github/copilot-instructions.md](../../.github/copilot-instructions.md) | Copilot agent instructions — session start ritual, PR checklist, scope discipline, CODEOWNERS sentinel |
 | [../factory/README.md](../factory/README.md) | Factory operating model entry point for org-level agent and maintainer workflow |
-
-## Quality standard
-
-All files in this directory are Claude Code skills. Each file must have YAML frontmatter with `name` and `description`. CI enforces this via `.github/workflows/docs-quality.yml`.
