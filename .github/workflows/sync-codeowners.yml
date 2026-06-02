@@ -1,0 +1,70 @@
+name: Sync CODEOWNERS triagers block
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/CODEOWNERS
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          owner: projectbluefin
+
+      - name: Checkout common
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Sync triagers block to downstream repos
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # Extract the BEGIN/END TRIAGERS block from common's CODEOWNERS
+          TRIAGE_BLOCK=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS)
+
+          if [[ -z "$TRIAGE_BLOCK" ]]; then
+            echo "No TRIAGERS block found in .github/CODEOWNERS — nothing to sync."
+            exit 0
+          fi
+
+          for repo in bluefin bluefin-lts dakota; do
+            echo "--- Syncing $repo ---"
+
+            # Fetch current file
+            RESPONSE=$(gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS)
+            SHA=$(echo "$RESPONSE" | jq -r '.sha')
+            CURRENT=$(echo "$RESPONSE" | jq -r '.content' | base64 -d)
+
+            # Skip if the block is already identical
+            EXISTING_BLOCK=$(echo "$CURRENT" | sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p')
+            if [[ "$EXISTING_BLOCK" == "$TRIAGE_BLOCK" ]]; then
+              echo "$repo: already up to date, skipping."
+              continue
+            fi
+
+            # Replace the block: remove old, append new
+            NEW=$(echo "$CURRENT" | sed '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/d')
+            # Ensure a trailing newline before appending
+            NEW=$(printf '%s\n%s\n' "${NEW%$'\n'}" "$TRIAGE_BLOCK")
+
+            ENCODED=$(printf '%s' "$NEW" | base64 -w0)
+            gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS \
+              --method PUT \
+              --field message="chore: sync triagers block from projectbluefin/common" \
+              --field content="$ENCODED" \
+              --field sha="$SHA"
+
+            echo "$repo: updated."
+          done

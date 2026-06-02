@@ -1,1 +1,10 @@
-* @castrojo @hanthor @ahmedadan
+# Shared with aurora
+system_files/shared/** @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
+
+# Bluefin
+system_files/bluefin/** @castrojo @hanthor @ahmedadan
+
+# BEGIN TRIAGERS — managed by projectbluefin/common, do not edit manually in downstream repos
+# docs/**  @handle1 @handle2
+# *.md     @handle1 @handle2
+# END TRIAGERS
