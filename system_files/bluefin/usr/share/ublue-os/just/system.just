@@ -39,7 +39,6 @@ bluefin-cli:
         brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
     fi
 
-
 # alias for toggle-devmode
 devmode:
     @ujust toggle-devmode
