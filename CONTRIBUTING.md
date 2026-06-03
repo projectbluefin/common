@@ -4,7 +4,20 @@ Thanks for helping out!
 
 Check the [Contributing Guide](https://docs.projectbluefin.io/contributing) for contribution information.
 
-This repository is for building the images, you are probably looking for [@projectbluefin/common](https://github.com/projectbluefin/common) to change something in Bluefin. Make sure you check [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture).
+## What belongs here
+
+**projectbluefin/common** is the shared OCI layer consumed by all Bluefin image variants:
+- Shared system configuration and packages (applied to all Bluefin variants and Aurora)
+- Organizational governance (CODEOWNERS, governance.md)
+- Shared infrastructure and documentation
+- Build automation (Justfile, Containerfile)
+
+For image-specific changes, open issues and PRs in:
+- **bluefin** — base Bluefin image (Fedora-based, `:stable` tag)
+- **bluefin-lts** — long-term support variant (`:lts` tag)
+- **dakota** — minimal variant (`:latest` tag)
+
+Refer to [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture) to understand how layers flow downstream.
 
 ## CI
 
