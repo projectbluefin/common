@@ -1,10 +1,21 @@
-# CONTRIBUTING 
+# CONTRIBUTING
 
-Thanks for helping out! 
+Thanks for helping out!
 
-Check the [Contributing Guide](https://docs.projectbluefin.io/contributing) for contribution information.
+## What belongs here
 
-This repository is for building the images, you are probably looking for [@projectbluefin/common](https://github.com/projectbluefin/common) to change something in Bluefin. Make sure you check [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture).
+`projectbluefin/common` is the **shared OCI layer** consumed by all Bluefin variants. Changes here propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build — stay surgical.
+
+| If you want to change… | Go to |
+|---|---|
+| Bluefin desktop defaults, apps, just recipes | [`projectbluefin/bluefin`](https://github.com/projectbluefin/bluefin) |
+| LTS-specific behavior | [`projectbluefin/bluefin-lts`](https://github.com/projectbluefin/bluefin-lts) |
+| Dakota (GNOME OS variant) | [`projectbluefin/dakota`](https://github.com/projectbluefin/dakota) |
+| Shared system config (applies to Aurora too) | [`ublue-os/aurorafin-shared`](https://github.com/ublue-os/aurorafin-shared) |
+| E2E test suite | [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite) |
+| Shared just recipes, profile scripts, CODEOWNERS | **here** |
+
+See the [architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture) for the full picture.
 
 ## CI
 
