@@ -1,0 +1,121 @@
+name: PR E2E
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BASE_IMAGE: ghcr.io/ublue-os/bluefin:latest
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_NAME: common
+
+jobs:
+  compose:
+    name: Compose PR test image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image-meta.outputs.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          submodules: recursive
+
+      - name: Generate tags
+        id: image-meta
+        shell: bash
+        run: |
+          sha_short="${GITHUB_SHA::7}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            compose_tag="e2e-pr-${{ github.event.pull_request.number }}-${sha_short}"
+          else
+            compose_tag="e2e-merge-group-${sha_short}"
+          fi
+          {
+            echo "common_tag=${sha_short}"
+            echo "compose_tag=${compose_tag}"
+            echo "image=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${compose_tag}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build common layer candidate
+        id: build_common
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        with:
+          containerfiles: |
+            ./Containerfile
+          image: localhost/common-pr
+          tags: ${{ steps.image-meta.outputs.common_tag }}
+          oci: true
+
+      - name: Write compose Containerfile
+        shell: bash
+        run: |
+          cat <<EOF > Containerfile.pr-e2e
+          FROM localhost/common-pr:${{ steps.image-meta.outputs.common_tag }} AS common
+          FROM ${{ env.BASE_IMAGE }}
+
+          COPY --from=common /system_files/shared /tmp/system_files/shared
+          COPY --from=common /system_files/bluefin /tmp/system_files/bluefin
+
+          RUN rsync -a /tmp/system_files/shared/ / && \
+              rsync -a /tmp/system_files/bluefin/ / && \
+              glib-compile-schemas /usr/share/glib-2.0/schemas && \
+              rm -rf /tmp/system_files
+          EOF
+
+      - name: Build composed test image
+        id: build_compose
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        with:
+          containerfiles: |
+            ./Containerfile.pr-e2e
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.image-meta.outputs.compose_tag }}
+          oci: true
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push composed test image
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          image: ${{ steps.build_compose.outputs.image }}
+          tags: ${{ steps.build_compose.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          extra-args: |
+            --compression-format=zstd:chunked
+
+  e2e:
+    name: E2E — composed common suite
+    needs: compose
+    permissions:
+      contents: read
+      packages: write
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
+    with:
+      image: ${{ needs.compose.outputs.image }}
+      suites: common
