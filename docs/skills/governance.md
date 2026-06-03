@@ -1,3 +1,8 @@
+---
+name: governance
+description: "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos."
+---
+
 # Contributor Governance — Triagers & CODEOWNERS
 
 ## Roles
