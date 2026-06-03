@@ -82,3 +82,17 @@ required for a PR to merge — triagers count for `docs/**` and `*.md` paths.
 | `bluefin` | Branch protection on `main` | 1 |
 | `bluefin-lts` | Branch protection on `main` | 1 |
 | `dakota` | Branch protection on `main` | 1 |
+
+## Lifecycle automation (bonedigger)
+
+| Repo | Workflow | State |
+|---|---|---|
+| `bluefin` | `bonedigger.yml` | ✅ live |
+| `common` | `bonedigger.yml` | ✅ live (added 2026-06-03, PR #453) |
+| `bluefin-lts` | — | ❌ not yet |
+| `dakota` | `actionadon.yml` | ⚠️ different engine |
+| `knuckle` | `actionadon.yml` | ⚠️ different engine |
+
+`common`'s workflow calls `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` at a pinned commit SHA. Brand: `Common` / 🧱.
+
+Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) is tracked in projectbluefin/common#409.
