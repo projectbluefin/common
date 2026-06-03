@@ -1,0 +1,93 @@
+# Pre-merge composition gate (MVP)
+#
+# Posts a comment on PRs to `common` with links to recent downstream build
+# results (bluefin and dakota), directing developers to manually verify their
+# changes work in those downstream images before merge.
+#
+# This is a minimal viable pre-merge validation approach. Full automated
+# composition gate is tracked separately (issue #405).
+
+name: Notify Downstream Build Status
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  notify-downstream:
+    name: Notify Downstream Build Status
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Fetch latest bluefin build results
+        id: bluefin
+        run: |
+          # Get the latest bluefin build from the Actions API
+          BLUEFIN_BUILD=$(gh api repos/projectbluefin/bluefin/actions/runs --paginate --jq '.workflow_runs[0]' 2>/dev/null || echo '{}')
+          BLUEFIN_RUN_ID=$(echo "$BLUEFIN_BUILD" | jq -r '.id // "unknown"')
+          BLUEFIN_STATUS=$(echo "$BLUEFIN_BUILD" | jq -r '.conclusion // "unknown"')
+          echo "run_id=${BLUEFIN_RUN_ID}" >> $GITHUB_OUTPUT
+          echo "status=${BLUEFIN_STATUS}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch latest dakota build results
+        id: dakota
+        run: |
+          # Get the latest dakota build from the Actions API
+          DAKOTA_BUILD=$(gh api repos/projectbluefin/dakota/actions/runs --paginate --jq '.workflow_runs[0]' 2>/dev/null || echo '{}')
+          DAKOTA_RUN_ID=$(echo "$DAKOTA_BUILD" | jq -r '.id // "unknown"')
+          DAKOTA_STATUS=$(echo "$DAKOTA_BUILD" | jq -r '.conclusion // "unknown"')
+          echo "run_id=${DAKOTA_RUN_ID}" >> $GITHUB_OUTPUT
+          echo "status=${DAKOTA_STATUS}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post comment with downstream build links
+        run: |
+          # Build the comment with status indicators
+          BLUEFIN_RUN_ID="${{ steps.bluefin.outputs.run_id }}"
+          BLUEFIN_STATUS="${{ steps.bluefin.outputs.status }}"
+          DAKOTA_RUN_ID="${{ steps.dakota.outputs.run_id }}"
+          DAKOTA_STATUS="${{ steps.dakota.outputs.status }}"
+
+          # Map statuses to emoji
+          bluefin_icon=$([ "$BLUEFIN_STATUS" = "success" ] && echo "✅" || echo "⚠️")
+          dakota_icon=$([ "$DAKOTA_STATUS" = "success" ] && echo "✅" || echo "⚠️")
+
+          cat > /tmp/comment.md <<'COMMENT'
+## Pre-merge Validation Checklist
+
+This PR modifies shared configuration that is used by downstream images. Before merge, **you must verify your changes work** in the composed images.
+
+### Downstream Build Status
+- BLUEFIN_ICON_PLACEHOLDER **Bluefin**: [Latest build](https://github.com/projectbluefin/bluefin/actions?query=branch%3Amain) (BLUEFIN_STATUS_PLACEHOLDER)
+- DAKOTA_ICON_PLACEHOLDER **Dakota**: [Latest build](https://github.com/projectbluefin/dakota/actions?query=branch%3Amain) (DAKOTA_STATUS_PLACEHOLDER)
+
+### How to Test
+1. **Wait for downstream builds to complete** — Bluefin and Dakota rebuild automatically when `common` changes merge to main.
+2. **Check your changes in those images** using the latest tags:
+   - `ghcr.io/ublue-os/bluefin:latest` and `ghcr.io/ublue-os/bluefin:lts`
+   - `ghcr.io/projectbluefin/dakota:latest`
+3. **Verify functionality** — Run `ujust` and test any recipes/commands you modified.
+4. **Report issues** — If you find problems, open an issue in the relevant downstream repo.
+
+### Post-merge E2E
+The `common` layer is validated post-merge by the [E2E workflow](https://github.com/projectbluefin/common/actions/workflows/e2e.yml) using the `projectbluefin/testsuite` suite, which runs behavioral tests in the composed images.
+
+---
+For more information on the pre-merge validation process, see [CONTRIBUTING.md](https://github.com/projectbluefin/common/blob/main/CONTRIBUTING.md#pre-merge-validation).
+COMMENT
+
+          # Replace placeholders with actual values
+          sed -i "s/BLUEFIN_ICON_PLACEHOLDER/$bluefin_icon/g" /tmp/comment.md
+          sed -i "s/BLUEFIN_STATUS_PLACEHOLDER/$BLUEFIN_STATUS/g" /tmp/comment.md
+          sed -i "s/DAKOTA_ICON_PLACEHOLDER/$dakota_icon/g" /tmp/comment.md
+          sed -i "s/DAKOTA_STATUS_PLACEHOLDER/$DAKOTA_STATUS/g" /tmp/comment.md
+
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/comment.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
