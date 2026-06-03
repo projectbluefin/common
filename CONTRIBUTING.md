@@ -4,7 +4,7 @@ Thanks for helping out!
 
 Check the [Contributing Guide](https://docs.projectbluefin.io/contributing) for contribution information.
 
-This repository is for building the images, you are probably looking for [@projectbluefin/common](https://github.com/projectbluefin/common) to change something in Bluefin. Make sure you check [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture).
+This repository is the shared OCI layer and coordination hub for the Bluefin factory: shared `system_files/` overlays, governance and process docs, and the canonical skill docs live here. If you need to change an image-specific build or runtime behavior, work in the relevant image repo instead (`projectbluefin/bluefin`, `projectbluefin/bluefin-lts`, `projectbluefin/dakota`, or `projectbluefin/knuckle`). See the [architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture) for the repo boundaries.
 
 ## CI
 
