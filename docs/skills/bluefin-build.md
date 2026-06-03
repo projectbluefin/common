@@ -122,8 +122,9 @@ just hive    # or: ~/src/hive-status --watch
 **Full PR checklist:** `projectbluefin/common` → `.github/copilot-instructions.md` § *PR procedure*
 
 ```bash
-# 1. Branch from upstream main (or testing for bluefin/bluefin-lts/dakota)
-git fetch upstream && git checkout -b feat/my-change upstream/main
+# 1. Branch from origin main (or testing for bluefin/bluefin-lts/dakota)
+# origin = projectbluefin/<repo> directly — no fork
+git fetch origin && git checkout -b feat/my-change origin/main
 # 2. Make changes, run just check
 # 3. Squash to one commit, then open PR:
 gh pr create \
@@ -387,7 +388,7 @@ Fetch all open PR branches as local worktrees, run `just check` on each:
 cd ~/src/common
 # Fetch all open PR refs
 gh pr list --repo projectbluefin/common --state open --json number --jq '.[].number' | \
-  xargs -I{} git fetch upstream refs/pull/{}/head:pr/{} -q
+  xargs -I{} git fetch origin refs/pull/{}/head:pr/{} -q
 
 # Test each in a worktree
 for PR in <list>; do
