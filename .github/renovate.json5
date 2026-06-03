@@ -17,6 +17,26 @@
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "ublue-os/artwork"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["^Containerfile$"],
+      "matchStrings": [
+        "alpine:latest@sha256:(?<currentValue>[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "alpine",
+      "autoReplaceStringTemplate": "alpine:latest@sha256:{{{newDigest}}}"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["^Containerfile$"],
+      "matchStrings": [
+        "ghcr\\.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:(?<currentValue>[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/ublue-os/bluefin-wallpapers-gnome",
+      "autoReplaceStringTemplate": "ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:{{{newDigest}}}"
     }
   ]
 }
