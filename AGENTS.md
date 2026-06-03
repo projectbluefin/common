@@ -66,8 +66,13 @@ system_files/
 .github/workflows/
   build.yml                # Build + push on merge to main
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
+  pr-e2e.yml               # Pre-merge e2e composition gate for PRs
   validate-just.yml        # PR gate: just check
   validate-brewfiles.yaml  # PR gate: Brewfile validation
+  release.yml              # Monthly release on 1st of month (cron + workflow_dispatch)
+  bonedigger.yml           # Issue lifecycle automation (claim/queue/reclaim)
+  sync-codeowners.yml      # Syncs CODEOWNERS TRIAGERS block to downstream repos on push
+  hive-progress-sync.yml   # Hourly queue stats → projectbluefin org project board
 ```
 
 ## CODEOWNERS
