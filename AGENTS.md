@@ -61,12 +61,36 @@ Justfile                   # Build automation
 system_files/
   shared/                  # Config applied to ALL Bluefin variants (and Aurora)
   bluefin/                 # Config applied to Bluefin-specific variants only
+aurorafin-shared/          # Git submodule (ublue-os/aurorafin-shared)
+  system_files/
+    shared/                # Shared Aurora/Bluefin config (upstream-controlled)
+    nvidia/                # NVIDIA-specific config (upstream-controlled)
+bluefin-branding/          # Git submodule (projectbluefin/branding)
+  system_files/            # Wallpapers, logos (local edits allowed)
 .github/workflows/
   build.yml                # Build + push on merge to main
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
   validate-just.yml        # PR gate: just check
   validate-brewfiles.yaml  # PR gate: Brewfile validation
 ```
+
+### Submodule editing boundaries
+
+**aurorafin-shared** (upstream: `ublue-os/aurorafin-shared`)
+- **DO NOT edit locally** — this is shared with Aurora
+- Changes to `aurorafin-shared/system_files/shared/` must go upstream as a PR to ublue-os/aurorafin-shared
+- Changes to `aurorafin-shared/system_files/nvidia/` must go upstream as a PR to ublue-os/aurorafin-shared
+- Pull updates via `git submodule update --remote`
+
+**bluefin-branding** (upstream: `projectbluefin/branding`)
+- **CAN be edited locally** for wallpapers and logos
+- Merge changes to projectbluefin/branding as needed
+- Pull updates via `git submodule update --remote`
+
+**system_files/** (this repo)
+- **CAN be edited locally** — Bluefin-specific config
+- Bluefin-specific overrides in `system_files/bluefin/`
+- Shared config layer in `system_files/shared/`
 
 ## CODEOWNERS
 
@@ -82,10 +106,6 @@ just check      # lint Justfile
 just build      # full container build (slow — requires podman + network)
 pre-commit run --all-files   # hygiene checks (json/yaml/toml + actionlint)
 ```
-
-## Submodule
-
-`bluefin-branding` → projectbluefin/branding (wallpapers, logos). `just build` initializes it automatically.
 
 ## Scope warning
 
