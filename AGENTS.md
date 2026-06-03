@@ -58,9 +58,11 @@ When in doubt, post nothing.
 ```
 Containerfile              # OCI image build
 Justfile                   # Build automation
+aurorafin-shared/          # Git submodule: shared system config for ALL variants (and Aurora)
+bluefin-branding/          # Git submodule: wallpapers and logos
 system_files/
-  shared/                  # Config applied to ALL Bluefin variants (and Aurora)
-  bluefin/                 # Config applied to Bluefin-specific variants only
+  shared/                  # Shared config staged from aurorafin-shared (not edited directly here)
+  bluefin/                 # Local editable config for Bluefin-specific variants only
 .github/workflows/
   build.yml                # Build + push on merge to main
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
@@ -83,9 +85,12 @@ just build      # full container build (slow — requires podman + network)
 pre-commit run --all-files   # hygiene checks (json/yaml/toml + actionlint)
 ```
 
-## Submodule
+## Submodules
 
-`bluefin-branding` → projectbluefin/branding (wallpapers, logos). `just build` initializes it automatically.
+- `bluefin-branding` → `projectbluefin/branding` (wallpapers, logos). `just build` initializes it automatically.
+- `aurorafin-shared` → `ublue-os/aurorafin-shared` (shared system config for all variants and Aurora).
+
+Changes to shared system config must go to `ublue-os/aurorafin-shared` in an upstream PR, not by editing `system_files/shared/` in this repo.
 
 ## Scope warning
 
