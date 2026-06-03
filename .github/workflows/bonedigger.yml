@@ -1,0 +1,20 @@
+name: bonedigger
+on:
+  issues:
+    types: [opened, labeled, closed]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 9 * * *'
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  bonedigger:
+    uses: projectbluefin/bonedigger/.github/workflows/lifecycle.yml@2a734ae2095cdce9507b904d9fc83d836955c0f5
+    with:
+      brand_name: "Common"
+      brand_emoji: "🧱"
+    secrets: inherit
