@@ -50,6 +50,27 @@ Force a resync anytime:
 gh workflow run sync-codeowners.yml --repo projectbluefin/common
 ```
 
+## Hive sync coverage
+
+Hive progress sync now covers all five `projectbluefin` repos on staggered cron slots:
+
+| Repo | Minute |
+|---|---|
+| `dakota` | `:00` |
+| `bluefin` | `:15` |
+| `common` | `:20` |
+| `knuckle` | `:30` |
+| `bluefin-lts` | `:45` |
+
+The sync jobs count slash-separated labels (`hive/p0`, `hive/p1`) across the full repo set.
+Older references to dotted labels are stale.
+
+## Template sync namespace
+
+bonedigger's `sync-templates.yml` now targets the `projectbluefin/*` namespace,
+not the old `ublue-os/*` pre-migration namespace. `projectbluefin/knuckle` is
+included in that sync set.
+
 ## Branch protection
 
 `require_code_owner_reviews: true` is active on all four repos. A CODEOWNERS match is
