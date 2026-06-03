@@ -62,7 +62,7 @@ jobs:
           for f in "$SKILLS_DIR"/*.md; do
             name=$(basename "$f")
             [[ "$name" == "INDEX.md" ]] && continue
-            if ! grep -q "$name" "$INDEX"; then
+            if ! grep -qF "$name" "$INDEX"; then
               echo "::error file=$INDEX::$name is not listed in INDEX.md"
               failed=1
             fi
