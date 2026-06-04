@@ -14,6 +14,8 @@ sign-off.** This would break OTA updates, E2E CI, and the rollback helper for al
 |---|---|---|
 | `ghcr.io/ublue-os/bluefin*` | ✅ Active production | All Bluefin image variants |
 | `ghcr.io/ublue-os/bluefin:lts` | ✅ Active production | LTS stream |
+| `ghcr.io/projectbluefin/bluefin:testing` | ✅ Active testing | Bluefin testing candidate tag |
+| `ghcr.io/projectbluefin/bluefin:lts-testing` | ✅ Active testing | Bluefin LTS testing candidate tag |
 | `ghcr.io/ublue-os/brew` | ✅ Active | Homebrew layer consumed by bluefin |
 | `ghcr.io/ublue-os/akmods-*` | ✅ Active | Kernel modules |
 | `ghcr.io/projectbluefin/common` | ✅ Active | Common shared layer (this repo) |
@@ -26,6 +28,15 @@ sign-off.** This would break OTA updates, E2E CI, and the rollback helper for al
 - `system_files/bluefin/usr/bin/ublue-rollback-helper` — reads `IMAGE_VENDOR` from
   `image-info.json` to construct the registry path; changing the vendor changes the OTA target
 - Any ujust recipe that references the image registry for rollback/rebase
+
+## Narrow exception for testing-stream gates
+
+`common/.github/workflows/promotion-candidate-e2e.yml` is allowed to reference:
+
+- `ghcr.io/projectbluefin/bluefin:testing`
+- `ghcr.io/projectbluefin/bluefin:lts-testing`
+
+Those are testing-only candidate tags used to add common-side promotion feedback. They are **not** production OTA targets. `validate.yml` explicitly whitelists only these two refs; all other `ghcr.io/projectbluefin/bluefin*` workflow refs remain blocked.
 
 ## How ublue-rollback-helper uses the registry
 

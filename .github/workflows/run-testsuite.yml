@@ -1,0 +1,30 @@
+name: Run Testsuite
+
+# Reusable wrapper around projectbluefin/testsuite e2e.yml.
+# Keeps the testsuite SHA pin in one place for PR, post-merge, and
+# promotion-candidate gates in this repo.
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Full image ref to test"
+        required: true
+        type: string
+      suites:
+        description: "Comma-separated test suites to run"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  e2e:
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@82a233861b343cd71f359cc1e0d7b134fea78e88 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: ${{ inputs.image }}
+      suites: ${{ inputs.suites }}

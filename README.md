@@ -102,16 +102,24 @@ Users can install these bundles using the `ujust bbrew` command, which will prom
 
 ## CI / Testing
 
-Changes are validated in two stages:
+Changes are validated in three layers:
 
-**On every PR** — lightweight checks only (no VM boot):
-- `validate-just` — lints the Justfile and all `.just` recipes
-- `build` — builds the OCI image with `buildah`
+If you need the per-workflow purpose and ownership map, start with
+[`docs/skills/workflow-map.md`](docs/skills/workflow-map.md).
+
+**On every PR**:
+- `validate.yml` — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards
+- `build.yml` — builds the OCI image with `buildah`
+- `skill-drift.yml` — warns when implementation changes land without matching skill-doc updates
+- `pr-e2e.yml` — advisory composed-image common-suite check against a downstream Bluefin base
 
 **On merge to main** — full layer validation via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite):
 - Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin LTS, Bluefin Stable, and Dakota
 - SSH-mode: behave runs from the GHA runner over SSH into a QEMU VM — no full GNOME session needed, completes in ~15 min
 - Validates dconf defaults, locked keys, `ujust`, setup scripts, desktop entries, and shell configuration as they land in the composed images
+
+**Before downstream testing → stable promotions**:
+- `promotion-candidate-e2e.yml` runs `smoke,common` against `ghcr.io/projectbluefin/bluefin:{testing,lts-testing}` on Tuesdays, giving `common` a repo-local signal on the exact candidate tags that feed promotion
 
 ## Building Locally
 

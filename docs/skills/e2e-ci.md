@@ -5,7 +5,7 @@
 **File:** `.github/workflows/e2e.yml`
 
 - Runs after merges to `main`
-- Calls the reusable `projectbluefin/testsuite` E2E workflow with `suites: common`
+- Calls the local `.github/workflows/run-testsuite.yml` wrapper, which centralizes the pinned `projectbluefin/testsuite` SHA
 - Validates the common layer against three downstream images:
   - `ghcr.io/ublue-os/bluefin:latest`
   - `ghcr.io/ublue-os/bluefin:lts`
@@ -20,9 +20,23 @@
 - Builds the PR's `common` layer candidate first
 - Composes a downstream test image from `ghcr.io/ublue-os/bluefin:latest` by overlaying `/system_files/shared` and `/system_files/bluefin`
 - Recompiles GSettings schemas in the composed image
-- Pushes the composed image to GHCR and runs the reusable `projectbluefin/testsuite` workflow with `suites: common`
+- Pushes the composed image to GHCR and runs the local testsuite wrapper with `suites: common`
 
 This is the pre-merge gate for common-layer changes, so regressions can fail before merge instead of waiting for post-merge E2E.
+In branch protection today it is still an advisory/non-required signal; `build.yml` remains the required merge check.
+
+## Promotion-candidate feedback loop
+
+**File:** `.github/workflows/promotion-candidate-e2e.yml`
+
+- Runs weekly on Tuesdays before the downstream Bluefin promotion workflows
+- Tests the exact candidate tags used for promotion from common's side:
+  - `ghcr.io/projectbluefin/bluefin:testing`
+  - `ghcr.io/projectbluefin/bluefin:lts-testing`
+- Runs `smoke,common` to add a boot/basic-usage signal on top of the shared-layer checks
+- Uses the same local testsuite wrapper as PR/post-merge workflows, so the testsuite SHA stays aligned
+
+This is **not** a full installer gate. It is the smallest safe repo-local improvement common can make without editing downstream image repos or installer pipelines.
 
 ## Known CI caveats and quarantines
 
@@ -34,4 +48,4 @@ This is the pre-merge gate for common-layer changes, so regressions can fail bef
 
 ## Testsuite SHA pin
 
-`run-testsuite.yml` in `projectbluefin/bluefin` pins the testsuite SHA. When the pin lags behind `main`, quarantined scenarios may run and cause spurious failures. Renovate manages the pin automatically once it's set to a SHA (not `@main`). After any testsuite fix merges, approve the Renovate bump PR promptly.
+`common/.github/workflows/run-testsuite.yml` now pins the testsuite SHA for all repo-local callers. When the pin lags behind `main`, quarantined scenarios may run and cause spurious failures. `common` does not yet have Renovate config, so update this one wrapper file deliberately whenever testsuite fixes land.

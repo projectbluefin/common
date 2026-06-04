@@ -115,7 +115,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
+    uses: ./.github/workflows/run-testsuite.yml
     with:
       image: ${{ needs.compose.outputs.image }}
       suites: common

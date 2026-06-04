@@ -1,12 +1,12 @@
 # Post-merge E2E — common layer validation
 #
-# Runs AFTER a merge to main (not on PRs). PRs are gated only by the
-# lightweight validate-just and build workflows.
+# Runs AFTER a merge to main (not on PRs). PRs get validate/build plus the
+# advisory composed-image gate in pr-e2e.yml.
 #
-# Uses the projectbluefin/testsuite reusable e2e workflow with the `common`
-# suite, which validates that the files shipped by this repo (dconf defaults,
-# ujust, setup scripts, desktop entries, shell config) are present and
-# functional in the composed Bluefin images.
+# Uses the local run-testsuite wrapper with the `common` suite, which validates
+# that the files shipped by this repo (dconf defaults, ujust, setup scripts,
+# desktop entries, shell config) are present and functional in the downstream
+# images.
 #
 # The `common` suite runs in SSH mode from the GHA runner — no full GNOME
 # session needed, so jobs complete in ~15 min vs ~60 min for GUI suites.
@@ -26,23 +26,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-bluefin-lts:
-    name: "E2E — Bluefin LTS"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Bluefin LTS
+            image: ghcr.io/ublue-os/bluefin:lts
+            suites: common
+          - name: Bluefin Stable
+            image: ghcr.io/ublue-os/bluefin:latest
+            suites: common
+          - name: Dakota
+            image: ghcr.io/projectbluefin/dakota:latest
+            suites: common
+    name: "E2E — ${{ matrix.name }}"
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/run-testsuite.yml
     with:
-      image: ghcr.io/ublue-os/bluefin:lts
-      suites: common
-
-  e2e-bluefin-stable:
-    name: "E2E — Bluefin Stable"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
-    with:
-      image: ghcr.io/ublue-os/bluefin:latest
-      suites: common
-
-  e2e-dakota:
-    name: "E2E — Dakota"
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@262ba3726dda2979aa3aa9acf84b60fecfdbc776 # main
-    with:
-      image: ghcr.io/projectbluefin/dakota:latest
-      suites: common
+      image: ${{ matrix.image }}
+      suites: ${{ matrix.suites }}
