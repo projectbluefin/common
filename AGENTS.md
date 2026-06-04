@@ -58,11 +58,11 @@ When in doubt, post nothing.
 ```
 Containerfile              # OCI image build
 Justfile                   # Build automation
-aurorafin-shared/          # Git submodule: shared system config for ALL variants (and Aurora)
 bluefin-branding/          # Git submodule: wallpapers and logos
 system_files/
-  shared/                  # Shared config staged from aurorafin-shared (not edited directly here)
+  shared/                  # Shared config for ALL variants (and Aurora) — directly editable
   bluefin/                 # Local editable config for Bluefin-specific variants only
+  nvidia/                  # NVIDIA overlay — directly editable
 .github/workflows/
   bonedigger.yml           # Issue lifecycle automation for common
   build.yml                # Build + push on merge to main
@@ -97,9 +97,8 @@ pre-commit run --all-files   # hygiene checks (json/yaml/toml + actionlint)
 ## Submodules
 
 - `bluefin-branding` → `projectbluefin/branding` (wallpapers, logos). `just build` initializes it automatically.
-- `aurorafin-shared` → `ublue-os/aurorafin-shared` (shared system config for all variants and Aurora).
 
-Changes to shared system config must go to `ublue-os/aurorafin-shared` in an upstream PR, not by editing `system_files/shared/` in this repo.
+`system_files/shared/` and `system_files/nvidia/` are now directly tracked in this repo — edit them here directly.
 
 ## Scope warning
 

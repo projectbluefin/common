@@ -2,7 +2,7 @@ just := just_executable()
 
 # Build the bluefin-common container locally
 build:
-    git submodule update --init --recursive
+    git submodule update --init bluefin-branding
     podman build -t localhost/bluefin-common:latest -f ./Containerfile .
 
 check:

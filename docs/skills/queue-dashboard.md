@@ -55,12 +55,9 @@ gh pr merge <new-N> --squash --admin
 - Agent can still admin-merge with `--admin` — this bypasses approval requirement
 - Use judgment: skip only if there is an active objection or the PR is clearly not ready
 
-### Blocked by submodule boundary
-- Touches `system_files/shared/**` (or specific known files: `apps.just`, `default.just`, `ublue-bling`) → **cannot land here**
-- These files live in `ublue-os/aurorafin-shared`; direct edits are silently ignored by the build
-- Leave comment pointing to `ublue-os/aurorafin-shared` upstream
-- **Never file the upstream ublue-os PR yourself** — tell the author to do it manually
-- See `submodule-boundary.md` for full policy
+### Previously blocked by submodule boundary — now unblocked
+- PRs touching `system_files/shared/**` are now **directly mergeable** — the aurorafin-shared submodule has been removed and these files live here
+- Edit `system_files/shared/` directly in this repo
 
 ### CHANGES_REQUESTED
 - Read the review comment to understand what's needed
@@ -127,11 +124,10 @@ not a code defect. Admin-merge these safely when the code change is correct.
 
 ## Common PR comment templates
 
-**Submodule boundary:**
+**Previously blocked by submodule — now unblocked:**
 ```
-This PR touches `system_files/shared/` which is read-only here — materialized from
-`ublue-os/aurorafin-shared`. Changes must go upstream to ublue-os/aurorafin-shared first.
-Agent cannot file PRs in ublue-os repos — please report upstream manually.
+This PR touches system_files/shared/ — which is now directly editable here since
+the aurorafin-shared submodule was removed. Rebase onto main and reopen.
 ```
 
 **Superseded:**

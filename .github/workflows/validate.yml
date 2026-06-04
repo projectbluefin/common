@@ -22,21 +22,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
-          submodules: recursive
+          submodules: true
 
-      - name: Check submodule drift (aurorafin-shared)
-        shell: bash
-        run: |
-          echo "Verifying system_files/shared/ has not been manually edited..."
-          git submodule update --init aurorafin-shared
-          if ! git diff --exit-code -- aurorafin-shared; then
-            echo ""
-            echo "ERROR: aurorafin-shared submodule has been manually edited."
-            echo "Changes to system_files/shared/ must go upstream via ublue-os/aurorafin-shared."
-            echo "Do not edit system_files/shared/ directly in this repo."
-            exit 1
-          fi
-          echo "Submodule is clean — no manual drift detected."
 
       - name: Install just
         uses: taiki-e/install-action@3bcad52036b48c4f9e2249c2ebd39a428ef3d98f # just

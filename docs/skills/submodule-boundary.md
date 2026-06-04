@@ -1,63 +1,33 @@
 ---
 name: submodule-boundary
-description: "system_files/shared/ is read-only (aurorafin-shared submodule) — editable scope is system_files/bluefin/ only."
+description: "system_files/shared/ is now directly editable in this repo — the aurorafin-shared submodule has been removed."
 ---
 
-# Submodule Boundary
+# system_files scope — what is editable where
 
-## What is read-only and why
+## Summary
 
-`system_files/shared/` is materialized from the `aurorafin-shared` git submodule
-(`ublue-os/aurorafin-shared`). The submodule is not initialized in the working tree by
-default — `system_files/shared/` may not even exist as a local directory.
+`system_files/shared/` is now a **directly tracked directory** in this repo. It was previously a read-only bind from the `aurorafin-shared` submodule, but that dependency has been severed. You can now edit files in `system_files/shared/` directly in PRs to this repo.
 
-**Critical:** the `Containerfile` copies from `aurorafin-shared/system_files/shared/`
-(the submodule), **not** from a local `system_files/shared/` directory. Any files written
-to the local `system_files/shared/` path are **silently ignored by the build**.
+`system_files/bluefin/` remains the editable path for Bluefin-specific config.
+`system_files/nvidia/` contains NVIDIA-specific overlays and is also directly tracked here.
 
-`system_files/bluefin/` is the correct place for Bluefin-specific config. Edit here freely.
+## Editable paths
 
-## Rule
-
-| Path | Editable? | Where to make changes |
+| Path | Editable? | Notes |
 |---|---|---|
-| `system_files/shared/**` | ❌ No | Open a PR in `ublue-os/aurorafin-shared` |
-| `system_files/bluefin/**` | ✅ Yes | Edit directly in this repo |
-| `bluefin-branding/**` | ❌ No | Open a PR in `projectbluefin/branding` |
+| `system_files/shared/**` | ✅ Yes | Directly tracked — edit here |
+| `system_files/bluefin/**` | ✅ Yes | Bluefin-specific config |
+| `system_files/nvidia/**` | ✅ Yes | NVIDIA overlay |
+| `bluefin-branding/**` | ❌ No | Submodule — `projectbluefin/branding` |
 
-## Local verification
+## What changed
 
-```bash
-git diff --exit-code -- aurorafin-shared
+Previously, `system_files/shared/` was materialized from a `ublue-os/aurorafin-shared` git submodule. The `validate.yml` workflow enforced that `system_files/shared/` could not be edited directly. **That constraint is gone.** The submodule has been removed and the files are now owned here.
+
+## Submodule that remains
+
+Only `bluefin-branding` remains as a submodule:
 ```
-
-Zero output = clean. Any output = you have uncommitted changes to the submodule that will
-fail the CI drift check.
-
-## CI gate
-
-`validate.yml` step "Check submodule drift (aurorafin-shared)" runs `git diff --exit-code -- aurorafin-shared`
-and prints a clear error if the submodule has been manually edited.
-
-## Specific files that have moved upstream (as of #395)
-
-These files **no longer exist** in this repo — they are owned by `ublue-os/aurorafin-shared`:
-
-| File | Path in aurorafin-shared |
-|---|---|
-| `apps.just` | `system_files/shared/usr/share/ublue-os/just/apps.just` |
-| `default.just` | `system_files/shared/usr/share/ublue-os/just/default.just` |
-| `ublue-bling` | `system_files/shared/usr/bin/ublue-bling` |
-
-Any PR that modifies these paths in this repo will hit a `modify/delete` conflict on rebase
-because main deleted them when #395 wired the submodule. Leave a comment telling the author
-to submit upstream. **Do not skip/drop these commits silently** — the fix still needs to land
-somewhere.
-
-## Upstream policy — ublue-os repos
-
-**Agents must never file issues or PRs in `ublue-os/*` repos.** If a change requires
-`ublue-os/aurorafin-shared`, tell the human contributor to report it there manually.
-
-When you encounter a PR that touches `system_files/shared/`, leave a comment explaining
-the boundary and close the loop — do not attempt to create the upstream PR yourself.
+bluefin-branding → projectbluefin/branding (wallpapers, logos)
+```

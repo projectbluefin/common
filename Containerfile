@@ -29,10 +29,10 @@ RUN install -d /out/bluefin/usr/bin && \
     chmod +x /out/bluefin/usr/bin/umotd
 
 FROM scratch AS ctx
-COPY /aurorafin-shared/system_files/shared /system_files/shared/
+COPY /system_files/shared /system_files/shared/
 COPY /bluefin-branding/system_files /system_files/bluefin
 COPY /system_files/bluefin /system_files/bluefin
-COPY /aurorafin-shared/system_files/nvidia /system_files/nvidia/
+COPY /system_files/nvidia /system_files/nvidia/
 
 COPY --from=build /out/shared /system_files/shared
 COPY --from=build /out/bluefin /system_files/bluefin
