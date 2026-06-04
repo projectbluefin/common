@@ -1,6 +1,14 @@
 # docs/skills — Index
 
-Agent skill docs for the `projectbluefin/common` repo.
+Agent-agnostic skill docs for the `projectbluefin/common` repo. These apply to any agent (Copilot, Claude, etc.) working in this repository.
+
+## What belongs here
+
+Workflow knowledge, architectural context, and operational runbooks that any agent needs to work effectively in this repo.
+
+## What does NOT belong here
+
+Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`, `.cursorrules`, etc.) are loaded separately by their respective tools and must not be listed here.
 
 ## Factory docs
 
@@ -31,8 +39,5 @@ Agent skill docs for the `projectbluefin/common` repo.
 | [rollback-helper.md](rollback-helper.md) | `ublue-rollback-helper` TUI state machine — three-way coordinated arrays, LTS/non-LTS branches, registry path derivation, testing guidance |
 | [skill-drift.md](skill-drift.md) | How to satisfy the PR skill-drift check and what counts as a real skill update |
 | [acmm-audit-level1.md](acmm-audit-level1.md) | ACMM Level 1 audit (2026-06-04) — blindspots, feedback mechanisms, structural obstacles, Level 2 recommendations and issue batch |
+| [../../.github/copilot-instructions.md](../../.github/copilot-instructions.md) | Copilot agent instructions — session start ritual, PR checklist, scope discipline, CODEOWNERS sentinel |
 | [../factory/README.md](../factory/README.md) | Factory operating model entry point for org-level agent and maintainer workflow |
-
-## Quality standard
-
-All files in this directory are Claude Code skills. Each file must have YAML frontmatter with `name` and `description`. CI enforces this via `.github/workflows/docs-quality.yml`.

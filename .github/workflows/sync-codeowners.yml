@@ -68,3 +68,46 @@ jobs:
 
             echo "$repo: updated."
           done
+
+      - name: Reconcile triager collaborator permissions
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          DESIRED=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS \
+            | grep '^# @' | sed 's/^# @//')
+
+          if [[ -z "$DESIRED" ]]; then
+            echo "No triagers listed in sentinel block — skipping permission reconciliation."
+            exit 0
+          fi
+
+          echo "Desired triagers: $(echo "$DESIRED" | tr '\n' ' ')"
+
+          for repo in common bluefin bluefin-lts dakota; do
+            echo "--- Reconciling permissions for $repo ---"
+
+            CURRENT=$(gh api "repos/projectbluefin/$repo/collaborators?affiliation=direct" \
+              --paginate --jq '.[] | select(.permissions.triage == true and .permissions.push == false) | .login' \
+              2>/dev/null || echo "")
+
+            while IFS= read -r user; do
+              [[ -z "$user" ]] && continue
+              if ! echo "$CURRENT" | grep -qx "$user"; then
+                echo "Adding @$user to $repo with triage"
+                gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                  --method PUT \
+                  --field permission=triage > /dev/null
+              else
+                echo "@$user already has triage on $repo"
+              fi
+            done <<< "$DESIRED"
+
+            while IFS= read -r user; do
+              [[ -z "$user" ]] && continue
+              if ! echo "$DESIRED" | grep -qx "$user"; then
+                echo "Removing @$user from $repo"
+                gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                  --method DELETE > /dev/null
+              fi
+            done <<< "$CURRENT"
+          done
