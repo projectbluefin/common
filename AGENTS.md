@@ -66,12 +66,15 @@ system_files/
 .github/workflows/
   bonedigger.yml           # Issue lifecycle automation for common
   build.yml                # Build + push on merge to main
+  docs-quality.yml         # PR gate: skill frontmatter and Trail of Bits CI
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
+  hive-progress-sync.yml   # Hourly queue stats → projectbluefin org project board
   pr-e2e.yml               # PR-time composed-image common-suite gate
   promotion-candidate-e2e.yml # Weekly smoke/common checks for testing promotion candidates
   release.yml              # Monthly versioned OCI release (1st of month, also workflow_dispatch)
   run-testsuite.yml        # Local wrapper that centralizes the testsuite SHA pin
   skill-drift.yml          # PR advisory gate for implementation/doc parity
+  sync-codeowners.yml      # Syncs CODEOWNERS TRIAGERS block to downstream repos on push
   validate.yml             # PR gate: just check, pre-commit, shellcheck, submodule drift
   validate-brewfiles.yaml  # PR gate: Brewfile validation
 ```
