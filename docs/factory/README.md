@@ -9,7 +9,7 @@ This directory is the org-level entry point for agents and maintainers working a
 - Factory org: `projectbluefin`
 - Product: bootc-based OCI images and the automation that builds, validates, and promotes them
 - Shared layer repo: `common` — https://github.com/projectbluefin/common
-- Production image registry: `ghcr.io/ublue-os/bluefin*` **not** `projectbluefin` yet; migration is incomplete as of 2026-06-04
+- Production image registry: `ghcr.io/ublue-os/bluefin*` **not** `projectbluefin` yet
 - Registry reference: `docs/skills/image-registry.md`
 
 ## Repo map and data flow
@@ -55,12 +55,7 @@ Lifecycle: `filed → approved → queued → claimed → done`
 | `claimed` | Agent comments `/claim`; issue is assigned and leaves the pool |
 | `done` | Fix is shipped and verified; standard target is 3× `ujust verify`, or maintainer override |
 
-Operational notes:
-- Bonedigger manages this lifecycle in `bluefin`.
-- actionadon manages the equivalent flow in `dakota`/`knuckle`.
-- `common` now has bonedigger lifecycle automation; `bluefin-lts` still does not.
-- `bluefin-lts` still requires manual care to avoid double-claiming and stale claims until lifecycle automation lands there.
-- No PR activity in 7 days should return the claim (`/unclaim`) until org-wide automation exists.
+Bonedigger manages this lifecycle across all factory repos. No PR activity in 7 days should return the claim (`/unclaim`).
 
 ## Agent rules of engagement
 
@@ -70,24 +65,31 @@ Operational notes:
 - Do not rewrite image refs from `ghcr.io/ublue-os/bluefin*` to `projectbluefin` without explicit maintainer approval.
 - Prefer existing skills and workflows over inventing new process.
 
-## Migration status — parity matrix snapshot (2026-06-04)
+## Factory infrastructure
 
-| Artifact | common | bluefin | bluefin-lts | dakota | actions | testsuite |
-|---|---|---|---|---|---|---|
-| AGENTS.md | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| pre-commit | ✅ | ✅ | ✅ | ❌ | — | — |
-| skill-drift.yml | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| no-floating-action-tags hook | ✅ | ✅ | ✅ | ❌ | ✅ | — |
-| bonedigger lifecycle | ✅ | ✅ | ❌ | ❌ | — | — |
-| Renovate config | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Post-merge e2e | ✅ | ✅ | ❌ | partial | — | — |
-| Installability gate | ⚠️ testing-stream smoke/common only | ❌ | ❌ | ❌ | — | ❌ |
-| CODEOWNERS active | ✅ | ✅ | ✅ | ✅ | — | — |
-| docs/skills/ populated | ✅ | ✅ | partial | ✅ | ✅ | ✅ |
+The following are wired across all factory repos (bluefin, bluefin-lts, common, dakota, knuckle):
 
-Read this table as an execution warning, not a scorecard: parity is incomplete, automation is fragmented, and agents must still compensate for missing guardrails across the factory, especially in `bluefin-lts`.
+- **AGENTS.md** — per-repo operating contract
+- **Label taxonomy** — `hive/p0`, `hive/p1`, `queue/agent-ready`, `queue/claimed`, `agent/blocked`, `source:*`
+- **Squash-only merge + delete-branch-on-merge**
+- **5 standard issue templates**
+- **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
+- **hive-progress-sync.yml** — hourly org board update
+- **bonedigger lifecycle automation** — issue pipeline active in all repos
+- **skill-drift.yml** — PR advisory gate for doc/impl parity
+- **pre-commit** — json/yaml/toml hygiene and no-floating-action-tags
+- **Renovate** — automated dependency updates
 
-`common` also has a new **promotion-candidate smoke/common gate** in `.github/workflows/promotion-candidate-e2e.yml`. It is not a full installer gate, but it gives repo-local signal on `bluefin:testing` and `bluefin:lts-testing` before the downstream Tuesday promotions.
+`common` also has a **promotion-candidate smoke/common gate** (`promotion-candidate-e2e.yml`). It is not a full installer gate, but it gives early signal on `bluefin:testing` and `bluefin:lts-testing` before the downstream Tuesday promotions.
+
+## Open gaps
+
+- **bonedigger (the tool)** is not itself factory-onboarded — no AGENTS.md, no hive labels, CI issues pending [#418](https://github.com/projectbluefin/common/issues/418)
+- **Renovate config** in `common` has invalid `packageRules` — Renovate is paused until fixed [#487](https://github.com/projectbluefin/common/issues/487)
+- **Regression contract** across `latest`/`stable`/`gts`/`lts` streams is undefined [#420](https://github.com/projectbluefin/common/issues/420)
+- **bonedigger crash/panic signal** not wired into promotion decisions [#424](https://github.com/projectbluefin/common/issues/424)
+
+Tracking epics: [#403](https://github.com/projectbluefin/common/issues/403) (common as org brain) · [#404](https://github.com/projectbluefin/common/issues/404) (infra parity) · [#405](https://github.com/projectbluefin/common/issues/405) (QA model)
 
 ## Per-repo AGENTS.md entry points
 

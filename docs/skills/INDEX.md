@@ -14,9 +14,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 
 | File | What it covers |
 |---|---|
-| [../factory/README.md](../factory/README.md) | Org brain landing page — what common is, factory structure, data flow, org board |
-| [../factory/agentic-model.md](../factory/agentic-model.md) | Agent operating guide — rules, issue lifecycle, label taxonomy, PR policy, branch targets |
-| [../factory/migration-status.md](../factory/migration-status.md) | Live parity matrix — current state of factory infra migration across all 5 repos |
+| [../factory/README.md](../factory/README.md) | Org brain landing page — factory structure, data flow, infrastructure state, open gaps |
 
 ## Skill docs
 

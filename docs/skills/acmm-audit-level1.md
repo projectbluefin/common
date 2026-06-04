@@ -525,15 +525,9 @@ The factory's live parity matrix — which every agent reads at session start �
 
 ### Updated Recommendations for Level 2 (Section 4 Supplement)
 
-#### R-11 · Fix `migration-status.md` stale entries and add update protocol (P0)
+#### R-11 · ~~Fix `migration-status.md` stale entries~~ — RESOLVED
 
-**Target:** `common` / `docs/factory/migration-status.md`
-
-**Required actions:**
-1. Update the table to reflect current accurate state (bonedigger ✅ for bluefin-lts, skill-drift ✅ for common)
-2. Add a "Last verified" date field in the table header
-3. Add a mandatory update step to the PR checklist: "If this PR closes a parity gap, update `docs/factory/migration-status.md` in the same commit"
-4. Remove one of the two duplicate parity matrices or add a clear single-source rule
+`migration-status.md` was deleted 2026-06-04. Factory infrastructure state is now documented as prose in `docs/factory/README.md` (single source of truth). Open gaps are tracked as linked issues in that file.
 
 ---
 
