@@ -74,7 +74,7 @@ check-ci.sh prints current run status and highlights failures.
 |---|---|---|
 | `setup-runner` | `bootc-build/setup-runner` | Install just/cosign/oras/syft, optionally update podman, set up storage. Use `storage-backend: 'none'` to skip storage for non-build jobs |
 | `detect-changes` | `bootc-build/detect-changes` | Outputs: `image_changed`, `should_build`, `nvidia_changed`, `image_flavors` |
-| `validate-pr` | `bootc-build/validate-pr` | just check + shellcheck + hadolint + pre-commit. All action pins live here — Renovate updates this one file |
+| `validate-pr` | `bootc-build/validate-pr` | just check + shellcheck + hadolint + pre-commit. All action pins live here — Renovate updates this one file. Optional inputs: `system-files-shellcheck-glob`, `enable-desktop-file-validate`, `check-submodule-drift` |
 | `dnf-cache` | `bootc-build/dnf-cache` | Restore/save DNF build cache |
 | `ghcr-cleanup` | `bootc-build/ghcr-cleanup` | Delete old images from GHCR |
 | `preflight` | `bootc-build/preflight` | Pre-build cosign verify, key checks |
@@ -430,6 +430,20 @@ Full adversarial review of all 23 workflow files. 6 blocking + 8 non-blocking fi
 **Dependency order for merging:** actions PR #33 (detect-changes) → actions PR #34 (validate-pr) → bluefin PR #250 (then update `@SHA` refs to `@v1`).
 
 **PR smoke push namespace:** PR builds must push to `ghcr.io/projectbluefin/bluefin-pr`, not `bluefin`. The `clean.yml` workflow now also cleans `bluefin-pr` images older than 90d.
+
+### ACMM Level 1 hardening — shellcheck / desktop-file-validate / signing coverage (added 2026-06-04)
+
+**What was done (common commit `c2689137`, actions PR #65, bluefin PR #299, testsuite PR #285):**
+
+| Fix | Description |
+|---|---|
+| `validate.yml` replaces `validate-just.yml` in `common` | Adds shellcheck on `ublue-rollback-helper` + aurorafin-shared submodule drift guard |
+| `validate-pr` gets 3 new optional inputs | `system-files-shellcheck-glob`, `enable-desktop-file-validate`, `check-submodule-drift` — centralized in `projectbluefin/actions` |
+| bluefin `pr-validation.yml` opts in | `system-files-shellcheck-glob: system_files/**/*.sh`, `enable-desktop-file-validate: true` |
+| `common_signing.feature` added to testsuite common suite | Runtime assertions: signing key hashes, bazaar.preinstall, flatpak-add-fedora-repos.service absence, `ujust` presence, `policy.json` |
+| Hook scripts add `# shellcheck source=/dev/null` | 5 scripts sourcing `/usr/lib/ublue/setup-services/libsetup.sh` silenced correctly |
+
+**Merge state:** common pushed direct to main; testsuite PR #285 merged; actions PR #65 + bluefin PR #299 pending human review + `@v1` tag move.
 
 ### Testing Images fails on new flavor — skopeo name unknown (added 2026-06-03)
 

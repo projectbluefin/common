@@ -55,6 +55,59 @@ jobs:
         shell: bash
         run: shellcheck -e SC2207 system_files/bluefin/usr/bin/ublue-rollback-helper
 
+      - name: Guard against ublue-os→projectbluefin image ref regressions
+        shell: bash
+        run: |
+          echo "Checking for disallowed ublue-os→projectbluefin OCI image ref changes..."
+          # Production images are still published at ghcr.io/ublue-os/. Do not change these refs.
+          if grep -rE 'ghcr\.io/projectbluefin/(bluefin|aurora|bazzite)' \
+              .github/workflows/ \
+              system_files/bluefin/usr/bin/ublue-rollback-helper 2>/dev/null; then
+            echo ""
+            echo "ERROR: Found projectbluefin OCI image refs. Production images are published"
+            echo "at ghcr.io/ublue-os/, not ghcr.io/projectbluefin/. Do not change these refs"
+            echo "until the org migration for OCI image publishing is complete."
+            echo "See docs/skills/image-registry.md for details."
+            exit 1
+          fi
+          echo "No disallowed image ref changes found."
+
+      - name: Validate dconf lock/override parity
+        shell: bash
+        run: |
+          echo "Checking dconf lock/override parity..."
+          LOCK_FILE="system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings"
+          OVERRIDE_DIR="system_files/bluefin/usr/share/glib-2.0/schemas"
+
+          if [[ ! -f "$LOCK_FILE" ]]; then
+            echo "Lock file not found: $LOCK_FILE"
+            exit 1
+          fi
+
+          MISSING=0
+          while IFS= read -r lock_entry; do
+            # Skip empty lines and comments
+            [[ -z "$lock_entry" || "$lock_entry" == \#* ]] && continue
+
+            # Extract the key name from the dconf path (last path component)
+            key=$(basename "$lock_entry")
+
+            # Check if key appears in any override file
+            if ! grep -r "$key" "$OVERRIDE_DIR" --include="*.override" -q 2>/dev/null; then
+              echo "MISSING: lock entry '$lock_entry' has no corresponding override in $OVERRIDE_DIR"
+              MISSING=$((MISSING + 1))
+            fi
+          done < "$LOCK_FILE"
+
+          if [[ $MISSING -gt 0 ]]; then
+            echo ""
+            echo "ERROR: $MISSING locked key(s) have no matching override entry."
+            echo "Every key in $LOCK_FILE must have a corresponding entry in a .gschema.override file."
+            echo "See docs/skills/dconf-consistency.md for details."
+            exit 1
+          fi
+          echo "All locked keys have matching override entries."
+
       - name: Install pre-commit
         shell: bash
         run: pip install pre-commit
