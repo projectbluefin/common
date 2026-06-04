@@ -1,3 +1,8 @@
+---
+name: workflow-map
+description: "What each GitHub workflow in projectbluefin/common is for — validation, E2E, release, and factory-policy boundaries."
+---
+
 # Common workflow map
 
 Load this when you need to understand **what each GitHub workflow in `projectbluefin/common` is for** and which one to edit.

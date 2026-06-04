@@ -1,3 +1,8 @@
+---
+name: ci-tooling
+description: "Pre-commit floating-tag guard, skill-drift workflow, and Renovate OCI digest tracking for projectbluefin repos."
+---
+
 # CI tooling
 
 ## Floating-tag guard

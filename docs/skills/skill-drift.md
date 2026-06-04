@@ -1,3 +1,8 @@
+---
+name: skill-drift
+description: "How to satisfy the PR skill-drift check and what counts as a real skill update."
+---
+
 # Skill drift
 
 ## Scope

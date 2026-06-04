@@ -1,3 +1,8 @@
+---
+name: dconf-consistency
+description: "GSettings override and dconf lock file parity rules — must edit both files together for locked settings."
+---
+
 # dconf Consistency
 
 ## The two-file rule
