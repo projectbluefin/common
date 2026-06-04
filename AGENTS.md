@@ -113,6 +113,7 @@ Load the relevant skill doc before making changes in these areas.
 | Image refs / registry paths | [`docs/skills/image-registry.md`](docs/skills/image-registry.md) |
 | `ublue-rollback-helper` changes | [`docs/skills/rollback-helper.md`](docs/skills/rollback-helper.md) |
 | CI / GitHub Actions | [`docs/skills/ci-tooling.md`](docs/skills/ci-tooling.md) |
+| What a `common` workflow is for | [`docs/skills/workflow-map.md`](docs/skills/workflow-map.md) |
 | E2E test changes | [`docs/skills/e2e-ci.md`](docs/skills/e2e-ci.md) |
 | Governance / CODEOWNERS | [`docs/skills/governance.md`](docs/skills/governance.md) |
 | PR queue / merge decisions | [`docs/skills/queue-dashboard.md`](docs/skills/queue-dashboard.md) |

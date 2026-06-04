@@ -104,6 +104,9 @@ Users can install these bundles using the `ujust bbrew` command, which will prom
 
 Changes are validated in three layers:
 
+If you need the per-workflow purpose and ownership map, start with
+[`docs/skills/workflow-map.md`](docs/skills/workflow-map.md).
+
 **On every PR**:
 - `validate.yml` — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards
 - `build.yml` — builds the OCI image with `buildah`

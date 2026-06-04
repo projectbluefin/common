@@ -31,6 +31,9 @@ dakota      ─┘                  │
 - `iso`: installation media fed by validated image outputs
 - `actions`: shared GitHub Actions used across the org
 
+For the workflow-by-workflow purpose map inside `common`, see
+[`../skills/workflow-map.md`](../skills/workflow-map.md).
+
 ## Factory repos
 
 - `common` — https://github.com/projectbluefin/common
