@@ -17,6 +17,7 @@ Agent skill docs for the `projectbluefin/common` repo.
 | [image-registry.md](image-registry.md) | ublue-os vs projectbluefin org split for OCI publishing — production images still at `ghcr.io/ublue-os/` |
 | [rollback-helper.md](rollback-helper.md) | `ublue-rollback-helper` TUI state machine — three-way coordinated arrays, LTS/non-LTS branches, registry path derivation, testing guidance |
 | [skill-drift.md](skill-drift.md) | How to satisfy the PR skill-drift check and what counts as a real skill update |
+| [SKILL_DRIFT_CI.md](SKILL_DRIFT_CI.md) | Skill drift CI deep-dive — when it fires, how to fix it, code→skill mapping for this repo |
 | [acmm-audit-level1.md](acmm-audit-level1.md) | ACMM Level 1 audit (2026-06-04) — blindspots, feedback mechanisms, structural obstacles, Level 2 recommendations and issue batch |
 | [../factory/README.md](../factory/README.md) | Factory operating model entry point for org-level agent and maintainer workflow |
 
