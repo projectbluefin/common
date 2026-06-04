@@ -8,8 +8,12 @@ description: "system_files/shared/ is read-only (aurorafin-shared submodule) —
 ## What is read-only and why
 
 `system_files/shared/` is materialized from the `aurorafin-shared` git submodule
-(`ublue-os/aurorafin-shared`). The files appear in the working tree and look editable,
-but **direct edits here are rejected by CI** (`validate.yml` → "Check submodule drift").
+(`ublue-os/aurorafin-shared`). The submodule is not initialized in the working tree by
+default — `system_files/shared/` may not even exist as a local directory.
+
+**Critical:** the `Containerfile` copies from `aurorafin-shared/system_files/shared/`
+(the submodule), **not** from a local `system_files/shared/` directory. Any files written
+to the local `system_files/shared/` path are **silently ignored by the build**.
 
 `system_files/bluefin/` is the correct place for Bluefin-specific config. Edit here freely.
 
@@ -35,15 +39,20 @@ fail the CI drift check.
 `validate.yml` step "Check submodule drift (aurorafin-shared)" runs `git diff --exit-code -- aurorafin-shared`
 and prints a clear error if the submodule has been manually edited.
 
-## Scope of shared/ content
+## Specific files that have moved upstream (as of #395)
 
-`system_files/shared/` includes:
-- `usr/share/ublue-os/just/` — ujust recipes shared across Aurora, Bluefin, and Dakota
-- `usr/share/ublue-os/homebrew/` — Brewfiles
-- Shell config, udev rules, and system service units common to all variants
+These files **no longer exist** in this repo — they are owned by `ublue-os/aurorafin-shared`:
 
-Changes to any of these for **all** variants go upstream. Changes **only for Bluefin** go in
-`system_files/bluefin/`.
+| File | Path in aurorafin-shared |
+|---|---|
+| `apps.just` | `system_files/shared/usr/share/ublue-os/just/apps.just` |
+| `default.just` | `system_files/shared/usr/share/ublue-os/just/default.just` |
+| `ublue-bling` | `system_files/shared/usr/bin/ublue-bling` |
+
+Any PR that modifies these paths in this repo will hit a `modify/delete` conflict on rebase
+because main deleted them when #395 wired the submodule. Leave a comment telling the author
+to submit upstream. **Do not skip/drop these commits silently** — the fix still needs to land
+somewhere.
 
 ## Upstream policy — ublue-os repos
 

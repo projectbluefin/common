@@ -30,6 +30,8 @@ description: "Pre/post-merge E2E CI for common — composed PR gate, testing-str
 This is the pre-merge gate for common-layer changes, so regressions can fail before merge instead of waiting for post-merge E2E.
 In branch protection today it is still an advisory/non-required signal; `build.yml` remains the required merge check.
 
+> **⚠️ Current status (as of 2026-06-04):** The `e2e` job in `pr-e2e.yml` has `if: false` added — it is **intentionally disabled** while the GNOME smoke suite is known broken. The `compose` job still runs (builds/pushes the test image). Remove the `if: false` line when the suite is fixed.
+
 ## Promotion-candidate feedback loop
 
 **File:** `.github/workflows/promotion-candidate-e2e.yml`

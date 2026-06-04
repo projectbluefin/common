@@ -91,3 +91,13 @@ That applies to both:
 - `COPY --from=` image references
 
 If a pinned image is not represented in Renovate config, the digest will silently go stale.
+
+## Renovate versioned-binary tracking
+
+`.github/renovate.json5` also tracks versioned binaries downloaded in the `Containerfile` build stage via custom regex managers:
+
+| Binary | Source | Renovate pattern |
+|---|---|---|
+| `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
+
+When adding a new binary that is pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json5` so the version stays current automatically.

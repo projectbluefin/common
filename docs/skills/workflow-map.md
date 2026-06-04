@@ -15,6 +15,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 |---|---|---|
 | `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
 | `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
+| `docs-quality.yml` | PR gate: skill frontmatter presence and Trail of Bits CI integration | Keeping skill docs complete and well-formed |
 | `build.yml` | Builds and publishes the `common` OCI layer on merge | Changing how the shared layer is built or pushed |
 | `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer | Changing how PR-time downstream composition is tested |
 | `e2e.yml` | Post-merge common-suite validation against Bluefin stable, Bluefin LTS, and Dakota | Changing shipped-layer validation after merge |
