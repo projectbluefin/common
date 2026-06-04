@@ -55,7 +55,8 @@ Lifecycle: `filed → approved → queued → claimed → done`
 Operational notes:
 - Bonedigger manages this lifecycle in `bluefin`.
 - actionadon manages the equivalent flow in `dakota`/`knuckle`.
-- `common` and `bluefin-lts` do **not** yet have lifecycle automation; agents must avoid double-claiming and stale claims manually.
+- `common` now has bonedigger lifecycle automation; `bluefin-lts` still does not.
+- `bluefin-lts` still requires manual care to avoid double-claiming and stale claims until lifecycle automation lands there.
 - No PR activity in 7 days should return the claim (`/unclaim`) until org-wide automation exists.
 
 ## Agent rules of engagement
@@ -72,16 +73,18 @@ Operational notes:
 |---|---|---|---|---|---|---|
 | AGENTS.md | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | pre-commit | ✅ | ✅ | ✅ | ❌ | — | — |
-| skill-drift.yml | ❌ | ✅ | ✅ | ✅ | ✅ | — |
-| no-floating-action-tags hook | ❌ | ✅ | ✅ | ❌ | ✅ | — |
-| bonedigger lifecycle | ❌ | ✅ | ❌ | ❌ | — | — |
+| skill-drift.yml | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| no-floating-action-tags hook | ✅ | ✅ | ✅ | ❌ | ✅ | — |
+| bonedigger lifecycle | ✅ | ✅ | ❌ | ❌ | — | — |
 | Renovate config | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Post-merge e2e | ✅ | ✅ | ❌ | partial | — | — |
-| Installability gate | ❌ | ❌ | ❌ | ❌ | — | ❌ |
+| Installability gate | ⚠️ testing-stream smoke/common only | ❌ | ❌ | ❌ | — | ❌ |
 | CODEOWNERS active | ✅ | ✅ | ✅ | ✅ | — | — |
 | docs/skills/ populated | ✅ | ✅ | partial | ✅ | ✅ | ✅ |
 
-Read this table as an execution warning, not a scorecard: parity is incomplete, automation is fragmented, and agents must compensate for missing guardrails in `common` and `bluefin-lts`.
+Read this table as an execution warning, not a scorecard: parity is incomplete, automation is fragmented, and agents must still compensate for missing guardrails across the factory, especially in `bluefin-lts`.
+
+`common` also has a new **promotion-candidate smoke/common gate** in `.github/workflows/promotion-candidate-e2e.yml`. It is not a full installer gate, but it gives repo-local signal on `bluefin:testing` and `bluefin:lts-testing` before the downstream Tuesday promotions.
 
 ## Per-repo AGENTS.md entry points
 

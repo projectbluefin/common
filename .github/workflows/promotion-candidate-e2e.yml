@@ -1,0 +1,29 @@
+name: Promotion Candidate E2E
+
+# Common cannot add a full installer gate for downstream repos by itself, but it
+# can continuously exercise the exact testing-stream tags that feed promotion.
+on:
+  schedule:
+    - cron: "0 3 * * 2"
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Bluefin Testing
+            image: ghcr.io/projectbluefin/bluefin:testing
+            suites: smoke,common
+          - name: Bluefin LTS Testing
+            image: ghcr.io/projectbluefin/bluefin:lts-testing
+            suites: smoke,common
+    name: "E2E — ${{ matrix.name }}"
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/run-testsuite.yml
+    with:
+      image: ${{ matrix.image }}
+      suites: ${{ matrix.suites }}

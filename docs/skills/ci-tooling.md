@@ -2,7 +2,7 @@
 
 ## Floating-tag guard
 
-**Scope:** org-wide pre-commit hook in all `projectbluefin` repos (`common`, `bluefin`, `bluefin-lts`, `dakota`, `knuckle`, `actions`)
+**Scope:** shared pre-commit hook pattern for `projectbluefin` repos. It is currently live in `common`, `bluefin`, `bluefin-lts`, and `actions`; parity work remains in other repos.
 
 The `no-floating-action-tags` hook blocks GitHub Actions from being committed with floating refs in workflow files.
 
@@ -44,7 +44,7 @@ Use both. Renovate keeps pinned refs fresh; the hook enforces that refs are pinn
 
 **Workflow:** `.github/workflows/skill-drift.yml`
 
-`skill-drift.yml` is a PR gate used across projectbluefin repos. It calls the reusable workflow `projectbluefin/actions/.github/workflows/skill-drift-check.yml@v1` to flag when implementation changes land without corresponding skill-doc updates.
+`skill-drift.yml` is a PR gate used across projectbluefin repos. In `common`, it calls the reusable workflow `projectbluefin/actions/.github/workflows/skill-drift-check.yml` at a pinned commit SHA so the local floating-tag guard does not reject the workflow.
 
 ### Repo path mapping
 
@@ -61,6 +61,8 @@ Use both. Renovate keeps pinned refs fresh; the hook enforces that refs are pinn
 A PR that touches any repo's `code-paths` without also touching one of its `skill-paths` triggers the check.
 
 This is advisory, not a hard merge block, but it should be treated as a prompt to update documentation while the implementation context is still fresh.
+
+For `common`, the workflow now lives at `.github/workflows/skill-drift.yml` and uses the exact path mapping shown above.
 
 ## Renovate OCI digest tracking
 

@@ -19,13 +19,13 @@ The core mission — **Agentic OS Components / operating system factory** — mu
 
 These are the highest-probability regression sites where an AI without full codebase context will confidently generate broken changes.
 
-### BS-1.1 · `common` has no `skill-drift.yml` enforcement
+### BS-1.1 · `common` skill-drift enforcement was missing and is now live
 
 **Repo:** common  **Issue:** [#413](https://github.com/projectbluefin/common/issues/413)
 
-`bluefin`, `bluefin-lts`, and `dakota` all have `skill-drift.yml` wired. `common` — the **canonical skills hub** — does not. Implementation PRs can land here with no prompt to update docs, defeating the purpose of the hub. This is the highest-leverage gap in the entire factory.
+`bluefin`, `bluefin-lts`, and `dakota` already had `skill-drift.yml` wired. `common` — the **canonical skills hub** — was the holdout, so implementation PRs could land here with no prompt to update docs. That gap is now closed in `common`, but the lesson remains: the skills hub must enforce its own hygiene first.
 
-**Immediate fix:** Add `.github/workflows/skill-drift.yml` to `common` (and `knuckle`).
+**Immediate fix:** Land `.github/workflows/skill-drift.yml` in `common` (done) and continue parity work in the remaining repos.
 
 ---
 
@@ -109,23 +109,23 @@ Dakota uses **BuildStream 2 (BST)**. There are no `dnf5` commands, no Fedora RPM
 
 ---
 
-### BS-1.10 · Lifecycle bot fragmented across 5 repos
+### BS-1.10 · Lifecycle bot still fragmented across 5 repos
 
 **Repo:** org-wide  **Issue:** [#409](https://github.com/projectbluefin/common/issues/409)
 
-The `filed → approved → queued → claimed → done` state machine runs on three different engines across five repos: bonedigger (bluefin), actionadon (dakota, knuckle), and nothing (common, bluefin-lts). An AI claiming an issue in `common` or `bluefin-lts` will find no automation, no TTL, no heartbeat check — double-claiming and permanent orphans are possible. This is the single biggest operational risk to a multi-agent factory.
+The `filed → approved → queued → claimed → done` state machine still runs on three different engines across five repos: bonedigger (bluefin, common), actionadon (dakota, knuckle), and nothing (bluefin-lts). `common` is no longer missing lifecycle automation, but the factory is still fragmented and `bluefin-lts` remains uncovered. This is still one of the biggest operational risks to a multi-agent factory.
 
-**Immediate fix:** Add `bonedigger.yml` to `common` and `bluefin-lts`.
+**Immediate fix:** Add `bonedigger.yml` to `bluefin-lts`, then align the remaining engines on a single contract.
 
 ---
 
-### BS-1.11 · Floating GitHub Action tags — no pre-commit guard in `common`
+### BS-1.11 · Floating GitHub Action tags — parity still incomplete outside `common`
 
 **Repo:** common  **Issue:** [#477](https://github.com/projectbluefin/common/issues/477)
 
-`bluefin` has the `no-floating-action-tags` pre-commit hook. `common` does not. `actionlint` catches syntax errors but does not enforce SHA pinning. Any AI that adds a workflow step will default to the `@v3` / `@main` pattern shown in GitHub's own documentation.
+`common`, `bluefin`, `bluefin-lts`, and `actions` now have the `no-floating-action-tags` pre-commit hook. `actionlint` still only catches syntax errors, not SHA pinning, so repos without the hook remain vulnerable to `@v3` / `@main` regressions copied from GitHub examples.
 
-**Existing skill:** `docs/skills/ci-tooling.md` covers the hook pattern. The fix is mechanical: add the hook to `common/.pre-commit-config.yaml`.
+**Existing skill:** `docs/skills/ci-tooling.md` covers the hook pattern. The remaining work is parity in repos that still lack the hook.
 
 ---
 
@@ -153,10 +153,9 @@ These are the active feedback loops that currently arrest error cascades.
 ### Critical gaps
 
 - **No pre-merge composition test** for `common`: a `common` change lands before downstream bluefin/lts/dakota builds validate it (issue [#405](https://github.com/projectbluefin/common/issues/405)).
-- **No installability gate** before `testing → stable` promotion (issue [#423](https://github.com/projectbluefin/common/issues/423)).
+- **No full installability gate** before `testing → stable` promotion (issue [#423](https://github.com/projectbluefin/common/issues/423)). `common` now has scheduled `smoke,common` coverage on `bluefin:testing` and `bluefin:lts-testing`, but there is still no installer/bootc-install gate.
 - **No bonedigger signal** wired into promotion decisions (issue [#424](https://github.com/projectbluefin/common/issues/424)).
-- **`skill-drift.yml` missing from `common`** — the org brain has no enforcement that docs stay current (issue [#413](https://github.com/projectbluefin/common/issues/413)).
-- **`bluefin-lts` has no post-merge e2e** (issue [#425](https://github.com/projectbluefin/common/issues/425)).
+- **`bluefin-lts` still has no repo-local post-merge e2e** (issue [#425](https://github.com/projectbluefin/common/issues/425)). `common` now adds a common-side weekly smoke/common check on `:lts-testing`, but downstream parity is still incomplete.
 
 ---
 
@@ -238,7 +237,7 @@ Ordered by blast radius × probability of regression.
 
 **Target:** `common`, `bluefin-lts`  **Issue:** [#409](https://github.com/projectbluefin/common/issues/409)
 
-Add `bonedigger.yml` to `common` and `bluefin-lts`. Until this lands, an AI agent claiming an issue in either repo has no automated state management — double-claims and orphans are guaranteed at scale.
+`common` now has `bonedigger.yml`; `bluefin-lts` still does not. Finish the parity work there, then align the remaining lifecycle engines on one contract so agents do not have to memorize repo-specific claim behavior.
 
 ---
 
@@ -246,9 +245,9 @@ Add `bonedigger.yml` to `common` and `bluefin-lts`. Until this lands, an AI agen
 
 **Target:** `common`  **Issue:** [#413](https://github.com/projectbluefin/common/issues/413)
 
-`common` is the canonical skills hub. It must enforce its own documentation hygiene. Without `skill-drift.yml`, implementation PRs routinely land without updating the skills they affect.
+`common` is the canonical skills hub. It now enforces its own documentation hygiene with `skill-drift.yml`, so the next step is keeping the path mapping and adjacent skill docs current whenever workflow coverage changes.
 
-**New skill file needed:** `docs/skills/skill-drift.md` (how to satisfy the check; what counts as a skill update).
+**Supporting skill file:** `docs/skills/skill-drift.md` explains how to satisfy the check and what counts as a real skill update.
 
 ---
 
@@ -256,14 +255,7 @@ Add `bonedigger.yml` to `common` and `bluefin-lts`. Until this lands, an AI agen
 
 **Target:** `common`  **Issue:** [#477](https://github.com/projectbluefin/common/issues/477)
 
-Add to `.pre-commit-config.yaml`:
-```yaml
-- repo: https://github.com/projectbluefin/common
-  rev: <sha>
-  hooks:
-    - id: no-floating-action-tags
-```
-Or add the local pygrep hook directly (see `ci-tooling.md`).
+The local `pygrep`-based `no-floating-action-tags` hook is now present in `common/.pre-commit-config.yaml`. Keep the supporting docs and parity matrix accurate, and carry the same guard into any remaining repo that still lacks it.
 
 ---
 
@@ -356,12 +348,12 @@ Create `docs/factory/README.md` as the factory entry point. Every agent entering
 |---|---|---|---|---|---|---|
 | AGENTS.md | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | pre-commit | ✅ | ✅ | ✅ | ❌ | — | — |
-| skill-drift.yml | ❌ | ✅ | ✅ | ✅ | ✅ | — |
-| no-floating-action-tags hook | ❌ | ✅ | ✅ | ❌ | ✅ | — |
-| bonedigger lifecycle | ❌ | ✅ | ❌ | ❌ | — | — |
+| skill-drift.yml | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| no-floating-action-tags hook | ✅ | ✅ | ✅ | ❌ | ✅ | — |
+| bonedigger lifecycle | ✅ | ✅ | ❌ | ❌ | — | — |
 | Renovate config | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Post-merge e2e | ✅ | ✅ | ❌ | partial | — | — |
-| Installability gate | ❌ | ❌ | ❌ | ❌ | — | ❌ |
+| Installability gate | ⚠️ testing-stream smoke/common only | ❌ | ❌ | ❌ | — | ❌ |
 | CODEOWNERS active | ✅ | ✅ | ✅ | ✅ | — | — |
 | docs/skills/ populated | ✅ | ✅ | partial | ✅ | ✅ | ✅ |
 
@@ -373,9 +365,7 @@ Work these in order. Each builds on the one before.
 
 | Priority | Issue | Repo | Type | Unblocks |
 |---|---|---|---|---|
-| P0 | [#413](https://github.com/projectbluefin/common/issues/413) | common | skill-drift.yml | org brain hygiene |
 | P0 | [#409](https://github.com/projectbluefin/common/issues/409) | org-wide | lifecycle bot | all agent operations |
-| P1 | [#477](https://github.com/projectbluefin/common/issues/477) | common | no-floating-action-tags | CI hygiene |
 | P1 | [#468](https://github.com/projectbluefin/common/issues/468) | common | image-registry guard | prevents org-migration breaks |
 | P1 | [#476](https://github.com/projectbluefin/common/issues/476) | bluefin | pre-push hook | remote trap |
 | P1 | [#471](https://github.com/projectbluefin/common/issues/471) | bluefin | copr-security skill | security invariant |

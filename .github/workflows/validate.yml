@@ -59,17 +59,43 @@ jobs:
         shell: bash
         run: |
           echo "Checking for disallowed ublue-os→projectbluefin OCI image ref changes..."
-          # Production images are still published at ghcr.io/ublue-os/. Do not change these refs.
-          if grep -rE 'ghcr\.io/projectbluefin/(bluefin|aurora|bazzite)' \
-              .github/workflows/ \
-              system_files/bluefin/usr/bin/ublue-rollback-helper 2>/dev/null; then
-            echo ""
-            echo "ERROR: Found projectbluefin OCI image refs. Production images are published"
-            echo "at ghcr.io/ublue-os/, not ghcr.io/projectbluefin/. Do not change these refs"
-            echo "until the org migration for OCI image publishing is complete."
-            echo "See docs/skills/image-registry.md for details."
-            exit 1
-          fi
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          allowed_refs = {
+              Path(".github/workflows/promotion-candidate-e2e.yml"): {
+                  "ghcr.io/projectbluefin/bluefin:testing",
+                  "ghcr.io/projectbluefin/bluefin:lts-testing",
+              }
+          }
+          pattern = re.compile(r"ghcr\.io/projectbluefin/(bluefin|aurora|bazzite)(?::[A-Za-z0-9._-]+)?")
+          candidates = list(Path(".github/workflows").rglob("*.yml"))
+          candidates += list(Path(".github/workflows").rglob("*.yaml"))
+          candidates.append(Path("system_files/bluefin/usr/bin/ublue-rollback-helper"))
+
+          violations = []
+          for path in candidates:
+              for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+                  for match in pattern.finditer(line):
+                      ref = match.group(0)
+                      if ref in allowed_refs.get(path, set()):
+                          continue
+                      violations.append(f"{path}:{lineno}:{ref}")
+
+          if violations:
+              print("")
+              print("ERROR: Found disallowed projectbluefin OCI image refs:")
+              for violation in violations:
+                  print(f"  - {violation}")
+              print("")
+              print("Production images are still published at ghcr.io/ublue-os/.")
+              print("Only the promotion-candidate testing tags are allowed under")
+              print("ghcr.io/projectbluefin/bluefin in .github/workflows/promotion-candidate-e2e.yml.")
+              print("See docs/skills/image-registry.md for details.")
+              sys.exit(1)
+          PY
           echo "No disallowed image ref changes found."
 
       - name: Validate dconf lock/override parity

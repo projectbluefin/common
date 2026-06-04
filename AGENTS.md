@@ -64,9 +64,14 @@ system_files/
   shared/                  # Shared config staged from aurorafin-shared (not edited directly here)
   bluefin/                 # Local editable config for Bluefin-specific variants only
 .github/workflows/
+  bonedigger.yml           # Issue lifecycle automation for common
   build.yml                # Build + push on merge to main
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
+  pr-e2e.yml               # PR-time composed-image common-suite gate
+  promotion-candidate-e2e.yml # Weekly smoke/common checks for testing promotion candidates
   release.yml              # Monthly versioned OCI release (1st of month, also workflow_dispatch)
+  run-testsuite.yml        # Local wrapper that centralizes the testsuite SHA pin
+  skill-drift.yml          # PR advisory gate for implementation/doc parity
   validate.yml             # PR gate: just check, pre-commit, shellcheck, submodule drift
   validate-brewfiles.yaml  # PR gate: Brewfile validation
 ```
