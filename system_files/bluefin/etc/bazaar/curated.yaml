@@ -228,6 +228,7 @@ rows:
             - com.microsoft.Edge
             - com.opera.Opera
             - com.vivaldi.Vivaldi
+            - org.ecosia.Browser
 
   - sections:
       - expand-horizontally: true
