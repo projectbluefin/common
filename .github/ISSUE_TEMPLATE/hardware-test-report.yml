@@ -1,0 +1,132 @@
+name: "Hardware test report"
+description: "Record a real-hardware validation run for a Bluefin candidate image."
+labels: ["hardware/test-report", "source:community"]
+title: "hardware test report: <device> on <digest-or-tag>"
+type: "QA"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Real hardware is part of the factory loop
+
+        VM gates catch a lot, but they do not catch suspend, docks, firmware, hotplug, or ACPI edge cases.
+        Use this form to feed real-device signal into promotion decisions.
+
+  - type: input
+    id: image
+    attributes:
+      label: "Image digest or tag tested"
+      description: "Paste the exact candidate digest or tag you booted."
+      placeholder: "ghcr.io/projectbluefin/common@sha256:... or bluefin:testing"
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: "Hardware model"
+      description: "Include make, model, and generation/revision if known."
+      placeholder: "Framework Laptop 13, AMD Ryzen AI 300 series"
+    validations:
+      required: true
+
+  - type: input
+    id: test-date
+    attributes:
+      label: "Test date"
+      description: "Use YYYY-MM-DD so reports sort cleanly."
+      placeholder: "2026-06-04"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity"
+      description: "How should this report affect promotion?"
+      options:
+        - "all-clear"
+        - "degraded"
+        - "blocker"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Hardware-only categories
+
+        Mark each category as pass, fail, or untested for this specific image.
+
+  - type: dropdown
+    id: suspend-resume
+    attributes:
+      label: "1) Suspend / resume"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: usb-c-docks
+    attributes:
+      label: "2) USB-C / docks / alt-mode"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: gpu-hotplug
+    attributes:
+      label: "3) GPU power management / display hotplug"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: wireless-firmware
+    attributes:
+      label: "4) Wi-Fi / Bluetooth / firmware"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tpm-secureboot
+    attributes:
+      label: "5) TPM / Secure Boot / disk unlock edge cases"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: av-stack
+    attributes:
+      label: "6) Audio / webcam / microphone"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: battery-thermals
+    attributes:
+      label: "7) Battery / thermals / ACPI platform behavior"
+      options: ["pass", "fail", "untested"]
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "pstore / kdump evidence"
+      description: "Paste logs, paste a gist link, or say none collected. Include crash signatures if present."
+      placeholder: "pstore excerpt, kdump backtrace, or link to captured logs"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Notes"
+      description: "Anything maintainers should know: dock model, monitor chain, firmware rev, repro rate, regressions, or known-good baseline."
+    validations:
+      required: false
