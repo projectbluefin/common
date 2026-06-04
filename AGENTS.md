@@ -35,7 +35,13 @@ testsuite gates `:latest` promotion in all three image repos.
 | `claimed` | Comment `/claim` — assigned, removed from pool |
 | `done` | Fix shipped + 3× `ujust verify` or maintainer override |
 
-No PR activity in 7 days: return the claim manually (`/unclaim`) — automation pending (see issue #432).
+**Automatic reclaim policy:** No activity on a claimed issue in 7 days automatically returns it to the queue. The `.github/workflows/stale-claims.yml` workflow runs daily at 9am UTC and:
+- Identifies issues with the `queue/claimed` label that haven't been updated in 7+ days
+- Removes the `queue/claimed` label
+- Adds the `queue/agent-ready` label
+- Posts a comment notifying the agent
+
+This ensures claimed work doesn't block others — if you need more time, just comment on the issue to reset the 7-day timer.
 
 ### PR comment policy
 

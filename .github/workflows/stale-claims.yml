@@ -1,0 +1,81 @@
+name: Stale Claim Reclaim
+
+on:
+  schedule:
+    # Run daily at 9am UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  reclaim-stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Find and reclaim stale claimed issues
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+            // Get all issues with queue/claimed label
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'queue/claimed',
+              state: 'open',
+              per_page: 100
+            });
+
+            console.log(`Found ${issues.data.length} claimed issues to check`);
+
+            for (const issue of issues.data) {
+              const issueNumber = issue.number;
+              const updatedAt = new Date(issue.updated_at);
+
+              console.log(`Checking issue #${issueNumber}: last activity ${updatedAt}`);
+
+              // Check if issue has been inactive for 7+ days
+              if (updatedAt < sevenDaysAgo) {
+                console.log(`Issue #${issueNumber} is stale (inactive since ${updatedAt})`);
+
+                try {
+                  // Remove queue/claimed label
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: 'queue/claimed'
+                  });
+                  console.log(`Removed queue/claimed label from #${issueNumber}`);
+
+                  // Add queue/agent-ready label
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    labels: ['queue/agent-ready']
+                  });
+                  console.log(`Added queue/agent-ready label to #${issueNumber}`);
+
+                  // Post comment about the reclaim
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    body: '@agent Returning to queue due to 7-day inactivity per [AGENTS.md](https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/blob/main/AGENTS.md)'
+                  });
+                  console.log(`Posted reclaim comment on #${issueNumber}`);
+
+                } catch (error) {
+                  console.error(`Error processing issue #${issueNumber}: ${error.message}`);
+                }
+              } else {
+                console.log(`Issue #${issueNumber} is still active (last activity within 7 days)`);
+              }
+            }
