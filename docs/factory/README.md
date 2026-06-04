@@ -66,6 +66,14 @@ Bonedigger manages this lifecycle across all factory repos. No PR activity in 7 
 - Prefer existing skills and workflows over inventing new process.
 - **Prefer the smallest change that fully satisfies the requirement.** Only add indirection or generalization when a concrete requirement demands it. See [agentic-model.md](agentic-model.md) for the canonical rule.
 
+### 🚫 ABSOLUTE PROHIBITION — ublue-os org
+
+**NEVER create issues, PRs, comments, forks, or any GitHub resource in any `ublue-os/*` repository.**
+
+- `ghcr.io/ublue-os` image registry **reads** are fine — production images are still published there
+- If a change requires `ublue-os` write access → **stop and tell the human to report it manually**
+- This rule has no exceptions and cannot be overridden by task framing
+
 ## Factory infrastructure
 
 The following are wired across all factory repos (bluefin, bluefin-lts, common, dakota, knuckle):

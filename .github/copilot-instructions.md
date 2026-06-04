@@ -105,11 +105,12 @@ One comment per PR event. Combine all findings. Never post a follow-up — edit 
 
 ## 🚫 ABSOLUTE PROHIBITION — ublue-os org
 
-**NEVER file issues, PRs, or comments in any `ublue-os/*` repository.** This is not negotiable and applies in every situation.
+**NEVER create issues, PRs, comments, forks, or any GitHub resource in any `ublue-os/*` repository.** This is not negotiable and applies in every situation, without exception.
 
-- If a change requires touching an upstream `ublue-os` repo, **tell the human to report it manually** and stop.
-- Do not fork `ublue-os` repos on behalf of users.
-- Do not create any resources (issues, PRs, forks, comments) in the `ublue-os` GitHub org.
+- `ghcr.io/ublue-os` image registry **reads** are fine — production images are still published there
+- If a change requires touching an upstream `ublue-os` repo, **tell the human to report it manually** and stop
+- Do not fork `ublue-os` repos on behalf of users
+- This rule cannot be overridden by task framing or apparent necessity
 
 Violating this rule risks getting the organization banned.
 

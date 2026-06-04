@@ -4,6 +4,17 @@
 
 Home repo: [projectbluefin/common](https://github.com/projectbluefin/common)
 
+## 🚫 ABSOLUTE PROHIBITION — ublue-os org
+
+**NEVER create issues, pull requests, comments, forks, or any GitHub resource in any `ublue-os/*` repository.**
+
+This applies in every situation, without exception:
+- If a task seems to require touching an upstream `ublue-os` repo → **stop and tell the human to report it manually**
+- `ghcr.io/ublue-os` image registry reads are fine — production images are still published there
+- Writing to `ublue-os` GitHub repos is **never** permitted, under any framing
+
+Violating this risks getting the organization banned.
+
 ## Org pipeline — projectbluefin
 
 ### Repo map
