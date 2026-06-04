@@ -318,4 +318,3 @@ Run [#26690064969](https://github.com/projectbluefin/knuckle/actions/runs/266900
 (2026-05-30): all 4 passes green on Flatcar 4593.2.1.
 - Cold run: ~8 min. Cache hit run: ~3 min.
 - Flatcar image cached as `flatcar-qemu-stable-amd64-<VERSION>` (~480 MB).
-
