@@ -66,7 +66,7 @@ system_files/
 .github/workflows/
   build.yml                # Build + push on merge to main
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
-  validate-just.yml        # PR gate: just check
+  validate.yml             # PR gate: just check, pre-commit, shellcheck, submodule drift
   validate-brewfiles.yaml  # PR gate: Brewfile validation
 ```
 

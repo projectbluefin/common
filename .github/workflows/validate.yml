@@ -1,0 +1,72 @@
+name: Validate PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - LICENSE
+      - .gitignore
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          submodules: recursive
+
+      - name: Check submodule drift (aurorafin-shared)
+        shell: bash
+        run: |
+          echo "Verifying system_files/shared/ has not been manually edited..."
+          git submodule update --init aurorafin-shared
+          if ! git diff --exit-code -- aurorafin-shared; then
+            echo ""
+            echo "ERROR: aurorafin-shared submodule has been manually edited."
+            echo "Changes to system_files/shared/ must go upstream via ublue-os/aurorafin-shared."
+            echo "Do not edit system_files/shared/ directly in this repo."
+            exit 1
+          fi
+          echo "Submodule is clean — no manual drift detected."
+
+      - name: Install just
+        uses: taiki-e/install-action@427262525d42141333caf43b602cf574dd6a6381 # just
+        with:
+          tool: just
+
+      - name: Check Just syntax
+        shell: bash
+        run: just check
+
+      - name: Install shellcheck
+        shell: bash
+        run: sudo apt-get update -y && sudo apt-get install -y shellcheck
+
+      - name: Shellcheck helper scripts
+        shell: bash
+        run: shellcheck -e SC2207 system_files/bluefin/usr/bin/ublue-rollback-helper
+
+      - name: Install pre-commit
+        shell: bash
+        run: pip install pre-commit
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-${{ runner.arch }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pre-commit-
+
+      - name: Run pre-commit
+        shell: bash
+        run: pre-commit run --all-files
