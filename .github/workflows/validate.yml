@@ -71,7 +71,11 @@ jobs:
               }
           }
           pattern = re.compile(r"ghcr\.io/projectbluefin/(bluefin|aurora|bazzite)(?::[A-Za-z0-9._-]+)?")
-          candidates = list(Path(".github/workflows").rglob("*.yml"))
+          candidates = [
+              path
+              for path in Path(".github/workflows").rglob("*.yml")
+              if path.name != "validate.yml"
+          ]
           candidates += list(Path(".github/workflows").rglob("*.yaml"))
           candidates.append(Path("system_files/bluefin/usr/bin/ublue-rollback-helper"))
 
