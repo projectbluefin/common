@@ -39,7 +39,7 @@ jobs:
             exit 0
           fi
 
-          for repo in bluefin bluefin-lts dakota; do
+          for repo in bluefin bluefin-lts dakota knuckle; do
             echo "--- Syncing $repo ---"
 
             # Fetch current file
@@ -83,7 +83,7 @@ jobs:
 
           echo "Desired triagers: $(echo "$DESIRED" | tr '\n' ' ')"
 
-          for repo in common bluefin bluefin-lts dakota; do
+          for repo in common bluefin bluefin-lts dakota knuckle; do
             echo "--- Reconciling permissions for $repo ---"
 
             CURRENT=$(gh api "repos/projectbluefin/$repo/collaborators?affiliation=direct" \

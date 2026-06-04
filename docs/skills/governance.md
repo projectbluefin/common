@@ -30,7 +30,7 @@ docs/**  @handle1 @handle2
 
 **To add/remove a triager:** edit the two active lines inside the sentinel block in
 `common/.github/CODEOWNERS` → commit to `main` → the sync workflow pushes the change to
-`bluefin`, `bluefin-lts`, and `dakota` automatically.
+`bluefin`, `bluefin-lts`, `dakota`, and `knuckle` automatically.
 
 ### Per-repo ownership (maintained in each repo separately)
 
@@ -40,13 +40,14 @@ docs/**  @handle1 @handle2
 | `bluefin` | `@castrojo @p5 @m2Giles @tulilirockz` | `.github/workflows/`, `Justfile`, `build_files/` |
 | `bluefin-lts` | same as bluefin | same + `image-versions.yml` exempt (Renovate) |
 | `dakota` | same as bluefin | same + `elements/` |
+| `knuckle` | same as bluefin | same as bluefin |
 
 ## Sync workflow
 
 **File:** `.github/workflows/sync-codeowners.yml` in `projectbluefin/common`
 
 - Triggers on `push` to `main` when `.github/CODEOWNERS` changes, plus `workflow_dispatch`
-- Extracts the `BEGIN/END TRIAGERS` block and replaces it in `bluefin`, `bluefin-lts`, `dakota`
+- Extracts the `BEGIN/END TRIAGERS` block and replaces it in `bluefin`, `bluefin-lts`, `dakota`, `knuckle`
 - Skips repos where the block is already identical (no noise commits)
 - Uses **mergeraptor** (`MERGERAPTOR_APP_ID` / `MERGERAPTOR_PRIVATE_KEY` org secrets) for cross-repo writes
 
