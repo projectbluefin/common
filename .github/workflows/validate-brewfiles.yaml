@@ -26,15 +26,15 @@ jobs:
 
           while IFS= read -r -d '' brewfile ; do
             echo "::group:: ===$(basename $brewfile)==="
-            
+
             grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
             echo "Syncing taps..."
             brew bundle --file=./taps.Brewfile > /dev/null 2>&1 || true
-            
+
             # Extract combined list for parallel check
             FORMULAS=$(grep -E '^\s*brew\s+["'\'']' "$brewfile" | sed -E 's/^\s*brew\s+["'\'']([^"'\'']+)["'\''].*/formula \1/' || true)
             CASKS=$(grep -E '^\s*cask\s+["'\'']' "$brewfile" | sed -E 's/^\s*cask\s+["'\'']([^"'\'']+)["'\''].*/cask \1/' || true)
-            
+
             ENTRIES=$(printf "%s\n%s" "$FORMULAS" "$CASKS" | grep -v '^\s*$' || true)
 
             if [ -n "$ENTRIES" ]; then
@@ -51,7 +51,7 @@ jobs:
             else
               echo "No formulas or casks found."
             fi
-            
+
             echo "::endgroup::"
           done < <(find "system_files/shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0)
 
