@@ -61,6 +61,7 @@ bbrew:
     fi
     echo "Note: Some of these take a while to load, we'll keep working on it."
     bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
+    [[ -t 0 ]] && ujust --choose || true
 
 cncf:
     #!/usr/bin/env bash
@@ -72,3 +73,4 @@ cncf:
         fi
     fi
     bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+    [[ -t 0 ]] && ujust --choose || true
