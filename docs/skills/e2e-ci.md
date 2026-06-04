@@ -30,3 +30,8 @@ This is the pre-merge gate for common-layer changes, so regressions can fail bef
 - `testsuite#210` tracks the `bash -lc` PATH mismatch affecting `zsh`/`fish` checks in the CI user environment
 - GNOME Software scenarios are intentionally `@quarantine` after `testsuite#258`; they should not be treated as active software-store coverage
 - Bazaar coverage is currently a `@pending` placeholder tied to the same gap
+- `ujust report --confirm` scenario (`system_health.feature`) is `@quarantine` — the `--confirm` mode is not implemented in any current image variant; the step skip-detection used the wrong error string. See testsuite PR #259. Re-enable when `report --confirm` lands in the image Justfile.
+
+## Testsuite SHA pin
+
+`run-testsuite.yml` in `projectbluefin/bluefin` pins the testsuite SHA. When the pin lags behind `main`, quarantined scenarios may run and cause spurious failures. Renovate manages the pin automatically once it's set to a SHA (not `@main`). After any testsuite fix merges, approve the Renovate bump PR promptly.
