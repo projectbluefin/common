@@ -103,6 +103,25 @@ When given a task, read the intent literally:
 
 One comment per PR event. Combine all findings. Never post a follow-up — edit the existing comment. Never duplicate GitHub UI state (approvals, CI status). When in doubt, post nothing.
 
-## Downstream impact
+## 🚫 ABSOLUTE PROHIBITION — ublue-os org
 
-Changes to `system_files/shared/` affect **bluefin, bluefin-lts, Aurora, and dakota** simultaneously. A broken shared change will fail all downstream builds at next compose. Test locally with `just build` before pushing anything to shared.
+**NEVER file issues, PRs, or comments in any `ublue-os/*` repository.** This is not negotiable and applies in every situation.
+
+- If a change requires touching an upstream `ublue-os` repo, **tell the human to report it manually** and stop.
+- Do not fork `ublue-os` repos on behalf of users.
+- Do not create any resources (issues, PRs, forks, comments) in the `ublue-os` GitHub org.
+
+Violating this rule risks getting the organization banned.
+
+## system_files layout
+
+`system_files/shared/` is **directly editable** in this repo — there is no aurorafin-shared submodule anymore. Edit shared config here directly.
+
+```
+system_files/
+  shared/   — editable here, affects ALL variants (bluefin, lts, aurora, dakota)
+  bluefin/  — editable here, Bluefin-specific only
+  nvidia/   — editable here, NVIDIA overlay
+bluefin-branding/  — submodule (projectbluefin/branding) — do not edit directly
+```
+
