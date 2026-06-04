@@ -29,6 +29,7 @@ Project Bluefin has fragmented lifecycle automation across multiple implementati
 
 - **Repos Currently Using**:
   - bluefin-lts (via bonedigger.yml - from #412)
+  - common (via bonedigger.yml - wired in main)
   - dakota (via bonedigger.yml - from #412)
   - knuckle (via bonedigger.yml - from #412)
 
@@ -65,7 +66,6 @@ Project Bluefin has fragmented lifecycle automation across multiple implementati
 - **Repos without automation**:
   - bonedigger (the repo providing the automation, doesn't use it itself)
   - bootc-installer
-  - common
   - dakota-iso
   - documentation
   - dot-project
@@ -169,6 +169,7 @@ jobs:
 - [x] #412: Add bonedigger.yml to dakota
 - [x] #412: Add bonedigger.yml to knuckle
 - [x] #413: Add skill-drift.yml to knuckle
+- [x] Add bonedigger.yml to common
 - [ ] Remove actionadon.yml from dakota (after verification)
 - [ ] Remove duplicate actionadon.yml from knuckle (after verification)
 - [ ] Document consolidation strategy for org
