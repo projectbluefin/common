@@ -1,3 +1,8 @@
+---
+name: acmm-audit-level1
+description: "ACMM Level 1 audit (2026-06-04) — blindspots, feedback mechanisms, structural obstacles, and Level 2 recommendations."
+---
+
 # ACMM Level 1 Audit — Project Bluefin Factory
 
 **Date:** 2026-06-04

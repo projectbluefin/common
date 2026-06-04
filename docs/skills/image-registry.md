@@ -1,3 +1,8 @@
+---
+name: image-registry
+description: "ublue-os vs projectbluefin OCI publishing split — production images still at ghcr.io/ublue-os, not projectbluefin."
+---
+
 # Image Registry — ublue-os vs projectbluefin
 
 ## Critical: the org migration is incomplete for OCI images

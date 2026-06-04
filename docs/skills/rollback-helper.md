@@ -1,3 +1,8 @@
+---
+name: rollback-helper
+description: "ublue-rollback-helper TUI state machine — three-way coordinated arrays, LTS branches, and registry path derivation."
+---
+
 # rollback-helper
 
 `system_files/bluefin/usr/bin/ublue-rollback-helper` is an interactive TUI that lets users switch Bluefin variants and channels. It contains a **three-way coordinated state machine** that is easy to break by editing only one of the three moving parts.

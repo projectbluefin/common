@@ -1,3 +1,8 @@
+---
+name: submodule-boundary
+description: "system_files/shared/ is read-only (aurorafin-shared submodule) — editable scope is system_files/bluefin/ only."
+---
+
 # Submodule Boundary
 
 ## What is read-only and why

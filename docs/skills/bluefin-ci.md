@@ -343,8 +343,8 @@ Individual repos do NOT need their own `renovate.yml`. Renovate is managed centr
 | `bazzite-gnome:latest` | bazzite |
 | `gnomeos-latest` | vanilla-gnome, software |
 
-**`software` suite is gnomeos-only** — Bluefin ships Warehouse, not GNOME Software.  
-**`bazzite-gnome` runs bazzite suite only** — not vanilla-gnome (bazzite makes shell modifications).  
+**`software` suite is gnomeos-only** — Bluefin ships Warehouse, not GNOME Software.
+**`bazzite-gnome` runs bazzite suite only** — not vanilla-gnome (bazzite makes shell modifications).
 **Use `bluefin-nvidia-open`**, not `bluefin-nvidia:latest` — nvidia-open is built daily; the non-open variant was last published Oct 2025 with bootc too old for `--bootloader`.
 
 **All learnings documented in `projectbluefin/testsuite` `docs/skills/ops.md`, `suite-map.md`, `contributing.md`, `e2e-workflow.md`, and `RUNBOOK.md`.**

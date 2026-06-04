@@ -4,6 +4,7 @@ Agent skill docs for the `projectbluefin/common` repo.
 
 | File | What it covers |
 |---|---|
+| [bluefin-ci.md](bluefin-ci.md) | Bluefin CI/CD troubleshooting — workflow failures, build status, common issues |
 | [governance.md](governance.md) | Triagers role, CODEOWNERS sentinel pattern, sync workflow, branch protection matrix |
 | [hive-review.md](hive-review.md) | `~/src/hive-status` — session start, P0/P1 triage, hive label taxonomy |
 | [queue-dashboard.md](queue-dashboard.md) | queue.projectbluefin.io — PR tiers, merge ruleset (2 approvals), refresh cadence |
@@ -18,3 +19,7 @@ Agent skill docs for the `projectbluefin/common` repo.
 | [skill-drift.md](skill-drift.md) | How to satisfy the PR skill-drift check and what counts as a real skill update |
 | [acmm-audit-level1.md](acmm-audit-level1.md) | ACMM Level 1 audit (2026-06-04) — blindspots, feedback mechanisms, structural obstacles, Level 2 recommendations and issue batch |
 | [../factory/README.md](../factory/README.md) | Factory operating model entry point for org-level agent and maintainer workflow |
+
+## Quality standard
+
+All files in this directory are Claude Code skills. Each file must have YAML frontmatter with `name` and `description`. CI enforces this via `.github/workflows/docs-quality.yml`.
