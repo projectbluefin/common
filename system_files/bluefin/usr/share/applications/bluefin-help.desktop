@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Bluefin Help
+Comment=Open GNOME help pages in the browser
+Exec=xdg-open https://help.gnome.org/
+Icon=help-browser
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/help;x-scheme-handler/ghelp;
+NoDisplay=true
