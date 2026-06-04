@@ -39,7 +39,7 @@ jobs:
           echo "Submodule is clean — no manual drift detected."
 
       - name: Install just
-        uses: taiki-e/install-action@427262525d42141333caf43b602cf574dd6a6381 # just
+        uses: taiki-e/install-action@3bcad52036b48c4f9e2249c2ebd39a428ef3d98f # just
         with:
           tool: just
 
