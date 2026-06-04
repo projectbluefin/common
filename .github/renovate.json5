@@ -8,6 +8,10 @@
     "enabled": true
   },
 
+  "dockerfile": {
+    "managerFilePatterns": ["^Containerfile$"]
+  },
+
   "customManagers": [
     {
       "customType": "regex",
@@ -17,6 +21,15 @@
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "ublue-os/artwork"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["^Containerfile$"],
+      "matchStrings": [
+        "COPY --from=(?<depName>ghcr\\.io/ublue-os/bluefin-wallpapers-gnome):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ]
 }
