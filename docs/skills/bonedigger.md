@@ -1,9 +1,9 @@
 ---
 name: bonedigger
-description: "bonedigger integration guide — issue lifecycle automation, template sync, current status per repo, and known issues."
+description: "bonedigger integration guide — ujust report filing, priority escalation from confirm counts, and current status per repo."
 ---
 
-# bonedigger — Crash Detection & Issue Lifecycle
+# bonedigger — ujust Report Filing & Priority Escalation
 
 **Repo:** https://github.com/projectbluefin/bonedigger
 
@@ -11,60 +11,27 @@ description: "bonedigger integration guide — issue lifecycle automation, templ
 
 bonedigger has two functions:
 
-1. **Issue lifecycle automation** — manages the `filed → approved → queued → claimed → done` pipeline via `lifecycle.yml`
-2. **Diagnostic template sync** — syncs issue templates from `bonedigger/templates/` to all factory repos via `sync-templates.yml`
+1. **ujust report detection** — when an issue is filed via `ujust report` on a live system, bonedigger detects the diagnostic signature and sets `source:ujust-report`
+2. **Priority auto-escalation** — tracks `ujust confirm` counts and escalates automatically:
+   - 3+ confirms → adds `priority/p1`
+   - 5+ confirms → adds `priority/p0`
 
-Crash/panic detection (planned): identifies kernel panics from pstore/kdump artifacts, classifies boot events into 4 buckets, scans for panic keywords in logs. Tracked in [bonedigger#11](https://github.com/projectbluefin/bonedigger/issues/11) and [bonedigger#12](https://github.com/projectbluefin/bonedigger/issues/12).
+## What bonedigger does NOT do
 
-## Integration pattern
+Issue lifecycle management (slash commands, pipeline widget, label transitions, stale sweep) moved to `projectbluefin/common/.github/workflows/lifecycle.yml` as of 2026-06-05.
 
-Each factory repo should have `.github/workflows/bonedigger.yml`:
+See [`label-workflow.md`](./label-workflow.md) for the full lifecycle reference.
 
-```yaml
-name: bonedigger
-on:
-  issues:
-    types: [opened, labeled, closed]
-  issue_comment:
-    types: [created]
-  schedule:
-    - cron: '0 9 * * *'
-permissions:
-  issues: write
-  contents: read
-jobs:
-  bonedigger:
-    uses: projectbluefin/bonedigger/.github/workflows/lifecycle.yml@<PINNED-SHA>
-    with:
-      brand_name: "Bluefin"     # or repo name
-      brand_emoji: "🦖"
-    secrets: inherit
-```
+## Integration status
 
-Always pin to a SHA, not a branch ref.
+All 6 factory repos now call `projectbluefin/common/.github/workflows/lifecycle.yml` via `lifecycle-caller.yml`. bonedigger is no longer called directly for lifecycle from factory repos.
 
-## Current integration status
-
-| Repo | bonedigger.yml | Status |
-|---|---|---|
-| bluefin | ✅ | Active — pinned SHA |
-| common | ✅ | Active — aligned 2026-06-04, PR #490 |
-| bluefin-lts | ❌ | Missing |
-| dakota | ❌ | Missing — uses actionadon instead |
-| knuckle | ❌ | Missing — uses actionadon instead |
+bonedigger's `sync-templates.yml` continues to propagate issue templates to factory repos.
 
 ## Template sync
 
-bonedigger's `sync-templates.yml` propagates issue templates to all factory repos. **Current issue:** it targets `ublue-os/*` (old namespace) instead of `projectbluefin/*` — tracked in [common#408](https://github.com/projectbluefin/common/issues/408).
+bonedigger's `sync-templates.yml` propagates issue templates from `bonedigger/templates/` to factory repos.
 
-When fixed, templates will sync from `bonedigger/templates/` automatically on push to main.
-
-## Known issues
-
-| Issue | Status |
-|---|---|
-| [bonedigger#13](https://github.com/projectbluefin/bonedigger/issues/13) | sync-templates uses banned PAT — open |
-| [common#408](https://github.com/projectbluefin/common/issues/408) | sync-templates wrong namespace (ublue-os/*) — open |
-| [common#412](https://github.com/projectbluefin/common/issues/412) | bonedigger.yml missing from 4 repos — open |
-| [common#418](https://github.com/projectbluefin/common/issues/418) | bonedigger has no AGENTS.md or hive labels — open |
-| [common#424](https://github.com/projectbluefin/common/issues/424) | bonedigger not wired into promotion decisions — open |
+Known issues:
+- [bonedigger#13](https://github.com/projectbluefin/bonedigger/issues/13) — sync-templates uses banned PAT
+- [common#408](https://github.com/projectbluefin/common/issues/408) — sync-templates wrong namespace (ublue-os/*)

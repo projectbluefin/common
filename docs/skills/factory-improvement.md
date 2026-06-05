@@ -37,7 +37,7 @@ Never automate these. Never propose automating them without explicit maintainer 
 
 | Gate | Why it must be human |
 |---|---|
-| `status/approved` — maintainer comments `/approve` | Prioritization judgment; agent scope assignment |
+| `/approve` comment — lifecycle moves the issue directly to `status/queued` | Prioritization judgment; agent scope assignment |
 | PR merge approval (1 human reviewer per CODEOWNERS) | Accountability; trust for org-critical changes |
 | `hive/p0` and `hive/p1` label assignment | Release impact judgment |
 | Production promotion decisions (Tuesday cadence) | Final go/no-go for user-facing changes |
@@ -101,7 +101,7 @@ must have ALL of:
 | Requirement | Check command |
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
-| `bonedigger.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
+| `lifecycle-caller.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/lifecycle-caller.yml` |
 | `skill-drift.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/skill-drift.yml` |
 | Hive labels present | `gh label list --repo projectbluefin/{repo} \| grep hive` |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
@@ -139,7 +139,7 @@ Count duplicates during each audit pass. Each duplicate is a maintenance liabili
 
 ---
 
-## Known Gaps (as of 2026-06-04)
+## Known Gaps (as of 2026-06-05)
 
 ### P0 — Critical
 
@@ -152,7 +152,6 @@ Count duplicates during each audit pass. Each duplicate is a maintenance liabili
 
 | Gap | Issue | Automatable? |
 |---|---|---|
-| `bonedigger` not wired in `bluefin-lts` and `dakota` | #418 | Yes |
 | Renovate paused — invalid packageRules in base config | #487 | Yes |
 | `bluefin` pre-push hook missing — `git push` goes to ublue-os/bluefin | #476 | Yes |
 | Issue lifecycle table duplicated verbatim in 3 files | — | Yes |
@@ -165,7 +164,6 @@ Count duplicates during each audit pass. Each duplicate is a maintenance liabili
 | `docs-quality.yml` + `skill-drift.yml` could be one workflow with two jobs | Yes |
 | `factory/README.md` + `agentic-model.md` could be merged (~50 lines unique content) | Yes |
 | ~30 skills duplicated between workspace and `common/docs/skills/` with no sync mechanism | Partial |
-| bonedigger crash/panic not wired to promotion decisions (#424) | Yes |
 | Regression contract across `latest`/`stable`/`gts`/`lts` streams undefined (#420) | No — requires human spec |
 
 ---
@@ -176,16 +174,15 @@ Count duplicates during each audit pass. Each duplicate is a maintenance liabili
 2. Wire `bluefin-lts` post-merge e2e gate (P0)
 3. Fix Renovate config (P1 — dependency drift is a security concern)
 4. Consolidate duplicate docs (P1 — cheap, high leverage)
-5. Close stale issue #418 (P1 — confirm bonedigger onboarded)
-6. `bluefin` pre-push hook (P1 — repeat incident prevention)
-7. Merge `docs-quality.yml` + `skill-drift.yml` (Backlog)
-8. Merge `factory/README.md` + `agentic-model.md` (Backlog)
+5. `bluefin` pre-push hook (P1 — repeat incident prevention)
+6. Merge `docs-quality.yml` + `skill-drift.yml` (Backlog)
+7. Merge `factory/README.md` + `agentic-model.md` (Backlog)
 
 ---
 
 ## What "Done" Looks Like
 
-- [ ] Every factory repo has identical infrastructure (AGENTS.md, bonedigger, skill-drift, hive labels, pre-commit, squash-only)
+- [ ] Every factory repo has identical infrastructure (AGENTS.md, lifecycle-caller.yml, skill-drift, hive labels, pre-commit, squash-only)
 - [ ] Every pipeline stage has a gate: pre-merge CI, post-merge e2e, promotion smoke
 - [ ] All rules exist in exactly one canonical location with one-line pointers elsewhere
 - [ ] Renovate is running across all repos

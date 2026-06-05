@@ -41,11 +41,10 @@ Any workflow `uses:` line pointing at `@main`, `@master`, `@latest`, or a floati
 The ACMM audit treats some internal reusable workflows as a documented policy exception, not a lint cleanup target.
 
 - Third-party actions should still be SHA-pinned.
-- `projectbluefin/` internal reusable workflows may intentionally float when maintainers are using them as managed tags.
-- Specifically, `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` is intentional in `bluefin-lts` and `dakota`; bonedigger does not publish versioned releases there, so do **not** auto-pin those refs during a floating-tag cleanup pass.
+- `projectbluefin/` internal reusable workflows should follow the repo-local policy comments rather than blanket float-to-`@main` cleanup.
+- The old `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` exemption was retired when lifecycle ownership moved into `common`.
+- Downstream `lifecycle-caller.yml` files now pin `projectbluefin/common/.github/workflows/lifecycle.yml@<SHA>`, and Renovate manages those SHA updates.
 - If you are changing an internal `projectbluefin/` ref, follow the repo-local comment and coordinate with maintainers before converting it to a SHA.
-
-This skill is the authoritative explanation for the bonedigger `@main` exemption comments added in downstream repos.
 
 ### Renovate vs pre-commit
 

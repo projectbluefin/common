@@ -24,7 +24,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `skill-drift.yml` | Warns when implementation changes land without matching docs/skills updates | Adjusting doc-drift coverage or path mapping |
 | `sync-codeowners.yml` | Keeps CODEOWNERS/policy state in sync | Governance / CODEOWNERS automation work |
 | `release.yml` | Monthly/versioned OCI release flow | Changing versioned layer release behavior |
-| `bonedigger.yml` | Issue lifecycle / queue automation | Changing common's claim/queue automation |
+| `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls common `lifecycle.yml`. | Changing factory lifecycle automation |
 | `hive-progress-sync.yml` | Publishes common repo progress into Hive state | Changing Hive reporting or dashboard sync behavior |
 
 ## Mental model
@@ -43,7 +43,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 
 ### Factory operations
 
-`bonedigger.yml`, `sync-codeowners.yml`, and `hive-progress-sync.yml` are factory-policy workflows rather than image-test workflows.
+`lifecycle-caller.yml`, `sync-codeowners.yml`, and `hive-progress-sync.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership itself lives in `common`'s reusable `.github/workflows/lifecycle.yml`.
 
 ## Which skill to load next
 

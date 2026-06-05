@@ -22,7 +22,7 @@ Load when: Starting your session, reviewing P0/P1 issues, or performing daily tr
 
 ## Hive Label Taxonomy
 
-The **hive system** prioritizes issues based on impact and reproducibility. bonedigger automatically assigns hive labels based on:
+The **hive system** prioritizes issues based on impact and reproducibility. bonedigger auto-escalates priority based on:
 
 1. **User confirm count** — `ujust confirm <issue>` comments
 2. **Impact scope** — Does it affect all variants or specific streams?
@@ -141,7 +141,7 @@ Review each P1 in top repos:
    ├─ Hardware → @hardware-leads
    └─ System/CI → @system-leads
 4. Leave a triage comment with area assignment
-5. Click `/approve` (bonedigger will queue it)
+5. Comment `/approve` (lifecycle automation will queue it)
 ```
 
 ### 4. Review P2s opportunistically
@@ -187,16 +187,21 @@ If a P0 or P1 is **unclaimed for 72+ hours**:
 
 The system will escalate it to team leads automatically.
 
-## Integration with bonedigger
+## Integration with bonedigger and lifecycle automation
 
-Every issue filed via `ujust report` starts here. bonedigger:
+Every issue filed via `ujust report` starts with bonedigger intake. bonedigger:
 
 1. Collects diagnostics (OS version, logs, hardware info)
-2. **Auto-assigns P0/P1** based on `ujust confirm` count
+2. **Auto-escalates hive priority** based on `ujust confirm` count
 3. Posts diagnosis card (read this first!)
-4. Adds `status/triage` label (you remove via `/approve`)
 
-See [bonedigger-overview](./bonedigger-overview.md) for mechanics.
+Lifecycle state changes now live in `projectbluefin/common`:
+
+1. `.github/workflows/lifecycle.yml` owns slash commands, widget updates, label guards, and stale sweeps
+2. `/approve` moves issues directly to `status/queued`
+3. `status/approved` has been removed from the lifecycle
+
+See [bonedigger-overview](./bonedigger-overview.md) for intake/reporting mechanics and [label-workflow](./label-workflow.md) for the lifecycle state machine.
 
 ## Integration with Trail of Bits CI
 
@@ -211,6 +216,6 @@ Read [skill-drift documentation](./SKILL_DRIFT_CI.md) for how to handle CI failu
 
 ## See also
 
-- [bonedigger-lifecycle](./bonedigger-lifecycle.md) — State machine and slash commands
+- [label-workflow](./label-workflow.md) — Lifecycle state machine and slash commands
 - [queue-dashboard](./queue-dashboard.md) — Repository-wide queue view
 - [REGRESSION_CONTRACT](../qa/REGRESSION_CONTRACT.md) — Feature parity across streams

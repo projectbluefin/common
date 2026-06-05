@@ -43,22 +43,20 @@ testsuite gates `:latest` promotion in all three image repos.
 
 ### Issue lifecycle
 
-`filed → triage → approved → queued → claimed → done`
+`filed → triage → queued → claimed → done`
 
 Full workflow, label reference, and human/agent instructions:
 [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md)
 
 | Stage | Label | How |
 |---|---|---|
-| `filed` | — | Issue opened |
-| `triage` | `status/triage` 🟠 | Maintainer sets `kind/` + `area/`, then `/approve` or `status/discussing` |
-| `discussing` | `status/discussing` | Human drives to consensus → `/approve` |
-| `approved` | `status/approved` | Comment `/approve` — bonedigger adds `status/queued` |
-| `queued` | `status/queued` | In work pool — comment `/claim` to take |
-| `claimed` | `status/claimed` | Assigned and in progress — open PR with `Closes #NNN` |
+| `triage` | `status/triage` 🟣 | Maintainer sets `kind/` + `area/`, then comments `/approve` or adds `status/discussing` |
+| `discussing` | `status/discussing` | Human drives to consensus → comments `/approve` |
+| `queued` | `status/queued` | Lifecycle automation sets this on `/approve` (after kind/+area/ guard passes) |
+| `claimed` | `status/claimed` | Comment `/claim` — assigned and in progress — open PR with `Closes #NNN` |
 | `done` | — | Fix shipped + 3× `ujust verify` or maintainer override |
 
-No PR activity in 7 days → comment `/unclaim` returns issue to queue.
+Automation: lifecycle runs from `projectbluefin/common/.github/workflows/lifecycle.yml`. Daily stale sweep returns inactive claims after 7 days.
 
 ### PR lifecycle
 
@@ -115,7 +113,7 @@ system_files/
   bluefin/                 # Local editable config for Bluefin-specific variants only
   nvidia/                  # NVIDIA overlay — directly editable
 .github/workflows/
-  bonedigger.yml           # Issue lifecycle automation for common
+  lifecycle-caller.yml     # Issue/PR lifecycle — calls common/.github/workflows/lifecycle.yml
   build.yml                # Build + push on merge to main
   docs-quality.yml         # PR gate: skill frontmatter and Trail of Bits CI
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota

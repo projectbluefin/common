@@ -104,16 +104,18 @@ git push origin main
 
 This includes skill updates, INDEX.md, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`.
 
-## Lifecycle automation (bonedigger)
+## Lifecycle automation
 
 | Repo | Workflow | State |
 |---|---|---|
-| `bluefin` | `bonedigger.yml` | ✅ live |
-| `common` | `bonedigger.yml` | ✅ live (added 2026-06-03, PR #453) |
-| `bluefin-lts` | — | ❌ not yet |
-| `dakota` | `actionadon.yml` | ⚠️ different engine |
-| `knuckle` | `actionadon.yml` | ⚠️ different engine |
+| `bluefin` | `lifecycle-caller.yml` | ✅ live |
+| `common` | `lifecycle-caller.yml` | ✅ live |
+| `bluefin-lts` | `lifecycle-caller.yml` | ✅ live |
+| `dakota` | `lifecycle-caller.yml` | ✅ live |
+| `knuckle` | `lifecycle-caller.yml` | ✅ live |
 
-`common`'s workflow calls `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` at a pinned commit SHA. Brand: `Common` / 🧱.
+`common` owns the reusable `.github/workflows/lifecycle.yml`. Each repo's `lifecycle-caller.yml` calls that workflow at a pinned `common` commit SHA.
+
+Lifecycle labels now come from `labels.json` and are synced by `sync-labels.yml` across the factory.
 
 Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.
