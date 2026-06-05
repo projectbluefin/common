@@ -46,7 +46,7 @@ When you see `status/triage`:
 
 1. Is this valid? Is it a duplicate?
    - Invalid or duplicate → close with explanation; add `kind/wontfix` if you want to track the decision
-   - Needs more data → add `ghost/needs-data`, ask in a comment, leave `status/triage` in place
+   - Needs more data → ask for `ujust report` output in a comment, leave `status/triage` in place
 2. Set **exactly one** `kind/` label
 3. Set **one or more** `area/` labels
 4. Optionally set one `priority/` label (backlog ordering) or `hive/p0`/`hive/p1` (current-cycle urgency)
@@ -245,18 +245,6 @@ An issue can carry **both** a `hive/*` and a `priority/*` — they track differe
 | `source:ujust-report` | Filed via `ujust report` by a user |
 
 Note: `source:` uses a colon separator — this is intentional for compatibility with bonedigger's label routing.
-
-### Bug investigation — ghost/ labels
-
-Applied during community bug triage to track the investigation state. Multiple can coexist.
-
-| Label | Meaning |
-|---|---|
-| `ghost/needs-data` | Need `ujust report` output or logs from the user |
-| `ghost/regression` | Was working before; something broke it |
-| `ghost/report-attached` | User submitted diagnostic data |
-| `ghost/reproduced` | Confirmed on a second machine |
-| `ghost/verified` | Reporter confirmed the fix works on their hardware |
 
 ### PR labels
 
