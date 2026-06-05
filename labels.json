@@ -318,5 +318,20 @@
     "name": "stale-digest",
     "color": "e4e669",
     "description": "Filed against an outdated image digest."
+  },
+  {
+    "name": "hardware/test-report",
+    "color": "d4c5f9",
+    "description": "Community hardware test report. Triage to hardware/all-clear or hardware/blocker."
+  },
+  {
+    "name": "hardware/all-clear",
+    "color": "0e8a16",
+    "description": "Hardware test passed. Real-device evidence for promotion review."
+  },
+  {
+    "name": "hardware/blocker",
+    "color": "d93f0b",
+    "description": "Hardware regression. Blocks image promotion until resolved."
   }
 ]
