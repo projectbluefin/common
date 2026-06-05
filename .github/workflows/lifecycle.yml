@@ -157,6 +157,55 @@ jobs:
 
           update_widget
 
+  on-issue-labeled:
+    if: github.event_name == 'issues' && github.event.action == 'labeled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - name: Check epic requirement for large enhancements
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ISSUE_JSON=$(gh issue view "$NUMBER" --repo "$REPO" --json labels,state)
+
+          has_label() {
+            local label="$1"
+            jq -e --arg label "$label" '.labels[].name == $label' <<<"$ISSUE_JSON" >/dev/null 2>&1
+          }
+
+          # Only act on open kind/enhancement issues at size L or XL
+          if [[ "$(jq -r '.state' <<<"$ISSUE_JSON")" != "OPEN" ]]; then exit 0; fi
+          if ! has_label "kind/enhancement"; then exit 0; fi
+          if ! (has_label "size/L" || has_label "size/XL"); then exit 0; fi
+
+          # Already an epic — no prompt needed
+          if has_label "kind/epic"; then exit 0; fi
+
+          # Idempotency: skip if reminder was already posted
+          existing=$(gh issue view "$NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[].body | select(contains("<!-- epic-reminder -->"))] | length')
+          if [[ "$existing" -gt 0 ]]; then exit 0; fi
+
+          # shellcheck disable=SC2016  # backtick content is markdown, not shell
+          gh issue comment "$NUMBER" --repo "$REPO" --body '<!-- epic-reminder -->
+          ⚡ **Epic check — large enhancement**
+
+          This issue is labeled `kind/enhancement` with `size/L` or `size/XL`. Large features should be tracked under an epic so progress is visible on the project board.
+
+          **Choose one before commenting `/approve`:**
+          - **Make this issue the epic:** add `kind/epic` and file child issues for each tracked piece of work. Epics are not implemented directly — they are trackers.
+          - **Link to an existing epic:** add `Part of #EPIC_NUMBER` to the issue body.
+
+          See the [label workflow](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md#epics) for details.'
+
   on-comment:
     if: github.event_name == 'issue_comment' && github.event.action == 'created' && github.event.issue.pull_request == null && github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest

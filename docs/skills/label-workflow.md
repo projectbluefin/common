@@ -253,6 +253,48 @@ Unassign yourself
 | `kind/epic` | Multi-issue tracker. Do not implement here; file child issues instead. |
 | `kind/wontfix` | Will not be implemented. Do not claim or open PRs for this issue. |
 
+---
+
+## Epics
+
+An epic is a `kind/epic` issue that tracks a multi-issue feature. It is never implemented directly — implementation happens in child issues that link back to it.
+
+### When to use an epic
+
+The lifecycle automation posts an epic-check comment when an issue has **both** `kind/enhancement` and `size/L` or `size/XL`. This is advisory, not blocking — you must act on it before commenting `/approve`.
+
+**Use an epic when:**
+- The feature has 3+ distinct pieces of work
+- Progress needs to be visible on the project board across a release cycle
+- Multiple contributors or agents may work on different pieces simultaneously
+
+**Skip the epic when:**
+- The enhancement is self-contained and can land in a single PR
+- Size was auto-labeled conservatively but the actual scope is small
+
+### Filing an epic
+
+1. Open a new issue with `kind/epic` and the full feature title
+2. Write a description that states the goal and acceptance criteria for the whole feature
+3. List child issues as checkboxes in the body: `- [ ] Part of #NNN — short description`
+4. On each child issue body, add `Part of #EPIC_NUMBER` so the board links them
+
+### Linking a child issue to an epic
+
+Add to the issue body:
+```
+Part of #EPIC_NUMBER
+```
+
+The project board groups issues by parent, so this is what makes the progress roll up correctly.
+
+### Automation trigger
+
+| Trigger | What happens |
+|---|---|
+| `kind/enhancement` + `size/L` or `size/XL` labeled on an open issue | Lifecycle posts a one-time comment (`<!-- epic-reminder -->`) asking to link or create an epic |
+| `kind/epic` already present | No comment posted — the issue IS the epic |
+
 ### Priority — two families, different purposes
 
 > **Invariants:** at most one `hive/*`; at most one `priority/*`
@@ -361,6 +403,7 @@ Do not set these labels manually unless the workflow is down.
 | Trigger | What the lifecycle workflow does |
 |---|---|
 | Issue opened | Adds `status/triage`, inserts pipeline widget in issue body |
+| Issue labeled (`kind/enhancement` + `size/L` or `size/XL`) | Posts one-time epic-check comment if `kind/epic` not present and reminder not yet sent |
 | `/approve` comment (write+) | **Guard:** checks for `kind/` + `area/`. Rejects with comment if missing. On pass: removes `status/triage`/`status/discussing`, adds `status/queued`, updates widget. |
 | `/claim` comment | Removes `status/queued`, adds `status/claimed`, assigns commenter, updates widget |
 | `/unclaim` comment | Removes `status/claimed`, re-adds `status/queued`, unassigns, updates widget |
