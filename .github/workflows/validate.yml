@@ -55,7 +55,14 @@ jobs:
               Path(".github/workflows/promotion-candidate-e2e.yml"): {
                   "ghcr.io/projectbluefin/bluefin:testing",
                   "ghcr.io/projectbluefin/bluefin:lts-testing",
-              }
+              },
+              Path(".github/workflows/e2e.yml"): {
+                  "ghcr.io/projectbluefin/bluefin:testing",
+                  "ghcr.io/projectbluefin/bluefin:lts-testing",
+              },
+              Path(".github/workflows/pr-e2e.yml"): {
+                  "ghcr.io/projectbluefin/bluefin:testing",
+              },
           }
           pattern = re.compile(r"ghcr\.io/projectbluefin/(bluefin|aurora|bazzite)(?::[A-Za-z0-9._-]+)?")
           candidates = [
