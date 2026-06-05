@@ -109,9 +109,9 @@ Tracking epics: [#403](https://github.com/projectbluefin/common/issues/403) (com
 - `actions` — https://github.com/projectbluefin/actions/blob/main/AGENTS.md
 - `testsuite` — https://github.com/projectbluefin/testsuite/blob/main/AGENTS.md
 
-## Minimum read order for agents
+## Reference read order for agents
 
-1. This file
-2. Target repo `AGENTS.md`
-3. Relevant `docs/skills/*` files for the task
-4. Repo-local validation/build workflow before commit or merge
+1. Target repo `AGENTS.md` — start here
+2. This file — org map, infrastructure state, open gaps
+3. `docs/factory/agentic-model.md` — label taxonomy, branch targets, sensitive paths
+4. Relevant `docs/skills/*` files — lazy-load for the specific task

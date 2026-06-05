@@ -64,6 +64,24 @@ When in doubt, post nothing.
 - Max 4 open PRs at a time per agent
 - No WIP PRs
 
+## Session start — mandatory
+
+Run before any other work:
+
+```bash
+~/src/hive-status
+```
+
+No arguments, no auth required, completes in under 5 seconds. Surfaces P0/P1 blockers and the advisory queue. Do not proceed without it.
+
+## Scope discipline
+
+Read task intent literally:
+
+- `"work on hive priority issues"` = pick the top issue from `hive-status` output and fix it
+- `"do PR reviews"` = review open PRs only — do not start fix work
+- If a session could involve both, confirm scope with the user before acting
+
 ## Repo layout
 
 ```

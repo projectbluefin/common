@@ -1,6 +1,6 @@
 # Agentic Operating Model — projectbluefin
 
-All 5 factory repos operate under a shared agentic model. Agents MUST read this before touching any repo.
+Deep reference for label taxonomy, branch targets, and sensitive paths. **Entry point is the target repo's `AGENTS.md`.** Load this file when you need label, branch, or path details beyond what AGENTS.md covers.
 
 ## Agent rules (hard)
 
