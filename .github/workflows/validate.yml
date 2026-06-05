@@ -4,10 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "*.md"
-      - LICENSE
-      - .gitignore
   merge_group:
 
 concurrency:
@@ -19,6 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Validate PR title (Conventional Commits)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          pattern='^(feat|fix|chore|docs|style|refactor|perf|test|ci|build|revert)(\(.+\))?(!)?: .+'
+          if ! echo "$PR_TITLE" | grep -qE "$pattern"; then
+            echo "ERROR: PR title does not follow Conventional Commits."
+            echo "  Got:      $PR_TITLE"
+            echo "  Expected: <type>[optional scope]: <description>"
+            echo "  Types:    feat fix chore docs style refactor perf test ci build revert"
+            echo "  Example:  fix(ci): prevent workflow from running twice"
+            exit 1
+          fi
+          echo "✓ PR title OK: $PR_TITLE"
+
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
