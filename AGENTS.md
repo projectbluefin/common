@@ -61,9 +61,22 @@ Full workflow, label reference, and human/agent instructions:
 | `claimed` | `status/claimed` | Comment `/claim` — assigned and in progress — open PR with `Closes #NNN` |
 | `done` | — | Fix shipped + 3× `ujust verify` or maintainer override |
 
-Every issue body contains a **pipeline widget** (`<!-- factory-pipeline-start/end -->`) that shows the current stage and exact next action. The lifecycle workflow updates it automatically on each transition.
+Every issue body contains a **pipeline widget** (`<!-- factory-pipeline-start/end -->`) that shows the current stage, area, priority, and role-specific next steps for both the maintainer and the reporter. The lifecycle workflow updates it automatically on each transition. Widget format:
 
-Automation: lifecycle runs from `projectbluefin/common/.github/workflows/lifecycle.yml`. Daily stale sweep returns inactive claims after 7 days.
+```
+**<repo> · issue pipeline**
+
+  ▶  discussing —
+  ...
+
+**area:** area/gnome   **priority:** —
+**maintainer:** reach consensus, then comment /approve
+**reporter:** add spec, context, or requirements to the issue body
+```
+
+To backfill the widget onto pre-existing issues, run the `Backfill pipeline widget` workflow (`workflow_dispatch`) in this repo.
+
+Automation: lifecycle runs from `projectbluefin/common/.github/workflows/lifecycle.yml` and is deployed to all core factory repos via `lifecycle-caller.yml`. Daily stale sweep returns inactive claims after 7 days.
 
 ### PR lifecycle
 
@@ -120,7 +133,8 @@ system_files/
   bluefin/                 # Local editable config for Bluefin-specific variants only
   nvidia/                  # NVIDIA overlay — directly editable
 .github/workflows/
-  lifecycle-caller.yml     # Issue/PR lifecycle — calls common/.github/workflows/lifecycle.yml
+  lifecycle-caller.yml     # Issue/PR lifecycle — calls common/.github/workflows/lifecycle.yml (deployed to all factory repos)
+  backfill-pipeline.yml   # One-shot workflow_dispatch: injects pipeline widget into pre-existing issues
   build.yml                # Build + push on merge to main
   docs-quality.yml         # PR gate: skill frontmatter and Trail of Bits CI
   e2e.yml                  # Post-merge e2e against bluefin, bluefin-lts, dakota
