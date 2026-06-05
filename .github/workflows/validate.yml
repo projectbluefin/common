@@ -25,6 +25,17 @@ jobs:
           submodules: true
 
 
+      - name: Check submodule drift
+        shell: bash
+        run: |
+          if git submodule status | grep -E '^[+-]'; then
+            echo ""
+            echo "ERROR: A submodule is dirty (+) or uninitialized (-)."
+            echo "Ensure all submodules are committed at a clean ref."
+            exit 1
+          fi
+          echo "All submodules are clean."
+
       - name: Install just
         uses: taiki-e/install-action@3bcad52036b48c4f9e2249c2ebd39a428ef3d98f # just
         with:

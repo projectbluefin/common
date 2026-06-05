@@ -27,3 +27,25 @@ jobs:
     with:
       image: ${{ matrix.image }}
       suites: ${{ matrix.suites }}
+
+  notify-on-failure:
+    name: "File issue on E2E failure"
+    needs: [e2e]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: File promotion-blocker issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+          gh issue create \
+            --repo "$REPO" \
+            --title "🚨 Promotion candidate E2E failed — ${DATE}" \
+            --body "The Tuesday promotion-candidate E2E suite failed before the weekly promotion window. **Do NOT promote** \`bluefin:testing\` or \`bluefin:lts-testing\` until resolved. Workflow run: ${RUN_URL}" \
+            --label "kind/bug" \
+            --label "kind/github-action"

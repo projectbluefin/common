@@ -67,3 +67,5 @@ jobs:
           draft: false
           prerelease: false
           makeLatest: true
+          allowUpdates: true
+          skipIfReleaseExists: false
