@@ -1,0 +1,149 @@
+name: Backfill pipeline widget
+
+on:
+  workflow_dispatch:
+    inputs:
+      issues:
+        description: 'Comma-separated issue numbers to backfill (e.g. 120,176,200). Leave empty to auto-find all issues missing the widget.'
+        required: false
+        default: ''
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      BRAND_NAME: "Common"
+      BRAND_EMOJI: "🧱"
+      INPUT_ISSUES: ${{ github.event.inputs.issues }}
+    steps:
+      - name: Inject pipeline widget into issues missing it
+        shell: python3 {0}
+        run: |
+          import json, os, re, subprocess, sys
+
+          repo       = os.environ['REPO']
+          brand_name = os.environ['BRAND_NAME']
+          brand_emoji = os.environ['BRAND_EMOJI']
+          input_issues = os.environ['INPUT_ISSUES'].strip()
+
+          def gh(*args):
+              r = subprocess.run(['gh', *args], capture_output=True, text=True)
+              if r.returncode != 0:
+                  print(f'gh error: {r.stderr}', file=sys.stderr)
+              return r
+
+          def get_issue(n):
+              r = gh('issue', 'view', str(n), '--repo', repo,
+                     '--json', 'body,state,stateReason,labels,assignees')
+              return json.loads(r.stdout)
+
+          def build_widget(issue, number):
+              labels    = [l['name'] for l in issue.get('labels', [])]
+              assignees = [a['login'] for a in issue.get('assignees', [])]
+              body      = issue.get('body') or ''
+              state     = issue.get('state', 'OPEN').upper()
+
+              if state == 'CLOSED':
+                  stage = 'done'
+              elif 'status/claimed' in labels:
+                  stage = 'claimed'
+              elif 'status/queued' in labels:
+                  stage = 'queued'
+              elif 'status/discussing' in labels:
+                  stage = 'discussing'
+              else:
+                  stage = 'triage'
+
+              area     = ', '.join(l for l in labels if l.startswith('area/')) or '—'
+              priority = ', '.join(l for l in labels if l.startswith('priority/') or l.startswith('hive/')) or '—'
+              assignee = f" @{assignees[0]}" if assignees else ''
+              maintainer_actions = {
+                  'triage':    'set kind/ + area/ labels, then comment /approve',
+                  'discussing':'reach consensus, then comment /approve',
+                  'queued':    '—',
+                  'claimed':   'review the PR when it opens',
+                  'done':      '—',
+              }
+              reporter_actions = {
+                  'triage':    'answer questions; add repro steps if a bug',
+                  'discussing':'add spec, context, or requirements to the issue body',
+                  'queued':    'comment /claim to fix it yourself, or wait for a contributor',
+                  'claimed':   'test the fix when a PR is ready',
+                  'done':      '—',
+              }
+              status_lines = []
+              for line_stage, label in [
+                  ('triage',    'triage     needs kind/ + area/ then /approve'),
+                  ('discussing','discussing —'),
+                  ('queued',    'queued     —'),
+                  ('claimed',   f'claimed    {assignee.strip()}' if assignee else 'claimed    —'),
+                  ('done',      'done       —'),
+              ]:
+                  if stage == 'done':
+                      marker = '✓'
+                  elif line_stage == stage:
+                      marker = '▶'
+                  elif line_stage == 'triage' and stage in {'discussing', 'queued', 'claimed'}:
+                      marker = '✓'
+                  elif line_stage == 'queued' and stage == 'claimed':
+                      marker = '✓'
+                  else:
+                      marker = '·'
+                  status_lines.append(f'  {marker}  {label}')
+
+              widget = '\n'.join([
+                  '<!-- factory-pipeline-start -->',
+                  '```text',
+                  f'{brand_emoji} {brand_name} · issue pipeline',
+                  '──────────────────────────────────────────────────',
+                  *status_lines,
+                  '──────────────────────────────────────────────────',
+                  f'  area:       {area}    priority: {priority}',
+                  f'  maintainer: {maintainer_actions[stage]}',
+                  f'  reporter:   {reporter_actions[stage]}',
+                  '```',
+                  '<!-- factory-pipeline-end -->',
+              ])
+
+              pattern = re.compile(
+                  r'<!-- factory-pipeline-start -->.*?<!-- factory-pipeline-end -->', re.S)
+              if '<!-- factory-pipeline-start -->' in body:
+                  return pattern.sub(widget, body, count=1)
+              stripped = body.rstrip()
+              return f'{stripped}\n\n{widget}' if stripped else widget
+
+          # Resolve issue list
+          if input_issues:
+              numbers = [int(n.strip()) for n in input_issues.split(',') if n.strip()]
+          else:
+              r = gh('issue', 'list', '--repo', repo, '--limit', '500',
+                     '--json', 'number,body,state')
+              all_issues = json.loads(r.stdout)
+              numbers = [
+                  i['number'] for i in all_issues
+                  if '<!-- factory-pipeline-start -->' not in (i.get('body') or '')
+              ]
+              print(f'Auto-found {len(numbers)} issues missing the widget: {numbers}')
+
+          ok = fail = 0
+          for n in numbers:
+              issue    = get_issue(n)
+              new_body = build_widget(issue, n)
+              r = gh('issue', 'edit', str(n), '--repo', repo, '--body', new_body)
+              if r.returncode == 0:
+                  print(f'✓ #{n}')
+                  ok += 1
+              else:
+                  print(f'✗ #{n}')
+                  fail += 1
+
+          print(f'\nDone: {ok} updated, {fail} failed')
+          if fail:
+              sys.exit(1)

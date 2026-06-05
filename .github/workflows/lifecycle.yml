@@ -89,12 +89,19 @@ jobs:
           area = ', '.join([label for label in labels if label.startswith('area/')]) or '—'
           priority = ', '.join([label for label in labels if label.startswith('priority/') or label.startswith('hive/')]) or '—'
           assignee = f" @{assignees[0]}" if assignees else ''
-          next_actions = {
-              'triage': 'set kind/ and area/ labels, then comment /approve',
-              'discussing': 'reach consensus, update spec in issue body, then comment /approve',
-              'queued': 'comment /claim to take this issue',
-              'claimed': f'open a PR with Closes #{number}',
-              'done': '—',
+          maintainer_actions = {
+              'triage':    'set kind/ + area/ labels, then comment /approve',
+              'discussing':'reach consensus, then comment /approve',
+              'queued':    '—',
+              'claimed':   'review the PR when it opens',
+              'done':      '—',
+          }
+          reporter_actions = {
+              'triage':    'answer questions; add repro steps if a bug',
+              'discussing':'add spec, context, or requirements to the issue body',
+              'queued':    'comment /claim to fix it yourself, or wait for a contributor',
+              'claimed':   'test the fix when a PR is ready',
+              'done':      '—',
           }
           status_lines = []
           for line_stage, label in [
@@ -123,8 +130,9 @@ jobs:
               '──────────────────────────────────────────────────',
               *status_lines,
               '──────────────────────────────────────────────────',
-              f'  area:     {area}         priority: {priority}',
-              f'  next:     {next_actions[stage]}',
+              f'  area:       {area}    priority: {priority}',
+              f'  maintainer: {maintainer_actions[stage]}',
+              f'  reporter:   {reporter_actions[stage]}',
               '```',
               '<!-- factory-pipeline-end -->',
           ])
@@ -279,12 +287,19 @@ jobs:
           area = ', '.join([label for label in labels if label.startswith('area/')]) or '—'
           priority = ', '.join([label for label in labels if label.startswith('priority/') or label.startswith('hive/')]) or '—'
           assignee = f" @{assignees[0]}" if assignees else ''
-          next_actions = {
-              'triage': 'set kind/ and area/ labels, then comment /approve',
-              'discussing': 'reach consensus, update spec in issue body, then comment /approve',
-              'queued': 'comment /claim to take this issue',
-              'claimed': f'open a PR with Closes #{number}',
-              'done': '—',
+          maintainer_actions = {
+              'triage':    'set kind/ + area/ labels, then comment /approve',
+              'discussing':'reach consensus, then comment /approve',
+              'queued':    '—',
+              'claimed':   'review the PR when it opens',
+              'done':      '—',
+          }
+          reporter_actions = {
+              'triage':    'answer questions; add repro steps if a bug',
+              'discussing':'add spec, context, or requirements to the issue body',
+              'queued':    'comment /claim to fix it yourself, or wait for a contributor',
+              'claimed':   'test the fix when a PR is ready',
+              'done':      '—',
           }
           status_lines = []
           for line_stage, label in [
@@ -313,8 +328,9 @@ jobs:
               '──────────────────────────────────────────────────',
               *status_lines,
               '──────────────────────────────────────────────────',
-              f'  area:     {area}         priority: {priority}',
-              f'  next:     {next_actions[stage]}',
+              f'  area:       {area}    priority: {priority}',
+              f'  maintainer: {maintainer_actions[stage]}',
+              f'  reporter:   {reporter_actions[stage]}',
               '```',
               '<!-- factory-pipeline-end -->',
           ])
@@ -550,12 +566,19 @@ jobs:
           area = ', '.join([label for label in labels if label.startswith('area/')]) or '—'
           priority = ', '.join([label for label in labels if label.startswith('priority/') or label.startswith('hive/')]) or '—'
           assignee = f" @{assignees[0]}" if assignees else ''
-          next_actions = {
-              'triage': 'set kind/ and area/ labels, then comment /approve',
-              'discussing': 'reach consensus, update spec in issue body, then comment /approve',
-              'queued': 'comment /claim to take this issue',
-              'claimed': f'open a PR with Closes #{number}',
-              'done': '—',
+          maintainer_actions = {
+              'triage':    'set kind/ + area/ labels, then comment /approve',
+              'discussing':'reach consensus, then comment /approve',
+              'queued':    '—',
+              'claimed':   'review the PR when it opens',
+              'done':      '—',
+          }
+          reporter_actions = {
+              'triage':    'answer questions; add repro steps if a bug',
+              'discussing':'add spec, context, or requirements to the issue body',
+              'queued':    'comment /claim to fix it yourself, or wait for a contributor',
+              'claimed':   'test the fix when a PR is ready',
+              'done':      '—',
           }
           status_lines = []
           for line_stage, label in [
@@ -584,8 +607,9 @@ jobs:
               '──────────────────────────────────────────────────',
               *status_lines,
               '──────────────────────────────────────────────────',
-              f'  area:     {area}         priority: {priority}',
-              f'  next:     {next_actions[stage]}',
+              f'  area:       {area}    priority: {priority}',
+              f'  maintainer: {maintainer_actions[stage]}',
+              f'  reporter:   {reporter_actions[stage]}',
               '```',
               '<!-- factory-pipeline-end -->',
           ])
