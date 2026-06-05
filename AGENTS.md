@@ -78,6 +78,49 @@ To backfill the widget onto pre-existing issues, run the `Backfill pipeline widg
 
 Automation: lifecycle runs from `projectbluefin/common/.github/workflows/lifecycle.yml` and is deployed to all core factory repos via `lifecycle-caller.yml`. Daily stale sweep returns inactive claims after 7 days.
 
+Key lifecycle automation triggers:
+
+| Trigger | Action |
+|---|---|
+| Issue opened | Adds `status/triage`, inserts pipeline widget |
+| Issue labeled with `kind/enhancement` + `size/L` or `size/XL` | Posts one-time epic-check comment if `kind/epic` not present — see below |
+| `/approve` comment | Guards for `kind/` + `area/`, then moves to `status/queued` |
+| `/claim` comment | Moves to `status/claimed`, assigns commenter |
+| Daily schedule | Returns stale `status/claimed` issues (7 days inactive) to `status/queued` |
+
+### Epics
+
+A `kind/epic` issue is a multi-issue tracker — **never implement directly**, file child issues instead.
+
+**When the lifecycle posts an epic-check comment:** any `kind/enhancement` issue that receives `size/L` or `size/XL` gets a one-time comment asking the author to either convert to `kind/epic` or add `Part of #EPIC_NUMBER` to the body before `/approve`. This is advisory — it does not block the pipeline.
+
+**Filing an epic:**
+1. Create an issue with `kind/epic`
+2. List child issues as checkboxes: `- [ ] Part of #NNN — description`
+3. On each child issue body, add `Part of #EPIC_NUMBER`
+
+All open epics and their sub-issues are tracked on the factory project board (see below).
+
+### Project board — todo.projectbluefin.io
+
+**URL:** https://github.com/orgs/projectbluefin/projects/2
+
+The board mirrors the factory pipeline. Status column options map 1:1 to lifecycle stages:
+
+| Status | Lifecycle label | Meaning |
+|---|---|---|
+| Triage 🟣 | `status/triage` | New — needs kind/ + area/ + /approve |
+| Discussing 🔵 | `status/discussing` | Under discussion — needs consensus + /approve |
+| Queued 🟡 | `status/queued` | Ready to claim |
+| Claimed 🟠 | `status/claimed` | Actively being worked |
+| Done 🟢 | closed | Shipped |
+
+**Scope:** common, bluefin, bluefin-lts, dakota, testsuite, knuckle — all factory repos.
+
+**Epic field:** free-text field on each card. Link a card to its parent epic by title or issue number.
+
+**Epic sync:** all open `kind/epic` issues and their sub-issues are manually synced to the board. When filing a new epic, add it to the board. When filing child issues, add them too.
+
 ### PR lifecycle
 
 | Label | Actor | Meaning |
@@ -187,6 +230,7 @@ Load the relevant skill doc before making changes in these areas.
 | Task | Load first |
 |---|---|
 | Labels / issue workflow | [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) |
+| Project board / epic tracking | [`docs/skills/queue-dashboard.md`](docs/skills/queue-dashboard.md) |
 | Any `system_files/` edit | [`docs/skills/submodule-boundary.md`](docs/skills/submodule-boundary.md) |
 | GNOME settings / dconf | [`docs/skills/dconf-consistency.md`](docs/skills/dconf-consistency.md) |
 | Image refs / registry paths | [`docs/skills/image-registry.md`](docs/skills/image-registry.md) |
