@@ -32,6 +32,8 @@ bonedigger's `sync-templates.yml` continues to propagate issue templates to fact
 
 bonedigger's `sync-templates.yml` propagates issue templates from `bonedigger/templates/` to factory repos.
 
-Known issues:
-- [bonedigger#13](https://github.com/projectbluefin/bonedigger/issues/13) — sync-templates uses banned PAT
-- [common#408](https://github.com/projectbluefin/common/issues/408) — sync-templates wrong namespace (ublue-os/*)
+~~Known issues:~~
+- ~~[bonedigger#13](https://github.com/projectbluefin/bonedigger/issues/13) — sync-templates uses banned PAT~~ ✅ Fixed in [bonedigger#21](https://github.com/projectbluefin/bonedigger/pull/21) — replaced with mergeraptor app token
+- ~~[common#408](https://github.com/projectbluefin/common/issues/408) — sync-templates wrong namespace (ublue-os/*)~~ ✅ Fixed
+
+**Note:** Requires `MERGERAPTOR_APP_ID` (var) and `MERGERAPTOR_PRIVATE_KEY` (secret) to be configured on the bonedigger repo by a maintainer.

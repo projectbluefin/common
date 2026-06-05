@@ -7,7 +7,11 @@ Deep reference for label taxonomy, branch targets, and sensitive paths. **Entry 
 - **AGENTS.md is the per-repo contract.** Read it first. Every repo has one.
 - **One agentic whole.** Changes that touch common affect bluefin, bluefin-lts, and dakota. Think before merging.
 - **No castrojo fork.** Agents push branches directly to projectbluefin repos and open PRs with `gh pr create --repo projectbluefin/<repo>`.
-- **Attribution on every AI commit:** `Assisted-by: <Model> via <Tool>`
+- **Attribution on every AI commit — both trailers required (CI-enforced in `validate.yml`):**
+  ```
+  Assisted-by: <Model> via GitHub Copilot
+  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  ```
 - **Squash only.** All 5 repos use squash merge. Never merge-commit or rebase-merge.
 - **Max 4 open PRs per agent at once.**
 - **`just check` and `pre-commit run --all-files` before every commit.** `just check` validates Justfile syntax; `pre-commit` catches trailing whitespace, missing newlines, YAML/JSON hygiene, and floating action tags across all files.

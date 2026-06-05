@@ -100,7 +100,11 @@ When in doubt, post nothing.
 - `just check` before every commit
 - `pre-commit run --all-files` before every commit
 - PR title: Conventional Commits format (`feat:`, `fix:`, `chore(deps):`, etc.)
-- Attribution on every AI-authored commit: `Assisted-by: <Model> via <Tool>`
+- Attribution on every AI-authored commit — both trailers required (CI-enforced in `validate.yml`):
+  ```
+  Assisted-by: <Model> via GitHub Copilot
+  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  ```
 - Max 4 open PRs at a time per agent
 - No WIP PRs
 
