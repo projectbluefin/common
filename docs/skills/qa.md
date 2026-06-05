@@ -10,22 +10,22 @@ description: "QA model, test coverage matrix, promotion gates by repo, hardware 
 | Repo | Existing gates | Critical gaps |
 |---|---|---|
 | **bluefin** | lint, PR build+smoke, post-merge e2e, upgrade test, weekly pre-promotion | Installability gate, real-hardware gate, Bazaar/Flatpak test |
-| **bluefin-lts** | PR validation, PR smoke | Post-merge e2e, testing→stable gate, upgrade gate, installability gate |
-| **common** | PR build, just/brewfile validation, post-merge suite | **No pre-merge downstream composition** |
+| **bluefin-lts** | PR validation, PR smoke, post-merge e2e | testing→stable gate, upgrade gate, installability gate |
+| **common** | PR composed-image gate, just/brewfile validation, post-merge suite | installability gate, hardware gate |
 | **dakota** | validate/build, PR smoke, publish gate | Installability gate, hardware gate |
 | **knuckle** | unit/race/lint/vuln/coverage/BATS/headless/VM e2e | Bare-metal installer validation |
 
 ## Known gaps (tracked)
 
-| Issue | Gap | Priority |
-|---|---|---|
-| [#419](https://github.com/projectbluefin/common/issues/419) | software.feature tests GNOME Software, not Bazaar | P0 |
-| [#421](https://github.com/projectbluefin/common/issues/421) | No pre-merge composition gate for common | P0 |
-| [#423](https://github.com/projectbluefin/common/issues/423) | No installability gate before promotion | P1 |
-| [#420](https://github.com/projectbluefin/common/issues/420) | No regression contract across streams | P1 |
-| [#422](https://github.com/projectbluefin/common/issues/422) | Hardware-only bug classes invisible to gate | P1 |
-| [#424](https://github.com/projectbluefin/common/issues/424) | bonedigger not wired into promotion | P1 |
-| [#425](https://github.com/projectbluefin/common/issues/425) | bluefin-lts testing→stable gate too weak | P1 |
+| Issue | Gap | Priority | Status |
+|---|---|---|---|
+| [#419](https://github.com/projectbluefin/common/issues/419) | software.feature tests GNOME Software, not Bazaar | P0 | open |
+| [#420](https://github.com/projectbluefin/common/issues/420) | No regression contract across streams | P1 | open |
+| [#422](https://github.com/projectbluefin/common/issues/422) | Hardware-only bug classes invisible to gate | P1 | open |
+| [#424](https://github.com/projectbluefin/common/issues/424) | bonedigger not wired into promotion | P1 | open |
+| [#421](https://github.com/projectbluefin/common/issues/421) | No pre-merge composition gate for common | P0 | ✅ closed |
+| [#423](https://github.com/projectbluefin/common/issues/423) | No installability gate before promotion | P1 | ✅ closed |
+| [#425](https://github.com/projectbluefin/common/issues/425) | bluefin-lts testing→stable gate too weak | P1 | ✅ closed |
 
 ## Promotion quality gates (current state)
 

@@ -116,4 +116,4 @@ This includes skill updates, INDEX.md, and any other `docs/` content. Do not ope
 
 `common`'s workflow calls `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` at a pinned commit SHA. Brand: `Common` / 🧱.
 
-Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) is tracked in projectbluefin/common#409.
+Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.

@@ -1,6 +1,6 @@
 ---
 name: ci-tooling
-description: "Pre-commit floating-tag guard, skill-drift workflow, and Renovate OCI digest tracking for projectbluefin repos."
+description: "Pre-commit floating-tag guard, skill-drift workflow, consumer-contract validation, and Renovate OCI digest tracking for projectbluefin repos."
 ---
 
 # CI tooling
@@ -71,6 +71,7 @@ Use both. Renovate keeps pinned refs fresh; the hook enforces that refs are pinn
 | bluefin-lts | `.github/workflows/**`, `build_files/**`, `Justfile` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | dakota | `.github/workflows/**`, `build_files/**`, `Justfile`, `elements/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | knuckle | `.github/workflows/**`, `cmd/**`, `internal/**`, `Justfile`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
+| testsuite | `.github/workflows/**`, `.github/actions/**`, `tests/**`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 
 ### When it fires
 
