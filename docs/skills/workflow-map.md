@@ -26,7 +26,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `sync-labels.yml` | Syncs `labels.json` (67 labels) to all factory repos — requires `MERGERAPTOR_APP_ID` + `MERGERAPTOR_PRIVATE_KEY` secrets (see issue #511) | Adding/retiring labels or debugging label drift |
 | `release.yml` | Monthly/versioned OCI release flow. **Planned improvements:** git-cliff changelog + e2e prerequisite gate tracked in [common#513](https://github.com/projectbluefin/common/issues/513). | Changing versioned layer release behavior |
 | `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls common `lifecycle.yml`. | Changing factory lifecycle automation |
-| `hive-progress-sync.yml` | Publishes common repo progress into Hive state | Changing Hive reporting or dashboard sync behavior |
+| `hive-progress-sync.yml` | Posts common queue stats to the org project board; also syncs all open epics (`kind/epic`) and P0/P1 issues (`hive/p0`, `hive/p1`, `priority/p0`, `priority/p1`) from all 6 factory repos as cards — runs hourly + on push to main. Requires `PROJECT_TOKEN` org secret (classic PAT, `repo` + `project` scopes). | Changing Hive reporting, board sync behavior, or factory repo list |
 
 ## Mental model
 
@@ -44,7 +44,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 
 ### Factory operations
 
-`lifecycle-caller.yml`, `sync-codeowners.yml`, `sync-labels.yml`, and `hive-progress-sync.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership itself lives in `common`'s reusable `.github/workflows/lifecycle.yml`.
+`lifecycle-caller.yml`, `sync-codeowners.yml`, `sync-labels.yml`, and `hive-progress-sync.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership itself lives in `common`'s reusable `.github/workflows/lifecycle.yml`. `hive-progress-sync.yml` additionally owns the org project board — it adds all open epics and P0/P1 issues from every factory repo as cards (idempotent, hourly).
 
 ## Which skill to load next
 
