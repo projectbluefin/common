@@ -3,7 +3,8 @@
 # bonedigger version v0.1.0
 BONEDIGGER_VERSION := "v0.1.0"
 
-export BONEDIGGER_ISSUE_URL := "https://github.com/projectbluefin/common/issues/new?template=bug-report.yml"
+# Override to send bug reports to a custom repo; leave unset to auto-detect from image-info.json.
+# Feature requests always go to projectbluefin/common.
 export BONEDIGGER_BRAND := "🫐 Bluefin Bug Report"
 
 # Collect a privacy-respecting diagnostic report and offer to attach it to a new bug report.
@@ -13,7 +14,6 @@ report:
     set -euo pipefail
 
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
-    ISSUE_URL_BASE="${BONEDIGGER_ISSUE_URL:-https://github.com/projectbluefin/common/issues/new?template=bug-report.yml}"
     BONEDIGGER_BRAND="${BONEDIGGER_BRAND:-🫐 Bluefin Bug Report}"
     OTEL_CONFIG_SOURCE="/usr/share/ublue-os/otel/ujust-report-config.yaml"
     REPORT_ROOT="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}/ujust-report"
@@ -54,6 +54,29 @@ report:
     IMAGE_REF="$(jq -r '."image-ref" // "unknown"' "$IMAGE_INFO_FILE" 2>/dev/null || echo unknown)"
     IMAGE_TAG="$(jq -r '."image-tag" // "unknown"' "$IMAGE_INFO_FILE" 2>/dev/null || echo unknown)"
     IMAGE_FLAVOR="$(jq -r '."image-flavor" // "unknown"' "$IMAGE_INFO_FILE" 2>/dev/null || echo unknown)"
+
+    # Derive issue URLs: bugs go to the image repo, feature requests always go to common.
+    # Set BONEDIGGER_ISSUE_URL in the environment to override the auto-detected bug URL.
+    if [[ -n "${BONEDIGGER_ISSUE_URL:-}" ]]; then
+        ISSUE_URL_BASE="$BONEDIGGER_ISSUE_URL"
+    else
+        case "$IMAGE_NAME" in
+            bluefin)
+                if [[ "$IMAGE_TAG" == lts* ]]; then
+                    ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml"
+                else
+                    ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml"
+                fi
+                ;;
+            dakota)
+                ISSUE_URL_BASE="https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml"
+                ;;
+            *)
+                ISSUE_URL_BASE="https://github.com/projectbluefin/common/issues/new?template=bug-report.yml"
+                ;;
+        esac
+    fi
+    FEATURE_URL="https://github.com/projectbluefin/common/issues/new?template=feature-request.yml"
     BOOTED_IMAGE="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.booted.image.image.image // empty' 2>/dev/null || true)"
     BOOTED_DIGEST="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.booted.imageDigest // empty' 2>/dev/null || true)"
     STAGED_IMAGE="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.staged.image.image.image // empty' 2>/dev/null || true)"
@@ -303,7 +326,8 @@ report:
         else
             gum style --foreground 245 --margin "0 4" "Clipboard support not available."
         fi
-        gum style --foreground 245 --margin "0 4" "Open: $ISSUE_URL_BASE"
+        gum style --foreground 245 --margin "0 4" "Bug report: $ISSUE_URL_BASE"
+        gum style --foreground 245 --margin "0 4" "Feature request: $FEATURE_URL"
         gum style --foreground 245 --margin "0 4" "Report saved at: $REPORT_DIR/summary.md"
         if [[ -f "$REPORT_DIR/metrics.otlp.jsonl" || -f "$REPORT_DIR/logs.otlp.jsonl" ]]; then
             gum style --foreground 245 --margin "0 4" "Telemetry saved at: $REPORT_DIR/"
@@ -337,9 +361,19 @@ report:
     if [[ "$ISSUE_URL_BASE" != *\?* ]]; then
         ISSUE_JOINER='?'
     fi
-    ISSUE_URL="${ISSUE_URL_BASE}${ISSUE_JOINER}report-link=${ENCODED_URL}"
-    if gum confirm " Open a new issue in your browser with this report attached?"; then
-        xdg-open "$ISSUE_URL" 2>/dev/null || gum style --foreground 245 --margin "0 2" "Visit: $ISSUE_URL"
-    else
-        gum style --foreground 245 --margin "0 2" "Open later: $ISSUE_URL"
-    fi
+    BUG_URL="${ISSUE_URL_BASE}${ISSUE_JOINER}report-link=${ENCODED_URL}"
+    echo ""
+    gum style --foreground 245 --margin "0 2" "Open in browser:"
+    CHOICE="$(gum choose "🐛 File a bug report" "✨ Request a feature" "Skip" || echo "Skip")"
+    case "$CHOICE" in
+        "🐛 File a bug report")
+            xdg-open "$BUG_URL" 2>/dev/null || gum style --foreground 245 --margin "0 2" "Visit: $BUG_URL"
+            ;;
+        "✨ Request a feature")
+            xdg-open "$FEATURE_URL" 2>/dev/null || gum style --foreground 245 --margin "0 2" "Visit: $FEATURE_URL"
+            ;;
+        *)
+            gum style --foreground 245 --margin "0 2" "Bug report: $BUG_URL"
+            gum style --foreground 245 --margin "0 2" "Feature request: $FEATURE_URL"
+            ;;
+    esac
