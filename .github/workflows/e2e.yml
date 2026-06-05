@@ -32,10 +32,10 @@ jobs:
       matrix:
         include:
           - name: Bluefin LTS
-            image: ghcr.io/ublue-os/bluefin:lts
+            image: ghcr.io/projectbluefin/bluefin:lts-testing
             suites: common
           - name: Bluefin Stable
-            image: ghcr.io/ublue-os/bluefin:latest
+            image: ghcr.io/projectbluefin/bluefin:testing
             suites: common
           - name: Dakota
             image: ghcr.io/projectbluefin/dakota:latest

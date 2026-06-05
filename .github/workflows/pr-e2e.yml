@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  BASE_IMAGE: ghcr.io/ublue-os/bluefin:latest
+  BASE_IMAGE: ghcr.io/projectbluefin/bluefin:testing
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   IMAGE_NAME: common
 
@@ -112,7 +112,6 @@ jobs:
   e2e:
     name: E2E — composed common suite
     needs: compose
-    if: false # temporarily disabled — e2e suite is known broken (see issue #493 for recovery path)
     permissions:
       contents: read
       packages: write
