@@ -61,6 +61,8 @@ Full workflow, label reference, and human/agent instructions:
 | `claimed` | `status/claimed` | Comment `/claim` — assigned and in progress — open PR with `Closes #NNN` |
 | `done` | — | Fix shipped + 3× `ujust verify` or maintainer override |
 
+Every issue body contains a **pipeline widget** (`<!-- factory-pipeline-start/end -->`) that shows the current stage and exact next action. The lifecycle workflow updates it automatically on each transition.
+
 Automation: lifecycle runs from `projectbluefin/common/.github/workflows/lifecycle.yml`. Daily stale sweep returns inactive claims after 7 days.
 
 ### PR lifecycle
@@ -180,5 +182,9 @@ Load the relevant skill doc before making changes in these areas.
 | Hive monitoring | [`docs/skills/hive-review.md`](docs/skills/hive-review.md) |
 | Improving the factory (gap audit, automation coverage, pipeline parity) | [`docs/skills/factory-improvement.md`](docs/skills/factory-improvement.md) |
 | Onboarding / dev setup | [`docs/skills/onboarding.md`](docs/skills/onboarding.md) |
+| Renovate PRs (major bump review) | [`docs/skills/bluefin-renovate.md`](docs/skills/bluefin-renovate.md) |
+| Skill-drift check fails on a PR | [`docs/skills/skill-drift.md`](docs/skills/skill-drift.md) |
+| QA model / what is tested where | [`docs/skills/qa.md`](docs/skills/qa.md) |
+| ujust report filing / priority escalation | [`docs/skills/bonedigger.md`](docs/skills/bonedigger.md) |
 
 For the full factory operating model, see [`docs/factory/README.md`](docs/factory/README.md).
