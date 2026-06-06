@@ -16,6 +16,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 |---|---|
 | [../factory/README.md](../factory/README.md) | Org brain landing page — factory structure, data flow, infrastructure state, open gaps, branch targets, sensitive paths, parity matrix |
 | [../factory/IMPROVEMENTS.md](../factory/IMPROVEMENTS.md) | **Why we rewrote Bluefin** — narrative by area (build, CI, lifecycle, agentic model, QA, security). Living doc; agents append as improvements land. |
+| [../factory/agentic-model.md](../factory/agentic-model.md) | Cross-repo agent rules — hard rules, smallest-change principle, branch targets, sensitive paths, doc-only push exception, ublue-os prohibition |
 
 ## QA and promotion docs
 
@@ -41,9 +42,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [bluefin-variants.md](bluefin-variants.md) | Variant and stream matrix — which image/tag/flavor to use, build matrix, explaining variants |
 | [label-workflow.md](label-workflow.md) | Label taxonomy, issue lifecycle, and workflow guidelines for humans and agents across all factory repos |
 | [governance.md](governance.md) | Triagers role, CODEOWNERS sentinel pattern, sync workflow, branch protection matrix |
-| [hive.md](hive.md) | Hive label taxonomy, sync workflow schedule, org board fields, finding work |
 | [qa.md](qa.md) | QA model, test coverage matrix, promotion gates by repo, hardware gap, running tests |
-| [bonedigger.md](bonedigger.md) | bonedigger integration guide, current status per repo, template sync, known issues |
 | [hive-review.md](hive-review.md) | `~/src/hive-status` — session start, P0/P1 triage, hive label taxonomy |
 | [queue-dashboard.md](queue-dashboard.md) | PR review and merge queue workflow — ruleset (1 approval, squash, ALLGREEN queue), triage tiers, rebase patterns, submodule boundary policy |
 | [workflow-map.md](workflow-map.md) | What each `common` GitHub workflow is for — validation, E2E, release, and factory-policy boundaries |

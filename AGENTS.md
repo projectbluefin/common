@@ -151,6 +151,7 @@ When in doubt, post nothing.
 - Max 4 open PRs at a time per agent
 - No WIP PRs
 - **Never push directly to a protected branch.** Always open a PR. PRs enter the human review queue (`pr/needs-review`) and require `lgtm` from a human before merging. This applies to `common/main` too — branch protection bypass is not agent-permitted.
+- **Doc-only exception:** `docs/` edits and `AGENTS.md` changes in `common` may be pushed directly to `main` without a PR.
 
 ## Session start — mandatory
 
@@ -249,5 +250,13 @@ Load the relevant skill doc before making changes in these areas.
 | Skill-drift check fails on a PR | [`docs/skills/skill-drift.md`](docs/skills/skill-drift.md) |
 | QA model / what is tested where | [`docs/skills/qa.md`](docs/skills/qa.md) |
 | ujust report filing / priority escalation | [`docs/skills/bonedigger.md`](docs/skills/bonedigger.md) |
+| When to stop and ask a human | [`docs/skills/human-gates.md`](docs/skills/human-gates.md) |
+| Skill update mandate + what counts as a learning | [`docs/skills/skill-improvement.md`](docs/skills/skill-improvement.md) |
+| Why Bluefin was rewritten / factory improvement history | [`docs/factory/IMPROVEMENTS.md`](docs/factory/IMPROVEMENTS.md) |
+| Hive system architecture + kubestellar-bot loop | [`docs/skills/hive.md`](docs/skills/hive.md) |
+| ACMM / factory maturity model | [`docs/skills/acmm-audit-level2.md`](docs/skills/acmm-audit-level2.md) |
+| Hardware test reports | [`docs/hardware-testing.md`](docs/hardware-testing.md) |
+| Agent operating rules + branch targets (cross-repo) | [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md) |
 
+For the quick task→skill lookup, see [`docs/SKILL.md`](docs/SKILL.md).
 For the full factory operating model, see [`docs/factory/README.md`](docs/factory/README.md).

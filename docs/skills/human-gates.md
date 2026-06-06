@@ -74,7 +74,7 @@ When you hit a gate:
 2. Add a comment stating which gate you've hit and what decision is needed:
    ```
    Hitting the Security Gate — need human review before proceeding.
-   
+
    Proposed change: [describe it]
    Security property affected: [what it is]
    My approach: [what you're proposing]

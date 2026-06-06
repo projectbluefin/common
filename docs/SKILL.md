@@ -34,6 +34,7 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | Check on-call / hive state for the whole org | `docs/skills/hive.md` |
 | Submit a hardware test report | `docs/hardware-testing.md` |
 | Work on the ACMM / factory maturity model | `docs/skills/acmm-audit-level2.md` |
+| Understand cross-repo agent rules, branch targets, or sensitive paths | `docs/factory/agentic-model.md` |
 
 ## Improving skill docs
 
