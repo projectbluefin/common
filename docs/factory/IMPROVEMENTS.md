@@ -227,3 +227,4 @@ Reference: [`docs/skills/bonedigger.md`](../skills/bonedigger.md)
 | 2026-06-05 | Security | bonedigger sync-templates replaced banned PAT with mergeraptor app token | bonedigger#21 |
 | 2026-06-05 | Docs | ACMM Level 2 audit completed; Level 3 bridge requirements defined | acmm-audit-level2.md |
 | 2026-06-06 | Docs | Factory brain restructured: IMPROVEMENTS.md, human-gates.md, skill-improvement.md added; duplicate files merged and deleted | — |
+| 2026-06-06 | Docs | Operating manual pass: AGENTS.md trimmed 263→149 lines (lazy-load model); hive.md self-duplication removed; PR comment policy added to agentic-model.md (canonical); factory/README.md reference read order promoted to section 2; knuckle/* added to SKILL.md router; SSOT table updated in factory-improvement.md | — |
