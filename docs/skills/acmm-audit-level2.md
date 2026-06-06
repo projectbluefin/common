@@ -17,10 +17,9 @@ description: "ACMM Level 2→3 bridge audit (historical). Factory has reached Le
 
 ## Executive Summary
 
-The projectbluefin factory is a six-repo OCI image pipeline increasingly operated by
-AI agents. It has achieved Level 2 (Assisted) maturity: agents operate with human
-review, skill docs provide operational context, and feedback loops (CI gates, linters,
-e2e tests) arrest most error cascades before production.
+> **This is a historical baseline document.** The factory reached Level 3 (Instructed) on 2026-06-06. The text below records the L2 state as assessed on 2026-06-05. Use it to understand the bridge requirements that were implemented.
+
+The projectbluefin factory was a six-repo OCI image pipeline assessed at Level 2 (Assisted) maturity: agents operated with human review, skill docs provided operational context, and feedback loops (CI gates, linters, e2e tests) arrested most error cascades before production.
 
 **Core mission reminder:** This is an **Agentic OS Components / operating system factory**.
 The product is bootc OCI images. `common` is the org brain. Every agent must internalize

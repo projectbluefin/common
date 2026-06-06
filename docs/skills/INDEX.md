@@ -85,5 +85,10 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [knuckle-qa-lessons.md](knuckle-qa-lessons.md) | Archived knuckle QA lessons learned (May 2026) |
 | [knuckle-release.md](knuckle-release.md) | End-to-end release procedure for knuckle — unit tests, VM installs, ISO smoke, tagging |
 | [knuckle-testlab.md](knuckle-testlab.md) | knuckle in Flatcar QEMU VM on ghost — manual testing, TUI behavior, UI iteration |
+
+## Agent instruction files (not skills — loaded separately by tool)
+
+| File | Purpose |
+|---|---|
 | [../../.github/copilot-instructions.md](../../.github/copilot-instructions.md) | Copilot agent instructions — session start ritual, PR checklist, scope discipline, CODEOWNERS sentinel |
 | [../factory/README.md](../factory/README.md) | Factory operating model entry point for org-level agent and maintainer workflow |

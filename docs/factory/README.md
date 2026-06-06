@@ -67,7 +67,7 @@ Hard rules, branch targets, PR comment policy, session start: [`docs/factory/age
 
 ## Agent rules of engagement
 
-- Start here, then open the target repo's `AGENTS.md`.
+- Open the target repo's `AGENTS.md` first, then use this file for org context.
 - Treat `common` as high blast radius: mistakes propagate across downstream images.
 - Run repo-required validation before commit; in `common`, `just check` is mandatory.
 - Do not rewrite image refs from `ghcr.io/ublue-os/bluefin*` to `projectbluefin` without explicit maintainer approval.
@@ -88,15 +88,17 @@ The canonical definition lives in `common/AGENTS.md`. This is a pointer.
 
 ## Factory infrastructure
 
-The following are wired across the factory today (not every item applies to every repo):
+**Core pipeline repos** (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`) share full factory infrastructure. **Extended repos** (`bootc-installer`, `knuckle`, `iso`) have AGENTS.md and basic CI but are not yet on the full parity checklist.
 
-- **AGENTS.md** — per-repo operating contract
+The following are wired across the factory today (applies to core pipeline repos unless noted):
+
+- **AGENTS.md** — per-repo operating contract (all repos including extended)
 - **Label taxonomy** — canonical definitions in `labels.json` (67 labels; includes `hardware/*` for promotion gates), synced to all repos by `sync-labels.yml` (⚠️ requires `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY` secrets — issue #511); key labels: `hive/p0`, `hive/p1`, `status/queued`, `status/claimed`, `agent/blocked`, `source:*`, `hardware/blocker`
 - **Squash-only merge + delete-branch-on-merge**
 - **5 standard issue templates**
 - **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
 - **hive-progress-sync.yml** — hourly org board update
-- **lifecycle.yml** — common-owned issue/PR lifecycle: slash commands, widget, label guard, stale sweep. Active in all 6 factory repos via `lifecycle-caller.yml`.
+- **lifecycle.yml** — common-owned issue/PR lifecycle: slash commands, widget, label guard, stale sweep. Active in all 6 core pipeline repos via `lifecycle-caller.yml`.
 - **bonedigger** — scoped to ujust report filing and priority auto-escalation only
 - **skill-drift.yml** — PR advisory gate for doc/impl parity (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`; `testsuite` pending)
 - **pre-commit** — json/yaml/toml hygiene and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`)
@@ -107,7 +109,7 @@ The following are wired across the factory today (not every item applies to ever
 - **2-human production gate** — `factory-operations` environment requires two maintainer approvals before `:stable` tag in `bluefin`, `bluefin-lts`, `dakota`
 - **consumer-validation.yml** (actions) — validates consumer PR/CI evidence before merging actions changes
 
-## Current parity matrix (2026-06-06)
+## Current parity matrix (2026-06-06) — core pipeline repos
 
 | Artifact | common | bluefin | bluefin-lts | dakota | actions | testsuite |
 |---|---|---|---|---|---|---|

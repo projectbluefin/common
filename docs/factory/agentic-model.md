@@ -13,7 +13,10 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 - **`just check` before every commit** in repos that have a Justfile.
 - **`pre-commit run --all-files` before every commit** in repos with `.pre-commit-config.yaml`.
 - **Never push directly to a protected branch.** Always open a PR. PRs require `lgtm` from a human.
-- **Doc-only changes in `common`** (`docs/` edits, `AGENTS.md`) may be pushed directly to `main` — no PR required.
+- **Doc-only exception in `common`:** `docs/` edits and `AGENTS.md` changes may be pushed directly to `main` — no PR required. Before using this exception, confirm every changed path is under `docs/` or is `AGENTS.md`:
+  ```bash
+  git diff --cached --name-only  # must show only docs/* or AGENTS.md
+  ```
 - **Attribution on every AI-authored commit:**
   ```
   Assisted-by: <Model> via GitHub Copilot
@@ -33,7 +36,7 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 | `bluefin-lts` | `main` | `main→lts` is the promotion path |
 | `dakota` | `testing` | Never `main` |
 | `knuckle` | `main` | Installer — no testing branch |
-| `bootc-installer` | `main` | Flatpak installer — no testing branch |
+| `bootc-installer` | `dev` | Active work branch; `prod` triggers Flatpak release CI — never target `prod` directly |
 | `testsuite` | `main` | Test repo — no testing branch |
 | `actions` | `main` | Shared actions — no testing branch |
 

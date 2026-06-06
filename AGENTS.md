@@ -13,7 +13,10 @@ Home repo: [projectbluefin/common](https://github.com/projectbluefin/common)
 4. just check && pre-commit run --all-files  # before every commit
 ```
 
-**Doc-only changes** (docs/ and AGENTS.md) → push directly to `main`, no PR needed.
+**Doc-only changes** (docs/ and AGENTS.md) → push directly to `main`, no PR needed. Before using this exception, verify all staged changes are docs-only:
+```bash
+git diff --cached --name-only  # must show only docs/* or AGENTS.md
+```
 **Everything else** → branch + PR targeting `main`.
 
 ## 🚫 ABSOLUTE PROHIBITION — ublue-os org
