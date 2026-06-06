@@ -143,9 +143,47 @@ Tracking epics: [#404](https://github.com/projectbluefin/common/issues/404) (inf
 - `actions` — https://github.com/projectbluefin/actions/blob/main/AGENTS.md
 - `testsuite` — https://github.com/projectbluefin/testsuite/blob/main/AGENTS.md
 
+## Branch targets
+
+| Repo | PR target | Notes |
+|---|---|---|
+| bluefin | `testing` | Never `main` |
+| bluefin-lts | `main` | `main→lts` is the promotion path |
+| common | `main` | No testing branch |
+| dakota | `testing` | Never `main` |
+| knuckle | `main` | Installer, no testing branch |
+
+## Sensitive paths (require maintainer review)
+
+All repos: `.github/workflows/`, `Justfile`, `build_files/`
+dakota only: `elements/`
+
+## PR comment policy
+
+- One comment per PR event, max. Combine all findings into one comment.
+- Never duplicate GitHub UI state (approvals, CI status).
+- Test reports: what ran + pass/fail + blockers only. No diff summaries.
+- `@` mentions only when asking someone to do something specific.
+- When in doubt, post nothing.
+
+## Finding work
+
+```bash
+# P0 blockers — start here every session
+gh search issues --label "hive/p0" --owner projectbluefin --state open
+
+# Ready for agent pickup
+gh search issues --label "status/queued" --owner projectbluefin --state open
+
+# Live hive snapshot
+just hive   # from ~/src
+```
+
+Full label taxonomy and next-step lookup: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
+
 ## Reference read order for agents
 
 1. Target repo `AGENTS.md` — start here
-2. This file — org map, infrastructure state, open gaps
-3. `docs/factory/agentic-model.md` — label taxonomy, branch targets, sensitive paths
+2. This file — org map, infrastructure state, open gaps, branch targets, sensitive paths
+3. [`docs/factory/IMPROVEMENTS.md`](IMPROVEMENTS.md) — why we rewrote Bluefin; system architecture
 4. Relevant `docs/skills/*` files — lazy-load for the specific task

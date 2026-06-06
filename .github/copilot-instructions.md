@@ -248,5 +248,9 @@ Load the relevant skill doc before making changes in these areas.
 | Skill-drift check fails on a PR | [`docs/skills/skill-drift.md`](docs/skills/skill-drift.md) |
 | QA model / what is tested where | [`docs/skills/qa.md`](docs/skills/qa.md) |
 | ujust report filing / priority escalation | [`docs/skills/bonedigger.md`](docs/skills/bonedigger.md) |
+| When to stop and ask a human | [`docs/skills/human-gates.md`](docs/skills/human-gates.md) |
+| Skill update mandate + what counts as a learning | [`docs/skills/skill-improvement.md`](docs/skills/skill-improvement.md) |
+| Why Bluefin was rewritten / factory improvement history | [`docs/factory/IMPROVEMENTS.md`](docs/factory/IMPROVEMENTS.md) |
+| Hive system architecture + kubestellar-bot loop | [`docs/skills/hive.md`](docs/skills/hive.md) |
 
 For the full factory operating model, see [`docs/factory/README.md`](docs/factory/README.md).

@@ -14,8 +14,8 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 
 | File | What it covers |
 |---|---|
-| [../factory/README.md](../factory/README.md) | Org brain landing page — factory structure, data flow, infrastructure state, open gaps, parity matrix |
-| [../factory/agentic-model.md](../factory/agentic-model.md) | Label taxonomy, branch targets, sensitive paths, PR policy |
+| [../factory/README.md](../factory/README.md) | Org brain landing page — factory structure, data flow, infrastructure state, open gaps, branch targets, sensitive paths, parity matrix |
+| [../factory/IMPROVEMENTS.md](../factory/IMPROVEMENTS.md) | **Why we rewrote Bluefin** — narrative by area (build, CI, lifecycle, agentic model, QA, security). Living doc; agents append as improvements land. |
 
 ## QA and promotion docs
 
@@ -54,9 +54,11 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [dconf-consistency.md](dconf-consistency.md) | GSettings override ↔ dconf lock file parity rules — must edit both files together for locked settings |
 | [image-registry.md](image-registry.md) | ublue-os vs projectbluefin org split for OCI publishing — production images still at `ghcr.io/ublue-os/` |
 | [rollback-helper.md](rollback-helper.md) | `ublue-rollback-helper` TUI state machine — three-way coordinated arrays, LTS/non-LTS branches, registry path derivation, testing guidance |
-| [skill-drift.md](skill-drift.md) | How to satisfy the PR skill-drift check and what counts as a real skill update |
-| [SKILL_DRIFT_CI.md](SKILL_DRIFT_CI.md) | Skill-drift CI internals — when it fires, what it validates, how to satisfy or suppress it |
-| [acmm-audit-level1.md](acmm-audit-level1.md) | ACMM Level 1 audit (2026-06-04) — **historical record**, superseded by acmm-audit-level2.md |
+| [skill-drift.md](skill-drift.md) | How the skill-drift CI check works — path mapping, what counts as a satisfying update, waiver process |
+| [human-gates.md](human-gates.md) | The 4 decision gates (Design/Security/Breakage/Merge) — when to stop, how to signal, verification evidence requirement |
+| [skill-improvement.md](skill-improvement.md) | The skill-improvement mandate — checklist, what counts as a learning, cross-repo routing |
+| [bonedigger.md](bonedigger.md) | bonedigger + kubestellar-bot — the full self-improvement loop, ujust report, priority escalation, template sync |
+| [hive.md](hive.md) | Hive system architecture — bonedigger/kubestellar-bot/hive triangle, label taxonomy, sync schedule, finding work |
 | [acmm-audit-level2.md](acmm-audit-level2.md) | ACMM Level 2 audit (2026-06-05) — confirms L2 maturity, maps feedback mechanisms, defines Level 3 bridge requirements |
 | [factory-improvement.md](factory-improvement.md) | Self-improving factory loop — gap audit protocol, pipeline uniformity checklist, human gates, known gaps, and priority order for full automation |
 | [dakota-add-package.md](dakota-add-package.md) | Adding a new software package to the dakota/Bluefin BuildStream build |

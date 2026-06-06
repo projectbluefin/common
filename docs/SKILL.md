@@ -8,6 +8,10 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 |---|---|
 | Understand CODEOWNERS, triagers, or branch protection | `docs/skills/governance.md` |
 | Run hive priority review at session start | `docs/skills/hive-review.md` |
+| Understand the hive system / kubestellar-bot loop | `docs/skills/hive.md` |
+| Need to know when to stop and ask a human | `docs/skills/human-gates.md` |
+| Need to write a skill update / unsure what counts | `docs/skills/skill-improvement.md` |
+| Understand why Bluefin was rewritten (The Pattern) | `docs/factory/IMPROVEMENTS.md` |
 | Check the PR queue or merge ruleset | `docs/skills/queue-dashboard.md` |
 | Debug post-merge E2E CI, MOTD, or brew-setup masking | `docs/skills/e2e-ci.md` |
 | Add, remove, or modify packages (brew, flatpak, RPM) | `docs/skills/bluefin-packages.md` |
