@@ -15,10 +15,11 @@
 [Unit]
 Description=Fix groups for Legacy rechunker
 ConditionPathExists=/run/ostree-booted
+DefaultDependencies=no
 Wants=local-fs.target
 After=local-fs.target
-Before=systemd-user-sessions.service
-# Before=systemd-sysusers.service
+After=bootc-sysusers-shadow-sync.service
+Before=systemd-sysusers.service
 
 [Service]
 Type=oneshot

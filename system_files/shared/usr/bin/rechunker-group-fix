@@ -11,7 +11,10 @@
 GSHADOW_FILE="/etc/gshadow"
 GROUP_FILE="/etc/group"
 
-while IFS=: read -r group_name _rest; do
-    grep -q "^${group_name}:" "$GSHADOW_FILE" 2>/dev/null || \
-        printf '%s:!*::\n' "$group_name" >> "$GSHADOW_FILE"
-done < "$GROUP_FILE"
+(
+    flock -x 9
+    while IFS=: read -r group_name _rest; do
+        grep -q "^${group_name}:" "$GSHADOW_FILE" 2>/dev/null || \
+            printf '%s:!*::\n' "$group_name" >> "$GSHADOW_FILE"
+    done < "$GROUP_FILE"
+) 9>>"${GSHADOW_FILE}"
