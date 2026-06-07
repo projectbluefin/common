@@ -74,9 +74,7 @@ Use the closest matching existing skill. Only create a new skill when the change
 ```
 Changed a workflow?          → ci-tooling.md or workflow-map.md
 Changed a GNOME setting?     → dconf-consistency.md
-Changed a package?           → bluefin-packages.md
-Changed a release step?      → release-promotion.md or bluefin-release.md
-Changed a dakota element?    → the matching dakota-*.md skill
+Changed a release step?      → release-promotion.md
 Changed the lifecycle bot?   → label-workflow.md or bonedigger.md
 Changed CI gates?            → e2e-ci.md
 New domain entirely?         → create docs/skills/<area>.md
