@@ -16,6 +16,7 @@ Load this when cutting a release, evaluating whether a monthly tag is safe to cr
 - [Supply chain — current state and planned improvements](#supply-chain--current-state-and-planned-improvements)
 - [Verifying a published artifact](#verifying-a-published-artifact)
 - [Weekly gated release model](#weekly-gated-release-model)
+- [Troubleshooting the testing→main squash promotion](#troubleshooting-the-testingmain-squash-promotion)
 
 ---
 
@@ -179,6 +180,76 @@ The three image repos (bluefin, bluefin-lts, dakota) currently use inconsistent 
 | E2E gates | [e2e-ci.md](e2e-ci.md) |
 | Promotion gates (QA model) | [../qa/PROMOTION_GATES.md](../qa/PROMOTION_GATES.md) |
 | Supply chain tooling (shared) | [projectbluefin/actions#86](https://github.com/projectbluefin/actions/issues/86) |
+
+---
+
+## Troubleshooting the testing→main squash promotion
+
+`promote-testing-to-main.yml` squash-merges `testing` onto `main` by doing:
+
+```bash
+git checkout -B auto/promote-testing-to-main origin/main
+git merge --squash origin/testing
+git commit -m "chore: promote testing to main"
+git push --force origin auto/promote-testing-to-main
+```
+
+### UD (Updated/Deleted) conflict
+
+**Symptom:** `promote-testing-to-main.yml` fails with `Automatic merge failed` and `git status` shows lines like:
+
+```
+UD .github/workflows/generate-release.yml
+UD .github/workflows/scheduled-stable-release.yml
+```
+
+`UD` means: **testing deleted** the file, but **main still has it** (or vice versa). This happens when a PR removes a workflow from `testing` (e.g., consolidating to a reusable in `projectbluefin/actions`) but the deletion hasn't reached `main` yet.
+
+**Resolution:** Accept the deletions from `testing` — they represent the intended state:
+
+```bash
+cd ~/src/bluefin
+git fetch projectbluefin main testing
+git checkout -B fix/rebuild-squash-promo projectbluefin/main
+git merge --squash projectbluefin/testing  # will fail with UD conflict
+
+# For each UD file, accept the deletion from testing:
+git rm .github/workflows/generate-release.yml
+git rm .github/workflows/scheduled-stable-release.yml
+
+git commit -m "chore: promote testing to main"
+git push projectbluefin fix/rebuild-squash-promo:auto/promote-testing-to-main --force
+```
+
+Then re-run `promote-testing-to-main.yml` via `workflow_dispatch` — it will detect the squash branch already matches testing and proceed to the enqueue step.
+
+**Verify it's pre-existing** before touching anything: check if the `promote-testing-to-main.yml` run that failed predates your own merged PR. If it does, the conflict is not yours to own — but you can still fix the squash branch.
+
+### Merge queue enqueue blocked
+
+After rebuilding the squash branch, if `enqueuePullRequest` fails with:
+
+```
+Required status check "PR Validation — testsuite/validate (pull_request)" is expected.
+```
+
+The PR's CI checks have not yet completed against the new squash-branch HEAD. Wait for the `PR Validation — testsuite` workflow run to finish, then retry the enqueue.
+
+If the error is `At least 1 approving review is required`:
+
+- The `github-actions[bot]` (app ID 15368) is **not** in the bypass actors for `main-review-required-with-renovate-bypass`. It cannot self-approve.
+- An OrganizationAdmin must approve the PR. The workflow's enqueue step will retry after approval.
+- As a last resort, use `gh pr merge <N> --squash --admin` to bypass (only valid for org admins).
+
+### Branch policy on `projectbluefin/actions`
+
+`projectbluefin/actions` has a branch policy that blocks non-admin merges (including the agent token). PRs to `actions` always require a human to merge. After merge, the `@v1` tag must be force-pushed:
+
+```bash
+cd ~/src/actions
+git tag -f v1 HEAD
+git push --force origin v1
+```
 
 ---
 
