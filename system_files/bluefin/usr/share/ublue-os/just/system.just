@@ -76,6 +76,36 @@ toggle-devmode:
     fi
     echo "Use ujust dx-group to add your user to the correct groups and complete the installation after rebooting into the development image"
 
+# Toggle between the stable and testing image channels
+[group('System')]
+toggle-testing:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
+    IMAGE_REF="$(jq -r '."image-ref"' < "${IMAGE_INFO_FILE}")"
+    IMAGE_PATH="$(sed 's|^ostree-image-signed:docker://||' <<< "${IMAGE_REF}")"
+    if [[ "${IMAGE_TAG}" == *testing* ]]; then
+        if [[ "${IMAGE_TAG}" == "testing" ]]; then
+            NEW_TAG="stable"
+        else
+            NEW_TAG="${IMAGE_TAG/-testing/}"
+        fi
+        gum confirm "Switch from testing to ${NEW_TAG}?" || exit 0
+    else
+        case "${IMAGE_TAG}" in
+            stable|latest) NEW_TAG="testing" ;;
+            lts)           NEW_TAG="lts-testing" ;;
+            lts-hwe)       NEW_TAG="lts-hwe-testing" ;;
+            *)
+                echo "Cannot toggle testing from channel '${IMAGE_TAG}'."
+                exit 1 ;;
+        esac
+        echo "Testing images may be unstable and are not recommended for daily use."
+        gum confirm "Switch to testing channel (${NEW_TAG})?" || exit 0
+    fi
+    pkexec bootc switch --enforce-container-sigpolicy "${IMAGE_PATH}:${NEW_TAG}"
+
 # Configure docker,incus-admin,libvirt, container manager, serial permissions
 [group('System')]
 dx-group:
