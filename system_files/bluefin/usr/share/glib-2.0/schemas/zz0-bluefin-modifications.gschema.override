@@ -5,8 +5,8 @@ favorite-apps = ['org.mozilla.firefox.desktop', 'org.mozilla.Thunderbird.desktop
 enabled-extensions = ['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'custom-command-list@storageb.github.com', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io']
 
 [org.gnome.desktop.background]
-picture-uri='file:///usr/share/backgrounds/bluefin/12-bluefin.xml'
-picture-uri-dark='file:///usr/share/backgrounds/bluefin/12-bluefin.xml'
+picture-uri='file:///usr/share/backgrounds/bluefin/06-bluefin.xml'
+picture-uri-dark='file:///usr/share/backgrounds/bluefin/06-bluefin.xml'
 picture-options='zoom'
 primary-color='000000'
 secondary-color='FFFFFF'
