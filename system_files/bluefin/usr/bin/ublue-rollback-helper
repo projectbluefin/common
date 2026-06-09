@@ -53,11 +53,14 @@ if gum confirm --default=no "Would you like to pin to a specific build date?" ; 
   if [ "${LTS_MODE}" == 1 ] ; then
     if grep -q -e "hwe" -e "gdx" <<< "${channel_selected}" ; then
       filter="lts.[0-9]{8}"
+      # shellcheck disable=SC2207
       valid_tags=( $(list_tags "$filter" | grep hwe) )
     else
+      # shellcheck disable=SC2207
       valid_tags=( $(list_tags "$filter" | grep -v hwe) )
     fi
   else
+    # shellcheck disable=SC2207
     valid_tags=( $(list_tags "$filter") )
   fi
   [[ "${#valid_tags[@]}" -eq 0 ]] && { echo "No tags found for $filter"; exit 1; }

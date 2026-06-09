@@ -22,7 +22,7 @@ if [ "${HOOKS_VERBOSE}" == "true" ] ; then
 fi
 
 if [ -d "${SYSTEM_HOOKS_DIRECTORY}" ] ; then
-	for script in $SYSTEM_HOOKS_DIRECTORY/* ; do
-		bash $script
+	for script in "${SYSTEM_HOOKS_DIRECTORY}"/* ; do
+		bash "$script"
 	done
 fi

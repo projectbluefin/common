@@ -1,0 +1,51 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "system_files/**"
+      - "tests/**"
+      - "Justfile"
+  push:
+    branches:
+      - main
+    paths:
+      - "system_files/**"
+      - "tests/**"
+      - "Justfile"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Install bats-core
+        run: |
+          sudo apt-get install -y bats
+
+      - name: Run shellcheck
+        run: |
+          shellcheck \
+            system_files/shared/usr/bin/ublue-system-setup \
+            system_files/shared/usr/bin/ublue-user-setup \
+            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh \
+            system_files/bluefin/usr/bin/ublue-rollback-helper
+
+      - name: Run pytest (hooks.py)
+        run: python3 -m pytest tests/test_hooks.py -v
+
+      - name: Run bats (libsetup.sh)
+        run: bats tests/test_libsetup.bats
+
+      - name: Run bats (setup scripts)
+        run: bats tests/test_setup_scripts.bats
