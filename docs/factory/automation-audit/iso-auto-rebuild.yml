@@ -1,0 +1,92 @@
+# ISO Auto-Rebuild on Stable Promotion
+#
+# Triggered by repository_dispatch from execute-release.yml in image repos
+# after a successful testing→stable promotion. Rebuilds the appropriate
+# ISO variant to keep installation media fresh with the latest stable image.
+#
+# This workflow supplements (does not replace) the monthly cron builds.
+# Manual dispatch remains available for ad-hoc rebuilds.
+#
+# Payload schema:
+#   client_payload:
+#     variant: "stable" | "lts" | "lts-hwe"
+#     image_tag: "stable" | "lts" | "lts-hwe"
+#     source_repo: "projectbluefin/bluefin" | "projectbluefin/bluefin-lts"
+#     digest: "sha256:..." (the promoted digest)
+#     run_url: "https://github.com/..." (link to the promotion run)
+
+name: Auto-rebuild ISOs on promotion
+
+on:
+  repository_dispatch:
+    types:
+      - stable-promoted
+      - lts-promoted
+
+permissions:
+  contents: read
+
+jobs:
+  validate-payload:
+    name: Validate dispatch payload
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      variant: ${{ steps.parse.outputs.variant }}
+      image_tag: ${{ steps.parse.outputs.image_tag }}
+    steps:
+      - name: Parse and validate payload
+        id: parse
+        run: |
+          set -euo pipefail
+
+          VARIANT="${{ github.event.client_payload.variant }}"
+          IMAGE_TAG="${{ github.event.client_payload.image_tag }}"
+          SOURCE_REPO="${{ github.event.client_payload.source_repo }}"
+          DIGEST="${{ github.event.client_payload.digest }}"
+
+          # Validate variant
+          case "$VARIANT" in
+            stable|lts|lts-hwe)
+              echo "Valid variant: ${VARIANT}"
+              ;;
+            *)
+              echo "ERROR: Invalid variant '${VARIANT}' — expected stable, lts, or lts-hwe"
+              exit 1
+              ;;
+          esac
+
+          # Validate image_tag
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "ERROR: image_tag is required"
+            exit 1
+          fi
+
+          # Validate source_repo
+          if [[ "$SOURCE_REPO" != projectbluefin/* ]]; then
+            echo "ERROR: source_repo must be in projectbluefin org, got '${SOURCE_REPO}'"
+            exit 1
+          fi
+
+          # Validate digest format
+          if [[ "$DIGEST" != sha256:* ]]; then
+            echo "WARNING: digest doesn't look like sha256 — got '${DIGEST}'"
+          fi
+
+          {
+            echo "variant=${VARIANT}"
+            echo "image_tag=${IMAGE_TAG}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Payload validated: variant=${VARIANT}, image_tag=${IMAGE_TAG}, source=${SOURCE_REPO}"
+
+  rebuild:
+    name: Rebuild ${{ needs.validate-payload.outputs.variant }} ISOs
+    needs: [validate-payload]
+    uses: ./.github/workflows/reusable-build-iso-anaconda.yml
+    secrets: inherit
+    with:
+      image_version: ${{ needs.validate-payload.outputs.variant }}
+      image_tag: ${{ needs.validate-payload.outputs.image_tag }}
+      upload_artifacts: false
+      upload_r2: true
