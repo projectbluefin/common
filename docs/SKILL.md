@@ -42,6 +42,7 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | **Factory health and improvement** | |
 | Understand factory topology, parity matrix, and org structure | `docs/factory/README.md` |
 | Improve the factory (gap audit, automation coverage) | `docs/skills/factory-improvement.md` |
+| Review the automation audit (pipeline map, artifacts, roadmap) | `docs/factory/automation-audit/README.md` |
 | Capture a factory gap or AI context blindspot as an issue | file GitHub issue with `kind/improvement` + `area/*` + optional `ai-context` — see `docs/skills/label-workflow.md` |
 | Work on the ACMM / factory maturity model | `docs/skills/acmm-audit-level2.md` |
 | Understand the bonedigger lifecycle bot | `docs/skills/bonedigger.md` |

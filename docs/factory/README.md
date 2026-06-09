@@ -63,6 +63,15 @@ Lifecycle automation source: `.github/workflows/lifecycle.yml` (deployed to all 
 Full lifecycle, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
 Hard rules, branch targets, PR comment policy, session start: [`docs/factory/agentic-model.md`](agentic-model.md)
 
+## Automation coverage
+
+Factory automation audit (2026-06-09): [`docs/factory/automation-audit/`](automation-audit/README.md)
+
+- **91% automated** (88/97 workflows fully autonomous)
+- **4 intentional human gates** (promotion review, actions merge, priority assignment, stale PR unclaim)
+- **9 ready-to-deploy artifacts** to reach 97% automation
+- ISO is the weakest link (25% — manual dispatch only); fix artifacts provided
+
 ## Agent rules of engagement
 
 - Open the target repo's `AGENTS.md` first, then use this file for org context.

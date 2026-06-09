@@ -206,6 +206,64 @@ gh search issues --label "status/queued,area/ci" --owner projectbluefin --state 
 - [ ] Renovate is running across all repos
 - [ ] No known AI blindspot (ACMM audit) is unmitigated
 - [ ] Only the human gates listed above remain manual
+- [ ] ISO rebuilds are event-driven (triggered by stable promotion, not manual dispatch)
+- [ ] Supply chain: keyless signing + SBOM + SLSA L2 provenance on all image builds
+- [ ] Self-healing: retry + token health check on all workflows with external dependencies
+
+---
+
+## Automation Audit (2026-06-09)
+
+A comprehensive audit of the factory's automation coverage lives in [`docs/factory/automation-audit/`](../factory/automation-audit/README.md). It contains:
+
+- **Pipeline map** — 97 workflows across 6 repos inventoried with automation scores
+- **Manual touchpoints** — 11 steps classified as INTENTIONAL/AUTOMATABLE/BLOCKED
+- **Non-deterministic steps** — 7 sources of flakiness audited
+- **Failure modes** — 7 failure patterns with hardening YAML
+- **Ready-to-deploy artifacts** — 9 YAML/config files addressing the highest-impact gaps
+- **Implementation roadmap** — 7-phase plan (9 working days to reach 97% automation)
+
+**Key metrics from the audit:**
+
+| Measure | Current | After full implementation |
+|---|---|---|
+| Workflow automation | 91% (88/97) | 97% (93/97) |
+| Manual touchpoints | 11 | 4 (intentional human gates only) |
+| Self-healing patterns | 0 | 2 (retry + token health) |
+| Supply chain (SBOM/SLSA) | None | Full (keyless + SBOM + SLSA L2) |
+
+**Highest-impact quick wins (no dependencies, 1 day total):**
+1. `actions-v1-tag-update.yml` — eliminates forgotten tag push
+2. `cliff.toml` + `release-with-cliff.yml` — structured changelogs + E2E gate
+3. `retry-action.yml` — self-healing for transient failures
+4. `dakota-cache-warm.yml` — prevents 6h cold-start timeouts
+
+**Requires maintainer decision:**
+- Keyless signing migration (#513) — needed for Phase 6
+- ISO dispatch token provisioning — needed for Phase 5
+
+---
+
+## Cross-Repo Dispatch Patterns
+
+When dispatching workflows across repos (e.g., `execute-release.yml` → `iso`), `GITHUB_TOKEN` **cannot** create `repository_dispatch` events on other repositories. Use a GitHub App installation token:
+
+```yaml
+- name: Generate dispatch token
+  id: app-token
+  uses: actions/create-github-app-token@v1
+  with:
+    app-id: ${{ secrets.ISO_DISPATCH_APP_ID }}
+    private-key: ${{ secrets.ISO_DISPATCH_PRIVATE_KEY }}
+    repositories: iso
+
+- name: Dispatch
+  env:
+    GH_TOKEN: ${{ steps.app-token.outputs.token }}
+  run: gh api repos/projectbluefin/iso/dispatches -f event_type="stable-promoted" ...
+```
+
+Never use `secrets.GITHUB_TOKEN` for cross-repo dispatch — it will silently fail (GitHub returns 404, not 403).
 
 ---
 

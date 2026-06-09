@@ -27,7 +27,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `skill-drift.yml` | Warns when implementation changes land without matching docs/skills updates | Adjusting doc-drift coverage or path mapping |
 | `sync-codeowners.yml` | Keeps CODEOWNERS/policy state in sync | Governance / CODEOWNERS automation work |
 | `sync-labels.yml` | Syncs `labels.json` (67 labels) to all factory repos — requires `MERGERAPTOR_APP_ID` + `MERGERAPTOR_PRIVATE_KEY` secrets (see issue #511) | Adding/retiring labels or debugging label drift |
-| `release.yml` | Monthly/versioned OCI release flow. **Planned improvements:** git-cliff changelog + e2e prerequisite gate tracked in [common#513](https://github.com/projectbluefin/common/issues/513). | Changing versioned layer release behavior |
+| `release.yml` | Monthly/versioned OCI release flow. **Planned improvements:** git-cliff changelog + e2e prerequisite gate — see [`automation-audit/release-with-cliff.yml`](../factory/automation-audit/release-with-cliff.yml) for the ready-to-deploy replacement. Tracked in [common#513](https://github.com/projectbluefin/common/issues/513). | Changing versioned layer release behavior |
 | `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls common `lifecycle.yml`. | Changing factory lifecycle automation |
 
 ## Mental model
