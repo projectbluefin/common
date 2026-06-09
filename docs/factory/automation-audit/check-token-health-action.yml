@@ -1,0 +1,122 @@
+# Token Health Check — composite action
+#
+# Deploy to: projectbluefin/actions/actions/check-token-health/action.yml
+#
+# Usage:
+#   - uses: projectbluefin/actions/actions/check-token-health@<sha>
+#     with:
+#       token: ${{ secrets.RENOVATE_TOKEN }}
+#       token_name: RENOVATE_TOKEN
+#       required_scopes: repo,workflow
+#
+# Fails fast if a token is expired, revoked, or missing required scopes.
+# Run at the start of workflows that depend on PATs or App tokens.
+
+name: Check Token Health
+description: |
+  Verifies a GitHub token is valid, not expired, and has required scopes.
+  Fails the step immediately if the token is unhealthy, preventing
+  cascading failures deeper in the workflow.
+
+inputs:
+  token:
+    description: 'The GitHub token to validate'
+    required: true
+  token_name:
+    description: 'Human-readable name for error messages (e.g., RENOVATE_TOKEN)'
+    required: true
+  required_scopes:
+    description: 'Comma-separated list of required OAuth scopes (empty = any valid token)'
+    required: false
+    default: ''
+  min_remaining_requests:
+    description: 'Minimum API requests remaining before warning'
+    required: false
+    default: '100'
+
+outputs:
+  valid:
+    description: 'Whether the token is valid (true/false)'
+    value: ${{ steps.check.outputs.valid }}
+  rate_remaining:
+    description: 'API rate limit remaining'
+    value: ${{ steps.check.outputs.rate_remaining }}
+  expires_at:
+    description: 'Token expiry (if detectable)'
+    value: ${{ steps.check.outputs.expires_at }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate token
+      id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        TOKEN_NAME: ${{ inputs.token_name }}
+        REQUIRED_SCOPES: ${{ inputs.required_scopes }}
+        MIN_REMAINING: ${{ inputs.min_remaining_requests }}
+      run: |
+        set -euo pipefail
+
+        # 1. Basic auth check
+        HTTP_CODE=$(curl -s -o /tmp/auth-response.json -w '%{http_code}' \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/user)
+
+        if [ "$HTTP_CODE" = "401" ]; then
+          echo "::error::Token '${TOKEN_NAME}' is invalid or expired (HTTP 401)"
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+          exit 1
+        elif [ "$HTTP_CODE" = "403" ]; then
+          echo "::error::Token '${TOKEN_NAME}' is forbidden (HTTP 403) — may be suspended or IP-blocked"
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+          exit 1
+        elif [ "$HTTP_CODE" != "200" ]; then
+          echo "::error::Token '${TOKEN_NAME}' auth check returned HTTP ${HTTP_CODE}"
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi
+
+        # 2. Check scopes (from response headers)
+        SCOPES_HEADER=$(curl -s -I \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          https://api.github.com/user | grep -i "x-oauth-scopes:" | cut -d: -f2- | tr -d ' \r')
+
+        if [ -n "$REQUIRED_SCOPES" ]; then
+          IFS=',' read -ra REQUIRED <<< "$REQUIRED_SCOPES"
+          for scope in "${REQUIRED[@]}"; do
+            if ! echo "$SCOPES_HEADER" | grep -q "$scope"; then
+              echo "::error::Token '${TOKEN_NAME}' missing required scope '${scope}' (has: ${SCOPES_HEADER})"
+              echo "valid=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          done
+        fi
+
+        # 3. Check rate limit
+        RATE_JSON=$(curl -s \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          https://api.github.com/rate_limit)
+        REMAINING=$(echo "$RATE_JSON" | jq -r '.rate.remaining')
+        RESET=$(echo "$RATE_JSON" | jq -r '.rate.reset')
+
+        echo "rate_remaining=${REMAINING}" >> "$GITHUB_OUTPUT"
+
+        if [ "$REMAINING" -lt "$MIN_REMAINING" ]; then
+          RESET_TIME=$(date -d "@${RESET}" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r "$RESET" -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "::warning::Token '${TOKEN_NAME}' rate limit low: ${REMAINING} remaining (resets at ${RESET_TIME})"
+        fi
+
+        # 4. Check token expiry (GitHub App installations have expiry)
+        EXPIRES=$(jq -r '.expires_at // empty' /tmp/auth-response.json 2>/dev/null || true)
+        if [ -n "$EXPIRES" ]; then
+          echo "expires_at=${EXPIRES}" >> "$GITHUB_OUTPUT"
+          echo "Token '${TOKEN_NAME}' expires at: ${EXPIRES}"
+        else
+          echo "expires_at=none" >> "$GITHUB_OUTPUT"
+        fi
+
+        echo "valid=true" >> "$GITHUB_OUTPUT"
+        echo "Token '${TOKEN_NAME}' is healthy (rate: ${REMAINING} remaining)"
