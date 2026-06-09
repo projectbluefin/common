@@ -45,7 +45,7 @@ jobs:
           DATE=$(date +'%Y-%m-%d')
           gh issue create \
             --repo "$REPO" \
-            --title "🚨 Promotion candidate E2E failed — ${DATE}" \
+            --title "ci: promotion candidate E2E failed — ${DATE}" \
             --body "The Tuesday promotion-candidate E2E suite failed before the weekly promotion window. **Do NOT promote** \`bluefin:testing\` or \`bluefin:lts-testing\` until resolved. Workflow run: ${RUN_URL}" \
             --label "kind/bug" \
             --label "kind/github-action"
