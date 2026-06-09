@@ -146,7 +146,6 @@ setup-vms:
     fi
     echo "VM stack ready. Launch Virtual Machine Manager from the app menu."
     echo "Supports: Linux/Windows VMs, Windows 11 (UEFI + TPM), USB passthrough."
-    echo "For bridged networking or PCI passthrough, use the DX image: ujust toggle-devmode"
 
 # Toggle the VM stack on or off
 [group('System')]
