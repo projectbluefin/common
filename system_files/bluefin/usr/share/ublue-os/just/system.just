@@ -84,7 +84,8 @@ toggle-testing:
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
     IMAGE_REF="$(jq -r '."image-ref"' < "${IMAGE_INFO_FILE}")"
-    IMAGE_PATH="$(sed 's|^ostree-image-signed:docker://||' <<< "${IMAGE_REF}")"
+    # Strip transport prefix (ostree-image-signed:docker://, ostree-unverified-registry:, etc.)
+    IMAGE_PATH="$(sed -E 's|^.*://||; s|^[a-z-]+:||' <<< "${IMAGE_REF}")"
     if [[ "${IMAGE_TAG}" == *testing* ]]; then
         if [[ "${IMAGE_TAG}" == "testing" ]]; then
             NEW_TAG="stable"
