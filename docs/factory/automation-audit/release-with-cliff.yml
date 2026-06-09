@@ -1,0 +1,145 @@
+# Updated release.yml for projectbluefin/common
+#
+# Changes from current:
+# 1. Adds git-cliff for structured changelog generation
+# 2. Adds promotion criteria check (e2e must be green)
+# 3. Preserves monthly cron + manual dispatch
+#
+# Deploy to: projectbluefin/common/.github/workflows/release.yml
+# Requires: cliff.toml in repo root
+
+name: Monthly Release
+
+on:
+  schedule:
+    # Run on the 1st of every month at 00:00 UTC
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Gate: verify promotion criteria before creating release
+  check-promotion-criteria:
+    name: Verify promotion criteria
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      safe: ${{ steps.check.outputs.safe }}
+    steps:
+      - name: Check E2E status
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Check if latest e2e.yml run on main is successful
+          LATEST_E2E=$(gh run list \
+            --repo "${{ github.repository }}" \
+            --workflow e2e.yml \
+            --branch main \
+            --limit 1 \
+            --json conclusion \
+            --jq '.[0].conclusion')
+
+          if [ "$LATEST_E2E" != "success" ]; then
+            echo "WARNING: Latest E2E run is '${LATEST_E2E}' — not 'success'"
+            echo "safe=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping release — E2E is not green"
+          else
+            echo "E2E is green — safe to release"
+            echo "safe=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Check for do-not-merge PRs
+          DNM_COUNT=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --label "do-not-merge" \
+            --base main \
+            --json number \
+            --jq 'length')
+
+          if [ "$DNM_COUNT" -gt 0 ]; then
+            echo "WARNING: ${DNM_COUNT} do-not-merge PRs open"
+            echo "safe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Create monthly snapshot release
+    needs: [check-promotion-criteria]
+    if: needs.check-promotion-criteria.outputs.safe == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@3bcad52036b48c4f9e2249c2ebd39a428ef3d98f # just
+        with:
+          tool: git-cliff
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          TAG="v$(date +'%Y.%m')"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${TAG}"
+
+      - name: Generate changelog with git-cliff
+        id: changelog
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.tag.outputs.tag }}"
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            NOTES="Monthly snapshot release ${TAG}\n\nFirst release — no previous tag."
+          else
+            # Generate structured changelog
+            NOTES=$(git cliff "${PREVIOUS_TAG}..HEAD" --strip header 2>/dev/null || \
+              git log "${PREVIOUS_TAG}..HEAD" --pretty=format:'- %s (%h)' --no-merges)
+          fi
+
+          # Write to file for multiline output
+          echo "$NOTES" > /tmp/release-notes.md
+
+          # Prepend header
+          {
+            echo "## Monthly Snapshot: ${TAG}"
+            echo ""
+            cat /tmp/release-notes.md
+            echo ""
+            echo "---"
+            echo "*Automated monthly snapshot of bluefin-common configuration files.*"
+          } > /tmp/full-notes.md
+
+      - name: Create Release
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          bodyFile: /tmp/full-notes.md
+          draft: false
+          prerelease: false
+          makeLatest: true
+          allowUpdates: true
+          skipIfReleaseExists: false
+
+  skip-notification:
+    name: Skip notification
+    needs: [check-promotion-criteria]
+    if: needs.check-promotion-criteria.outputs.safe != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Log skip reason
+        run: |
+          echo "::warning::Monthly release skipped — promotion criteria not met"
+          echo "Check the E2E workflow and do-not-merge PRs before retrying."
+          echo "To retry: run release.yml via workflow_dispatch after resolving blockers."
