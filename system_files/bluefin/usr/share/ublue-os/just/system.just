@@ -74,6 +74,9 @@ toggle-devmode:
     if gum confirm "Do you want to install extra monospace fonts?" ; then
         brew bundle install --file=/usr/share/ublue-os/homebrew/fonts.Brewfile
     fi
+    if gum confirm "Do you want to set up the VM stack (virt-manager, QEMU, Windows 11 support)?" ; then
+        ujust setup-vms
+    fi
     echo "Use ujust dx-group to add your user to the correct groups and complete the installation after rebooting into the development image"
 
 # Toggle between the stable and testing image channels
@@ -127,6 +130,40 @@ dx-group:
     done
 
     echo "Reboot system and log back in to use docker, libvirt, incus, and serial connections."
+
+# Set up the VM stack: virt-manager flatpak + QEMU extension (UEFI, TPM, USB passthrough)
+# Idempotent — safe to run multiple times. Called by toggle-vms and toggle-devmode.
+[group('System')]
+setup-vms:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    flatpak install --system --noninteractive flathub \
+        org.virt_manager.virt-manager \
+        org.virt_manager.virt_manager.Extension.Qemu
+    mkdir -p ~/.config/libvirt
+    if ! grep -q "uri_default" ~/.config/libvirt/libvirt.conf 2>/dev/null; then
+        echo 'uri_default = "qemu:///session"' >> ~/.config/libvirt/libvirt.conf
+    fi
+    echo "VM stack ready. Launch Virtual Machine Manager from the app menu."
+    echo "Supports: Linux/Windows VMs, Windows 11 (UEFI + TPM), USB passthrough."
+    echo "For bridged networking or PCI passthrough, use the DX image: ujust toggle-devmode"
+
+# Toggle the VM stack on or off
+[group('System')]
+toggle-vms:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if flatpak list --system --columns=application 2>/dev/null | grep -q "org.virt_manager.virt-manager"; then
+        gum confirm "Remove the VM stack (virt-manager + QEMU)?" || exit 0
+        flatpak uninstall --system --noninteractive \
+            org.virt_manager.virt-manager \
+            org.virt_manager.virt_manager.Extension.Qemu || true
+        sed -i '/uri_default.*session/d' ~/.config/libvirt/libvirt.conf 2>/dev/null || true
+        echo "VM stack removed."
+    else
+        gum confirm "Install the VM stack (virt-manager + QEMU)?" || exit 0
+        ujust setup-vms
+    fi
 
 # Install system flatpaks for rebasers
 [group('System')]
