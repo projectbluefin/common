@@ -1,2 +1,16 @@
 iteration	metric	action	result	notes
 0	0	baseline	keep	Audit directory created; 0 artifacts
+1	2	pipeline-map.md + results.tsv	keep	97 workflows mapped across 6 repos; 8 critical gaps identified
+2	3	manual-touchpoints.md	keep	11 touchpoints classified; ISO and v1 tag are P1 quick wins
+3	5	iso-auto-rebuild.yml + iso-dispatch-snippet.yml	keep	Eliminates longest manual step (T2)
+4	6	actions-v1-tag-update.yml	keep	Eliminates forgotten-tag failure mode (T6)
+5	8	cliff.toml + release-with-cliff.yml	keep	Structured changelog + E2E prerequisite gate
+6	9	failure-modes.md	keep	7 failure modes documented with YAML hardening
+7	10	retry-action.yml	keep	Self-healing retry with exponential backoff
+8	11	build-upgraded.yml	keep	Keyless signing + SBOM + SLSA L2 + CVE scan
+9	12	non-deterministic-steps.md	keep	7 ND steps audited; 3 actionable fixes
+10	13	publish-loop-spec.md	keep	Complete target architecture specification
+11	14	dakota-cache-warm.yml	keep	Prevents 6h cold-start timeouts
+12	15	check-token-health-action.yml	keep	Token validation composite action
+13	16	implementation-roadmap.md	keep	7-phase prioritized roadmap
+14	17	README.md + results.tsv update	keep	Index and final summary
