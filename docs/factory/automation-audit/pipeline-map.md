@@ -154,7 +154,7 @@ Fully automated: `e2e.yml` (reusable), `nightly.yml`, `manual.yml` (dispatch), `
 
 | Repo | Auto | Partial | Manual/Disabled | Score |
 |---|---|---|---|---|
-| common | 13 | 1 | 0 | 96% |
+| common | 13 | 1 | 0 | 93% |
 | bluefin | 26 | 0 | 0 | 100% |
 | dakota | 18 | 1 | 1 | 90% |
 | actions | 19 | 0 | 0 | 100% |

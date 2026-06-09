@@ -22,9 +22,17 @@
     permissions:
       contents: read
     steps:
+      - name: Generate dispatch token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ISO_DISPATCH_APP_ID }}
+          private-key: ${{ secrets.ISO_DISPATCH_PRIVATE_KEY }}
+          repositories: iso
+
       - name: Dispatch ISO rebuild
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
 
@@ -65,18 +73,7 @@
 
 # --- Notes ---
 #
-# Token considerations:
-#   GITHUB_TOKEN from the calling repo does NOT have dispatch permission
-#   on projectbluefin/iso by default. Options:
-#
-#   1. Use a GitHub App (preferred) — create app with `contents:write` on iso repo
-#      Store app credentials as org secrets: ISO_DISPATCH_APP_ID, ISO_DISPATCH_PRIVATE_KEY
-#      Generate installation token in the step
-#
-#   2. Use a PAT with repo scope (simpler but less secure)
-#      Store as org secret: ISO_DISPATCH_TOKEN
-#
-#   3. Use repository_dispatch webhook from a GitHub App (most scalable)
-#
-# Recommendation: Option 1 (GitHub App) — reuse MERGERAPTOR app if it has
+# Token: Uses a GitHub App installation token (ISO_DISPATCH_APP_ID +
+# ISO_DISPATCH_PRIVATE_KEY org secrets). The app needs `contents:write`
+# permission on projectbluefin/iso. Reuse MERGERAPTOR app if it has
 # dispatch permission on iso, or create a dedicated dispatch app.
