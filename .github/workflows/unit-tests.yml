@@ -33,6 +33,9 @@ jobs:
         run: |
           sudo apt-get install -y bats
 
+      - name: Install pytest
+        run: pip install pytest
+
       - name: Run shellcheck
         run: |
           shellcheck \
