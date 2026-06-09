@@ -1,0 +1,54 @@
+# Auto-update v1 tag after merge to main
+#
+# After any PR merges to main in projectbluefin/actions, this workflow
+# force-pushes the v1 tag to HEAD. Consumers referencing @v1 get the
+# latest composite actions without manual tag management.
+#
+# Security: Only runs on push to main (post-merge). The human gate
+# for actions is the PR review — once merged, tag update is mechanical.
+#
+# Deploy to: projectbluefin/actions/.github/workflows/update-v1-tag.yml
+
+name: Update v1 tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-v1-tag
+  cancel-in-progress: true
+
+jobs:
+  update-tag:
+    name: Force-push v1 to HEAD
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Update v1 tag
+        run: |
+          set -euo pipefail
+
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          # Check if v1 already points to HEAD
+          EXISTING_TAG_SHA=$(git ls-remote --tags origin refs/tags/v1 | awk '{print $1}')
+
+          if [ "$EXISTING_TAG_SHA" = "$CURRENT_SHA" ]; then
+            echo "v1 already points to HEAD (${CURRENT_SHA::7}) — nothing to do"
+            exit 0
+          fi
+
+          git tag -f v1 HEAD
+          git push --force origin v1
+
+          echo "Updated v1: ${EXISTING_TAG_SHA::7} → ${CURRENT_SHA::7}"
