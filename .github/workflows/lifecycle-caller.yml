@@ -13,11 +13,11 @@ on:
 permissions:
   issues: write
   pull-requests: write
-  contents: write
+  contents: read
 
 jobs:
   lifecycle:
-    uses: ./.github/workflows/lifecycle.yml
+    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@7df3176a8449ba1db2c2b38ea18c0d9b3687a4f0 # chore/lifecycle-from-common — update SHA after actions PR merges
     with:
       brand_name: "Common"
     secrets: inherit
