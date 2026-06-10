@@ -51,7 +51,7 @@ jobs:
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing
+        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-fail-under=80
 
       - name: Run bats (libsetup.sh)
         run: bats tests/test_libsetup.bats
@@ -67,3 +67,12 @@ jobs:
 
       - name: Run bats (luks-tpm2-autounlock)
         run: bats tests/test_luks_tpm2.bats
+
+      - name: Run bats (rechunker-group-fix)
+        run: bats tests/test_rechunker_group_fix.bats
+
+      - name: Run bats (ublue-bling-fastfetch)
+        run: bats tests/test_bling_fastfetch.bats
+
+      - name: Run bats (changelog.just)
+        run: bats tests/test_changelog.bats

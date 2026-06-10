@@ -131,6 +131,38 @@ This pattern is used in:
 - `ublue-system-setup`, `ublue-user-setup` → same
 - `luks-tpm2-autounlock` → `CMDLINE_FILE`, `DISK_BY_UUID_DIR`, `DEV_DIR`
 - `ublue-bling` → `BLING_CLI_DIRECTORY`, `BLING_ENV_SCRIPT`
+- `rechunker-group-fix` → `GSHADOW_FILE`, `GROUP_FILE` (**workaround**: script is itself a workaround for systemd/systemd#30852; remove overrides when script is deleted)
+
+### Testing just recipes
+
+Just recipes embed bash after a shebang line. Extract the body with `awk` for bats testing:
+
+```bash
+_extract_script() {
+    local out_file="$1"
+    awk '
+        /^    #!\/usr\/bin\/bash/ { found=1; next }
+        found { sub(/^    /, ""); print }
+    ' "${JUSTFILE}" > "${out_file}"
+}
+```
+
+Then run: `bash "${extracted_script}"` with mocked PATH binaries.
+
+### Pitfall: literal `*` in bats grep assertions
+
+`grep -q "^name:!*::"` treats `*` as a regex quantifier (zero-or-more `!`) — it will **not** match the literal string `name:!*::`. Always escape:
+
+```bash
+# WRONG — * is a quantifier, matches name::: or name:!:: etc.
+grep -q "^name:!*::" file
+
+# CORRECT — \* matches a literal asterisk
+grep -q "^name:!\*::" file
+
+# ALSO CORRECT — -F disables regex entirely
+grep -qF "name:!*::" file
+```
 
 ## Exemptions
 
@@ -159,8 +191,6 @@ Scripts exempt from behavioral testing (shellcheck-only):
 | Shell scripts | shellcheck | 100% of all `.sh` + `usr/bin` scripts |
 | Shell behavior | bats | All `usr/bin` scripts with branching logic |
 
-Coverage reporting is visible in every PR's CI output. A hard `--cov-fail-under` threshold will be set in Phase 3 once baseline is established (tracked in [#561](https://github.com/projectbluefin/common/issues/561)).
-
 ## Test Files Reference
 
 | File | What it covers |
@@ -171,6 +201,9 @@ Coverage reporting is visible in every PR's CI output. A hard `--cov-fail-under`
 | `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
 | `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
 | `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |
+| `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
+| `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
+| `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
 
 ## Quality Epic
 

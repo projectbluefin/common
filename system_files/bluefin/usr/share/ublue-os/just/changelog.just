@@ -5,7 +5,8 @@ changelogs:
     #!/usr/bin/bash
 
     # Get Image Tag
-    TAG="$(jq -r '.["image-tag"]' < /usr/share/ublue-os/image-info.json)"
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
 
     # Select the correct upstream repo based on image stream
     if [[ "$TAG" =~ ^lts ]]; then
