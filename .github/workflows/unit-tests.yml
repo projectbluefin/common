@@ -15,6 +15,7 @@ on:
       - "system_files/**"
       - "tests/**"
       - "Justfile"
+  merge_group:
   workflow_dispatch:
 
 concurrency:

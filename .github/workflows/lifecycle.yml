@@ -516,6 +516,28 @@ jobs:
             gh pr edit "$NUMBER" --repo "$REPO" --add-label 'pr/needs-review'
           fi
 
+  on-pr-lgtm:
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'lgtm'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Queue for merge on lgtm
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Enable auto-merge — with merge queue ruleset this queues the PR;
+          # without it, merges automatically when all required checks pass.
+          gh pr merge "$NUMBER" --repo "$REPO" --auto
+          # Swap labels: PR is now queued, no longer needs review
+          gh pr edit "$NUMBER" --repo "$REPO" --remove-label 'pr/needs-review' || true
+
   stale-sweep:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
