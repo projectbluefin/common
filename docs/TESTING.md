@@ -204,6 +204,7 @@ Scripts exempt from behavioral testing (shellcheck-only):
 | `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
+| `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
 
 ## Quality Epic
 

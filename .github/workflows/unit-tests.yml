@@ -76,3 +76,6 @@ jobs:
 
       - name: Run bats (changelog.just)
         run: bats tests/test_changelog.bats
+
+      - name: Run bats (ublue-fastfetch)
+        run: bats tests/test_ublue_fastfetch.bats
