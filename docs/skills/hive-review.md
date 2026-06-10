@@ -231,3 +231,44 @@ Read [skill-drift documentation](./SKILL_DRIFT_CI.md) for how to handle CI failu
 - [label-workflow](./label-workflow.md) — Lifecycle state machine and slash commands
 - [queue-dashboard](./queue-dashboard.md) — Repository-wide queue view
 - [REGRESSION_CONTRACT](../qa/REGRESSION_CONTRACT.md) — Feature parity across streams
+
+---
+
+## Executing hive advisory batches (2026-06-10 session learnings)
+
+When executing a large hive advisory fleet (many repos, many PRs), these patterns prevent wasted retries:
+
+### GitHub API parallel commit conflicts
+
+Committing multiple files to the same branch in parallel calls causes HTTP 409 — the first commit advances the branch HEAD and the second call has a stale SHA.
+
+**Pattern:** Commit serially. Re-fetch SHA before each update:
+```bash
+SHA=$(gh api "repos/OWNER/REPO/contents/PATH?ref=BRANCH" --jq '.sha')
+# ... make changes ...
+gh api "repos/OWNER/REPO/contents/PATH" -X PUT -f sha="$SHA" ...
+# Then re-fetch SHA for the next file
+SHA2=$(gh api "repos/OWNER/REPO/contents/OTHER?ref=BRANCH" --jq '.sha')
+```
+
+### Pass file content via temp file, not heredoc env vars
+
+Python `os.environ['VAR']` inside a bash heredoc with `VAR=$(...)` fails — the var isn't exported. Write content to `/tmp/file.txt` and read with `open('/tmp/file.txt').read()`.
+
+### Repo-specific branch targets
+
+| Repo | PR target | Notes |
+|---|---|---|
+| `projectbluefin/bluefin` | `testing` | Never `main` |
+| `projectbluefin/bluefin-lts` | `main` | actions AGENTS.md previously said `testing` — now fixed |
+| `projectbluefin/bootc-installer` | `dev` | Default branch is `dev`, not `main` |
+| `projectbluefin/testsuite` | `main` | Merge queue enforced — doc changes still need CI green |
+| All others | `main` | Standard |
+
+### push_files vs create_or_update_file
+
+`push_files` batches multiple files in one commit but can fail with cryptic "Required url" errors for certain input shapes. Use `create_or_update_file` for single files as the reliable fallback.
+
+### Advisory digest is truncated
+
+The hive advisory comment in `common#557` is truncated at 65KB. The full digest is ~315KB. When analyzing: there is a second half with more quality-agent findings that the CI-maintainer section doesn't repeat. Always request the full comment body via `gh issue view --comments` and check for the truncation warning at the bottom.
