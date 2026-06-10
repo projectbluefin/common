@@ -6,10 +6,20 @@
   "packageRules": [
     {
       "description": "Automerge chore dep updates (digest, pin, patch, minor) when CI passes",
-      "matchUpdateTypes": ["digest", "pin", "patch", "minor"],
+      "matchUpdateTypes": [
+        "digest",
+        "pin",
+        "patch",
+        "minor"
+      ],
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
+    },
+    {
+      "description": "Group all projectbluefin/actions ref updates into one PR for atomic SHA bumps (consistency C3)",
+      "matchDepPatterns": ["projectbluefin/actions"],
+      "groupName": "projectbluefin/actions"
     }
   ]
 }
