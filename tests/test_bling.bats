@@ -24,8 +24,10 @@ setup() {
     export BLING_ENV_SCRIPT="${WORKDIR}/env.sh"
     printf '# mock env\n' > "${BLING_ENV_SCRIPT}"
 
-    # Isolated home directory
+    # Isolated home directory — unset XDG_CONFIG_HOME so the script uses
+    # the HOME-based fallback rather than the CI runner's real XDG path
     export HOME="${WORKDIR}/home"
+    unset XDG_CONFIG_HOME
     mkdir -p "${HOME}"
 }
 
@@ -74,9 +76,6 @@ teardown() {
     mkdir -p "${HOME}/.config/fish"
     export SHELL="/bin/fish"
     run bash "${BLING_SCRIPT}"
-    echo "--- script output ---"
-    echo "${output}"
-    echo "--- status: ${status} ---"
     [ "${status}" -eq 0 ]
     [ -f "${HOME}/.config/fish/config.fish" ]
     grep -qF "### bling.fish source start" "${HOME}/.config/fish/config.fish"
