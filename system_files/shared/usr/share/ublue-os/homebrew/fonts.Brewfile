@@ -1,3 +1,4 @@
+cask "font-opendyslexic"
 cask "font-caskaydia-mono-nerd-font"
 cask "font-comic-shanns-mono-nerd-font"
 cask "font-droid-sans-mono-nerd-font"
