@@ -7,9 +7,16 @@
 # systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
 # This will populate /etc/group successfully, and then populate /etc/gshadow
 # with any missing groups that we nuked when we removed /etc/gshadow
-
-GSHADOW_FILE="/etc/gshadow"
-GROUP_FILE="/etc/group"
+#
+# TODO: This entire script is a workaround for systemd-sysusers not managing
+# /etc/gshadow on bootc images. Remove once upstream resolves it:
+# https://github.com/systemd/systemd/issues/30852
+#
+# GSHADOW_FILE / GROUP_FILE env-var overrides exist solely for unit-test
+# isolation (bats cannot write to /etc). Remove them when this script is
+# deleted.
+GSHADOW_FILE="${GSHADOW_FILE:-/etc/gshadow}"
+GROUP_FILE="${GROUP_FILE:-/etc/group}"
 
 (
     flock -x 9
