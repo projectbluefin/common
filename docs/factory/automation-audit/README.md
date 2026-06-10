@@ -89,13 +89,13 @@ Follow-up work is tracked in `projectbluefin/common`:
 | [#585](https://github.com/projectbluefin/common/issues/585) | `[consistency C2]` Pin `@main` reusable-workflow refs to SHA in `bluefin` | ✅ Merged: [bluefin#484](https://github.com/projectbluefin/bluefin/pull/484) (→ `testing`; reaches `main` on next promotion) |
 | [#586](https://github.com/projectbluefin/common/issues/586) | `[consistency C2]` Pin `@main` reusable-workflow refs to SHA in `bluefin-lts` | ✅ Merged: [bluefin-lts#159](https://github.com/projectbluefin/bluefin-lts/pull/159) (live on `main`) |
 | [#589](https://github.com/projectbluefin/common/issues/589) | `[automation-audit]` Add `CODEOWNERS` to `iso` and `bonedigger` (drift-refresh finding) | ✅ Merged: [bonedigger#22](https://github.com/projectbluefin/bonedigger/pull/22), [iso#60](https://github.com/projectbluefin/iso/pull/60) (using `@projectbluefin/maintainers` team handle so membership changes auto-propagate) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 1: v1 tag auto-update | PR open: [actions#154](https://github.com/projectbluefin/actions/pull/154) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 2: git-cliff + e2e release gate | PR open: [common#592](https://github.com/projectbluefin/common/pull/592) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 3: retry composite action | PR open: [actions#155](https://github.com/projectbluefin/actions/pull/155) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 4: token health check action | PR open: [actions#156](https://github.com/projectbluefin/actions/pull/156) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 7: dakota BST cache-warm | PR open: [dakota#785](https://github.com/projectbluefin/dakota/pull/785) |
-| [#583](https://github.com/projectbluefin/common/issues/583) | C2: pin @main refs to SHA in dakota | PR open: [dakota#784](https://github.com/projectbluefin/dakota/pull/784) |
-| [#587](https://github.com/projectbluefin/common/issues/587) | C3: Renovate grouping rule for projectbluefin/actions | PR open: [common#593](https://github.com/projectbluefin/common/pull/593) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 1: v1 tag auto-update | ✅ Merged: [actions#154](https://github.com/projectbluefin/actions/pull/154) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 2: git-cliff + e2e release gate | ✅ Merged: [common#592](https://github.com/projectbluefin/common/pull/592) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 3: retry composite action | ✅ Merged: [actions#155](https://github.com/projectbluefin/actions/pull/155) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 4: token health check action | ✅ Merged: [actions#156](https://github.com/projectbluefin/actions/pull/156) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | Phase 7: dakota BST cache-warm | ✅ Merged: [dakota#787](https://github.com/projectbluefin/dakota/pull/787) |
+| [#583](https://github.com/projectbluefin/common/issues/583) | C2: pin @main refs to SHA in dakota | ✅ Merged: [dakota#786](https://github.com/projectbluefin/dakota/pull/786) |
+| [#587](https://github.com/projectbluefin/common/issues/587) | C3: Renovate grouping rule for projectbluefin/actions | ✅ Merged: [common#593](https://github.com/projectbluefin/common/pull/593) |
 | [#584](https://github.com/projectbluefin/common/issues/584) | C1: reusable-promote.yml | ⚠️ Blocked — schema mismatch between template and existing release-state.yaml; see [#584 comment](https://github.com/projectbluefin/common/issues/584) for details |
 
 *Open a tracking issue for any new finding from drift verification before adding it to the consistency or roadmap docs.*
