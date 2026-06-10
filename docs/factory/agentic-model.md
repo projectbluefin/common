@@ -42,6 +42,23 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 | `testsuite` | `main` | Test repo — no testing branch |
 | `actions` | `main` | Shared actions — no testing branch |
 
+**Branch creation rule:** Always cut feature branches from the PR target, not from whatever is currently checked out.
+
+```bash
+# Before creating a branch, always fetch and branch from the target:
+git fetch projectbluefin <target>
+git checkout -b feat/my-change projectbluefin/<target>
+# Example for bluefin (target = testing):
+git fetch projectbluefin testing
+git checkout -b feat/my-change projectbluefin/testing
+```
+
+Branching from the wrong base (e.g. `testing` when target is `main`, or vice versa) will cause the PR to show every diverged commit as new, polluting the diff and making review impossible. Verify before pushing:
+
+```bash
+git log feat/my-change ^projectbluefin/<target> --oneline  # must show ONLY your commits
+```
+
 ## Sensitive paths
 
 Changes to these paths require maintainer review before merge:
