@@ -13,22 +13,46 @@ function version-script() {
   TARGET_VERSIONING_NAME=$1
   TYPE_OF_SERVICE=$2
   VERSION=$3
-  shift
-  shift
-  shift
+  shift 3
 
-  if [ ! -e "${SETUP_CHECKER_FILE}" ] ; then
-    mkdir -p "$(dirname "${SETUP_CHECKER_FILE}")"
-    echo "{}" > "${SETUP_CHECKER_FILE}"
-  fi
+  local lock_file="${SETUP_CHECKER_FILE}.lock"
 
-  if [ "$(jq -r -c ".version.${TYPE_OF_SERVICE}.\"${TARGET_VERSIONING_NAME}\"" "${SETUP_CHECKER_FILE}")" == "${VERSION}" ] ; then
-    echo "Exiting as current version (${VERSION}) for ${TYPE_OF_SERVICE}-${TARGET_VERSIONING_NAME} is the same as latest version recorded on ${SETUP_CHECKER_FILE}"
-    return 1
-  fi
-  ANNOYING_JQ_WORKAROUND=$(mktemp)
-  jq ".version.${TYPE_OF_SERVICE}.\"${TARGET_VERSIONING_NAME}\" = \"${VERSION}\"" "${SETUP_CHECKER_FILE}" >"${ANNOYING_JQ_WORKAROUND}"
-  mv "${ANNOYING_JQ_WORKAROUND}" "${SETUP_CHECKER_FILE}"
-  set +x
-  return 0
+  # Run the check/write inside a subshell with an exclusive flock so that
+  # concurrent first-boot setup scripts (user-setup + privileged-setup) cannot
+  # read the JSON before either has written back, causing duplicate execution.
+  (
+    flock -x 200
+
+    if [ ! -e "${SETUP_CHECKER_FILE}" ]; then
+      mkdir -p "$(dirname "${SETUP_CHECKER_FILE}")"
+      echo "{}" > "${SETUP_CHECKER_FILE}"
+    fi
+
+    # Validate JSON; reset if malformed rather than silently skipping setup.
+    if ! jq '.' "${SETUP_CHECKER_FILE}" >/dev/null 2>&1; then
+      echo "Warning: ${SETUP_CHECKER_FILE} is malformed; resetting."
+      echo "{}" > "${SETUP_CHECKER_FILE}"
+    fi
+
+    if [ "$(jq -r -c ".version.${TYPE_OF_SERVICE}.\"${TARGET_VERSIONING_NAME}\"" "${SETUP_CHECKER_FILE}")" == "${VERSION}" ]; then
+      echo "Exiting as current version (${VERSION}) for ${TYPE_OF_SERVICE}-${TARGET_VERSIONING_NAME} is the same as latest version recorded on ${SETUP_CHECKER_FILE}"
+      exit 1
+    fi
+
+    local tmp
+    tmp=$(mktemp)
+    # Remove the temp file on any exit from this subshell (normal or error).
+    trap 'rm -f "${tmp}"' EXIT
+
+    if jq ".version.${TYPE_OF_SERVICE}.\"${TARGET_VERSIONING_NAME}\" = \"${VERSION}\"" "${SETUP_CHECKER_FILE}" > "${tmp}"; then
+      mv "${tmp}" "${SETUP_CHECKER_FILE}"
+    else
+      echo "Error: failed to write version update for ${TYPE_OF_SERVICE}-${TARGET_VERSIONING_NAME}"
+      exit 1
+    fi
+
+    exit 0
+  ) 200>"${lock_file}"
+
+  return $?
 }

@@ -6,6 +6,12 @@ on:
     paths:
       - .github/CODEOWNERS
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — show what would change without making any API calls'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: read
@@ -38,7 +44,10 @@ jobs:
       - name: Sync triagers block to downstream repos
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
+          set -euo pipefail
+
           # Extract the BEGIN/END TRIAGERS block from common's CODEOWNERS
           TRIAGE_BLOCK=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS)
 
@@ -46,6 +55,8 @@ jobs:
             echo "No TRIAGERS block found in .github/CODEOWNERS — nothing to sync."
             exit 0
           fi
+
+          [[ "${DRY_RUN}" == "true" ]] && echo "[dry-run] No API writes will be made."
 
           for repo in bluefin bluefin-lts dakota knuckle; do
             echo "--- Syncing $repo ---"
@@ -66,21 +77,27 @@ jobs:
             NEW=$(echo "$CURRENT" | sed '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/d')
             # Ensure a trailing newline before appending
             NEW=$(printf '%s\n%s\n' "${NEW%$'\n'}" "$TRIAGE_BLOCK")
-
             ENCODED=$(printf '%s' "$NEW" | base64 -w0)
-            gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS \
-              --method PUT \
-              --field message="chore: sync triagers block from projectbluefin/common" \
-              --field content="$ENCODED" \
-              --field sha="$SHA"
 
-            echo "$repo: updated."
+            if [[ "${DRY_RUN}" == "true" ]]; then
+              echo "[dry-run] Would update $repo CODEOWNERS (block differs)"
+            else
+              gh api repos/projectbluefin/$repo/contents/.github/CODEOWNERS \
+                --method PUT \
+                --field message="chore: sync triagers block from projectbluefin/common" \
+                --field content="$ENCODED" \
+                --field sha="$SHA"
+              echo "$repo: updated."
+            fi
           done
 
       - name: Reconcile triager collaborator permissions
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
+          set -euo pipefail
+
           DESIRED=$(sed -n '/^# BEGIN TRIAGERS/,/^# END TRIAGERS/p' .github/CODEOWNERS \
             | grep -oP '@\K[a-zA-Z0-9][a-zA-Z0-9_-]*' \
             | grep -v 'projectbluefin' \
@@ -92,6 +109,7 @@ jobs:
           fi
 
           echo "Desired triagers: $(echo "$DESIRED" | tr '\n' ' ')"
+          [[ "${DRY_RUN}" == "true" ]] && echo "[dry-run] No permission changes will be made."
 
           for repo in common bluefin bluefin-lts dakota knuckle; do
             echo "--- Reconciling permissions for $repo ---"
@@ -103,10 +121,14 @@ jobs:
             while IFS= read -r user; do
               [[ -z "$user" ]] && continue
               if ! echo "$CURRENT" | grep -qx "$user"; then
-                echo "Adding @$user to $repo with triage"
-                gh api "repos/projectbluefin/$repo/collaborators/$user" \
-                  --method PUT \
-                  --field permission=triage > /dev/null
+                if [[ "${DRY_RUN}" == "true" ]]; then
+                  echo "[dry-run] Would add @$user to $repo with triage"
+                else
+                  echo "Adding @$user to $repo with triage"
+                  gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                    --method PUT \
+                    --field permission=triage > /dev/null
+                fi
               else
                 echo "@$user already has triage on $repo"
               fi
@@ -115,9 +137,13 @@ jobs:
             while IFS= read -r user; do
               [[ -z "$user" ]] && continue
               if ! echo "$DESIRED" | grep -qx "$user"; then
-                echo "Removing @$user from $repo"
-                gh api "repos/projectbluefin/$repo/collaborators/$user" \
-                  --method DELETE > /dev/null
+                if [[ "${DRY_RUN}" == "true" ]]; then
+                  echo "[dry-run] Would remove @$user from $repo"
+                else
+                  echo "Removing @$user from $repo"
+                  gh api "repos/projectbluefin/$repo/collaborators/$user" \
+                    --method DELETE > /dev/null
+                fi
               fi
             done <<< "$CURRENT"
           done

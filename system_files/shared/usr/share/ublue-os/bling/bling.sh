@@ -29,9 +29,10 @@ if [ "$(command -v bat)" ]; then
     alias cat='bat --style=plain --pager=never'
 fi
 
-# set ATUIN_INIT_FLAGS in your ~/.bashrc before ublue-bling is sourced.
-# Atuin allows these flags: "--disable-up-arrow" and/or "--disable-ctrl-r"
-ATUIN_INIT_FLAGS="${ATUIN_INIT_FLAGS:-}"
+# open → xdg-open (familiar macOS-style file/URL opener)
+if [ "$(command -v xdg-open)" ]; then
+    alias open='xdg-open >/dev/null 2>&1'
+fi
 
 BLING_SHELL="$(basename "$(readlink /proc/$$/exe)")"
 
@@ -49,10 +50,6 @@ if [ "${BLING_SHELL}" = "bash" ]; then
 fi
 
 [ "$(command -v direnv)" ] && eval "$(direnv hook "${BLING_SHELL}")"
-# Atuin shell integration is disabled by default
-# The atuin binary is still installed and available for manual use
-# To enable shell integration, uncomment the following line or add it to your shell config:
-# [ "$(command -v atuin)" ] && eval "$(atuin init "${BLING_SHELL}" ${ATUIN_INIT_FLAGS})"
 [ "$(command -v starship)" ] && eval "$(starship init "${BLING_SHELL}")"
 [ "$(command -v zoxide)" ] && eval "$(zoxide init "${BLING_SHELL}")"
 

@@ -1,3 +1,9 @@
 *.raw
 *.img
 *.erofs
+.coverage
+.wrangler/
+knuckle/
+__pycache__/
+*.pyc
+.worktrees/
