@@ -90,11 +90,13 @@ EOF
     grep -q -- "--config /usr/share/ublue-os/fastfetch.jsonc" "${WORKDIR}/fastfetch.log"
 }
 
-@test "ublue-fastfetch: exports DEFAULT_THEME from config to fastfetch environment" {
-    # Override mock to capture the env var instead of args
-    printf '#!/bin/bash\necho "DEFAULT_THEME=${DEFAULT_THEME}" >> %s/fastfetch.log\n' \
-        "${WORKDIR}" > "${WORKDIR}/bin/fastfetch"
-    chmod +x "${WORKDIR}/bin/fastfetch"
+@test "ublue-fastfetch: exports DEFAULT_THEME to ublue-bling-fastfetch subprocess" {
+    # ublue-bling-fastfetch is the documented consumer of DEFAULT_THEME (comment in
+    # the script: '# Gets passed to ublue-bling-fastfetch'). Override that mock to
+    # record the env var it receives so a missing 'export' would be caught.
+    printf '#!/bin/bash\necho "DEFAULT_THEME=${DEFAULT_THEME}" >> %s/bling.log\necho "blue"\n' \
+        "${WORKDIR}" > "${WORKDIR}/bin/ublue-bling-fastfetch"
+    chmod +x "${WORKDIR}/bin/ublue-bling-fastfetch"
 
     cat > "${WORKDIR}/fastfetch.json" <<EOF
 {
@@ -106,13 +108,13 @@ EOF
 EOF
     run bash "${SCRIPT_UNDER_TEST}"
     [ "${status}" -eq 0 ]
-    grep -q "DEFAULT_THEME=mocha" "${WORKDIR}/fastfetch.log"
+    grep -q "DEFAULT_THEME=mocha" "${WORKDIR}/bling.log"
 }
 
 @test "ublue-fastfetch: DEFAULT_THEME falls back to 'slate' when key is absent" {
-    printf '#!/bin/bash\necho "DEFAULT_THEME=${DEFAULT_THEME}" >> %s/fastfetch.log\n' \
-        "${WORKDIR}" > "${WORKDIR}/bin/fastfetch"
-    chmod +x "${WORKDIR}/bin/fastfetch"
+    printf '#!/bin/bash\necho "DEFAULT_THEME=${DEFAULT_THEME}" >> %s/bling.log\necho "blue"\n' \
+        "${WORKDIR}" > "${WORKDIR}/bin/ublue-bling-fastfetch"
+    chmod +x "${WORKDIR}/bin/ublue-bling-fastfetch"
 
     cat > "${WORKDIR}/fastfetch.json" <<EOF
 {
@@ -123,7 +125,7 @@ EOF
 EOF
     run bash "${SCRIPT_UNDER_TEST}"
     [ "${status}" -eq 0 ]
-    grep -q "DEFAULT_THEME=slate" "${WORKDIR}/fastfetch.log"
+    grep -q "DEFAULT_THEME=slate" "${WORKDIR}/bling.log"
 }
 
 @test "ublue-fastfetch: extra CLI args are forwarded to fastfetch" {
