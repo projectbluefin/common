@@ -5,41 +5,72 @@
 #  https://www.reddit.com/r/Fedora/comments/uo4ufq/any_way_to_get_systemdcryptenroll_working_on/
 #  https://0pointer.net/blog/unlocking-luks2-volumes-with-tpm2-fido2-pkcs11-security-hardware-on-systemd-248.html
 
-gum confirm --affirmative="Enable" --negative="Disable" "Toggle TPM2 auto-unlock"
-EXIT_CODE="$?"
-case "${EXIT_CODE}" in
-  0|1)
-    ;;
-  *)
-    exit 0
-esac
+# Testability overrides — set in tests to avoid /proc and /dev access.
+CMDLINE_FILE="${CMDLINE_FILE:-/proc/cmdline}"
+DISK_BY_UUID_DIR="${DISK_BY_UUID_DIR:-/dev/disk/by-uuid}"
+DEV_DIR="${DEV_DIR:-/dev}"
 
-RD_LUKS_UUID="$(xargs -n1 -a /proc/cmdline | grep -E -e "rd.luks.(uuid|name)" | head -n 1 | cut -d= -f 2 | sed "s/^luks-//" )"
-CRYPT_DISK="$(realpath "/dev/disk/by-uuid/${RD_LUKS_UUID}")"
+# Extract the LUKS UUID from the kernel command line.
+# Handles both rd.luks.uuid=<uuid> and rd.luks.name=luks-<uuid> formats.
+get_luks_uuid() {
+    xargs -n1 -a "${CMDLINE_FILE}" \
+        | grep -E -e "rd.luks.(uuid|name)" \
+        | head -n 1 \
+        | cut -d= -f 2 \
+        | sed "s/^luks-//"
+}
 
-if ! find /dev -iname "${RD_LUKS_UUID:-INVALIDINVALID}" | grep -F -e "${RD_LUKS_UUID}" &>/dev/null; then
-  echo "Could not find LUKS device used to boot system on system mount table. Is your drive encrypted?"
-  exit 1
-fi
+# Resolve the LUKS block device path from a UUID via /dev/disk/by-uuid.
+resolve_crypt_disk() {
+    local uuid="$1"
+    realpath "${DISK_BY_UUID_DIR}/${uuid}"
+}
 
-if [ "${EXIT_CODE}" == 1 ] ; then
-  sudo systemd-cryptenroll --wipe-slot=tpm2 "${CRYPT_DISK}"
-  exit 0
-fi
+# Return 0 if the LUKS device UUID appears in DEV_DIR, 1 otherwise.
+check_luks_device() {
+    local uuid="$1"
+    find "${DEV_DIR}" -iname "${uuid:-INVALIDINVALID}" | grep -qF "${uuid}"
+}
 
-gum confirm "Would you like to set up a PIN?"
-EXIT_CODE="$?"
-SET_PIN_ARG=""
-case "${EXIT_CODE}" in
-  0)
-    export SET_PIN_ARG="--tpm2-with-pin=yes"
-    ;;
-  1)
-    ;;
-  *)
-    exit 0
-esac
+# Only run when executed directly; sourcing this file loads only functions.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    gum confirm --affirmative="Enable" --negative="Disable" "Toggle TPM2 auto-unlock"
+    EXIT_CODE="$?"
+    case "${EXIT_CODE}" in
+      0|1)
+        ;;
+      *)
+        exit 0
+    esac
 
-if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs='' ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
-  echo "TPM2 LUKS auto-unlock configured for next reboot."
+    RD_LUKS_UUID="$(get_luks_uuid)"
+    CRYPT_DISK="$(resolve_crypt_disk "${RD_LUKS_UUID}")"
+
+    if ! check_luks_device "${RD_LUKS_UUID}"; then
+        echo "Could not find LUKS device used to boot system on system mount table. Is your drive encrypted?"
+        exit 1
+    fi
+
+    if [ "${EXIT_CODE}" == 1 ] ; then
+        sudo systemd-cryptenroll --wipe-slot=tpm2 "${CRYPT_DISK}"
+        exit 0
+    fi
+
+    gum confirm "Would you like to set up a PIN?"
+    EXIT_CODE="$?"
+    SET_PIN_ARG=""
+    case "${EXIT_CODE}" in
+        0)
+            export SET_PIN_ARG="--tpm2-with-pin=yes"
+            ;;
+        1)
+            ;;
+        *)
+            exit 0
+    esac
+
+    # shellcheck disable=SC2086
+    if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs='' ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
+        echo "TPM2 LUKS auto-unlock configured for next reboot."
+    fi
 fi
