@@ -361,3 +361,50 @@ gh run cancel <run-id> --repo projectbluefin/common
 ```
 
 If a stale in-progress run with `cancel-in-progress: true` is blocking new triggers, cancel it explicitly — the new push may have silently been queued but not started.
+
+---
+
+## ⛔ Branch-from-target rule (merge queue repos)
+
+Every projectbluefin repo runs a merge queue. A PR with merge conflicts or a dirty diff **cannot enter the queue** and stalls work for everyone on that branch.
+
+**Root cause of dirty diffs:** Creating a branch from `main` when the PR targets `testing`. The `testing` branch in `bluefin`, `bluefin-lts`, and `dakota` accumulates CI and release-pipeline commits that never land on `main`. A branch created from `main` is missing those commits — the PR diff shows them all as "deleted".
+
+### Branch targets
+
+| Repo | PR targets | Branch FROM |
+|---|---|---|
+| `bluefin`, `bluefin-lts`, `dakota` | `testing` | `testing` |
+| `common`, `actions`, `knuckle` | `main` | `main` |
+
+### Mandatory pre-open gate (every PR)
+
+```bash
+TARGET=testing   # or main — match the PR target
+git fetch origin
+
+# 1. Only your files in the diff
+git diff --name-only origin/${TARGET}..HEAD
+# If unintended files appear → wrong base. Recreate from origin/${TARGET}.
+
+# 2. No merge conflicts
+git merge --no-commit --no-ff origin/${TARGET}
+git merge --abort 2>/dev/null || true
+
+# 3. No known red CI
+# Do not open a PR if local tests fail. The merge queue will reject it.
+just check && pre-commit run --all-files
+```
+
+### Recreating a branch with the wrong base
+
+```bash
+# Identify your commits
+git log --oneline origin/${TARGET}..HEAD
+
+# Recreate from the correct base
+git checkout -b <branch>-clean origin/${TARGET}
+git cherry-pick <your-sha1> <your-sha2> ...
+```
+
+*Observed violation (2026-06-10):* `projectbluefin/dakota` PR #779 was created from `main` targeting `testing`. The `testing` branch had 20+ diverged commits — 12 workflow files, Justfile changes, and BST element updates all appeared as "deleted" in the diff. PR closed; clean PR #780 recreated from `testing`.
