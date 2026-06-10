@@ -11,7 +11,7 @@ metadata:
 - [AI commit attribution (mandatory)](#ai-commit-attribution-mandatory)
 - [SHA pinning policy](#sha-pinning-policy)
 - [Floating-tag guard](#floating-tag-guard)
-- [Skill drift detection](#skill-drift-detection) *(removed from common — agentic enforcement only)*
+- [Skill drift detection](#skill-drift-detection)
 - [Renovate OCI digest tracking](#renovate-oci-digest-tracking)
 - [Renovate versioned-binary tracking](#renovate-versioned-binary-tracking)
 - [Bulk SHA bump — regex multiline trap](#bulk-sha-bump--regex-multiline-trap)
@@ -117,9 +117,11 @@ Use both. The hook enforces that refs are pinned at commit time. Renovate keeps 
 
 ## Skill drift detection
 
-> **`common` removed `skill-drift.yml` in [PR #569](https://github.com/projectbluefin/common/pull/569).** Reason: AGENTS.md policy — *"Process conventions are self-enforced by agents. Never implement a process convention as a CI gate."* The gate caused spurious CI failures on valid OCI PRs that omitted a doc update. Skill update discipline is enforced in the agentic review loop and in AGENTS.md, not by CI exit 1.
->
-> Other projectbluefin repos (bluefin, dakota, knuckle) still run their own `skill-drift.yml` — that's their choice per repo. Do not re-add it to `common`.
+**`common` does not run `skill-drift.yml`.** Do not add it.
+
+Reason: AGENTS.md policy — *"Process conventions are self-enforced by agents. Never implement a process convention as a CI gate."* Skill update discipline lives in the agentic review loop, not in CI exit codes. A PR that ships a valid OCI improvement without a skill-doc update should not be blocked.
+
+Other projectbluefin repos (bluefin, dakota, knuckle) run their own `skill-drift.yml` — that is their choice. The rule above applies only to `common`.
 
 **Workflow (other repos):** `skill-drift.yml` calls the reusable workflow `projectbluefin/actions/.github/workflows/skill-drift-check.yml` at a pinned commit SHA (so the local floating-tag guard does not reject the caller).
 
@@ -241,7 +243,7 @@ grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
 ```
 Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `acmm-audit-level2.md` risk statements, `specs/` JSON chunks.
 
-## Shell Script Testability Patterns (added 2026-06-10)
+## Shell Script Testability Patterns
 
 ### BASH_SOURCE guard for interactive scripts
 

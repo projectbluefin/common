@@ -29,10 +29,10 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `release.yml` | Monthly/versioned OCI release flow. **Planned improvements:** git-cliff changelog + e2e prerequisite gate — see [`automation-audit/release-with-cliff.yml`](../factory/automation-audit/release-with-cliff.yml) for the ready-to-deploy replacement. Tracked in [common#513](https://github.com/projectbluefin/common/issues/513). | Changing versioned layer release behavior |
 | `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls common `lifecycle.yml`. **`lifecycle.yml` (747 lines) belongs in `projectbluefin/actions` — tracked in [common#570](https://github.com/projectbluefin/common/issues/570). Do not add more logic inline here.** | Changing factory lifecycle automation |
 
-> **Deleted workflows (do not re-add without a strong justification):**
-> - `backfill-pipeline.yml` — one-shot widget backfill, ran once. Widget logic had diverged from `lifecycle.yml`. Move to a local script if needed again.
-> - `skill-drift.yml` — process convention enforced as CI gate, violates AGENTS.md policy. See `ci-tooling.md` § Skill drift detection.
-> - `docs-quality.yml` — deleted earlier; skill frontmatter enforcement now in agent review loop.
+> **Workflows that do not exist in `common` and must not be re-added:**
+> - `backfill-pipeline.yml` — issue widget backfill. If needed, run as a local script; do not add CI plumbing for a one-shot task.
+> - `skill-drift.yml` — process convention as CI gate; violates AGENTS.md policy. See `ci-tooling.md` § Skill drift detection.
+> - `docs-quality.yml` — skill frontmatter enforcement belongs in agent review, not CI.
 
 ## Mental model
 

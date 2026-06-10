@@ -93,19 +93,22 @@ just bats               # BATS integration tests
 
 bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger.md](bonedigger.md).
 
-## libsetup.sh — known edge cases (hardened in PR #569)
+## libsetup.sh — setup versioning
 
-`version-script` in `system_files/shared/usr/lib/ublue/setup-services/libsetup.sh` has two silent failure modes that were fixed:
+`version-script` in `system_files/shared/usr/lib/ublue/setup-services/libsetup.sh` is the idempotency guard for all first-boot setup scripts.
 
-1. **Concurrent execution** — user-setup and privileged-setup can both start on first boot. Without a lock, both read the JSON before either writes back → same step runs twice. Fixed with `flock -x` on a `.lock` file adjacent to the state file (subshell + fd 200 pattern).
-
-2. **Malformed JSON** — if `setup_versioning.json` is corrupted, `jq` exits non-zero. Before the fix, this left the mktemp file uncleaned and silently treated the script as "already run" (skipping setup). Fixed with explicit JSON validation + safe reset to `{}` + `trap 'rm -f "${tmp}"' EXIT` in the subshell.
-
-**Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
-
-**Pattern for callers** (unchanged API):
+**Pattern for callers:**
 ```bash
 source /usr/lib/ublue/setup-services/libsetup.sh
 version-script my-service user 1 || exit 0
-# ... setup steps here, will only run once ...
+# ... setup steps here, run exactly once per version bump ...
 ```
+
+**Protections built into `version-script`:**
+- **Concurrent execution safe:** uses `flock -x` (fd 200 on a `.lock` file adjacent to the state file) so that user-setup and privileged-setup starting simultaneously on first boot cannot both read before either writes — each call is serialised.
+- **Malformed state file safe:** validates JSON with `jq` before reading. If `setup_versioning.json` is corrupted, resets to `{}` with a warning rather than silently skipping setup.
+- **Temp file cleanup:** uses `trap 'rm -f "${tmp}"' EXIT` inside the subshell so no orphaned temp files remain on error.
+
+**State file:** `~/.local/share/ublue/setup_versioning.json` (user-scoped, not global).
+
+**Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
