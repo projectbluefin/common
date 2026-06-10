@@ -51,7 +51,7 @@ jobs:
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing --cov-fail-under=80
+        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-fail-under=80
 
       - name: Run bats (libsetup.sh)
         run: bats tests/test_libsetup.bats
