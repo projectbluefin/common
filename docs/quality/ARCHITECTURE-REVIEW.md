@@ -1,8 +1,8 @@
 # Architecture Review: Quality Improvement — projectbluefin/common
 
-**Author:** Principal Architecture Review  
-**Date:** 2026-06-10  
-**Scope:** Testing strategy, issue deduplication, phased roadmap, acceptance criteria  
+**Author:** Principal Architecture Review
+**Date:** 2026-06-10
+**Scope:** Testing strategy, issue deduplication, phased roadmap, acceptance criteria
 **Status:** DRAFT — for maintainer review
 
 ---
@@ -302,11 +302,11 @@ The common repo is quality-healthy when all of the following are true:
 
 ## 7. Issue Consolidation Summary
 
-**Close as invalid:** #559, #564 (ublue-rollback-helper ghost issues)  
-**Close as duplicate (merge into #562):** #563  
-**Close as duplicate (merge into #561):** #566  
-**Close as partially resolved:** #551 (libsetup + setup scripts done; remainder tracked by #552)  
-**Repurpose as quality epic:** #553  
+**Close as invalid:** #559, #564 (ublue-rollback-helper ghost issues)
+**Close as duplicate (merge into #562):** #563
+**Close as duplicate (merge into #561):** #566
+**Close as partially resolved:** #551 (libsetup + setup scripts done; remainder tracked by #552)
+**Repurpose as quality epic:** #553
 
 **Remaining work items (6 distinct, actionable):**
 
