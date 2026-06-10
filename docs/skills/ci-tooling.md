@@ -149,3 +149,28 @@ If you add new OCI image pins to `Containerfile`, also update `.github/renovate.
 | `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
 
 When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json5` so the version stays current automatically.
+
+---
+
+## Removing a shell script from common — 4 mandatory touch-points
+
+When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
+
+| File | What to remove |
+|---|---|
+| `.github/workflows/unit-tests.yml` | The script path from the shellcheck `run:` block |
+| `.github/workflows/validate.yml` | The `shellcheck` step that invokes it (if script-specific) **and** any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
+| `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
+| `docs/skills/` | The script's skill file (if it has one) + its `INDEX.md` row + `SKILL.md` routing row + all cross-references |
+
+### Dead apt step hazard
+
+If the `validate.yml` shellcheck step was the **only** consumer of `Install shellcheck` in that job, delete the apt install step too — it becomes a silent no-op that wastes ~20 seconds per CI run and confuses future readers.
+
+### Cross-reference sweep
+
+After deleting the script and its skill file, run:
+```bash
+grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
+```
+Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `acmm-audit-level2.md` risk statements, `specs/` JSON chunks.
