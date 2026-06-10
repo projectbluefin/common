@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Prevent system sleep while a long-running task completes.
 # Usage: caffeinate              — prevent sleep indefinitely (Ctrl+C to release)
 #        caffeinate sleep 3600   — prevent sleep for 1 hour

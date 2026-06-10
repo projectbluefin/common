@@ -38,9 +38,13 @@ BLING_SHELL="$(basename "$(readlink /proc/$$/exe)")"
 # Initialize direnv before bash-preexec to avoid PROMPT_COMMAND conflicts
 # See: https://github.com/rcaloras/bash-preexec/pull/143
 if [ "${BLING_SHELL}" = "bash" ]; then
+    # shellcheck source=/dev/null
     [ -f "/etc/profile.d/bash-preexec.sh" ] && . "/etc/profile.d/bash-preexec.sh"
+    # shellcheck source=/dev/null
     [ -f "/usr/share/bash-prexec" ] && . "/usr/share/bash-prexec"
+    # shellcheck source=/dev/null
     [ -f "/usr/share/bash-prexec.sh" ] && . "/usr/share/bash-prexec.sh"
+    # shellcheck source=/dev/null
     [ -f "${HOMEBREW_PREFIX}/etc/profile.d/bash-preexec.sh" ] && . "${HOMEBREW_PREFIX}/etc/profile.d/bash-preexec.sh"
 fi
 
