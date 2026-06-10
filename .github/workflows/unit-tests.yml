@@ -45,6 +45,7 @@ jobs:
             system_files/shared/usr/bin/ublue-privileged-setup \
             system_files/shared/usr/bin/ublue-bling \
             system_files/shared/usr/bin/luks-tpm2-autounlock \
+            system_files/shared/usr/bin/ublue-fastfetch \
             system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
 
       - name: Run shellcheck — .sh scripts
