@@ -8,11 +8,27 @@ metadata:
 # CI tooling
 
 ## Contents
+- [AI commit attribution (mandatory)](#ai-commit-attribution-mandatory)
 - [SHA pinning policy](#sha-pinning-policy)
 - [Floating-tag guard](#floating-tag-guard)
 - [Skill drift detection](#skill-drift-detection)
 - [Renovate OCI digest tracking](#renovate-oci-digest-tracking)
 - [Renovate versioned-binary tracking](#renovate-versioned-binary-tracking)
+
+---
+
+## AI commit attribution (mandatory)
+
+`validate.yml` enforces that every AI-authored commit carries **both** trailers. One without the other fails CI.
+
+```
+Assisted-by: Claude Sonnet 4.6 via pi
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
+
+This applies even when working in pi (not GitHub Copilot). The `Co-authored-by: Copilot` trailer is required by the repo CI regardless of which tool authored the commit. Missing either trailer → CI exit 1 on the attribution check step.
+
+The check is asymmetric: a commit with **neither** trailer passes (human-authored commits are not required to carry trailers). Only commits with one-but-not-both fail.
 
 ---
 
@@ -137,6 +153,52 @@ Full path-to-skill mapping and waiver process: [`skill-drift.md`](./skill-drift.
 ### Rule when adding OCI pins
 
 If you add new OCI image pins to `Containerfile`, also update `.github/renovate.json5` so Renovate can keep them current. Applies to both `FROM` and `COPY --from=` references. An untracked pin silently goes stale.
+
+---
+
+## Shellcheck in validate.yml
+
+`validate.yml` runs shellcheck on all `.sh` files under `system_files/` plus the non-extension helper `ublue-rollback-helper`.
+
+### The expand pattern
+
+```yaml
+- name: Shellcheck all shell scripts
+  shell: bash
+  run: |
+    find system_files -name "*.sh" -print0 | xargs -0 shellcheck -e SC2207
+    shellcheck -e SC2207 system_files/bluefin/usr/bin/ublue-rollback-helper
+```
+
+`ublue-rollback-helper` has no `.sh` extension so it is not caught by `find` — it needs an explicit second line.
+
+### Profile.d files — SC2148 (no shebang)
+
+Profile.d files are **sourced** by the shell, never executed directly. They legitimately have no shebang. Shellcheck requires a shell directive instead:
+
+```sh
+# shellcheck shell=bash
+alias open="xdg-open &>/dev/null"
+```
+
+Add `# shellcheck shell=bash` as the first line of any profile.d file that:
+- Declares functions or aliases
+- Uses bash-specific syntax (`&>`, `local`, arrays, etc.)
+
+### Runtime-only sourced files — SC1091 (not following)
+
+Files sourced at runtime (e.g., `bash-preexec.sh` from Homebrew or `/etc/profile.d/`) do not exist in the repo. Add `# shellcheck source=/dev/null` immediately before each source line:
+
+```sh
+# shellcheck source=/dev/null
+[ -f "/etc/profile.d/bash-preexec.sh" ] && . "/etc/profile.d/bash-preexec.sh"
+```
+
+This applies per-source-line, not to the whole file.
+
+### SC2207 (global suppress)
+
+SC2207 (arrays from command output) is suppressed globally in the shellcheck step with `-e SC2207`. This was intentional for `ublue-rollback-helper` which parses skopeo tag lists — tag names contain no spaces so word splitting is safe there. Evaluate case by case before adding new array-from-command patterns.
 
 ---
 

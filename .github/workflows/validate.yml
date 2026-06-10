@@ -58,6 +58,15 @@ jobs:
         shell: bash
         run: just check
 
+      - name: Install shellcheck
+        shell: bash
+        run: sudo apt-get update -y && sudo apt-get install -y shellcheck
+
+      - name: Shellcheck all shell scripts
+        shell: bash
+        run: |
+          find system_files -name "*.sh" -print0 | xargs -0 shellcheck -e SC2207
+
       - name: Guard against ublue-os→projectbluefin image ref regressions
         shell: bash
         run: |
