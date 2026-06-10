@@ -17,18 +17,18 @@ metadata:
 
 ---
 
-## AI commit attribution (mandatory)
+## AI commit attribution (convention, not CI-gated)
 
-`validate.yml` enforces that every AI-authored commit carries **both** trailers. One without the other fails CI.
+AI-authored commits should carry both trailers as a convention:
 
 ```
 Assisted-by: Claude Sonnet 4.6 via pi
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ```
 
-This applies even when working in pi (not GitHub Copilot). The `Co-authored-by: Copilot` trailer is required by the repo CI regardless of which tool authored the commit. Missing either trailer → CI exit 1 on the attribution check step.
+The `validate.yml` attribution check was removed — it is **not** a CI gate. A missing or single trailer does not block your PR. Including both trailers is the expected convention but will never cause `exit 1`.
 
-The check is asymmetric: a commit with **neither** trailer passes (human-authored commits are not required to carry trailers). Only commits with one-but-not-both fail.
+Note: `pi`-authored commits use `Assisted-by: <Model> via pi`. The `Co-authored-by: Copilot` trailer is optional but conventional.
 
 ---
 
@@ -324,3 +324,40 @@ A space in `HOOKS_DIR` will silently fail to find hooks if only `$script` is fix
 Architecture documents from subagents must be source-verified before committing.
 Subagents have hallucinated file content and CI config state. Always `grep` the
 actual file before accepting a claim about its contents or existence.
+
+### XDG_CONFIG_HOME isolation in bats tests
+
+GitHub Actions runners set `XDG_CONFIG_HOME=/home/runner/.config` in their environment. If a bats test overrides `HOME` to a temp dir but does not clear `XDG_CONFIG_HOME`, any script using `${XDG_CONFIG_HOME:-$HOME/.config}` will write to the **real runner path**, not the test's isolated temp dir.
+
+The directory `/home/runner/.config/fish` does not exist on runners, so `cat >>` or similar fails, and with `set -e` the script exits non-zero — test reports `status != 0` with no other diagnostic output.
+
+**Fix:** add `unset XDG_CONFIG_HOME` in `setup()` alongside `export HOME=...`:
+```bash
+setup() {
+    WORKDIR="$(mktemp -d)"
+    export HOME="${WORKDIR}/home"
+    unset XDG_CONFIG_HOME   # CI runner sets this; prevent it leaking into subprocess
+    mkdir -p "${HOME}"
+    ...
+}
+```
+This ensures scripts fall back to `$HOME/.config` which is the test's temp dir.
+
+### `gh run rerun` uses the original commit SHA, not current HEAD
+
+`gh run rerun <run-id>` replays the workflow on the commit that originally triggered it. If you have since force-pushed the branch, the rerun still tests the old commit.
+
+To trigger CI on the **current** HEAD after a force push:
+
+```bash
+# Option 1 — push a new commit (even empty)
+git commit --allow-empty -m "ci: trigger fresh CI run" && git push origin <branch>
+
+# Option 2 — manually dispatch the workflow on the branch
+gh workflow run unit-tests.yml --repo projectbluefin/common --ref <branch>
+
+# Option 3 — cancel the stale in-progress run, then push
+gh run cancel <run-id> --repo projectbluefin/common
+```
+
+If a stale in-progress run with `cancel-in-progress: true` is blocking new triggers, cancel it explicitly — the new push may have silently been queued but not started.
