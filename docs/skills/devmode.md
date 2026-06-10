@@ -1,8 +1,6 @@
 ---
 name: devmode
-description: "ujust devmode wizard — installs developer stack in-place on any Bluefin image. No -dx rebase. Covers tool selection, progress bar, group setup, and marker file."
-metadata:
-  type: procedure
+description: Turn on Developer Mode wizard for Bluefin. In-place DX setup via ujust devmode — no -dx image rebase required. Covers tool selection, progress bar, group config, and marker file.
 ---
 
 # devmode — Turn on Developer Mode

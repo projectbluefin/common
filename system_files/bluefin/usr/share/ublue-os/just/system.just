@@ -310,21 +310,6 @@ toggle-vms:
         just --justfile "{{ justfile() }}" setup-vms
     fi
 
-# Set up incus for system containers
-# TODO: verify brew install incus availability on Linuxbrew; may need COPR/system package
-[group('System')]
-setup-incus:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if command -v incus &>/dev/null; then
-        echo "incus is already installed."
-    elif brew install incus 2>/dev/null; then
-        echo "incus installed via Homebrew."
-    else
-        echo "incus is not available via Homebrew on this system."
-        exit 1
-    fi
-
 # Install system flatpaks
 [group('System')]
 install-system-flatpaks $confirm="1":
