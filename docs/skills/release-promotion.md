@@ -210,6 +210,31 @@ git commit -m "chore: promote testing to main"
 git push --force origin auto/promote-testing-to-main
 ```
 
+### Gate stuck — release/blocked with no E2E evidence
+
+**Symptom:** The promotion PR has `release/blocked` and the sticky gate comment reads:
+> No completed post-testing-e2e run found for suites smoke,common on this PR head SHA.
+
+The gate queries `GET /repos/{repo}/actions/runs?head_sha={TESTING_SHA}`. It looks for a completed run matching `post-testing-e2e.yml` (bluefin) or `Post-Merge E2E — Testing Parity` (bluefin-lts) associated with that exact SHA.
+
+**Root causes in priority order:**
+
+1. **E2E workflow only fires on main branch builds, not testing** — check `branches:` filter on the `workflow_run` trigger in `post-testing-e2e.yml` / `post-merge-e2e.yml`. Must be `[main, testing]`.
+2. **The fix is on `testing` but not yet on `main`** — `workflow_run` triggers use the default branch (main) workflow file. A fix to the branches filter only takes effect once it reaches main.
+3. **Gate jq selector mismatch** — the `reusable-release-gate.yml` selector uses `contains("post-merge e2e")` (hyphenated). Any variation (space instead of hyphen) silently fails to match.
+
+**Manual escape for the current cycle (bluefin only):**
+
+```bash
+# Comment /e2e on the open promotion PR to manually trigger E2E evidence
+# Must be done by a maintainer with write access
+gh pr comment <N> --repo projectbluefin/bluefin --body "/e2e"
+```
+
+Once the E2E passes for the testing SHA and the gate clears, the promotion PR auto-enqueues. After that first promotion, the fix lands on main and the system is self-sustaining.
+
+**LTS and dakota** have no circular dependency — their PRs target main directly. Merging the fix PR is sufficient.
+
 ### UD (Updated/Deleted) conflict
 
 **Symptom:** `promote-testing-to-main.yml` fails with `Automatic merge failed` and `git status` shows lines like:
