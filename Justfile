@@ -2,9 +2,12 @@ just := just_executable()
 
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 test:
-    python3 -m pytest tests/test_hooks.py -v
+    python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
+    bats tests/test_privileged_setup.bats
+    bats tests/test_bling.bats
+    bats tests/test_luks_tpm2.bats
 
 # Build the bluefin-common container locally
 build:

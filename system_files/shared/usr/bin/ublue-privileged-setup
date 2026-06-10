@@ -22,7 +22,7 @@ if [ "${HOOKS_VERBOSE}" == "true" ] ; then
 fi
 
 if [ -d "${PRIVILEGED_HOOKS_DIRECTORY}" ] ; then
-	for script in $PRIVILEGED_HOOKS_DIRECTORY/* ; do
-		bash $script
+	for script in "${PRIVILEGED_HOOKS_DIRECTORY}"/* ; do
+		bash "$script"
 	done
 fi

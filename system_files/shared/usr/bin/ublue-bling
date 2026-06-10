@@ -2,7 +2,7 @@
 
 set -eoux pipefail
 
-BLING_CLI_DIRECTORY="/usr/share/ublue-os/bling"
+BLING_CLI_DIRECTORY="${BLING_CLI_DIRECTORY:-/usr/share/ublue-os/bling}"
 
 BLING_SCRIPT_SOURCE=""
 TARGET_CONFIG_FILE=""
@@ -27,15 +27,15 @@ case "${shell}" in
 esac
 
 function is-bling-installed() {
-    echo "hello"
     [ -f "$TARGET_CONFIG_FILE" ] || return 1
 
-    if [ -n "$(grep -n "source $BLING_CLI_DIRECTORY/$BLING_SCRIPT_SOURCE" "$TARGET_CONFIG_FILE" | grep -Eo '^[^:]+')" ]; then
+    if grep -q "source $BLING_CLI_DIRECTORY/$BLING_SCRIPT_SOURCE" "$TARGET_CONFIG_FILE"; then
         return 0
     fi
     return 1
 }
 
+# shellcheck source=/dev/null
 [ -f "${BLING_ENV_SCRIPT:-/usr/share/ublue-os/bling/env.sh}" ] && . "${BLING_ENV_SCRIPT:-/usr/share/ublue-os/bling/env.sh}"
 
 BLING_MESSAGE_ENABLE="${BLING_MESSAGE_ENABLE:-Enable bling for ${shell}?}"

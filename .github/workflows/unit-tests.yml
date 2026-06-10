@@ -34,21 +34,36 @@ jobs:
         run: |
           sudo apt-get install -y bats
 
-      - name: Install pytest
-        run: pip install pytest
+      - name: Install pytest and pytest-cov
+        run: pip install pytest pytest-cov
 
-      - name: Run shellcheck
+      - name: Run shellcheck — extensionless scripts
         run: |
           shellcheck \
             system_files/shared/usr/bin/ublue-system-setup \
             system_files/shared/usr/bin/ublue-user-setup \
+            system_files/shared/usr/bin/ublue-privileged-setup \
+            system_files/shared/usr/bin/ublue-bling \
+            system_files/shared/usr/bin/luks-tpm2-autounlock \
             system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
 
+      - name: Run shellcheck — .sh scripts
+        run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
+
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v
+        run: python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing
 
       - name: Run bats (libsetup.sh)
         run: bats tests/test_libsetup.bats
 
       - name: Run bats (setup scripts)
         run: bats tests/test_setup_scripts.bats
+
+      - name: Run bats (privileged setup)
+        run: bats tests/test_privileged_setup.bats
+
+      - name: Run bats (ublue-bling)
+        run: bats tests/test_bling.bats
+
+      - name: Run bats (luks-tpm2-autounlock)
+        run: bats tests/test_luks_tpm2.bats
