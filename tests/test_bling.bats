@@ -71,7 +71,6 @@ teardown() {
 # ---------------------------------------------------------------------------
 
 @test "ublue-bling: fish install creates sentinel block in config.fish" {
-    export XDG_CONFIG_HOME="${HOME}/.config"
     mkdir -p "${HOME}/.config/fish"
     export SHELL="/bin/fish"
     run bash "${BLING_SCRIPT}"
