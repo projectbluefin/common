@@ -42,8 +42,7 @@ jobs:
           shellcheck \
             system_files/shared/usr/bin/ublue-system-setup \
             system_files/shared/usr/bin/ublue-user-setup \
-            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh \
-            system_files/bluefin/usr/bin/ublue-rollback-helper
+            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
 
       - name: Run pytest (hooks.py)
         run: python3 -m pytest tests/test_hooks.py -v

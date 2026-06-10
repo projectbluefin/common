@@ -98,7 +98,7 @@ Production images: `ghcr.io/projectbluefin/bluefin*` (NOT `projectbluefin`)
 CI/testing images: `ghcr.io/projectbluefin/bluefin:testing`
 
 All image refs are now `ghcr.io/projectbluefin/` — the org migration is complete.
-This breaks e2e workflows, rollback-helper, and production paths.
+This breaks e2e workflows and production paths.
 
 **Constraint:** Load `image-registry.md` before touching ANY image reference.
 

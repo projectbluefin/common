@@ -43,7 +43,6 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [submodule-boundary.md](submodule-boundary.md) | What is/isn't editable in this repo — `system_files/shared/` is directly tracked here (edit freely), `system_files/bluefin/` is Bluefin-specific |
 | [dconf-consistency.md](dconf-consistency.md) | GSettings override ↔ dconf lock file parity rules — must edit both files together for locked settings |
 | [image-registry.md](image-registry.md) | projectbluefin OCI image registry — all production images at `ghcr.io/projectbluefin/` |
-| [rollback-helper.md](rollback-helper.md) | `ublue-rollback-helper` TUI state machine — three-way coordinated arrays, LTS/non-LTS branches, registry path derivation, testing guidance |
 | [devmode.md](devmode.md) | `ujust devmode` setup wizard — what it installs, UX flow, tap strategy, group logic, legacy -dx advisory, known caveats |
 | [containerfile.md](containerfile.md) | Containerfile build structure — multi-stage build, wallpaper source caveat, ujust completion generation, SHA verification pattern, `just overlay` local testing |
 | [skill-drift.md](skill-drift.md) | How the skill-drift CI check works — path mapping, what counts as a satisfying update, waiver process |

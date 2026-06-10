@@ -155,15 +155,6 @@ bluefin-apps:
     echo "Installing default system flatpaks..."
     @ujust install-system-flatpaks
 
-alias switch-stream := rebase-helper
-alias switch-streams := rebase-helper
-alias rollback-helper := rebase-helper
-
-# Rebase assistant
-[group('System')]
-rebase-helper:
-    @/usr/bin/ublue-rollback-helper
-
 # Check Secure Boot status and key enrollment
 [group('System')]
 check-sb-key:

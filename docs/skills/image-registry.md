@@ -39,7 +39,7 @@ Bluefin publishes two flavors, built from the same Containerfile with different 
 
 > Historical note: the image was erroneously named `bluefin-nvidia-open` prior to 2026-06-07. The rename was applied in bluefin PR #434.
 
-## How rollback-helper derives the registry path
+## How runtime tools derive the registry path
 
 ```bash
 IMAGE_VENDOR="$(jq -r '."image-vendor"' < /usr/share/ublue-os/image-info.json)"

@@ -838,7 +838,7 @@ Semantic search across the full knowledge base. Use for conceptual, explanatory,
 {
   "results": [
     {
-      "chunk_text": "## Switching Streams\n\nUse `ujust rebase-helper` for interactive stream selection, or employ manual commands:\n\n```\nsudo bootc switch ghcr.io/ublue-os/bluefin:stable --enforce-container-sigpolicy\n```",
+      "chunk_text": "## Switching Streams\n\nUse `bootc switch` to change streams:\n\n```\nsudo bootc switch ghcr.io/ublue-os/bluefin:stable --enforce-container-sigpolicy\n```",
       "source_name": "bluefin-docs",
       "source_url": "https://docs.projectbluefin.io/administration#switching-streams",
       "section": "Update Streams — Switching Streams",

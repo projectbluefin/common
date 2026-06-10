@@ -85,7 +85,7 @@ Groups are added via `pkexec` at the end, conditional on what was selected:
 ## Legacy -dx image users
 
 If `IMAGE_NAME` ends in `dx`, the wizard shows an advisory:
-> "Legacy -dx image detected. After setup, run 'ujust rebase-helper' to switch to the standard image."
+> "Legacy -dx image detected. After setup, run 'bootc switch ghcr.io/projectbluefin/bluefin:stable' to switch to the standard image."
 
 The wizard still runs normally — it does NOT rebase automatically.
 

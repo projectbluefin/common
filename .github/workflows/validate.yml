@@ -58,14 +58,6 @@ jobs:
         shell: bash
         run: just check
 
-      - name: Install shellcheck
-        shell: bash
-        run: sudo apt-get update -y && sudo apt-get install -y shellcheck
-
-      - name: Shellcheck helper scripts
-        shell: bash
-        run: shellcheck -e SC2207 system_files/bluefin/usr/bin/ublue-rollback-helper
-
       - name: Guard against ublue-os→projectbluefin image ref regressions
         shell: bash
         run: |
@@ -95,7 +87,6 @@ jobs:
               if path.name != "validate.yml"
           ]
           candidates += list(Path(".github/workflows").rglob("*.yaml"))
-          candidates.append(Path("system_files/bluefin/usr/bin/ublue-rollback-helper"))
 
           violations = []
           for path in candidates:
