@@ -114,15 +114,23 @@ Lifecycle automation source of truth: `.github/workflows/lifecycle.yml`
 
 ### Mandatory gates
 
+> **Gate taxonomy — read this before adding any CI check:**
+> CI gates protect the OCI image artifact. A check earns `exit 1` only if failure means a broken or wrong image ships to users.
+> Process conventions (attribution, skill files, doc formatting) are self-enforced by agents. **Never implement a process convention as a CI gate.**
+
+**Product gates (CI-enforced — these protect the artifact):**
 - `just check` before every commit
-- `pre-commit run --all-files` before every commit
+- `pre-commit run --all-files` before every commit — enforces SHA pinning, JSON/YAML/TOML hygiene, actionlint
 - PR title: Conventional Commits format (`feat:`, `fix:`, `chore(deps):`, etc.)
-- Attribution on every AI-authored commit — both trailers required (CI-enforced in `validate.yml`):
+- **SHA pinning:** All `uses:` references to external GitHub Actions must be pinned to a full commit SHA with a version comment — never use floating tags (`@main`, `@latest`, `@v*`). Pre-commit enforces this. See [`docs/skills/ci-tooling.md`](docs/skills/ci-tooling.md).
+
+**Process conventions (agent-enforced — not CI gates, will not block your PR):**
+- Attribution on every AI-authored commit — include both trailers as a convention, not a hard gate:
   ```
   Assisted-by: <Model> via GitHub Copilot
   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
   ```
-- **SHA pinning:** All `uses:` references to external GitHub Actions must be pinned to a full commit SHA with a version comment — never use floating tags (`@main`, `@latest`, `@v*`). Pre-commit enforces this. See [`docs/skills/ci-tooling.md`](docs/skills/ci-tooling.md).
+- Skill file committed in the same PR as the work it documents
 - Max 4 open PRs at a time per agent
 - No WIP PRs
 - **One PR per feature.** Never batch unrelated changes into a single PR. Each logical fix or feature gets its own branch and PR.
@@ -141,7 +149,7 @@ Common types: `feat` `fix` `docs` `ci` `refactor` `chore` `build` `perf` `test` 
 
 ### AI attribution
 
-Every AI-authored commit **must** include both trailers (enforced by `validate.yml`):
+Every AI-authored commit should include both trailers. This is a convention — it is not CI-enforced and will not block your PR:
 
 ```
 feat(ci): add retry logic to testsuite dispatch
@@ -152,7 +160,7 @@ Assisted-by: Claude Sonnet 4.6 via GitHub Copilot
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ```
 
-Both trailers must appear together. One without the other is a CI violation.
+Include both trailers together. Do not add CI checks to enforce attribution — a missing trailer does not affect the OCI image.
 
 ## Build Tools
 
@@ -291,7 +299,7 @@ Do not request PR review without evidence:
 - [ ] If no automated test covers the change — describe how you manually verified it
 - [ ] Skill file update committed in **this same PR** (not a follow-up)
 - [ ] PR title follows Conventional Commits format
-- [ ] Both AI attribution trailers present on every AI-authored commit
+- [ ] Attribution trailers included on AI-authored commits (convention — not a hard gate)
 
 ## Skill routing
 

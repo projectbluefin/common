@@ -19,11 +19,13 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
   ```bash
   git diff --cached --name-only  # must show only docs/* or AGENTS.md
   ```
-- **Attribution on every AI-authored commit:**
+- **CI gates protect the OCI image artifact.** A check earns `exit 1` only if failure means a broken or wrong image ships. Process conventions (attribution, skill files, doc formatting) are self-enforced by agents and must never appear as CI gates.
+- **Attribution on every AI-authored commit (convention, not a CI gate):**
   ```
   Assisted-by: <Model> via GitHub Copilot
   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
   ```
+  Include both trailers. Do not implement attribution checking as a blocking CI step.
 
 ## Smallest-change principle
 
