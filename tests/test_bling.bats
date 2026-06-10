@@ -74,6 +74,9 @@ teardown() {
     mkdir -p "${HOME}/.config/fish"
     export SHELL="/bin/fish"
     run bash "${BLING_SCRIPT}"
+    echo "--- script output ---"
+    echo "${output}"
+    echo "--- status: ${status} ---"
     [ "${status}" -eq 0 ]
     [ -f "${HOME}/.config/fish/config.fish" ]
     grep -qF "### bling.fish source start" "${HOME}/.config/fish/config.fish"
