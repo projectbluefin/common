@@ -532,6 +532,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Guard: do not queue if a hold label is present
+          LABELS=$(gh pr view "$NUMBER" --repo "$REPO" --json labels --jq '.labels[].name')
+          for block in "do-not-merge" "status/hold"; do
+            if echo "$LABELS" | grep -Fxq "$block"; then
+              echo "Blocked by label '$block' — skipping auto-merge"
+              exit 0
+            fi
+          done
           # Enable auto-merge — with merge queue ruleset this queues the PR;
           # without it, merges automatically when all required checks pass.
           gh pr merge "$NUMBER" --repo "$REPO" --auto
