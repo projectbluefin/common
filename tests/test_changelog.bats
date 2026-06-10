@@ -30,8 +30,15 @@ setup() {
     touch "${CURL_CALLS}"
     export CURL_CALLS
 
+    # Mock image-info.json — IMAGE_INFO_FILE env var override (see changelog.just)
+    # Without this, the shell redirect '< /usr/share/ublue-os/image-info.json'
+    # fails in CI before jq is invoked, leaving TAG empty.
+    IMAGE_INFO="${WORKDIR}/image-info.json"
+    echo '{"image-tag": "latest"}' > "${IMAGE_INFO}"
+    export IMAGE_INFO_FILE="${IMAGE_INFO}"
+
     # Mock jq:
-    #   - '.["image-tag"]' query  → returns $MOCK_TAG
+    #   - '.["image-tag"]' query  → returns $MOCK_TAG (ignores stdin — IMAGE_INFO_FILE set above)
     #   - all other invocations   → echo a mock changelog body
     cat > "${MOCKDIR}/jq" << 'EOF'
 #!/bin/bash
@@ -62,7 +69,7 @@ CURLEOF
     printf '#!/bin/bash\ncat\n' > "${MOCKDIR}/glow"
     chmod +x "${MOCKDIR}/glow"
 
-    # Mock grep: used for DATE extraction — return a fixed date string
+    # Mock grep: used for DATE extraction - return a fixed date string
     cat > "${MOCKDIR}/grep" << 'EOF'
 #!/bin/bash
 # If called with -oP for OSTREE_VERSION date extraction, return fixed date
@@ -86,7 +93,7 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# Repo selection — LTS stream
+# Repo selection - LTS stream
 # ---------------------------------------------------------------------------
 
 @test "changelog: lts tag selects projectbluefin/bluefin-lts repo" {
@@ -109,7 +116,7 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# Repo selection — non-LTS streams
+# Repo selection - non-LTS streams
 # ---------------------------------------------------------------------------
 
 @test "changelog: stable tag selects projectbluefin/bluefin repo" {
@@ -134,7 +141,7 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# URL construction — release fetch path
+# URL construction - release fetch path
 # ---------------------------------------------------------------------------
 
 @test "changelog: stable tag fetches from /releases endpoint (not /releases/latest)" {
