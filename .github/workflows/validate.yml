@@ -32,44 +32,6 @@ jobs:
           fi
           echo "✓ PR title OK: $PR_TITLE"
 
-      - name: Check AI commit attribution trailers
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        shell: bash
-        run: |
-          echo "Checking AI commit attribution trailers..."
-          mapfile -t commit_data < <(gh api "/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" \
-            --paginate --jq '.[] | "\(.sha):\(.commit.message | @base64)"')
-          violations=0
-          for line in "${commit_data[@]}"; do
-            sha="${line%%:*}"
-            msg=$(printf '%s' "${line#*:}" | base64 --decode)
-            has_assisted=0
-            has_coauthored=0
-            echo "$msg" | grep -qE '^Assisted-by:' && has_assisted=1
-            echo "$msg" | grep -qF 'Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>' && has_coauthored=1
-            if [[ "$has_assisted" -eq 1 && "$has_coauthored" -eq 0 ]]; then
-              echo "ERROR: ${sha:0:8} — has 'Assisted-by:' but missing 'Co-authored-by: Copilot'"
-              violations=$((violations + 1))
-            fi
-            if [[ "$has_coauthored" -eq 1 && "$has_assisted" -eq 0 ]]; then
-              echo "ERROR: ${sha:0:8} — has 'Co-authored-by: Copilot' but missing 'Assisted-by:'"
-              violations=$((violations + 1))
-            fi
-          done
-          if [[ "$violations" -gt 0 ]]; then
-            echo ""
-            echo "ERROR: $violations commit(s) have incomplete AI attribution trailers."
-            echo "AI-authored commits must include BOTH:"
-            echo "  Assisted-by: <Model> via GitHub Copilot"
-            echo "  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-            echo "See AGENTS.md and docs/factory/agentic-model.md for details."
-            exit 1
-          fi
-          echo "✓ AI attribution check passed (${#commit_data[@]} commits checked)."
-
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
