@@ -14,15 +14,15 @@ When this principle conflicts with convenience, the principle wins. New workflow
 
 ## Executive Summary
 
-The projectbluefin factory is **91% automated** across **116 workflows in 7 in-scope repos** (common 11, bluefin 26, bluefin-lts 16, dakota 22, actions 22, testsuite 10, iso 9; bonedigger 2 and housekeeping 0 are out of audit scope). This audit identifies the remaining gaps and provides ready-to-deploy artifacts to reach **≥97% automation** with only the documented intentional human gates remaining.
+The projectbluefin factory is **91% automated** across **117 workflows in 7 in-scope repos** (common 11, bluefin 26, bluefin-lts 16, dakota 23, actions 22, testsuite 10, iso 9; bonedigger 2 and housekeeping 0 are out of audit scope). This audit identifies the remaining gaps and provides ready-to-deploy artifacts to reach **≥97% automation** with only the documented intentional human gates remaining.
 
 **Key findings:**
 - ISO builds are the weakest link (25% automation — fully manual dispatch); fix artifacts retained as **proposals only** (the `iso` repo is currently out of scope for this rollout)
 - Supply chain tooling (SBOM, SLSA, keyless signing) is designed but not deployed
 - Self-healing patterns (retry, token health) don't exist yet
 - 4 of 7 non-deterministic steps are already mitigated
-- **875 lines** of `promote-testing-to-main.yml` are triplicated across image repos (bluefin 343 + bluefin-lts 349 + dakota 183) and should consolidate into `projectbluefin/actions`
-- **12 `@main` reusable-workflow refs** remain across image repos: 4 reusable workflows (`reusable-execute-release`, `reusable-release-gate`, `reusable-release-reminder`, `reusable-release`) × 3 consumers (bluefin, bluefin-lts, dakota) — silent behavior changes downstream
+- **C1 (partial):** `promote-testing-to-main.yml` consolidation in progress — dakota migrated (183 → 29 LoC via [actions#157](https://github.com/projectbluefin/actions/pull/157) + [dakota#788](https://github.com/projectbluefin/dakota/pull/788)); bluefin (343 LoC) and bluefin-lts (353 LoC) adoption pending one observed promotion cycle
+- **5 `@main` reusable-workflow refs** remain in bluefin only (bluefin-lts and dakota cleaned ✅); fix in bluefin is merged to `testing` ([bluefin#484](https://github.com/projectbluefin/bluefin/pull/484)) — lands on `main` at next promotion cycle
 - `iso` and `bonedigger` ship without `CODEOWNERS` ([#589](https://github.com/projectbluefin/common/issues/589))
 - `bluefin-lts`, `dakota`, `actions`, `iso`, and `bonedigger` have no in-repo `renovate.json`; they rely on the org-level [`projectbluefin/renovate-config`](https://github.com/projectbluefin/renovate-config) preset — this is the **intended pattern**, not a gap. Audit doc clarified rather than tracked as a defect.
 
@@ -34,7 +34,7 @@ The projectbluefin factory is **91% automated** across **116 workflows in 7 in-s
 
 | # | File | Purpose |
 |---|---|---|
-| 1 | [`pipeline-map.md`](pipeline-map.md) | Complete mapping of 116 workflows across 7 in-scope repos |
+| 1 | [`pipeline-map.md`](pipeline-map.md) | Complete mapping of 117 workflows across 7 in-scope repos |
 | 2 | [`manual-touchpoints.md`](manual-touchpoints.md) | 11 manual touchpoints classified and prioritized |
 | 3 | [`non-deterministic-steps.md`](non-deterministic-steps.md) | 7 ND steps audited, 3 actionable fixes |
 | 4 | [`failure-modes.md`](failure-modes.md) | 7 failure modes with YAML hardening patterns |

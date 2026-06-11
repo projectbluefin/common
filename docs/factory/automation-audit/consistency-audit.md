@@ -38,7 +38,7 @@ This document supplements [`pipeline-map.md`](pipeline-map.md) and [`manual-touc
 | Lives in | `bluefin/.github/workflows/promote-testing-to-main.yml` (~14 KB), `bluefin-lts/.github/workflows/promote-testing-to-main.yml` (~14 KB), `dakota/.github/workflows/promote-testing-to-main.yml` (~6 KB) |
 | What it does | Resolves `:testing` digests, writes `.github/release-state.yaml`, opens/updates the always-open squash PR against `main` |
 | Per-image variation | List of variants (image streams) and the e2e suite name |
-| Total LoC duplicated | **875 lines** triplicated (verified 2026-06-10: bluefin 343 + bluefin-lts 349 + dakota 183) |
+| Total LoC duplicated | **725 lines** remaining (verified 2026-06-10-drift: bluefin 343 + bluefin-lts 353 + dakota **29** — dakota migrated via [actions#157](https://github.com/projectbluefin/actions/pull/157) + [dakota#788](https://github.com/projectbluefin/dakota/pull/788)) |
 | Consolidation target | `projectbluefin/actions/.github/workflows/reusable-promote.yml` taking `variants` (array) + `e2e_suite` (string) + `lts_floor_days` (int, default 0) as inputs |
 | Effort | 1 day |
 | Risk | LOW — this workflow runs daily; regression is caught within 24h |
@@ -46,8 +46,8 @@ This document supplements [`pipeline-map.md`](pipeline-map.md) and [`manual-touc
 
 **Adoption order (canary-first, lowest blast radius first):**
 
-1. `dakota` (single variant, lowest user impact) — observe one promotion cycle
-2. `bluefin-lts` — observe one promotion cycle
+1. `dakota` ✅ **Done** — migrated to caller pattern, 183 → 29 LoC ([actions#157](https://github.com/projectbluefin/actions/pull/157) + [dakota#788](https://github.com/projectbluefin/dakota/pull/788))
+2. `bluefin-lts` — **pending** one observed dakota promotion cycle
 3. `bluefin` (highest user impact) — land last
 
 **Rollback strategy:** keep the original `promote-testing-to-main.yml` content commented (or in a `.bak` sibling file) for one full promotion cycle after migration. Revert is one commit.
@@ -158,21 +158,21 @@ These vary intentionally and are NOT consolidation candidates:
 
 Order by automation gain × inverse effort:
 
-| Order | Item | Gain | Effort | Tracks |
-|---|---|---|---|---|
-| 1 | C2 — pin `@main` to SHA | HIGH | 30 min × 2 | Pre-existing pre-commit hook |
-| 2 | C3 — Renovate grouping rule | MEDIUM | 1 hour | New rule in `common/renovate.json` (already orchestrator) |
-| 3 | C1 — reusable-promote workflow | HIGH | 1 day | New in `actions/.github/workflows/` |
-| 4 | C4 — sign-and-publish migration | HIGH | 4 hours | [actions#86](https://github.com/projectbluefin/actions/issues/86), [common#513](https://github.com/projectbluefin/common/issues/513) |
-| 5 | C5 — release-state schema | LOW | 2.5 hours | New |
-| 6 | C3.5 — drift detector workflow | MEDIUM | 2 hours | New in `actions/` |
+| Order | Item | Gain | Effort | Status | Tracks |
+|---|---|---|---|---|---|
+| 1 | C2 — pin `@main` to SHA | HIGH | 30 min × 2 | ✅ **Done** — dakota ([#786](https://github.com/projectbluefin/dakota/pull/786)), bluefin-lts ([#159](https://github.com/projectbluefin/bluefin-lts/pull/159)); bluefin ([#484](https://github.com/projectbluefin/bluefin/pull/484)) merged to `testing`, lands on `main` at next promotion | Pre-existing pre-commit hook |
+| 2 | C3 — Renovate grouping rule | MEDIUM | 1 hour | ✅ **Done** — [common#593](https://github.com/projectbluefin/common/pull/593) | [#587](https://github.com/projectbluefin/common/issues/587) |
+| 3 | C1 — reusable-promote workflow | HIGH | 1 day | 🔶 **Partial** — reusable workflow live ([actions#157](https://github.com/projectbluefin/actions/pull/157)), dakota adopted ([dakota#788](https://github.com/projectbluefin/dakota/pull/788)); bluefin-lts + bluefin pending one promotion cycle | [#584](https://github.com/projectbluefin/common/issues/584) |
+| 4 | C4 — sign-and-publish migration | HIGH | 4 hours | ⏳ Pending | [actions#86](https://github.com/projectbluefin/actions/issues/86), [common#513](https://github.com/projectbluefin/common/issues/513) |
+| 5 | C5 — release-state schema | LOW | 2.5 hours | ⏳ Pending | New |
+| 6 | C3.5 — drift detector workflow | MEDIUM | 2 hours | ⏳ Pending | New in `actions/` |
 
 ## Net automation impact
 
 After C1–C5:
 
-- **875 lines** of triplicated YAML reduced to one reusable workflow + 3 thin callers (≈30 LoC each)
-- Zero `@main` refs — full SHA pinning across all consumers
+- **725 lines** of triplicated YAML reduced to one reusable workflow + 3 thin callers (≈30 LoC each) — **in progress**: dakota 29 LoC ✅, bluefin-lts + bluefin pending adoption
+- Zero `@main` refs — full SHA pinning across all consumers (5 remain in bluefin `testing` branch; land on `main` at next promotion)
 - Single source of truth for: build, sign, release, promote, ISO rebuild, renovate-automerge, sync-branches, skill-drift, release-state schema
 - Shared composite library for: token health, retry, sign-and-publish, scan-image, detect-changes, validate-pr, setup-runner, chunka, ghcr-cleanup, generate-release-notes
 
