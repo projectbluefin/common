@@ -14,7 +14,7 @@ When this principle conflicts with convenience, the principle wins. New workflow
 
 ## Executive Summary
 
-The projectbluefin factory is **~97% automated** across **124 workflows in 7 in-scope repos** (common 12, bluefin 27, bluefin-lts 17, dakota 23, actions 26, testsuite 10, iso 9; bonedigger 2 and housekeeping 0 are out of audit scope). All 7 phases are now deployed — except Phase 5 (ISO auto-rebuild, `iso` repo out of scope). Only the documented intentional human gates remain.
+The projectbluefin factory is **~97% automated** across **124 workflows in 7 in-scope repos** (common 12, bluefin 27, bluefin-lts 17, dakota 23, actions 26, testsuite 10, iso 9; bonedigger 2 is out of audit scope, and `housekeeping` is deprecated with 0 workflows because org-wide automation now lives in `actions`). All 7 phases are now deployed — except Phase 5 (ISO auto-rebuild, `iso` repo out of scope). Only the documented intentional human gates remain.
 
 **Deployed phases (as of 2026-06-11):**
 
@@ -141,8 +141,8 @@ This audit will bit-rot quickly if not maintained. Future agents picking up audi
 Run these checks against the live state. Compare results to the README's Executive Summary and the per-doc claims:
 
 ```bash
-# 1. Workflow counts (audit currently claims 116 / 7 in-scope repos)
-for r in bluefin bluefin-lts common dakota actions iso bonedigger housekeeping; do
+# 1. Workflow counts (audit currently claims 124 / 7 in-scope repos)
+for r in bluefin bluefin-lts common dakota actions iso bonedigger; do
   n=$(ls ~/src/$r/.github/workflows/*.yml 2>/dev/null | wc -l); echo "$r: $n"
 done
 

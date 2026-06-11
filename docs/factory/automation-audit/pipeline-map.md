@@ -2,7 +2,7 @@
 
 > Generated: 2026-06-09 | Refreshed: 2026-06-10 (counts verified live), 2026-06-10 (drift pass: workflow counts, #423/#513 resolved) | Scope: projectbluefin org (common, bluefin, bluefin-lts, dakota, actions, testsuite, iso)
 >
-> Out-of-scope siblings (not part of the publish loop): `bonedigger` (2 workflows), `housekeeping` (0 workflows).
+> Out-of-scope siblings (not part of the publish loop): `bonedigger` (2 workflows). `housekeeping` is deprecated, has 0 workflows, and remains out of scope because org-wide automation lives in `projectbluefin/actions`.
 
 ## End-to-End Publishing Pipeline
 
