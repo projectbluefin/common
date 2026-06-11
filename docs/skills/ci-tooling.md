@@ -164,6 +164,27 @@ If you add new OCI image pins to `Containerfile`, also update `.github/renovate.
 
 ---
 
+## Trivy scan-image archive input
+
+When `build.yml` exports a locally built image with:
+
+```bash
+buildah push \
+  "common:<tag>" \
+  "docker-archive:/tmp/scan-image.tar:common:<tag>"
+```
+
+pass the archive to `projectbluefin/actions/bootc-build/scan-image` with:
+
+```yaml
+with:
+  input: /tmp/scan-image.tar
+```
+
+**Do not** use `image: docker-archive:/tmp/scan-image.tar` with the current `build.yml` v1 pin (`e39c947...`). That path gets forwarded to `trivy image`, which then tries docker/containerd/podman/remote lookup instead of reading the tarball directly and fails on hosted runners.
+
+---
+
 ## Shellcheck in validate.yml
 
 `validate.yml` runs shellcheck on all `.sh` files under `system_files/` plus the non-extension helper `ublue-rollback-helper`.
