@@ -35,10 +35,10 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [qa.md](qa.md) | QA model, test coverage matrix, promotion gates by repo, hardware gap, running tests |
 | [hive-review.md](hive-review.md) | `~/src/hive-status` — session start, P0/P1 triage, hive label taxonomy |
 | [queue-dashboard.md](queue-dashboard.md) | PR review and merge queue workflow — ruleset (1 approval, squash, ALLGREEN queue), triage tiers, rebase patterns, submodule boundary policy |
-| [release-promotion.md](release-promotion.md) | **common** release and promotion — criteria, monthly cadence, hotfix process, artifact verification, supply chain gaps |
+| [release-promotion.md](release-promotion.md) | **common** release and promotion — criteria, monthly cadence, hotfix process, artifact verification, supply chain (keyless cosign, SBOM, SLSA L2 live as of 2026-06-11) |
 | [workflow-map.md](workflow-map.md) | What each `common` GitHub workflow is for — validation, E2E, release, and factory-policy boundaries |
 | [e2e-ci.md](e2e-ci.md) | Pre/post-merge and promotion-candidate E2E CI for common — composed PR gate, testing-stream smoke/common checks, masked brew setup, quarantined scenarios |
-| [ci-tooling.md](ci-tooling.md) | Pre-commit floating-tag guard, live skill-drift workflow, Renovate OCI digest tracking |
+| [ci-tooling.md](ci-tooling.md) | Pre-commit floating-tag guard, SHA pinning, Renovate OCI digest tracking, Trivy archive scan pattern, multi-arch build matrix, release-state.yaml schema validation |
 | [onboarding.md](onboarding.md) | Verified setup commands, correct pip/npm flags, and PR branch targets for all projectbluefin repos |
 | [submodule-boundary.md](submodule-boundary.md) | What is/isn't editable in this repo — `system_files/shared/` is directly tracked here (edit freely), `system_files/bluefin/` is Bluefin-specific |
 | [dconf-consistency.md](dconf-consistency.md) | GSettings override ↔ dconf lock file parity rules — must edit both files together for locked settings |

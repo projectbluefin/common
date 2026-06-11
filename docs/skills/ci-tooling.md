@@ -185,6 +185,52 @@ with:
 
 ---
 
+## Multi-arch build matrix in build.yml
+
+`build.yml` (as of [common#598](https://github.com/projectbluefin/common/pull/598)) runs parallel per-arch jobs:
+
+```yaml
+strategy:
+  matrix:
+    include:
+      - arch: x86_64
+        runs_on: ubuntu-24.04
+        arch_suffix: amd64
+      - arch: aarch64
+        runs_on: ubuntu-24.04-arm
+        arch_suffix: arm64
+```
+
+Each job:
+1. Builds the image with `buildah-build` tagged `<image>:<sha>-<arch_suffix>`
+2. Exports to `/tmp/scan-image.tar` with `buildah push ... docker-archive:...`
+3. Scans via `scan-image` with `input: /tmp/scan-image.tar`
+4. On non-PR: pushes the arch-specific image and writes digest to `/tmp/digests/<arch_suffix>.txt`
+
+A separate `manifest` job then downloads both digest artifacts, creates the multi-arch manifest, signs with keyless OIDC, and generates SBOM + SLSA L2 attestations.
+
+---
+
+## release-state.yaml schema validation
+
+`.github/release-state.yaml` is validated against the JSON schema in `projectbluefin/actions/docs/schemas/release-state.schema.json` via a `check-jsonschema` pre-commit hook. The hook is configured in `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: <pinned-sha>  # see .pre-commit-config.yaml for current pin
+  hooks:
+    - id: check-jsonschema
+      name: Validate release-state.yaml against schema
+      files: ^\.github/release-state\.yaml$
+      args:
+        - --schemafile
+        - https://raw.githubusercontent.com/projectbluefin/actions/main/docs/schemas/release-state.schema.json
+```
+
+The hook is dormant until `.github/release-state.yaml` exists in the repo (promote workflows write it at first promotion).
+
+---
+
 ## Shellcheck in validate.yml
 
 `validate.yml` runs shellcheck on all `.sh` files under `system_files/` plus the non-extension helper `ublue-rollback-helper`.

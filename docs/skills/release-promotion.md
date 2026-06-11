@@ -61,7 +61,7 @@ When a critical fix needs a versioned tag outside the monthly window:
 | SBOM | ✅ syft — bundled in `sign-and-publish` composite action | — |
 | SLSA L2 provenance | ✅ GitHub Actions attestation — bundled in `sign-and-publish` | — |
 | CVE scanning | ✅ Trivy gate — bundled in `sign-and-publish` | — |
-| Changelog quality | `git log` heredoc | Migrate to `git-cliff` — [common#513](https://github.com/projectbluefin/common/issues/513) |
+| Changelog quality | ✅ `git-cliff` — live as of [common#592](https://github.com/projectbluefin/common/pull/592) | — |
 
 ### Keyless signing — required permissions
 
@@ -95,7 +95,7 @@ gh attestation verify \
   --repo projectbluefin/common
 ```
 
-### Verify SBOM attachment (after actions#86 ships)
+### Verify SBOM attachment
 
 ```bash
 # List attached referrers (SBOM, signatures, attestations)
@@ -209,7 +209,7 @@ The three image repos (bluefin, bluefin-lts, dakota) currently use inconsistent 
 | CI workflow purposes | [workflow-map.md](workflow-map.md) |
 | E2E gates | [e2e-ci.md](e2e-ci.md) |
 | Promotion gates (QA model) | [../qa/PROMOTION_GATES.md](../qa/PROMOTION_GATES.md) |
-| Supply chain tooling (shared) | [projectbluefin/actions#86](https://github.com/projectbluefin/actions/issues/86) |
+| Supply chain tooling (shared) | ✅ Landed — keyless cosign, SBOM, SLSA L2, Trivy via `projectbluefin/actions` composites |
 
 ---
 
