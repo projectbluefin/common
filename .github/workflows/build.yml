@@ -120,3 +120,18 @@ jobs:
           image-name: common
           certificate-identity-regexp: >-
             ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/
+
+      - name: Notify downstream repos of common image update
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          PAYLOAD=$(printf '{"digest":"%s","image":"%s"}' \
+            "${{ steps.push.outputs.digest }}" \
+            "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}")
+          for repo in bluefin bluefin-lts dakota; do
+            gh api "repos/projectbluefin/${repo}/dispatches" \
+              --method POST \
+              -f event_type=common-updated \
+              -f "client_payload=${PAYLOAD}"
+          done
