@@ -265,8 +265,7 @@ Never use `secrets.GITHUB_TOKEN` for cross-repo dispatch — it will silently fa
 After each improvement session:
 
 1. For each gap discovered: file a GitHub issue (see CAPTURE above)
-2. For ACMM blindspot items resolved: update `docs/skills/acmm-audit-level2.md`
-3. For significant improvements shipped: append to `docs/factory/IMPROVEMENTS.md`
+2. For significant improvements shipped: append to `docs/factory/IMPROVEMENTS.md`
 
 Do **not** maintain gap lists in this skill file. GitHub issues are the live backlog.
 

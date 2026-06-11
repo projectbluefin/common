@@ -333,7 +333,7 @@ After deleting the script and its skill file, run:
 ```bash
 grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
 ```
-Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `acmm-audit-level2.md` risk statements, `specs/` JSON chunks.
+Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `specs/` JSON chunks.
 
 ## Shell Script Testability Patterns
 

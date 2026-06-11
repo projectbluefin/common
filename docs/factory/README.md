@@ -132,7 +132,7 @@ The following are wired across the factory today (applies to core pipeline repos
 | 2-human production gate | ✅ | ✅ | ✅ | ✅ | — | — |
 | docs/skills/ populated | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-For the full blindspot / constraint-rule reference, see [`../skills/acmm-audit-level2.md`](../skills/acmm-audit-level2.md) (historical L2→L3 bridge audit). Factory current ACMM status: **Level 3 (Instructed)**.
+Factory ACMM status: **Level 3 (Instructed)** as of 2026-06-06.
 
 ## Open Gaps
 
