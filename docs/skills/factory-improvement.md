@@ -212,35 +212,16 @@ gh search issues --label "status/queued,area/ci" --owner projectbluefin --state 
 
 ---
 
-## Automation Audit (2026-06-09)
+## Automation Audit — completed 2026-06-11
 
-A comprehensive audit of the factory's automation coverage lives in [`docs/factory/automation-audit/`](../factory/automation-audit/README.md). It contains:
+All 7 automation phases deployed. The audit directory has been removed. Key outcomes:
 
-- **Pipeline map** — 97 workflows across 6 repos inventoried with automation scores
-- **Manual touchpoints** — 11 steps classified as INTENTIONAL/AUTOMATABLE/BLOCKED
-- **Non-deterministic steps** — 7 sources of flakiness audited
-- **Failure modes** — 7 failure patterns with hardening YAML
-- **Ready-to-deploy artifacts** — 9 YAML/config files addressing the highest-impact gaps
-- **Implementation roadmap** — 7-phase plan (9 working days to reach 97% automation)
-
-**Key metrics from the audit:**
-
-| Measure | Current | After full implementation |
-|---|---|---|
-| Workflow automation | ~97% (93/97) | 97%+ |
-| Manual touchpoints | 4 (intentional human gates) | 4 (intentional human gates only) |
-| Self-healing patterns | 2 (retry + token health) | 2+ |
-| Supply chain (SBOM/SLSA) | ✅ Live (keyless OIDC + syft + SLSA L2, common#595) | Extend to all image repos |
-
-**Highest-impact quick wins (no dependencies, 1 day total):**
-1. `actions-v1-tag-update.yml` — eliminates forgotten tag push
-2. `cliff.toml` + `release-with-cliff.yml` — structured changelogs + E2E gate
-3. `retry-action.yml` — self-healing for transient failures
-4. `dakota-cache-warm.yml` — prevents 6h cold-start timeouts
-
-**Requires maintainer decision:**
-- Keyless signing migration (#513) — needed for Phase 6
-- ISO dispatch token provisioning — needed for Phase 5
+| Measure | Result |
+|---|---|
+| Workflow automation | ~97% (124 workflows, 7 repos) |
+| Human gates | 4 intentional (promotion review, actions merge, priority assignment, stale PR unclaim) |
+| Supply chain | Keyless OIDC + SBOM + SLSA L2 live ([common#595](https://github.com/projectbluefin/common/pull/595)) |
+| C1 reusable-promote | dakota ✅, bluefin-lts ✅, **bluefin pending** ([common#584](https://github.com/projectbluefin/common/issues/584)) |
 
 ---
 
