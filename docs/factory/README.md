@@ -10,7 +10,7 @@ This directory is the org-level entry point for agents and maintainers working a
 
 Project Bluefin aims to be the most sophisticated CNCF showcase of cloud-native operating systems built with bootc. The factory is an **agentic CI/CD organism**: agents implement, humans set direction. Manual orchestration is treated as a reliability tax — every manual step that *can* be automated *will* be, every automated step must self-heal, and every remaining human gate is intentional and named in [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
-The full automation audit, current coverage, and ready-to-deploy artifacts live in [`automation-audit/`](automation-audit/README.md). New workflows must demonstrate self-healing against the catalogued [failure modes](automation-audit/failure-modes.md) before they ship.
+New workflows must self-heal: retry on transient failures, fast-fail on bad tokens, no silent skips. See [`docs/skills/ci-tooling.md`](../skills/ci-tooling.md) for known pitfalls.
 
 ## Reference read order
 
@@ -73,13 +73,7 @@ Hard rules, branch targets, PR comment policy, session start: [`docs/factory/age
 
 ## Automation coverage
 
-Factory automation audit (2026-06-09, supplemented 2026-06-10): [`docs/factory/automation-audit/`](automation-audit/README.md)
-
-- **~97% automated** (93/97 workflows fully autonomous)
-- **4 intentional human gates** (promotion review, actions merge, priority assignment, stale PR unclaim) — see [`docs/skills/human-gates.md`](../skills/human-gates.md)
-- **11 ready-to-deploy artifacts** to reach ≥97% automation, including a reusable promotion workflow that collapses ~700 lines of triplicated YAML
-- **L0–L5 publish-loop test plan** ([`publish-loop-test-plan.md`](automation-audit/publish-loop-test-plan.md)) — chaos suite, dry-run with idempotency probe, artifact verification
-- ISO is the weakest link (25% — manual dispatch only); fix artifacts provided as proposals
+~97% automated across 124 workflows in 7 in-scope repos. **4 intentional human gates:** promotion review, actions merge, priority assignment, stale PR unclaim — see [`docs/skills/human-gates.md`](../skills/human-gates.md). ISO auto-rebuild remains manual (iso repo out of scope).
 
 ## Agent rules of engagement
 
@@ -138,7 +132,7 @@ The following are wired across the factory today (applies to core pipeline repos
 | 2-human production gate | ✅ | ✅ | ✅ | ✅ | — | — |
 | docs/skills/ populated | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-For the full blindspot / constraint-rule reference, see [`../skills/acmm-audit-level2.md`](../skills/acmm-audit-level2.md) (historical L2→L3 bridge audit). Factory current ACMM status: **Level 3 (Instructed)**.
+Factory ACMM status: **Level 3 (Instructed)** as of 2026-06-06.
 
 ## Open Gaps
 

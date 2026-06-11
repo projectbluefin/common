@@ -50,7 +50,6 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [skill-improvement.md](skill-improvement.md) | The skill-improvement mandate — checklist, what counts as a learning, cross-repo routing |
 | [bonedigger.md](bonedigger.md) | bonedigger + kubestellar-bot — the full self-improvement loop, ujust report, priority escalation, template sync |
 | [hive.md](hive.md) | Hive system architecture — bonedigger/kubestellar-bot/hive triangle, label taxonomy, sync schedule, finding work |
-| [acmm-audit-level2.md](acmm-audit-level2.md) | ACMM Level 2 audit (2026-06-05) — confirms L2 maturity, maps feedback mechanisms, defines Level 3 bridge requirements |
 | [factory-improvement.md](factory-improvement.md) | Self-improving factory loop — gap audit protocol, pipeline uniformity checklist, human gates, known gaps, and priority order for full automation |
 
 ## Agent instruction files (not skills — loaded separately by tool)
