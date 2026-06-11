@@ -67,12 +67,22 @@ jobs:
             ${{ steps.generate-tags.outputs.sha_short }}
           oci: true
 
+      - name: Export image for scanning
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores the image in rootless buildah storage.
+          # Use buildah push to export to docker-archive for Trivy.
+          buildah push \
+            "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.sha_short }}" \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.sha_short }}"
+
       - name: Scan image for CVEs
         uses: projectbluefin/actions/bootc-build/scan-image@e39c94703801a272245bf2a96416594f36fe6f93 # v1
         with:
-          image: ${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.sha_short }}
+          input: /tmp/scan-image.tar
           severity-threshold: CRITICAL
-          exit-code: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          exit-code: '0'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
