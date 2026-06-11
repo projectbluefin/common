@@ -55,3 +55,7 @@ glib-compile-schemas --strict system_files/bluefin/usr/share/glib-2.0/schemas/
 ```
 
 The E2E `common` suite validates dconf state post-merge.
+
+## Shared launchers for GNOME menu items
+
+If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
