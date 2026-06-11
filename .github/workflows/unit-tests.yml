@@ -52,7 +52,17 @@ jobs:
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-fail-under=80
+        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage-html/
+          retention-days: 7
 
       - name: Run bats (libsetup.sh)
         run: bats tests/test_libsetup.bats
