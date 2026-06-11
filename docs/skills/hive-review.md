@@ -22,17 +22,41 @@ Load when: Starting your session, reviewing P0/P1 issues, or performing daily tr
 ## Quick start
 
 ```bash
-# On your Bluefin machine or within your work session
+# Show live hive status (uses gh auth token automatically)
 ~/src/hive-status
 
-# Interactive menu:
-# ├─ P0 (critical) — show all
-# ├─ P1 (high) — filter by repo
-# ├─ P2 (medium) — search by term
-# └─ P3+ (backlog) — pagination only
+# Watch mode — refresh every 300 seconds
+~/src/hive-status --watch
+
+# Dump raw JSON
+~/src/hive-status --json
 ```
 
-## Hive Label Taxonomy
+## Live API Endpoint
+
+The hive exposes a real-time REST API. `hive-status` uses this automatically.
+Manual curl (works from internet, requires GitHub auth):
+
+```bash
+# Standard HTTPS endpoint (works from anywhere with gh auth)
+curl -H "Authorization: Bearer $(gh auth token)" \
+  https://hosted-projectbluefin-knuckle-gjvq.hive.kubestellar.io/api/status
+
+# LAN-direct endpoint (from ghost's subnet only)
+curl -H "Authorization: Bearer $(gh auth token)" \
+  https://hosted-projectbluefin-knuckle-gjvq.hive.kubestellar.io:3002/api/v1/status
+
+# Public queue data (no auth needed, ~5 min refresh)
+curl https://queue.projectbluefin.io/data.json
+```
+
+The response is JSON with keys: `timestamp`, `hiveId`, `acmmLevel`, `agents[]`, `advisoryDigest`.
+`agents[]` items have: `name`, `displayName`, `state`, `busy`, `paused`, `cadence`, `model`, `sortOrder`.
+`advisoryDigest.by_agent[name][]` items have: `title`, `severity`.
+
+> The old `raw.githubusercontent.com/kubestellar/docs/.../index.html` static snapshot
+> is no longer published. The live API is the only data source.
+
 
 The **hive system** prioritizes issues based on impact and reproducibility. bonedigger auto-escalates priority based on:
 
