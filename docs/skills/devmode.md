@@ -79,6 +79,11 @@ Groups are added via `pkexec` at the end, conditional on what was selected:
 - `ublue-os/tap` — tapped once if any of VS Code / VSCodium / Antigravity / JetBrains selected
 - `ublue-os/experimental-tap` — tapped once if Zed selected
 
+## VS Code defaults
+
+- Keep VS Code extensions in `system_files/shared/usr/share/ublue-os/homebrew/ide.Brewfile` using `vscode "publisher.extension"` entries instead of a post-install shell hook.
+- The only VS Code config we ship in the image is the default `settings.json` at `system_files/bluefin/etc/skel/.config/Code/User/settings.json`.
+
 ---
 
 ## State tracking
