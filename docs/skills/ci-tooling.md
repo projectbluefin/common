@@ -117,6 +117,29 @@ Use both. The hook enforces that refs are pinned at commit time. Renovate keeps 
 
 ---
 
+## release-state.yaml schema validation
+
+`.github/release-state.yaml` should be validated with the `check-jsonschema` pre-commit hook against the shared schema in `projectbluefin/actions`.
+
+### Pin both the hook and the schema source
+
+Use an immutable hook revision **and** an immutable raw schema URL pinned to the `actions` commit that introduced the schema:
+
+```yaml
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: <commit-sha> # <version>
+  hooks:
+    - id: check-jsonschema
+      files: ^\.github/release-state\.yaml$
+      args:
+        - --schemafile
+        - https://raw.githubusercontent.com/projectbluefin/actions/<commit-sha>/docs/schemas/release-state.schema.json
+```
+
+Pinning the raw URL to a commit avoids silent schema drift on the next pre-commit run if `actions/main` changes. The hook is file-scoped, so `pre-commit run --all-files` is a no-op in repos that do not currently carry `.github/release-state.yaml`.
+
+---
+
 ## Skill drift detection
 
 **`common` does not run `skill-drift.yml`.** Do not add it.
