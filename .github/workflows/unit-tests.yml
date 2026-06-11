@@ -44,6 +44,7 @@ jobs:
             system_files/shared/usr/bin/ublue-user-setup \
             system_files/shared/usr/bin/ublue-privileged-setup \
             system_files/shared/usr/bin/ublue-bling \
+            system_files/shared/usr/bin/ublue-motd \
             system_files/shared/usr/bin/luks-tpm2-autounlock \
             system_files/shared/usr/bin/ublue-fastfetch \
             system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
@@ -80,3 +81,6 @@ jobs:
 
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
+
+      - name: Run bats (ublue-motd)
+        run: bats tests/test_ublue_motd.bats
