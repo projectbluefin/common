@@ -120,3 +120,28 @@ jobs:
           image-name: common
           certificate-identity-regexp: >-
             ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/
+
+      - name: Generate GitHub App token for downstream dispatch
+        id: app-token
+        if: github.event_name != 'pull_request'
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          owner: projectbluefin
+          repositories: bluefin,bluefin-lts,dakota
+
+      - name: Notify downstream repos of common image update
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PAYLOAD=$(printf '{"digest":"%s","image":"%s"}' \
+            "${{ steps.push.outputs.digest }}" \
+            "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}")
+          for repo in bluefin bluefin-lts dakota; do
+            gh api "repos/projectbluefin/${repo}/dispatches" \
+              --method POST \
+              -f event_type=common-updated \
+              -f "client_payload=${PAYLOAD}"
+          done
