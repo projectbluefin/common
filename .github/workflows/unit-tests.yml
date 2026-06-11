@@ -44,6 +44,7 @@ jobs:
             system_files/shared/usr/bin/ublue-user-setup \
             system_files/shared/usr/bin/ublue-privileged-setup \
             system_files/shared/usr/bin/ublue-bling \
+            system_files/shared/usr/bin/ublue-motd \
             system_files/shared/usr/bin/luks-tpm2-autounlock \
             system_files/shared/usr/bin/ublue-fastfetch \
             system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
@@ -52,7 +53,17 @@ jobs:
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-fail-under=80
+        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage-html/
+          retention-days: 7
 
       - name: Run bats (libsetup.sh)
         run: bats tests/test_libsetup.bats
@@ -66,6 +77,9 @@ jobs:
       - name: Run bats (ublue-bling)
         run: bats tests/test_bling.bats
 
+      - name: Run bats (bling.sh)
+        run: bats tests/test_bling_sh.bats
+
       - name: Run bats (luks-tpm2-autounlock)
         run: bats tests/test_luks_tpm2.bats
 
@@ -78,8 +92,14 @@ jobs:
       - name: Run bats (changelog.just)
         run: bats tests/test_changelog.bats
 
+      - name: Run bats (update.just)
+        run: bats tests/test_update_just.bats
+
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
+
+      - name: Run bats (ublue-motd)
+        run: bats tests/test_ublue_motd.bats
 
       - name: Run bats (ublue-image-info.sh)
         run: bats tests/test_ublue_image_info.bats
