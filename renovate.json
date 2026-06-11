@@ -17,9 +17,14 @@
       "automergeStrategy": "squash"
     },
     {
-      "description": "Group all projectbluefin/actions ref updates into one PR for atomic SHA bumps (consistency C3)",
+      "description": "Group and automerge projectbluefin/actions composite SHA updates into one PR",
+      "matchManagers": ["github-actions"],
       "matchDepPatterns": ["projectbluefin/actions"],
-      "groupName": "projectbluefin/actions"
+      "groupName": "projectbluefin/actions",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "labels": ["chore/deps", "automerge"]
     }
   ]
 }

@@ -17,42 +17,57 @@ on:
   merge_group:
   workflow_dispatch:
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   IMAGE_NAME: common
 
 jobs:
   build_push:
-    name: Build and push image
-    runs-on: ubuntu-latest
+    name: Build and push image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runs_on }}
     permissions:
       contents: read
       packages: write
-      id-token: write      # keyless cosign signing via OIDC
-      attestations: write  # GitHub SBOM + SLSA provenance attestations
       security-events: write  # SARIF upload for Trivy scan results
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runs_on: ubuntu-24.04
+            arch_suffix: amd64
+          - arch: aarch64
+            runs_on: ubuntu-24.04-arm
+            arch_suffix: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: true
 
+      - name: Setup runner
+        uses: projectbluefin/actions/bootc-build/setup-runner@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
+        with:
+          storage-backend: remove-software
+          update-podman: "true"
+
       - name: Generate tags
         id: generate-tags
         shell: bash
         run: |
-          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          alias_tags=()
-          # Only perform the follow code when the action is spawned from a Pull Request
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            alias_tags+=("pr-${{ github.event.number }}")
-          else
-            # The following is run when the timer is triggered or a merge/push to main
+          SHA_SHORT="${GITHUB_SHA::7}"
+          LOCAL_TAG="${SHA_SHORT}-${{ matrix.arch_suffix }}"
+          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "local_tag=${LOCAL_TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
-            alias_tags+=("latest")
           fi
-          echo "alias_tags=${alias_tags[*]}" >> "$GITHUB_OUTPUT"
 
       - name: Build Image
         id: build_image
@@ -61,10 +76,7 @@ jobs:
           containerfiles: |
             ./Containerfile
           image: ${{ env.IMAGE_NAME }}
-          tags: |
-            ${{ steps.generate-tags.outputs.alias_tags }}
-            ${{ steps.generate-tags.outputs.date }}
-            ${{ steps.generate-tags.outputs.sha_short }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
           oci: true
 
       - name: Export image for scanning
@@ -74,47 +86,92 @@ jobs:
           # buildah-build stores the image in rootless buildah storage.
           # Use buildah push to export to docker-archive for Trivy.
           buildah push \
-            "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.sha_short }}" \
-            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.sha_short }}"
+            "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
       - name: Scan image for CVEs
-        uses: projectbluefin/actions/bootc-build/scan-image@e39c94703801a272245bf2a96416594f36fe6f93 # v1
+        uses: projectbluefin/actions/bootc-build/scan-image@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
         with:
-          input: /tmp/scan-image.tar
+          image: docker-archive:/tmp/scan-image.tar
           severity-threshold: CRITICAL
-          exit-code: '0'
+          exit-code: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
-        if: github.event_name != 'pull_request'
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push To GHCR
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+      - name: Push image
         id: push
         if: github.event_name != 'pull_request'
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
+        uses: projectbluefin/actions/bootc-build/push-image@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
         with:
-          image: ${{ steps.build_image.outputs.image }}
-          tags: ${{ steps.build_image.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-          extra-args: |
-            --compression-format=zstd:chunked
+          image-name: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write digest to file
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.push.outputs.digest }}" > "/tmp/digests/${{ matrix.arch_suffix }}.txt"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: digest-${{ matrix.arch_suffix }}
+          path: /tmp/digests/${{ matrix.arch_suffix }}.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: Create and sign multi-arch manifest
+    needs: [build_push]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      id-token: write      # keyless cosign signing via OIDC
+      attestations: write  # GitHub SBOM + SLSA provenance attestations
+
+    steps:
+      - name: Generate manifest tags
+        id: manifest-tags
+        shell: bash
+        run: |
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Download digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        with:
+          pattern: digest-*
+          merge-multiple: true
+          path: /tmp/digests
+
+      - name: Build digests JSON
+        id: digests
+        shell: bash
+        run: |
+          AMD64=$(cat /tmp/digests/amd64.txt)
+          ARM64=$(cat /tmp/digests/arm64.txt)
+          echo "json={\"amd64\": \"${AMD64}\", \"arm64\": \"${ARM64}\"}" >> "$GITHUB_OUTPUT"
+
+      - name: Create multi-arch manifest
+        id: create-manifest
+        uses: projectbluefin/actions/bootc-build/create-manifest@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          digests-json: ${{ steps.digests.outputs.json }}
+          tags: |
+            latest
+            ${{ steps.manifest-tags.outputs.date }}
+            ${{ steps.manifest-tags.outputs.sha_short }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign, generate SBOM, and attest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@e39c94703801a272245bf2a96416594f36fe6f93 # v1
-        if: github.event_name != 'pull_request'
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          digest: ${{ steps.push.outputs.digest }}
+          digest: ${{ steps.create-manifest.outputs.digest }}
           signing-mode: keyless
           github-token: ${{ secrets.GITHUB_TOKEN }}
           image-name: common
@@ -123,7 +180,6 @@ jobs:
 
       - name: Generate GitHub App token for downstream dispatch
         id: app-token
-        if: github.event_name != 'pull_request'
         uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
@@ -132,12 +188,11 @@ jobs:
           repositories: bluefin,bluefin-lts,dakota
 
       - name: Notify downstream repos of common image update
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           PAYLOAD=$(printf '{"digest":"%s","image":"%s"}' \
-            "${{ steps.push.outputs.digest }}" \
+            "${{ steps.create-manifest.outputs.digest }}" \
             "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}")
           for repo in bluefin bluefin-lts dakota; do
             gh api "repos/projectbluefin/${repo}/dispatches" \

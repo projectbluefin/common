@@ -15,14 +15,68 @@ on:
     # Run on the 1st of every month at 00:00 UTC
     - cron: '0 0 1 * *'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["E2E"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
+  # Guard: only release when triggered by schedule/dispatch, or when E2E just turned green and a release is due
+  check-release-cadence:
+    name: Check release cadence
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      due: ${{ steps.check.outputs.due }}
+    steps:
+      - name: Check if release is due
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          WF_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            # Only proceed when E2E succeeded
+            if [ "$WF_CONCLUSION" != "success" ]; then
+              echo "E2E did not succeed (conclusion: ${WF_CONCLUSION}) — skipping release"
+              echo "due=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            # Skip if a release was published within the last 20 days
+            LAST_RELEASE=$(gh release list \
+              --repo "$GITHUB_REPOSITORY" \
+              --limit 1 \
+              --json publishedAt \
+              --jq '.[0].publishedAt // empty')
+
+            if [ -n "$LAST_RELEASE" ]; then
+              LAST_TS=$(date -d "$LAST_RELEASE" +%s)
+              NOW_TS=$(date +%s)
+              DAYS_SINCE=$(( (NOW_TS - LAST_TS) / 86400 ))
+              if [ "$DAYS_SINCE" -lt 20 ]; then
+                echo "Last release was ${DAYS_SINCE} days ago — not due yet"
+                echo "due=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+          fi
+
+          echo "due=true" >> "$GITHUB_OUTPUT"
+
   # Gate: verify promotion criteria before creating release
   check-promotion-criteria:
     name: Verify promotion criteria
+    needs: [check-release-cadence]
+    if: needs.check-release-cadence.outputs.due == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -68,7 +122,7 @@ jobs:
 
   release:
     name: Create monthly snapshot release
-    needs: [check-promotion-criteria]
+    needs: [check-release-cadence, check-promotion-criteria]
     if: needs.check-promotion-criteria.outputs.safe == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -133,7 +187,7 @@ jobs:
 
   skip-notification:
     name: Skip notification
-    needs: [check-promotion-criteria]
+    needs: [check-release-cadence, check-promotion-criteria]
     if: needs.check-promotion-criteria.outputs.safe != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 2

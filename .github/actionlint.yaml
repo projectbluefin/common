@@ -1,0 +1,11 @@
+# actionlint configuration
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md
+
+paths:
+  # continue-on-error IS supported by GitHub Actions for jobs that call reusable
+  # workflows, but actionlint 1.7.x still flags it as unsupported. Suppress the
+  # stale syntax-check error until actionlint catches up.
+  # See: https://github.com/projectbluefin/common/issues/497
+  .github/workflows/e2e.yml:
+    ignore:
+      - '"continue-on-error" is not available'
