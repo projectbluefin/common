@@ -13,11 +13,11 @@ on:
 permissions:
   issues: write
   pull-requests: write
-  contents: read
+  contents: write  # on-pr-lgtm job requires write to enable auto-merge
 
 jobs:
   lifecycle:
-    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@3025b5d31f34ce44c19eab41a7fa5d4d5c5b688e # v0 — update SHA when actions bumps lifecycle.yml
+    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@770424da92549af5e43b11fedc8ca565dd55a7f3 # v0 — update SHA when actions bumps lifecycle.yml
     with:
       brand_name: "Common"
     secrets: inherit

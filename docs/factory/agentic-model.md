@@ -7,6 +7,7 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 
 - **AGENTS.md is the per-repo contract.** Read it before touching anything.
 - **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
+- **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.
 - **No castrojo fork.** Push branches directly to `projectbluefin/*` repos, open PRs with `gh pr create --repo projectbluefin/<repo>`.
 - **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.
 - **Max 4 open PRs per agent at once.** No WIP PRs.

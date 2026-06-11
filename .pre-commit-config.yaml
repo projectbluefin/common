@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # v4.6.0
     hooks:
         - id: check-json
           exclude: \.devcontainer\.json
@@ -12,9 +12,18 @@ repos:
         - id: detect-private-key
         - id: check-added-large-files
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: 03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
     hooks:
       - id: actionlint
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: f805888065fdb6162e1f800e50bb9460cbd223d6 # 0.37.2
+    hooks:
+      - id: check-jsonschema
+        name: Validate release-state.yaml
+        files: ^\.github/release-state\.yaml$
+        args:
+          - --schemafile
+          - https://raw.githubusercontent.com/projectbluefin/actions/e39c94703801a272245bf2a96416594f36fe6f93/docs/schemas/release-state.schema.json
   - repo: local
     hooks:
       - id: no-floating-action-tags

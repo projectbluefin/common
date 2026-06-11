@@ -2,7 +2,7 @@
 Type=Application
 NoDisplay=false
 Terminal=false
-Exec=xdg-open https://docs.projectbluefin.io/
+Exec=flatpak run org.gnome.Papers /usr/share/doc/bluefin/bluefin.pdf
 Icon=ublue-docs
 Name=Documentation
 Name[cs]=Dokumentace

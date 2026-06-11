@@ -102,8 +102,8 @@ testsuite gates `:latest` promotion in all three image repos.
 
 | Repo | Role |
 |---|---|
-| [projectbluefin/housekeeping](https://github.com/projectbluefin/housekeeping) | Org-wide maintenance workflows |
 | [projectbluefin/testsuite](https://github.com/projectbluefin/testsuite) | QA pipeline — Argo + KubeVirt + AT-SPI |
+| [projectbluefin/housekeeping](https://github.com/projectbluefin/housekeeping) | Deprecated placeholder repo — org-wide automation now lives in `projectbluefin/actions` |
 | [projectbluefin/testing-lab](https://github.com/projectbluefin/testing-lab) | Homelab QA pipeline |
 | [projectbluefin/bluespeed](https://github.com/projectbluefin/bluespeed) | KubeStellar homelab factory |
 | [projectbluefin/iso](https://github.com/projectbluefin/iso) | ISO builds |

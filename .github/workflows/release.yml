@@ -1,13 +1,3 @@
-# Updated release.yml for projectbluefin/common
-#
-# Changes from current:
-# 1. Adds git-cliff for structured changelog generation
-# 2. Adds promotion criteria check (e2e must be green)
-# 3. Preserves monthly cron + manual dispatch
-#
-# Deploy to: projectbluefin/common/.github/workflows/release.yml
-# Requires: cliff.toml in repo root
-
 name: Monthly Release
 
 on:

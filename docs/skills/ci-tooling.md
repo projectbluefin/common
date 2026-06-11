@@ -79,7 +79,7 @@ Internal reusable workflow refs use a coordinated policy, not blanket SHA pinnin
 - The old `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` exemption was retired when lifecycle ownership moved into `common`
 - Other internal `projectbluefin/` refs follow repo-local policy comments — read the comment before converting
 
-**Audit-pin guidance (2026-06-10):** Even though the `no-floating-action-tags` hook exempts `projectbluefin/*` refs (negative lookahead), the [automation audit](../factory/automation-audit/consistency-audit.md) consolidation item C2 recommends pinning them to a SHA anyway. Reason: a floating `@main` ref makes upstream behavior changes propagate silently on the next workflow run; a SHA-pin makes Renovate open an explicit PR you can review. Tracked via `projectbluefin/common#585` (bluefin) and `#586` (bluefin-lts). Apply the same convention to any new image-repo workflow that consumes `projectbluefin/actions` reusable workflows.
+Pin `projectbluefin/actions` reusable workflow refs to a SHA anyway, even though the `no-floating-action-tags` hook exempts `projectbluefin/*`. A floating `@main` ref lets upstream changes propagate silently; a SHA-pin makes Renovate open an explicit PR. All image repos (bluefin, bluefin-lts, dakota) are now pinned.
 - Coordinate with maintainers before changing an internal ref policy
 
 ---
@@ -114,6 +114,29 @@ These two protections do different jobs:
 - **Renovate** updates existing SHA pins automatically once they are tracked
 
 Use both. The hook enforces that refs are pinned at commit time. Renovate keeps them fresh.
+
+---
+
+## release-state.yaml schema validation
+
+`.github/release-state.yaml` should be validated with the `check-jsonschema` pre-commit hook against the shared schema in `projectbluefin/actions`.
+
+### Pin both the hook and the schema source
+
+Use an immutable hook revision **and** an immutable raw schema URL pinned to the `actions` commit that introduced the schema:
+
+```yaml
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: <commit-sha> # <version>
+  hooks:
+    - id: check-jsonschema
+      files: ^\.github/release-state\.yaml$
+      args:
+        - --schemafile
+        - https://raw.githubusercontent.com/projectbluefin/actions/<commit-sha>/docs/schemas/release-state.schema.json
+```
+
+Pinning the raw URL to a commit avoids silent schema drift on the next pre-commit run if `actions/main` changes. The hook is file-scoped, so `pre-commit run --all-files` is a no-op in repos that do not currently carry `.github/release-state.yaml`.
 
 ---
 
@@ -310,7 +333,7 @@ After deleting the script and its skill file, run:
 ```bash
 grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
 ```
-Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `acmm-audit-level2.md` risk statements, `specs/` JSON chunks.
+Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `specs/` JSON chunks.
 
 ## Shell Script Testability Patterns
 

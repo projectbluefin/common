@@ -157,7 +157,7 @@ agent works on task
                       └─ loop
 ```
 
-The ACMM (AI Codebase Maturity Model) framework measures how well the loop is working. Current status: Level 3. See [`docs/skills/acmm-audit-level2.md`](../skills/acmm-audit-level2.md).
+The ACMM (AI Codebase Maturity Model) framework measures how well the loop is working. Current status: **Level 3 (Instructed)**, achieved 2026-06-06.
 
 **Why:** Compound improvement. A factory that doesn't learn from its own operation is just executing — not improving.
 
@@ -223,7 +223,7 @@ Reference: [`docs/skills/bonedigger.md`](../skills/bonedigger.md)
 |---|---|---|---|
 | 2026-06-05 | Lifecycle | Unified lifecycle.yml deployed to all 6 factory repos, replacing per-repo bonedigger lifecycle calls | common#— |
 | 2026-06-05 | Security | bonedigger sync-templates replaced banned PAT with mergeraptor app token | bonedigger#21 |
-| 2026-06-05 | Docs | ACMM Level 2 audit completed; Level 3 bridge requirements defined | acmm-audit-level2.md |
+| 2026-06-05 | Docs | ACMM Level 2 audit completed; Level 3 bridge requirements defined; Level 3 achieved 2026-06-06 | — |
 | 2026-06-06 | Docs | Factory brain restructured: IMPROVEMENTS.md, human-gates.md, skill-improvement.md added; duplicate files merged and deleted | — |
 | 2026-06-06 | Docs | Operating manual pass: removed Known Gaps/Priority Order checklists from factory-improvement.md; replaced Open Gaps bullet list in factory/README.md with org-wide GH search commands; added "Capturing gaps" section to agentic-model.md; fixed skill-improvement.md to file issues instead of updating static docs; updated SKILL.md router with gap-capture row; now 100% of factory gaps tracked as GitHub issues, zero static backlog in docs | — |
 | 2026-06-06 | Maturity | **ACMM Level 3 (Instructed) achieved.** Factory now has machine-readable per-repo contracts (AGENTS.md in all repos), programmatic instruction loading (Copilot system prompt), AI-specific guardrails (skill-drift CI gate, human-gates.md, human gates documented as non-automatable), and the hive ACMM scoring reflects L3. | hive-status |
