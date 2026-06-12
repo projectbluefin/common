@@ -47,7 +47,9 @@ jobs:
             system_files/shared/usr/bin/ublue-motd \
             system_files/shared/usr/bin/luks-tpm2-autounlock \
             system_files/shared/usr/bin/ublue-fastfetch \
-            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh
+            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh \
+            system_files/bluefin/usr/libexec/bluefin-dynamic-wallpaper \
+            system_files/bluefin/usr/libexec/get-geoclue-latitude
 
       - name: Run shellcheck — .sh scripts
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
@@ -103,3 +105,12 @@ jobs:
 
       - name: Run bats (ublue-image-info.sh)
         run: bats tests/test_ublue_image_info.bats
+
+      - name: Run bats (profile.d — caffeinate.sh + uutils.sh)
+        run: bats tests/test_profile_d.bats
+
+      - name: Run bats (bluefin-dynamic-wallpaper)
+        run: bats tests/test_dynamic_wallpaper.bats
+
+      - name: Run bats (get-geoclue-latitude)
+        run: bats tests/test_geoclue_latitude.bats
