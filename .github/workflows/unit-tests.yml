@@ -114,3 +114,6 @@ jobs:
 
       - name: Run bats (get-geoclue-latitude)
         run: bats tests/test_geoclue_latitude.bats
+
+      - name: Run bats (brew-preinstall)
+        run: bats tests/test_brew_preinstall.bats
