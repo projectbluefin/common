@@ -36,31 +36,6 @@ fix:
     {{ just }} --unstable --fmt -f Justfile || failed=1
     exit "$failed"
 
-# Preview a ujust TUI recipe in a new Ghostty window with hardware mocked
-# Usage: just preview-tui <just-file> <recipe>
-# Example: just preview-tui system_files/nvidia/usr/share/ublue-os/just/nvidia.just aimode
-preview-tui JUST_FILE RECIPE:
-    #!/usr/bin/bash
-    ABS_JUST="$(realpath "{{ JUST_FILE }}")"
-    JUST_DIR="$(dirname "${ABS_JUST}")"
-    STACKS_GUESS="$(dirname "${JUST_DIR}")/nvidia-stacks"
-    QUADLET_TMP="$(mktemp -d /tmp/preview-quadlets-XXXXXX)"
-    LAUNCHER="$(mktemp /tmp/preview-XXXXXX.sh)"
-    chmod +x "${LAUNCHER}"
-    # Build launcher with echo — avoids heredoc indentation handling in just
-    {
-        echo '#!/usr/bin/bash'
-        echo "export UJUST_PREVIEW=1"
-        echo "export UJUST_PREVIEW_STACKS_DIR='${STACKS_GUESS}'"
-        echo "export UJUST_PREVIEW_QUADLET_DIR='${QUADLET_TMP}'"
-        echo "'{{ just }}' --justfile '${ABS_JUST}' {{ RECIPE }} || true"
-        echo "echo ''"
-        echo "echo '  preview complete — exit to close'"
-        echo 'exec bash'
-    } > "${LAUNCHER}"
-    ghostty -e "${LAUNCHER}" &
-    disown
-
 # Inspect the directory structure of an OCI image
 tree IMAGE="localhost/bluefin-common:latest":
     echo "FROM alpine:latest" > TreeContainerfile
