@@ -50,7 +50,7 @@ The final `ctx` stage is a scratch image — it contains only the file tree that
 **The wallpaper source is still `ghcr.io/ublue-os/bluefin-wallpapers-gnome`.**
 
 ```dockerfile
-COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:... / /out/bluefin/usr/share
+COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:e4d74fa741ce9ff03a6a60440a58c31cef6c0fc145182357d243580ba239f810 / /out/bluefin/usr/share
 ```
 
 This is a build-time `COPY --from` image reference, not a runtime registry path. The production image tree lives in `ghcr.io/projectbluefin/`, but the wallpaper artwork still originates from the `ublue-os` artwork registry. This is intentional — the wallpapers are upstream artwork, not projectbluefin-owned infrastructure.
