@@ -104,15 +104,15 @@ toggle-user-motd:
       if gum confirm "Would you like to enable the MOTD?" ; then
         rm -f "${HOME}/.config/no-show-user-motd"
         echo "MOTD will now be shown on login."
-        exit 0
       fi
+      exit 0
     fi
     if gum confirm "Would you like to disable the MOTD?" ; then
       mkdir -p "${HOME}/.config"
       touch "${HOME}/.config/no-show-user-motd"
       echo "MOTD will not be shown anymore."
-      exit 0
     fi
+    exit 0
 
 # Check for local overrides
 check-local-overrides:

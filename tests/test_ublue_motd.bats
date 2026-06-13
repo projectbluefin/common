@@ -8,6 +8,7 @@ bats_require_minimum_version 1.5.0
 SCRIPT_UNDER_TEST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/bin/ublue-motd"
 UBLUE_MOTD_PROFILE_SCRIPT="${BATS_TEST_DIRNAME}/../system_files/shared/etc/profile.d/ublue-motd.sh"
 UMOTD_PROFILE_SCRIPT="${BATS_TEST_DIRNAME}/../system_files/shared/etc/profile.d/umotd.sh"
+TOGGLE_MOTD_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/default.just"
 WORKDIR=""
 MOCKDIR=""
 LOGDIR=""
@@ -158,6 +159,83 @@ EOF
 
     [ "${status}" -eq 0 ]
     grep -qx -- "ublue-motd" "${LOGDIR}/profile.log"
+}
+
+# Extract the toggle-user-motd recipe body from default.just into a runnable script
+_extract_toggle_recipe() {
+    local dest="$1"
+    awk '/^toggle-user-motd:$/{in_r=1;next} in_r && /^    /{sub(/^    /,"");print;next} in_r && !/^[[:space:]]/{exit}' \
+        "${TOGGLE_MOTD_JUST}" > "${dest}"
+    chmod +x "${dest}"
+}
+
+@test "toggle-user-motd: exits 0 when motd is enabled and user declines to disable" {
+    local script="${WORKDIR}/toggle.sh"
+    _extract_toggle_recipe "${script}"
+
+    # Mock gum to simulate 'No' (exit 1)
+    write_mock gum <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+
+    run bash "${script}"
+
+    [ "${status}" -eq 0 ]
+}
+
+@test "toggle-user-motd: exits 0 when motd is disabled and user declines to re-enable" {
+    local script="${WORKDIR}/toggle.sh"
+    _extract_toggle_recipe "${script}"
+
+    # Disable motd first
+    touch "${HOME}/.config/no-show-user-motd"
+
+    # Mock gum to simulate 'No' (exit 1) — should not fall through to the disable prompt
+    write_mock gum <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+
+    run bash "${script}"
+
+    [ "${status}" -eq 0 ]
+    # Motd should remain disabled (file untouched)
+    [ -e "${HOME}/.config/no-show-user-motd" ]
+}
+
+@test "toggle-user-motd: exits 0 and removes opt-out file when user confirms enable" {
+    local script="${WORKDIR}/toggle.sh"
+    _extract_toggle_recipe "${script}"
+
+    touch "${HOME}/.config/no-show-user-motd"
+
+    # Mock gum to simulate 'Yes' (exit 0)
+    write_mock gum <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+
+    run bash "${script}"
+
+    [ "${status}" -eq 0 ]
+    [ ! -e "${HOME}/.config/no-show-user-motd" ]
+}
+
+@test "toggle-user-motd: exits 0 and creates opt-out file when user confirms disable" {
+    local script="${WORKDIR}/toggle.sh"
+    _extract_toggle_recipe "${script}"
+
+    # Motd currently enabled (no opt-out file)
+    write_mock gum <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+
+    run bash "${script}"
+
+    [ "${status}" -eq 0 ]
+    [ -e "${HOME}/.config/no-show-user-motd" ]
 }
 
 @test "umotd.sh: invokes umotd unconditionally" {
