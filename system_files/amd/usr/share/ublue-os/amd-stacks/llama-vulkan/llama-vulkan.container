@@ -1,0 +1,22 @@
+[Unit]
+Description=Llama Vulkan — Vulkan RADV llama.cpp server (RDNA2+ · widest compat · :8080)
+After=network-online.target
+
+[Container]
+ContainerName=llama-vulkan
+Image=docker.io/kyuz0/amd-strix-halo-toolboxes:vulkan-radv
+AddDevice=/dev/dri
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--security-opt=seccomp=unconfined
+PodmanArgs=--group-add=video
+Network=llama-vulkan-network.network
+PublishPort=8080:8080
+Volume=%h/ai-workspaces/llama-vulkan/models:/workspace/models:z
+Exec=llama-server -m ${LLAMA_MODEL} -c 4096 -ngl 999 -fa 1 --no-mmap --host 0.0.0.0 --port 8080
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
