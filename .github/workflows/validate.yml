@@ -50,7 +50,7 @@ jobs:
           echo "All submodules are clean."
 
       - name: Install just
-        uses: taiki-e/install-action@3bcad52036b48c4f9e2249c2ebd39a428ef3d98f # just
+        uses: taiki-e/install-action@bafb217ce243dd135aa0204d91238f387d005863 # just
         with:
           tool: just
 
