@@ -7,7 +7,19 @@ test:
     bats tests/test_setup_scripts.bats
     bats tests/test_privileged_setup.bats
     bats tests/test_bling.bats
+    bats tests/test_bling_sh.bats
     bats tests/test_luks_tpm2.bats
+    bats tests/test_rechunker_group_fix.bats
+    bats tests/test_bling_fastfetch.bats
+    bats tests/test_changelog.bats
+    bats tests/test_update_just.bats
+    bats tests/test_ublue_fastfetch.bats
+    bats tests/test_ublue_motd.bats
+    bats tests/test_ublue_image_info.bats
+    bats tests/test_profile_d.bats
+    bats tests/test_dynamic_wallpaper.bats
+    bats tests/test_geoclue_latitude.bats
+    bats tests/test_brew_preinstall.bats
 
 # Build the bluefin-common container locally
 build:
