@@ -54,7 +54,7 @@ jobs:
       - name: Setup runner
         uses: projectbluefin/actions/bootc-build/setup-runner@dc35eb231998ba93244072ec72781e36f373a4a3 # v1
         with:
-          storage-backend: remove-software
+          storage-backend: btrfs
           update-podman: "true"
 
       - name: Generate tags
