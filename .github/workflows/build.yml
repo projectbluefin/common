@@ -80,6 +80,7 @@ jobs:
           oci: true
 
       - name: Export image for scanning
+        if: github.event_name != 'merge_group'
         shell: bash
         run: |
           set -eoux pipefail
@@ -90,6 +91,7 @@ jobs:
             "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
       - name: Scan image for CVEs
+        if: github.event_name != 'merge_group'
         uses: projectbluefin/actions/bootc-build/scan-image@e39c94703801a272245bf2a96416594f36fe6f93 # v1
         with:
           input: /tmp/scan-image.tar
