@@ -28,7 +28,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `sync-labels.yml` | Syncs `labels.json` (67 labels) to all factory repos — requires `MERGERAPTOR_APP_ID` + `MERGERAPTOR_PRIVATE_KEY` secrets (see issue #511) | Adding/retiring labels or debugging label drift |
 | `scorecard.yml` | Weekly OpenSSF Scorecard analysis. Runs on schedule and on push to main. Uploads SARIF to the GitHub Security tab. | Adjusting security posture reporting |
 | `release.yml` | Monthly/versioned OCI release flow. Triggered by schedule, `workflow_dispatch`, or automatically when `E2E` completes green on main. Uses git-cliff for changelog generation ([common#592](https://github.com/projectbluefin/common/pull/592)). | Changing versioned layer release behavior |
-| `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls common `lifecycle.yml`. **`lifecycle.yml` (747 lines) belongs in `projectbluefin/actions` — tracked in [common#570](https://github.com/projectbluefin/common/issues/570). Do not add more logic inline here.** | Changing factory lifecycle automation |
+| `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls `projectbluefin/actions/.github/workflows/lifecycle.yml@<SHA>` (moved from `common` in [#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10). Do not add lifecycle logic inline here — all logic lives in the `actions` reusable. | Changing factory lifecycle automation |
 
 > **Workflows that do not exist in `common` and must not be re-added:**
 > - `backfill-pipeline.yml` — issue widget backfill. If needed, run as a local script; do not add CI plumbing for a one-shot task.
@@ -51,7 +51,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 
 ### Factory operations
 
-`lifecycle-caller.yml`, `sync-codeowners.yml`, and `sync-labels.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership itself lives in `common`'s reusable `.github/workflows/lifecycle.yml`.
+`lifecycle-caller.yml`, `sync-codeowners.yml`, and `sync-labels.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. The `lifecycle-caller.yml` in each repo is a thin SHA-pinned caller — Renovate keeps that SHA current.
 
 ## Which skill to load next
 

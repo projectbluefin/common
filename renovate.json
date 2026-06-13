@@ -15,18 +15,6 @@
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
-    },
-    {
-      "description": "Group and automerge projectbluefin/actions composite SHA updates into one PR",
-      "matchManagers": ["github-actions"],
-      "groupName": "projectbluefin/actions",
-      "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash",
-      "labels": ["chore/deps", "automerge"],
-      "matchDepNames": [
-        "/projectbluefin/actions/"
-      ]
     }
   ]
 }

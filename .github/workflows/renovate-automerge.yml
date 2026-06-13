@@ -1,0 +1,61 @@
+name: Renovate Auto-merge
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    name: Auto-merge Renovate PRs
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+
+      - name: Find Renovate PR for this commit
+        id: find-pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --state open \
+            --json number,headRefOid,author \
+            --jq ".[] | select(.headRefOid == \"$HEAD_SHA\") | select(.author.login == \"renovate[bot]\" or .author.login == \"app/mergeraptor\") | .number" \
+            | head -1)
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No open Renovate/Mergeraptor PR found for SHA $HEAD_SHA — skipping"
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found Renovate/Mergeraptor PR #$PR_NUMBER"
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge PR
+        if: steps.find-pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # Direct squash-merge with mergeraptor token.
+          # main has main-review-required-with-renovate-bypass; github-actions[bot]
+          # is not in the bypass list but mergeraptor is. --auto is intentionally
+          # absent: it uses GitHub's auto-merge queue which does NOT honour
+          # bypass_pull_request_allowances regardless of token.
+          gh pr merge "${{ steps.find-pr.outputs.pr_number }}" \
+            --squash \
+            --repo "${{ github.repository }}" \
+            || echo "::warning::PR merge skipped (already merged or conflicting)"
+          echo "✅ Merged PR #${{ steps.find-pr.outputs.pr_number }}"

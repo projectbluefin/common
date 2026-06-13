@@ -38,7 +38,7 @@ bonedigger has two functions:
 
 ## bonedigger — what it does NOT do
 
-Issue lifecycle management (slash commands, pipeline widget, label transitions, stale sweep) moved to `projectbluefin/common/.github/workflows/lifecycle.yml` as of 2026-06-05.
+Issue lifecycle management (slash commands, pipeline widget, label transitions, stale sweep) lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. It was first deployed to `common` (2026-06-05) then moved to `actions` ([common#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10) to serve all factory repos as a single reusable.
 
 See [`label-workflow.md`](./label-workflow.md) for the full lifecycle reference.
 
@@ -54,7 +54,7 @@ kubestellar-bot does NOT make design or security decisions. Those hit a human ga
 
 ## Integration status
 
-All 6 factory repos call `projectbluefin/common/.github/workflows/lifecycle.yml` via `lifecycle-caller.yml`. bonedigger is no longer called directly for lifecycle from factory repos.
+All 6 factory repos call `projectbluefin/actions/.github/workflows/lifecycle.yml@<SHA>` via a thin `lifecycle-caller.yml`. If you find a `lifecycle-caller.yml` still pointing at `projectbluefin/common`, it is stale — delete it or update the target to `projectbluefin/actions`. bonedigger is no longer called directly for lifecycle from factory repos.
 
 bonedigger's `sync-templates.yml` continues to propagate issue templates to factory repos.
 

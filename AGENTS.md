@@ -223,12 +223,45 @@ pre-commit run --all-files   # hygiene checks (json/yaml/toml + actionlint)
 ## Submodules
 
 - `bluefin-branding` → `projectbluefin/branding` (wallpapers, logos). `just build` initializes it automatically.
+- `system_files/bluefin/usr/share/gnome-shell/extensions/custom-command-list@storageb.github.com` → `github.com/StorageB/custom-command-menu` (vendored GNOME extension — largest single source artifact in system_files at ~3.5K lines)
 
 `system_files/shared/` and `system_files/nvidia/` are now directly tracked in this repo — edit them here directly.
+
+**`knuckle/` is in `.gitignore`** — it's a locally cloned separate repo (`projectbluefin/knuckle`), not a submodule. Not tracked by common's git. Run `rm -rf knuckle/` to clean up a local clone.
 
 ## Scope warning
 
 Changes here flow into ALL downstream Bluefin variants at next build. A broken `system_files/shared/` change will break bluefin, bluefin-lts, AND dakota simultaneously. Test locally before pushing.
+
+## Factory workflow reuse — what lives in `projectbluefin/actions`
+
+Before writing inline workflow logic in any factory repo, check if a reusable already exists in `projectbluefin/actions`. Use thin callers (`uses: projectbluefin/actions/.github/workflows/reusable-*.yml@SHA`) rather than duplicating logic.
+
+| Reusable | Purpose | Consumers |
+|---|---|---|
+| `reusable-build.yml` | OCI image build (bootc) | bluefin, bluefin-lts, dakota |
+| `reusable-promote-squash.yml` | Promote testing→main via squash PR | bluefin, bluefin-lts, dakota |
+| `reusable-vulnerability-scan.yml` | Grype CVE scan + SARIF upload | bluefin, bluefin-lts, dakota |
+| `reusable-validate-renovate.yml` | Renovate config validation | actions, bluefin, bluefin-lts, dakota |
+| `reusable-release-reminder.yml` | Issue reminder for overdue releases | bluefin, bluefin-lts, dakota |
+| `reusable-renovate-automerge.yml` | Auto-merge Renovate PRs post-build | bluefin, bluefin-lts, dakota |
+| `reusable-release.yml` | Full release pipeline | bluefin, bluefin-lts, dakota |
+| `reusable-release-gate.yml` | Cosign verification + release gate | bluefin, bluefin-lts, dakota |
+| `skill-drift-check.yml` | PR-level skill staleness warning | actions, bluefin, bluefin-lts, dakota, knuckle |
+
+**`reusable-promote.yml` is deleted** — all consumers use `reusable-promote-squash.yml` now.
+
+## `system_files/` — icons reference
+
+Icons in `system_files/bluefin/usr/share/icons/hicolor/scalable/places/`:
+
+| File | Status | Used by |
+|---|---|---|
+| `ublue-docs.svg` | ✅ keep | `documentation.desktop` |
+| `ublue-discourse.svg` | ✅ keep | `discourse.desktop` |
+| `ublue-update.svg` | ✅ keep | `system-update.desktop` |
+
+The two `fedora_white*.svg` files (identical 1.2MB each) and `fedora-logo-sprite.svg` were removed in common#650 — they were unreferenced.
 
 ## Self-Improvement Loop
 
