@@ -749,7 +749,7 @@ The `renovate-automerge.yml` workflow uses the `mergeraptor` GitHub App to bypas
 
 **Secrets required:** `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` must be available to the repo. Set these at the **org level** (projectbluefin → Settings → Secrets → Actions) with "All repositories" access — never per-repo, or every new repo needs manual setup.
 
-**Trigger:** The workflow fires via `workflow_run` when the "Build" workflow completes. It only works correctly when Build runs as a `pull_request` event (Renovate opens a PR → Build runs → `workflow_run` fires → automerge merges). 
+**Trigger:** The workflow fires via `workflow_run` when the "Build" workflow completes. It only works correctly when Build runs as a `pull_request` event (Renovate opens a PR → Build runs → `workflow_run` fires → automerge merges).
 
 **Do not trigger via `workflow_dispatch`** on Renovate branches — `workflow_dispatch` causes Build to attempt push/sign (non-`pull_request` path), which fails on Renovate branches and causes the automerge to skip (conclusion != 'success').
 
