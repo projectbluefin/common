@@ -1,1 +1,361 @@
-IyB2aW06IHNldCBmdD1tYWtlIDoKIyBUaGlzIGZpbGUgc2hvdWxkIG9ubHkgY29udGFpbiBibHVlZmluIHNwZWNpZmljIHN0dWZmCgojIENvbmZpZ3VyZSBCbHVlZmluLUNMSSBUZXJtaW5hbCBFeHBlcmllbmNlIHdpdGggQnJldwojIE9ubHkgaW5zdGFsbHMgYnJldyBwYWNrYWdlcyB3aGVuIGVuYWJsaW5nIGJsaW5nIChub3Qgd2hlbiBkaXNhYmxpbmcpCltncm91cCgnU3lzdGVtJyldCltuby1leGl0LW1lc3NhZ2VdCmJsdWVmaW4tY2xpOgogICAgIyEvdXNyL2Jpbi9lbnYgYmFzaAogICAgc2V0IC1lCiAgICBCTElOR19TUkNfRElSPSIvdXNyL3NoYXJlL3VibHVlLW9zL2JsaW5nIgogICAgQkxJTkdfU0NSSVBUPSJibGluZy5zaCIKICAgIFNIRUxMX05BTUU9IiQoYmFzZW5hbWUgIiR7U0hFTEx9IikiCiAgICBjYXNlICIke1NIRUxMX05BTUV9IiBpbgogICAgICAgIGZpc2gpCiAgICAgICAgICAgIEJMSU5HX1NDUklQVD0iYmxpbmcuZmlzaCIKICAgICAgICAgICAgVEFSR0VUX0ZJTEU9IiR7WERHX0NPTkZJR19IT01FOi0kSE9NRS8uY29uZmlnfS9maXNoL2NvbmZpZy5maXNoIgogICAgICAgICAgICA7OwogICAgICAgIHpzaCkKICAgICAgICAgICAgVEFSR0VUX0ZJTEU9IiR7WkRPVERJUjotJEhPTUV9Ly56c2hyYyIKICAgICAgICAgICAgOzsKICAgICAgICBiYXNoKQogICAgICAgICAgICBUQVJHRVRfRklMRT0iJHtIT01FfS8uYmFzaHJjIgogICAgICAgICAgICA7OwogICAgICAgICopCiAgICAgICAgICAgIGVjaG8gIlVua25vd24gc2hlbGw6ICR7U0hFTExfTkFNRX0iCiAgICAgICAgICAgIGV4aXQgMQogICAgICAgICAgICA7OwogICAgZXNhYwogICAgIyBDaGVjayBpZiBibGluZyBpcyBjdXJyZW50bHkgaW5zdGFsbGVkIGJlZm9yZSB0b2dnbGluZwogICAgQkxJTkdfV0FTX0lOU1RBTExFRD0xCiAgICBpZiBbIC1mICIke1RBUkdFVF9GSUxFfSIgXSAmJiBncmVwIC1xICJzb3VyY2UgJHtCTElOR19TUkNfRElSfS8ke0JMSU5HX1NDUklQVH0iICIke1RBUkdFVF9GSUxFfSIgMj4vZGV2L251bGw7IHRoZW4KICAgICAgICBCTElOR19XQVNfSU5TVEFMTEVEPTAKICAgIGZpCiAgICAjIFRvZ2dsZSBibGluZyAodWJsdWUtYmxpbmcgd2lsbCByZW1vdmUgaWYgaW5zdGFsbGVkLCBhZGQgaWYgbm90KQogICAgdWJsdWUtYmxpbmcKICAgICMgT25seSBpbnN0YWxsIGJyZXcgcGFja2FnZXMgd2hlbiBlbmFibGluZyAoYmxpbmcgd2FzIG5vdCBpbnN0YWxsZWQgYmVmb3JlKQogICAgaWYgWyAiJHtCTElOR19XQVNfSU5TVEFMTEVEfSIgLW5lIDAgXTsgdGhlbgogICAgICAgIGJyZXcgYnVuZGxlIC0tZmlsZT0vdXNyL3NoYXJlL3VibHVlLW9zL2hvbWVicmV3L2NsaS5CcmV3ZmlsZQogICAgZmkKCiMgYWxpYXMgZm9yIHRvZ2dsZS1kZXZtb2RlCmRldm1vZGU6CiAgICBAdWp1c3QgdG9nZ2xlLWRldm1vZGUKCiMgU2V0IHVwIHRoZSBEZXZlbG9wZXIgRXhwZXJpZW5jZQpbZ3JvdXAoJ1N5c3RlbScpXQp0b2dnbGUtZGV2bW9kZToKICAgICMhL3Vzci9iaW4vZW52IGJhc2gKICAgIHNldCAtZQogICAgSlVTVEZJTEU9Int7IGp1c3RmaWxlKCkgfX0iCiAgICBJTUFHRV9JTkZPX0ZJTEU9IiR7SU1BR0VfSU5GT19GSUxFOi0vdXNyL3NoYXJlL3VibHVlLW9zL2ltYWdlLWluZm8uanNvbn0iCiAgICBERVZNT0RFX01BUktFUj0iJHtIT01FfS8uY29uZmlnL2JsdWVmaW4vZGV2bW9kZSIKCiAgICBndW0gc3R5bGUgXAogICAgICAgIC0tZm9yZWdyb3VuZCAyMTIgLS1ib3JkZXItZm9yZWdyb3VuZCAyMTIgLS1ib3JkZXIgZG91YmxlIFwKICAgICAgICAtLWFsaWduIGNlbnRlciAtLXdpZHRoIDYwIC0tcGFkZGluZyAiMSA0IiBcCiAgICAgICAgIlR1cm4gb24gRGV2ZWxvcGVyIE1vZGUiCiAgICBlY2hvICIiCgogICAgaWYgWyAtZiAiJHtERVZNT0RFX01BUktFUn0iIF07IHRoZW4KICAgICAgICBndW0gY29uZmlybSAiRGV2ZWxvcGVyIG1vZGUgaXMgYWxyZWFkeSBzZXQgdXAuIEFkZCBtb3JlIHRvb2xzPyIgfHwgZXhpdCAwCiAgICAgICAgZWNobyAiIgogICAgZmkKCiAgICBDSE9JQ0VTPSIkKGd1bSBjaG9vc2UgLS1uby1saW1pdCBcCiAgICAgICAgLS1oZWlnaHQgMjIgXAogICAgICAgIC0tc2VsZWN0ZWQtcHJlZml4ICLil4kgICIgXAogICAgICAgIC0tdW5zZWxlY3RlZC1wcmVmaXggIuKXiyAgIiBcCiAgICAgICAgLS1jdXJzb3IgIuKWuCAgIiBcCiAgICAgICAgLS1zZWxlY3RlZCAiICBEb2NrZXIsICBQb2RtYW4gRGVza3RvcCIgXAogICAgICAgICLilIDilIAgRG9ja2VyIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgCIgXAogICAgICAgICIgIERvY2tlciIgXAogICAgICAgICLilIDilIAgUG9kbWFuIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgCIgXAogICAgICAgICIgIFBvZG1hbiBEZXNrdG9wIiBcCiAgICAgICAgIuKUgOKUgCBWaXJ0dWFsaXphdGlvbiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAiIFwKICAgICAgICAiICBWaXJ0dWFsIE1hY2hpbmVzICh2aXJ0LW1hbmFnZXIgKyBRRU1VKSIgXAogICAgICAgICIgIExpbWEgKGxpZ2h0d2VpZ2h0IFZNcyB2aWEgS1ZNKSIgXAogICAgICAgICIgIGluY3VzIChzeXN0ZW0gY29udGFpbmVycykiIFwKICAgICAgICAi4pSA4pSAIElERSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAiIFwKICAgICAgICAiICBWUyBDb2RlIiBcCiAgICAgICAgIiAgVlNDb2RpdW0iIFwKICAgICAgICAiICBBbnRpZ3Jhdml0eSIgXAogICAgICAgICIgIFplZCIgXAogICAgICAgICIgIEpldEJyYWlucyBUb29sYm94IiBcCiAgICAgICAgIuKUgOKUgCBDTEkgRWRpdG9ycyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAiIFwKICAgICAgICAiICBOZW92aW0iIFwKICAgICAgICAiICBIZWxpeCIgXAogICAgICAgICIgIHZpbSIgXAogICAgICAgICIgIG1pY3JvIiB8fCB0cnVlKSIKCiAgICAjIF9keF93YW50czogdGVzdCB3aGV0aGVyIGEgY2hvaWNlIHdhcyBzZWxlY3RlZAogICAgX2R4X3dhbnRzKCkgeyBlY2hvICIke0NIT0lDRVN9IiB8IGdyZXAgLXEgIiRAIjsgfQoKICAgICMgQnVpbGQgaW5zdGFsbCBzdW1tYXJ5CiAgICBXSUxMX0lOU1RBTEw9KCJkZXZjb250YWluZXIgQ0xJIikKICAgIF9keF93YW50cyAtRiAiICBEb2NrZXIiICAgICAgICYmIFdJTExfSU5TVEFMTCs9KCJkb2NrZXIgKyBjb21wb3NlICsgbGF6eWRvY2tlciArIGRpdmUiKQogICAgX2R4X3dhbnRzICAgICJQb2RtYW4gRGVza3RvcCIgJiYgV0lMTF9JTlNUQUxMKz0oIlBvZG1hbiBEZXNrdG9wIikKICAgIF9keF93YW50cyAgICAiVmlydHVhbCBNYWNoaW5lcyIgJiYgV0lMTF9JTlNUQUxMKz0oInZpcnQtbWFuYWdlciArIFFFTVUiKQogICAgX2R4X3dhbnRzIC1GICIgIExpbWEiICAgICAgICAgJiYgV0lMTF9JTlNUQUxMKz0oIkxpbWEiKQogICAgX2R4X3dhbnRzICAgICJpbmN1cyIgICAgICAgICAgJiYgV0lMTF9JTlNUQUxMKz0oImluY3VzIikKICAgIF9keF93YW50cyAtRiAiICBWUyBDb2RlIiAgICAgICYmIFdJTExfSU5TVEFMTCs9KCJWUyBDb2RlIikKICAgIF9keF93YW50cyAgICAiVlNDb2RpdW0iICAgICAgICYmIFdJTExfSU5TVEFMTCs9KCJWU0NvZGl1bSIpCiAgICBfZHhfd2FudHMgICAgIkFudGlncmF2aXR5IiAgICAmJiBXSUxMX0lOU1RBTEwrPSgiQW50aWdyYXZpdHkiKQogICAgX2R4X3dhbnRzICAgICJaZWQiICAgICAgICAgICAgJiYgV0lMTF9JTlNUQUxMKz0oIlplZCIpCiAgICBfZHhfd2FudHMgICAgIkpldEJyYWlucyIgICAgICAmJiBXSUxMX0lOU1RBTEwrPSgiSmV0QnJhaW5zIFRvb2xib3giKQogICAgX2R4X3dhbnRzICAgICJOZW92aW0iICAgICAgICAgJiYgV0lMTF9JTlNUQUxMKz0oIk5lb3ZpbSIpCiAgICBfZHhfd2FudHMgICAgIkhlbGl4IiAgICAgICAgICAmJiBXSUxMX0lOU1RBTEwrPSgiSGVsaXgiKQogICAgX2R4X3dhbnRzIC1GICIgIHZpbSIgICAgICAgICAgJiYgV0lMTF9JTlNUQUxMKz0oInZpbSIpCiAgICBfZHhfd2FudHMgICAgIm1pY3JvIiAgICAgICAgICAmJiBXSUxMX0lOU1RBTEwrPSgibWljcm8iKQoKICAgIGVjaG8gIiIKICAgIFNVTU1BUllfQk9EWT0kKAogICAgICAgIGd1bSBzdHlsZSAtLWJvbGQgIlJlYWR5IHRvIGluc3RhbGw6IgogICAgICAgIGZvciBpdGVtIGluICIke1dJTExfSU5TVEFMTFtAXX0iOyBkbwogICAgICAgICAgICBlY2hvICIgIOKXjyAke2l0ZW19IgogICAgICAgIGRvbmUKICAgICkKICAgIGd1bSBzdHlsZSBcCiAgICAgICAgLS1ib3JkZXIgcm91bmRlZCAtLWJvcmRlci1mb3JlZ3JvdW5kIDIxMiBcCiAgICAgICAgLS1wYWRkaW5nICIxIDMiIC0td2lkdGggNTAgXAogICAgICAgICIke1NVTU1BUllfQk9EWX0iCiAgICBlY2hvICIiCgogICAgZ3VtIGNvbmZpcm0gIkluc3RhbGwgbm93PyIgfHwgZXhpdCAwCiAgICBlY2hvICIiCgogICAgSU5TVEFMTF9MSUJWSVJUPTAKICAgIElOU1RBTExfTElNQT0wCiAgICBJTlNUQUxMX0lOQ1VTPTAKICAgIElOU1RBTExfRE9DS0VSPTAKICAgIF9keF93YW50cyAtRiAiICBEb2NrZXIiICAgICAgICYmIElOU1RBTExfRE9DS0VSPTEKICAgIF9keF93YW50cyAgICAiVmlydHVhbCBNYWNoaW5lcyIgJiYgSU5TVEFMTF9MSUJWSVJUPTEKICAgIF9keF93YW50cyAtRiAiICBMaW1hIiAgICAgICAgICYmIElOU1RBTExfTElNQT0xCiAgICBfZHhfd2FudHMgICAgImluY3VzIiAgICAgICAgICAmJiBJTlNUQUxMX0lOQ1VTPTEKCiAgICAjIFRhcHMgYXJlIHNpbGVudC9mYXN0IOKAlCBydW4gYmVmb3JlIHRoZSBwcm9ncmVzcyBiYXIKICAgIGlmIF9keF93YW50cyAtRSAiVlMgQ29kZXxWU0NvZGl1bXxBbnRpZ3Jhdml0eXxKZXRCcmFpbnMiOyB0aGVuCiAgICAgICAgYnJldyB0YXAgdWJsdWUtb3MvdGFwIDI+L2Rldi9udWxsIHx8IHRydWUKICAgIGZpCiAgICBpZiBfZHhfd2FudHMgIlplZCI7IHRoZW4KICAgICAgICBicmV3IHRhcCB1Ymx1ZS1vcy9leHBlcmltZW50YWwtdGFwIDI+L2Rldi9udWxsIHx8IHRydWUKICAgIGZpCgogICAgIyBCdWlsZCBpbnN0YWxsIHF1ZXVlIGZvciB0aGUgcHJvZ3Jlc3MgYmFyCiAgICAjIF9keF9hZGQ6IGFwcGVuZCBvbmUgZW50cnkgdG8gYm90aCBuYW1lIGFuZCBjb21tYW5kIGFycmF5cwogICAgX2R4X2FkZCgpIHsgRFhfTkFNRVMrPSgiJDEiKTsgRFhfQ01EUys9KCIkMiIpOyB9CiAgICBEWF9OQU1FUz0oImRldmNvbnRhaW5lciBDTEkiKQogICAgRFhfQ01EUz0oImJyZXcgaW5zdGFsbCBkZXZjb250YWluZXIiKQogICAgWyAiJHtJTlNUQUxMX0RPQ0tFUn0iICAtZXEgMSBdICYmIF9keF9hZGQgIkRvY2tlciIgICAgICAgICAgICJicmV3IGluc3RhbGwgZG9ja2VyIGRvY2tlci1jb21wb3NlIGxhenlkb2NrZXIgZGl2ZSIKICAgIF9keF93YW50cyAgICAiUG9kbWFuIERlc2t0b3AiICYmIF9keF9hZGQgIlBvZG1hbiBEZXNrdG9wIiAgICAgImZsYXRwYWsgaW5zdGFsbCAtLXN5c3RlbSAtLW5vbmludGVyYWN0aXZlIGZsYXRodWIgaW8ucG9kbWFuX2Rlc2t0b3AuUG9kbWFuRGVza3RvcCIKICAgIFsgIiR7SU5TVEFMTF9MSUJWSVJUfSIgLWVxIDEgXSAmJiBfZHhfYWRkICJWaXJ0dWFsIE1hY2hpbmVzIiAiZmxhdHBhayBpbnN0YWxsIC0tc3lzdGVtIC0tbm9uaW50ZXJhY3RpdmUgZmxhdGh1YiBvcmcudmlydF9tYW5hZ2VyLnZpcnQtbWFuYWdlciBvcmcudmlydF9tYW5hZ2VyLnZpcnRfbWFuYWdlci5FeHRlbnNpb24uUWVtdSIKICAgIFsgIiR7SU5TVEFMTF9MSU1BfSIgICAgLWVxIDEgXSAmJiBfZHhfYWRkICJMaW1hIiAgICAgICAgICAgICAiYnJldyBpbnN0YWxsIGxpbWEiCiAgICBbICIke0lOU1RBTExfSU5DVVN9IiAgIC1lcSAxIF0gJiYgX2R4X2FkZCAiaW5jdXMiICAgICAgICAgICAgImJyZXcgaW5zdGFsbCBpbmN1cyIKICAgIF9keF93YW50cyAtRiAiICBWUyBDb2RlIiAgICAgICYmIF9keF9hZGQgIlZTIENvZGUiICAgICAgICAgICAiYnJldyBpbnN0YWxsIC0tY2FzayB1Ymx1ZS1vcy90YXAvdmlzdWFsLXN0dWRpby1jb2RlLWxpbnV4IgogICAgX2R4X3dhbnRzICAgICJWU0NvZGl1bSIgICAgICAgJiYgX2R4X2FkZCAiVlNDb2RpdW0iICAgICAgICAgICJicmV3IGluc3RhbGwgLS1jYXNrIHVibHVlLW9zL3RhcC92c2NvZGl1bS1saW51eCIKICAgIF9keF93YW50cyAgICAiQW50aWdyYXZpdHkiICAgICYmIF9keF9hZGQgIkFudGlncmF2aXR5IiAgICAgICAiYnJldyBpbnN0YWxsIC0tY2FzayB1Ymx1ZS1vcy90YXAvYW50aWdyYXZpdHktbGludXgiCiAgICBfZHhfd2FudHMgICAgIlplZCIgICAgICAgICAgICAmJiBfZHhfYWRkICJaZWQiICAgICAgICAgICAgICAgImJyZXcgaW5zdGFsbCAtLWNhc2sgdWJsdWUtb3MvZXhwZXJpbWVudGFsLXRhcC96ZWQtbGludXgiCiAgICBfZHhfd2FudHMgICAgIkpldEJyYWlucyIgICAgICAmJiBfZHhfYWRkICJKZXRCcmFpbnMgVG9vbGJveCIgImJyZXcgaW5zdGFsbCAtLWNhc2sgdWJsdWUtb3MvdGFwL2pldGJyYWlucy10b29sYm94LWxpbnV4IgogICAgX2R4X3dhbnRzICAgICJOZW92aW0iICAgICAgICAgJiYgX2R4X2FkZCAiTmVvdmltIiAgICAgICAgICAgICJicmV3IGluc3RhbGwgbnZpbSIKICAgIF9keF93YW50cyAgICAiSGVsaXgiICAgICAgICAgICYmIF9keF9hZGQgIkhlbGl4IiAgICAgICAgICAgICAiYnJldyBpbnN0YWxsIGhlbGl4IgogICAgX2R4X3dhbnRzIC1GICIgIHZpbSIgICAgICAgICAgJiYgX2R4X2FkZCAidmltIiAgICAgICAgICAgICAgICJicmV3IGluc3RhbGwgdmltIgogICAgX2R4X3dhbnRzICAgICJtaWNybyIgICAgICAgICAgJiYgX2R4X2FkZCAibWljcm8iICAgICAgICAgICAgICJicmV3IGluc3RhbGwgbWljcm8iCgogICAgIyBQcm9ncmVzcyBiYXIgaGVscGVycyDigJQgVW5pY29kZSBibG9jayBiYXIgZW1iZWRkZWQgaW4gZ3VtIHNwaW4gdGl0bGUuCiAgICAjIGd1bSBzcGluIGNsZWFycyBpdHMgb3duIGxpbmUgb24gc3VjY2Vzcywgc28gd2UgcHJpbnQgdGhlIGNoZWNrbWFyayBvdXJzZWx2ZXMuCiAgICAjIFJlc3VsdCBsb29rcyBsaWtlIHRoZSBCdWJibGUgVGVhIHBhY2thZ2UtbWFuYWdlciBleGFtcGxlOgogICAgIyAgIOKckyBkZXZjb250YWluZXIgQ0xJCiAgICAjICAg4qCZIOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkeKWkSAgMi83ICBEb2NrZXIKICAgIF9keF9iYXIoKSB7CiAgICAgICAgbG9jYWwgZG9uZT0kMSB0b3RhbD0kMiB3aWR0aD0yOCBiYXI9IiIgaQogICAgICAgIGxvY2FsIGZpbGxlZD0kKCggZG9uZSAqIHdpZHRoIC8gdG90YWwgKSkKICAgICAgICBmb3IgKChpPTA7IGk8ZmlsbGVkOyBpKyspKTsgICAgICAgICAgZG8gYmFyKz0i4paIIjsgZG9uZQogICAgICAgIGZvciAoKGk9MDsgaTwod2lkdGgtZmlsbGVkKTsgaSsrKSk7IGRvIGJhcis9IuKWkSI7IGRvbmUKICAgICAgICBwcmludGYgJyVzJyAiJHtiYXJ9IgogICAgfQogICAgX2R4X3N0ZXAoKSB7CiAgICAgICAgbG9jYWwgaWR4PSQxIHRvdGFsPSQyIG5hbWU9JDM7IHNoaWZ0IDMKICAgICAgICBsb2NhbCBiYXI7IGJhcj0iJChfZHhfYmFyICIke2lkeH0iICIke3RvdGFsfSIpIgogICAgICAgIGxvY2FsIGRpZ2l0cz0keyN0b3RhbH0gbGFiZWwKICAgICAgICBwcmludGYgLXYgbGFiZWwgIiUqZC8lKmQiICIke2RpZ2l0c30iICIkKChpZHgrMSkpIiAiJHtkaWdpdHN9IiAiJHt0b3RhbH0iCiAgICAgICAgaWYgZ3VtIHNwaW4gLS1zcGlubmVyIGRvdCBcCiAgICAgICAgICAgICAgICAtLXRpdGxlICIgJHtiYXJ9ICAke2xhYmVsfSAgJHtuYW1lfSIgLS0gIiRAIjsgdGhlbgogICAgICAgICAgICBndW0gc3R5bGUgLS1mb3JlZ3JvdW5kIDQyICLinJMgJHtuYW1lfSIKICAgICAgICBlbHNlCiAgICAgICAgICAgIGd1bSBzdHlsZSAtLWZvcmVncm91bmQgMTk2ICLinJcgJHtuYW1lfSIgPiYyCiAgICAgICAgICAgIHJldHVybiAxCiAgICAgICAgZmkKICAgIH0KCiAgICBOPSR7I0RYX05BTUVTW0BdfQogICAgZm9yIGkgaW4gIiR7IURYX05BTUVTW0BdfSI7IGRvCiAgICAgICAgX2R4X3N0ZXAgIiR7aX0iICIke059IiAiJHtEWF9OQU1FU1ske2l9XX0iIFwKICAgICAgICAgICAgYmFzaCAtYyAiJHtEWF9DTURTWyR7aX1dfSIgfHwgZXhpdCAxCiAgICBkb25lCgogICAgIyBQb3N0LWluc3RhbGw6IGNvbmZpZ3VyZSBsaWJ2aXJ0IHNlc3Npb24gVVJJIChpbnN0YW50IOKAlCBubyBzcGlubmVyIG5lZWRlZCkKICAgIGlmIFsgIiR7SU5TVEFMTF9MSUJWSVJUfSIgLWVxIDEgXTsgdGhlbgogICAgICAgIG1rZGlyIC1wICIke0hPTUV9Ly5jb25maWcvbGlidmlydCIKICAgICAgICBncmVwIC1xICJ1cmlfZGVmYXVsdCIgIiR7SE9NRX0vLmNvbmZpZy9saWJ2aXJ0L2xpYnZpcnQuY29uZiIgMj4vZGV2L251bGwgfHwgXAogICAgICAgICAgICBlY2hvICd1cmlfZGVmYXVsdCA9ICJxZW11Oi8vL3Nlc3Npb24iJyA+PiAiJHtIT01FfS8uY29uZmlnL2xpYnZpcnQvbGlidmlydC5jb25mIgogICAgZmkKCiAgICBDVVJSRU5UX1VTRVI9IiQoaWQgLXVuKSIKICAgIEdST1VQU19UT19BREQ9ImRpYWxvdXQiCiAgICBbICIke0lOU1RBTExfRE9DS0VSfSIgLWVxIDEgXSAgJiYgR1JPVVBTX1RPX0FERD0iJHtHUk9VUFNfVE9fQUREfSBkb2NrZXIiCiAgICBbICIke0lOU1RBTExfTElCVklSVH0iIC1lcSAxIF0gJiYgR1JPVVBTX1RPX0FERD0iJHtHUk9VUFNfVE9fQUREfSBsaWJ2aXJ0IgogICAgWyAiJHtJTlNUQUxMX0lOQ1VTfSIgLWVxIDEgXSAgICYmIEdST1VQU19UT19BREQ9IiR7R1JPVVBTX1RPX0FERH0gaW5jdXMtYWRtaW4iCiAgICBwa2V4ZWMgYmFzaCAtYyAiCiAgICAgICAgYXBwZW5kX2dyb3VwKCkgewogICAgICAgICAgICBsb2NhbCBnPVwiXCQxXCIKICAgICAgICAgICAgaWYgISBncmVwIC1xIFwiXlwke2d9OlwiIC9ldGMvZ3JvdXAgMj4vZGV2L251bGw7IHRoZW4KICAgICAgICAgICAgICAgIGdyZXAgXCJeXCR7Z306XCIgL3Vzci9saWIvZ3JvdXAgMj4vZGV2L251bGwgfCB0ZWUgLWEgL2V0Yy9ncm91cCA+IC9kZXYvbnVsbCB8fCB0cnVlCiAgICAgICAgICAgIGZpCiAgICAgICAgfQogICAgICAgIGZvciBnIGluICR7R1JPVVBTX1RPX0FERH07IGRvCiAgICAgICAgICAgIGFwcGVuZF9ncm91cCBcIlwke2d9XCIKICAgICAgICAgICAgdXNlcm1vZCAtYUcgXCJcJHtnfVwiICR7Q1VSUkVOVF9VU0VSfSAyPi9kZXYvbnVsbCB8fCB0cnVlCiAgICAgICAgZG9uZQogICAgIgoKICAgIG1rZGlyIC1wICIke0hPTUV9Ly5jb25maWcvYmx1ZWZpbiIKICAgIHRvdWNoICIke0RFVk1PREVfTUFSS0VSfSIKICAgIGVjaG8gIiIKICAgIGd1bSBzdHlsZSBcCiAgICAgICAgLS1mb3JlZ3JvdW5kIDIgLS1ib3JkZXItZm9yZWdyb3VuZCAyIC0tYm9yZGVyIHJvdW5kZWQgXAogICAgICAgIC0tYWxpZ24gY2VudGVyIC0td2lkdGggNjAgLS1wYWRkaW5nICIxIDQiIFwKICAgICAgICAiRGV2ZWxvcGVyIE1vZGUgaXMgb24hICBSZWJvb3QgdG8gYXBwbHkgZ3JvdXAgY2hhbmdlcy4iCgojIENvbmZpZ3VyZSBkb2NrZXIsIGluY3VzLWFkbWluLCBsaWJ2aXJ0LCBzZXJpYWwgcGVybWlzc2lvbnMgKHN0YW5kYWxvbmUpCgojIFRvZ2dsZSBiZXR3ZWVuIHRoZSBzdGFibGUgYW5kIHRlc3RpbmcgaW1hZ2UgY2hhbm5lbHMKW2dyb3VwKCdTeXN0ZW0nKV0KdG9nZ2xlLXRlc3Rpbmc6CiAgICAjIS91c3IvYmluL2VudiBiYXNoCiAgICBzZXQgLWV1byBwaXBlZmFpbAogICAgSU1BR0VfSU5GT19GSUxFPSIke0lNQUdFX0lORk9fRklMRTotL3Vzci9zaGFyZS91Ymx1ZS1vcy9pbWFnZS1pbmZvLmpzb259IgogICAgSU1BR0VfVEFHPSIkKGpxIC1yICcuImltYWdlLXRhZyInIDwgIiR7SU1BR0VfSU5GT19GSUxFfSIpIgogICAgSU1BR0VfUkVGPSIkKGpxIC1yICcuImltYWdlLXJlZiInIDwgIiR7SU1BR0VfSU5GT19GSUxFfSIpIgogICAgIyBTdHJpcCB0cmFuc3BvcnQgcHJlZml4IChvc3RyZWUtaW1hZ2Utc2lnbmVkOmRvY2tlcjovLywgb3N0cmVlLXVudmVyaWZpZWQtcmVnaXN0cnk6LCBldGMuKQogICAgSU1BR0VfUEFUSD0iJChzZWQgLUUgJ3N8Xi4qOi8vfHw7IHN8XlthLXotXSs6fHwnIDw8PCAiJHtJTUFHRV9SRUZ9IikiCiAgICBpZiBbWyAiJHtJTUFHRV9UQUd9IiA9PSAqdGVzdGluZyogXV07IHRoZW4KICAgICAgICBpZiBbWyAiJHtJTUFHRV9UQUd9IiA9PSAidGVzdGluZyIgXV07IHRoZW4KICAgICAgICAgICAgTkVXX1RBRz0ic3RhYmxlIgogICAgICAgIGVsc2UKICAgICAgICAgICAgTkVXX1RBRz0iJHtJTUFHRV9UQUcvLXRlc3RpbmcvfSIKICAgICAgICBmaQogICAgICAgIGd1bSBjb25maXJtICJTd2l0Y2ggZnJvbSB0ZXN0aW5nIHRvICR7TkVXX1RBR30/IiB8fCBleGl0IDAKICAgIGVsc2UKICAgICAgICBjYXNlICIke0lNQUdFX1RBR30iIGluCiAgICAgICAgICAgIHN0YWJsZXxsYXRlc3QpIE5FV19UQUc9InRlc3RpbmciIDs7CiAgICAgICAgICAgIGx0cykgICAgICAgICAgIE5FV19UQUc9Imx0cy10ZXN0aW5nIiA7OwogICAgICAgICAgICBsdHMtaHdlKSAgICAgICBORVdfVEFHPSJsdHMtaHdlLXRlc3RpbmciIDs7CiAgICAgICAgICAgICopCiAgICAgICAgICAgICAgICBlY2hvICJDYW5ub3QgdG9nZ2xlIHRlc3RpbmcgZnJvbSBjaGFubmVsICcke0lNQUdFX1RBR30nLiIKICAgICAgICAgICAgICAgIGV4aXQgMSA7OwogICAgICAgIGVzYWMKICAgICAgICBlY2hvICJUZXN0aW5nIGltYWdlcyBtYXkgYmUgdW5zdGFibGUgYW5kIGFyZSBub3QgcmVjb21tZW5kZWQgZm9yIGRhaWx5IHVzZS4iCiAgICAgICAgZ3VtIGNvbmZpcm0gIlN3aXRjaCB0byB0ZXN0aW5nIGNoYW5uZWwgKCR7TkVXX1RBR30pPyIgfHwgZXhpdCAwCiAgICBmaQogICAgcGtleGVjIGJvb3RjIHN3aXRjaCAtLWVuZm9yY2UtY29udGFpbmVyLXNpZ3BvbGljeSAiJHtJTUFHRV9QQVRIfToke05FV19UQUd9IgoKW2dyb3VwKCdTeXN0ZW0nKV0KZHgtZ3JvdXA6CiAgICAjIS91c3IvYmluL3BrZXhlYyBiYXNoCiAgICBhcHBlbmRfZ3JvdXAoKSB7CiAgICAgICAgbG9jYWwgZ3JvdXBfbmFtZT0iJDEiCiAgICAgICAgaWYgISBncmVwIC1xICJeJHtncm91cF9uYW1lfToiIC9ldGMvZ3JvdXAgMj4vZGV2L251bGw7IHRoZW4KICAgICAgICAgICAgZWNobyAiQXBwZW5kaW5nICR7Z3JvdXBfbmFtZX0gdG8gL2V0Yy9ncm91cCIKICAgICAgICAgICAgZ3JlcCAiXiR7Z3JvdXBfbmFtZX06IiAvdXNyL2xpYi9ncm91cCAyPi9kZXYvbnVsbCB8IHRlZSAtYSAvZXRjL2dyb3VwID4gL2Rldi9udWxsIHx8IHRydWUKICAgICAgICBmaQogICAgfQoKICAgIEdST1VQU19BREQ9KCJkb2NrZXIiICJpbmN1cy1hZG1pbiIgImxpYnZpcnQiICJkaWFsb3V0IikKCiAgICBmb3IgR1JPVVBfQUREIGluICIke0dST1VQU19BRERbQF19IiA7IGRvCiAgICAgICAgYXBwZW5kX2dyb3VwICIke0dST1VQX0FERH0iCiAgICAgICAgdXNlcm1vZCAtYUcgIiR7R1JPVVBfQUREfSIge3sgYGlkIC11bmAgfX0gMj4vZGV2L251bGwgfHwgdHJ1ZQogICAgZG9uZQoKICAgIGVjaG8gIlJlYm9vdCBzeXN0ZW0gYW5kIGxvZyBiYWNrIGluIHRvIHVzZSBkb2NrZXIsIGxpYnZpcnQsIGluY3VzLCBhbmQgc2VyaWFsIGNvbm5lY3Rpb25zLiIKCiMgU2V0IHVwIHRoZSBWTSBzdGFjazogdmlydC1tYW5hZ2VyIGZsYXRwYWsgKyBRRU1VIGV4dGVuc2lvbiAoVUVGSSwgVFBNLCBVU0IgcGFzc3Rocm91Z2gpCltncm91cCgnU3lzdGVtJyldCnNldHVwLXZtczoKICAgICMhL3Vzci9iaW4vZW52IGJhc2gKICAgIHNldCAtZXVvIHBpcGVmYWlsCiAgICBmbGF0cGFrIGluc3RhbGwgLS1zeXN0ZW0gLS1ub25pbnRlcmFjdGl2ZSBmbGF0aHViIFwKICAgICAgICBvcmcudmlydF9tYW5hZ2VyLnZpcnQtbWFuYWdlciBcCiAgICAgICAgb3JnLnZpcnRfbWFuYWdlci52aXJ0X21hbmFnZXIuRXh0ZW5zaW9uLlFlbXUKICAgIG1rZGlyIC1wICIke0hPTUV9Ly5jb25maWcvbGlidmlydCIKICAgIGlmICEgZ3JlcCAtcSAidXJpX2RlZmF1bHQiICIke0hPTUV9Ly5jb25maWcvbGlidmlydC9saWJ2aXJ0LmNvbmYiIDI+L2Rldi9udWxsOyB0aGVuCiAgICAgICAgZWNobyAndXJpX2RlZmF1bHQgPSAicWVtdTovLy9zZXNzaW9uIicgPj4gIiR7SE9NRX0vLmNvbmZpZy9saWJ2aXJ0L2xpYnZpcnQuY29uZiIKICAgIGZpCiAgICBlY2hvICJWTSBzdGFjayByZWFkeS4gU3VwcG9ydHM6IExpbnV4L1dpbmRvd3MgVk1zLCBXaW5kb3dzIDExIChVRUZJICsgVFBNKSwgVVNCIHBhc3N0aHJvdWdoLiIKCiMgVG9nZ2xlIHRoZSBWTSBzdGFjayBvbiBvciBvZmYKW2dyb3VwKCdTeXN0ZW0nKV0KdG9nZ2xlLXZtczoKICAgICMhL3Vzci9iaW4vZW52IGJhc2gKICAgIHNldCAtZXVvIHBpcGVmYWlsCiAgICBpZiBmbGF0cGFrIGxpc3QgLS1zeXN0ZW0gLS1jb2x1bW5zPWFwcGxpY2F0aW9uIDI+L2Rldi9udWxsIHwgZ3JlcCAtcSAib3JnLnZpcnRfbWFuYWdlci52aXJ0LW1hbmFnZXIiOyB0aGVuCiAgICAgICAgZ3VtIGNvbmZpcm0gIlJlbW92ZSB0aGUgVk0gc3RhY2sgKHZpcnQtbWFuYWdlciArIFFFTVUpPyIgfHwgZXhpdCAwCiAgICAgICAgZmxhdHBhayB1bmluc3RhbGwgLS1zeXN0ZW0gLS1ub25pbnRlcmFjdGl2ZSBcCiAgICAgICAgICAgIG9yZy52aXJ0X21hbmFnZXIudmlydC1tYW5hZ2VyIFwKICAgICAgICAgICAgb3JnLnZpcnRfbWFuYWdlci52aXJ0X21hbmFnZXIuRXh0ZW5zaW9uLlFlbXUgMj4vZGV2L251bGwgfHwgdHJ1ZQogICAgICAgIHNlZCAtaSAnL3VyaV9kZWZhdWx0LipzZXNzaW9uL2QnICIke0hPTUV9Ly5jb25maWcvbGlidmlydC9saWJ2aXJ0LmNvbmYiIDI+L2Rldi9udWxsIHx8IHRydWUKICAgICAgICBlY2hvICJWTSBzdGFjayByZW1vdmVkLiIKICAgIGVsc2UKICAgICAgICBndW0gY29uZmlybSAiSW5zdGFsbCB0aGUgVk0gc3RhY2sgKHZpcnQtbWFuYWdlciArIFFFTVUpPyIgfHwgZXhpdCAwCiAgICAgICAganVzdCAtLWp1c3RmaWxlICJ7eyBqdXN0ZmlsZSgpIH19IiBzZXR1cC12bXMKICAgIGZpCgojIEluc3RhbGwgc3lzdGVtIGZsYXRwYWtzCltncm91cCgnU3lzdGVtJyldCmluc3RhbGwtc3lzdGVtLWZsYXRwYWtzICRjb25maXJtPSIxIjoKICAgICMhL3Vzci9iaW4vZW52IGJhc2gKICAgIGlmIFsgIiRjb25maXJtIiAhPSAwIF0gOyB0aGVuCiAgICAgICAgZ3VtIGNvbmZpcm0gIkluc3RhbGwgc3lzdGVtIGZsYXRwYWtzPyIgfHwgZXhpdCAwCiAgICBmaQogICAgYnJldyBidW5kbGUgLS1maWxlPSIke1RBUkdFVF9GTEFUUEFLX0ZJTEU6LS91c3Ivc2hhcmUvdWJsdWUtb3MvaG9tZWJyZXcvc3lzdGVtLWZsYXRwYWtzLkJyZXdmaWxlfSIKCiMgSW5zdGFsbCBkZWZhdWx0IHN5c3RlbSBmbGF0cGFrcyAoYWxpYXMgZm9yIGluc3RhbGwtc3lzdGVtLWZsYXRwYWtzKQoKIyBGb3IgYWRkaXRpb25hbCBhcHBsaWNhdGlvbnMsIHVzZTogdWp1c3QgYmJyZXcKW2dyb3VwKCdTeXN0ZW0nKV0KYmx1ZWZpbi1hcHBzOgogICAgZWNobyAiSW5zdGFsbGluZyBkZWZhdWx0IHN5c3RlbSBmbGF0cGFrcy4uLiIKICAgIEB1anVzdCBpbnN0YWxsLXN5c3RlbS1mbGF0cGFrcwoKIyBDaGVjayBTZWN1cmUgQm9vdCBzdGF0dXMgYW5kIGtleSBlbnJvbGxtZW50Cltncm91cCgnU3lzdGVtJyldCmNoZWNrLXNiLWtleToKICAgICMhL3Vzci9iaW4vYmFzaAogICAgZWNobyAiPT0gU2VjdXJlIEJvb3QgU3RhdHVzID09IgogICAgaWYgWyAtZCAvc3lzL2Zpcm13YXJlL2VmaSBdOyB0aGVuCiAgICAgICAgaWYgY29tbWFuZCAtdiBtb2t1dGlsICY+IC9kZXYvbnVsbDsgdGhlbgogICAgICAgICAgICBtb2t1dGlsIC0tc2Itc3RhdGUKICAgICAgICBlbHNlCiAgICAgICAgICAgIGVjaG8gIm1va3V0aWwgbm90IGF2YWlsYWJsZSDigJQgY2hlY2tpbmcgRUZJIHZhcnMuLi4iCiAgICAgICAgICAgIGlmIFsgLWYgL3N5cy9maXJtd2FyZS9lZmkvZWZpdmFycy9TZWN1cmVCb290LThiZTRkZjYxLTkzY2EtMTFkMi1hYTBkLTAwZTA5ODAzMmI4YyBdOyB0aGVuCiAgICAgICAgICAgICAgICBTQj0kKG9kIC1BbiAtdCB1MSAvc3lzL2Zpcm13YXJlL2VmaS9lZml2YXJzL1NlY3VyZUJvb3QtOGJlNGRmNjEtOTNjYS0xMWQyLWFhMGQtMDBlMDk4MDMyYjhjIHwgYXdrICd7cHJpbnQgJE5GfScpCiAgICAgICAgICAgICAgICBbICIkU0IiID0gIjEiIF0gJiYgZWNobyAiU2VjdXJlQm9vdCBpcyBlbmFibGVkIiB8fCBlY2hvICJTZWN1cmVCb290IGlzIGRpc2FibGVkIgogICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICBlY2hvICJDYW5ub3QgZGV0ZXJtaW5lIFNlY3VyZSBCb290IHN0YXR1cyIKICAgICAgICAgICAgZmkKICAgICAgICBmaQogICAgICAgIGVjaG8gIiIKICAgICAgICBlY2hvICI9PSBNYWNoaW5lIE93bmVyIEtleSAoTU9LKSBTdGF0dXMgPT0iCiAgICAgICAgaWYgY29tbWFuZCAtdiBtb2t1dGlsICY+IC9kZXYvbnVsbDsgdGhlbgogICAgICAgICAgICBtb2t1dGlsIC0tbGlzdC1lbnJvbGxlZCAyPi9kZXYvbnVsbCB8IGhlYWQgLTYgfHwgZWNobyAiTm8gTU9LIGtleXMgZW5yb2xsZWQgb3IgbW9rdXRpbCByZXF1aXJlcyBzdWRvIgogICAgICAgIGZpCiAgICAgICAgZWNobyAiIgogICAgICAgIGVjaG8gIj09IEtlcm5lbCBTaWduYXR1cmUgPT0iCiAgICAgICAgdW5hbWUgLXIKICAgICAgICBpZiBjb21tYW5kIC12IHNidmVyaWZ5ICY+IC9kZXYvbnVsbDsgdGhlbgogICAgICAgICAgICBzYnZlcmlmeSAtLWxpc3QgL2Jvb3Qvdm1saW51ei0kKHVuYW1lIC1yKSAyPi9kZXYvbnVsbCB8fCBlY2hvICJzYnZlcmlmeSBub3QgYXZhaWxhYmxlIChpbnN0YWxsIHNic2lnbnRvb2xzKSIKICAgICAgICBmaQogICAgZWxzZQogICAgICAgIGVjaG8gIk5vdCBhbiBFRkkgc3lzdGVtIOKAlCBTZWN1cmUgQm9vdCBkb2VzIG5vdCBhcHBseS4iCiAgICBmaQo=
+# vim: set ft=make :
+# This file should only contain bluefin specific stuff
+
+# Configure Bluefin-CLI Terminal Experience with Brew
+# Only installs brew packages when enabling bling (not when disabling)
+[group('System')]
+[no-exit-message]
+bluefin-cli:
+    #!/usr/bin/env bash
+    set -e
+    BLING_SRC_DIR="/usr/share/ublue-os/bling"
+    BLING_SCRIPT="bling.sh"
+    SHELL_NAME="$(basename "${SHELL}")"
+    case "${SHELL_NAME}" in
+        fish)
+            BLING_SCRIPT="bling.fish"
+            TARGET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/fish/config.fish"
+            ;;
+        zsh)
+            TARGET_FILE="${ZDOTDIR:-$HOME}/.zshrc"
+            ;;
+        bash)
+            TARGET_FILE="${HOME}/.bashrc"
+            ;;
+        *)
+            echo "Unknown shell: ${SHELL_NAME}"
+            exit 1
+            ;;
+    esac
+    # Check if bling is currently installed before toggling
+    BLING_WAS_INSTALLED=1
+    if [ -f "${TARGET_FILE}" ] && grep -q "source ${BLING_SRC_DIR}/${BLING_SCRIPT}" "${TARGET_FILE}" 2>/dev/null; then
+        BLING_WAS_INSTALLED=0
+    fi
+    # Toggle bling (ublue-bling will remove if installed, add if not)
+    ublue-bling
+    # Only install brew packages when enabling (bling was not installed before)
+    if [ "${BLING_WAS_INSTALLED}" -ne 0 ]; then
+        brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
+    fi
+
+# alias for toggle-devmode
+devmode:
+    @ujust toggle-devmode
+
+# Set up the Developer Experience
+[group('System')]
+toggle-devmode:
+    #!/usr/bin/env bash
+    set -e
+    JUSTFILE="{{ justfile() }}"
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    DEVMODE_MARKER="${HOME}/.config/bluefin/devmode"
+
+    gum style \
+        --foreground 212 --border-foreground 212 --border double \
+        --align center --width 60 --padding "1 4" \
+        "Turn on Developer Mode"
+    echo ""
+
+    if [ -f "${DEVMODE_MARKER}" ]; then
+        gum confirm "Developer mode is already set up. Add more tools?" || exit 0
+        echo ""
+    fi
+
+    CHOICES="$(gum choose --no-limit \
+        --height 22 \
+        --selected-prefix "◉  " \
+        --unselected-prefix "○  " \
+        --cursor "▸  " \
+        --selected "  Docker,  Podman Desktop" \
+        "── Docker ───────────────────────────────────" \
+        "  Docker" \
+        "── Podman ───────────────────────────────────" \
+        "  Podman Desktop" \
+        "── Virtualization ───────────────────────────" \
+        "  Virtual Machines (virt-manager + QEMU)" \
+        "  Lima (lightweight VMs via KVM)" \
+        "  incus (system containers)" \
+        "── IDE ──────────────────────────────────────" \
+        "  VS Code" \
+        "  VSCodium" \
+        "  Antigravity" \
+        "  Zed" \
+        "  JetBrains Toolbox" \
+        "── CLI Editors ──────────────────────────────" \
+        "  Neovim" \
+        "  Helix" \
+        "  vim" \
+        "  micro" || true)"
+
+    # _dx_wants: test whether a choice was selected
+    _dx_wants() { echo "${CHOICES}" | grep -q "$@"; }
+
+    # Build install summary
+    WILL_INSTALL=("devcontainer CLI")
+    _dx_wants -F "  Docker"       && WILL_INSTALL+=("docker + compose + lazydocker + dive")
+    _dx_wants    "Podman Desktop" && WILL_INSTALL+=("Podman Desktop")
+    _dx_wants    "Virtual Machines" && WILL_INSTALL+=("virt-manager + QEMU")
+    _dx_wants -F "  Lima"         && WILL_INSTALL+=("Lima")
+    _dx_wants    "incus"          && WILL_INSTALL+=("incus")
+    _dx_wants -F "  VS Code"      && WILL_INSTALL+=("VS Code")
+    _dx_wants    "VSCodium"       && WILL_INSTALL+=("VSCodium")
+    _dx_wants    "Antigravity"    && WILL_INSTALL+=("Antigravity")
+    _dx_wants    "Zed"            && WILL_INSTALL+=("Zed")
+    _dx_wants    "JetBrains"      && WILL_INSTALL+=("JetBrains Toolbox")
+    _dx_wants    "Neovim"         && WILL_INSTALL+=("Neovim")
+    _dx_wants    "Helix"          && WILL_INSTALL+=("Helix")
+    _dx_wants -F "  vim"          && WILL_INSTALL+=("vim")
+    _dx_wants    "micro"          && WILL_INSTALL+=("micro")
+
+    echo ""
+    SUMMARY_BODY=$(
+        gum style --bold "Ready to install:"
+        for item in "${WILL_INSTALL[@]}"; do
+            echo "  ● ${item}"
+        done
+    )
+    gum style \
+        --border rounded --border-foreground 212 \
+        --padding "1 3" --width 50 \
+        "${SUMMARY_BODY}"
+    echo ""
+
+    gum confirm "Install now?" || exit 0
+    echo ""
+
+    INSTALL_LIBVIRT=0
+    INSTALL_LIMA=0
+    INSTALL_INCUS=0
+    INSTALL_DOCKER=0
+    _dx_wants -F "  Docker"       && INSTALL_DOCKER=1
+    _dx_wants    "Virtual Machines" && INSTALL_LIBVIRT=1
+    _dx_wants -F "  Lima"         && INSTALL_LIMA=1
+    _dx_wants    "incus"          && INSTALL_INCUS=1
+
+    # Taps are silent/fast — run before the progress bar
+    if _dx_wants -E "VS Code|VSCodium|Antigravity|JetBrains"; then
+        brew tap ublue-os/tap 2>/dev/null || true
+    fi
+    if _dx_wants "Zed"; then
+        brew tap ublue-os/experimental-tap 2>/dev/null || true
+    fi
+
+    # Build install queue for the progress bar
+    # _dx_add: append one entry to both name and command arrays
+    _dx_add() { DX_NAMES+=("$1"); DX_CMDS+=("$2"); }
+    DX_NAMES=("devcontainer CLI")
+    DX_CMDS=("brew install devcontainer")
+    [ "${INSTALL_DOCKER}"  -eq 1 ] && _dx_add "Docker"           "brew install docker docker-compose lazydocker dive"
+    _dx_wants    "Podman Desktop" && _dx_add "Podman Desktop"     "flatpak install --system --noninteractive flathub io.podman_desktop.PodmanDesktop"
+    [ "${INSTALL_LIBVIRT}" -eq 1 ] && _dx_add "Virtual Machines" "flatpak install --system --noninteractive flathub org.virt_manager.virt-manager org.virt_manager.virt_manager.Extension.Qemu"
+    [ "${INSTALL_LIMA}"    -eq 1 ] && _dx_add "Lima"             "brew install lima"
+    [ "${INSTALL_INCUS}"   -eq 1 ] && _dx_add "incus"            "brew install incus"
+    _dx_wants -F "  VS Code"      && _dx_add "VS Code"           "brew install --cask ublue-os/tap/visual-studio-code-linux"
+    _dx_wants    "VSCodium"       && _dx_add "VSCodium"          "brew install --cask ublue-os/tap/vscodium-linux"
+    _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-linux"
+    _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask ublue-os/experimental-tap/zed-linux"
+    _dx_wants    "JetBrains"      && _dx_add "JetBrains Toolbox" "brew install --cask ublue-os/tap/jetbrains-toolbox-linux"
+    _dx_wants    "Neovim"         && _dx_add "Neovim"            "brew install nvim"
+    _dx_wants    "Helix"          && _dx_add "Helix"             "brew install helix"
+    _dx_wants -F "  vim"          && _dx_add "vim"               "brew install vim"
+    _dx_wants    "micro"          && _dx_add "micro"             "brew install micro"
+
+    # Progress bar helpers — Unicode block bar embedded in gum spin title.
+    # gum spin clears its own line on success, so we print the checkmark ourselves.
+    # Result looks like the Bubble Tea package-manager example:
+    #   ✓ devcontainer CLI
+    #   ⠙ ████████████░░░░░░░░░░░░░░░░  2/7  Docker
+    _dx_bar() {
+        local done=$1 total=$2 width=28 bar="" i
+        local filled=$(( done * width / total ))
+        for ((i=0; i<filled; i++));          do bar+="█"; done
+        for ((i=0; i<(width-filled); i++)); do bar+="░"; done
+        printf '%s' "${bar}"
+    }
+    _dx_step() {
+        local idx=$1 total=$2 name=$3; shift 3
+        local bar; bar="$(_dx_bar "${idx}" "${total}")"
+        local digits=${#total} label
+        printf -v label "%*d/%*d" "${digits}" "$((idx+1))" "${digits}" "${total}"
+        if gum spin --spinner dot \
+                --title " ${bar}  ${label}  ${name}" -- "$@"; then
+            gum style --foreground 42 "✓ ${name}"
+        else
+            gum style --foreground 196 "✗ ${name}" >&2
+            return 1
+        fi
+    }
+
+    N=${#DX_NAMES[@]}
+    for i in "${!DX_NAMES[@]}"; do
+        _dx_step "${i}" "${N}" "${DX_NAMES[${i}]}" \
+            bash -c "${DX_CMDS[${i}]}" || exit 1
+    done
+
+    # Post-install: configure libvirt session URI (instant — no spinner needed)
+    if [ "${INSTALL_LIBVIRT}" -eq 1 ]; then
+        mkdir -p "${HOME}/.config/libvirt"
+        grep -q "uri_default" "${HOME}/.config/libvirt/libvirt.conf" 2>/dev/null || \
+            echo 'uri_default = "qemu:///session"' >> "${HOME}/.config/libvirt/libvirt.conf"
+    fi
+
+    CURRENT_USER="$(id -un)"
+    GROUPS_TO_ADD="dialout"
+    [ "${INSTALL_DOCKER}" -eq 1 ]  && GROUPS_TO_ADD="${GROUPS_TO_ADD} docker"
+    [ "${INSTALL_LIBVIRT}" -eq 1 ] && GROUPS_TO_ADD="${GROUPS_TO_ADD} libvirt"
+    [ "${INSTALL_INCUS}" -eq 1 ]   && GROUPS_TO_ADD="${GROUPS_TO_ADD} incus-admin"
+    pkexec bash -c "
+        append_group() {
+            local g=\"\$1\"
+            if ! grep -q \"^\${g}:\" /etc/group 2>/dev/null; then
+                grep \"^\${g}:\" /usr/lib/group 2>/dev/null | tee -a /etc/group > /dev/null || true
+            fi
+        }
+        for g in ${GROUPS_TO_ADD}; do
+            append_group \"\${g}\"
+            usermod -aG \"\${g}\" ${CURRENT_USER} 2>/dev/null || true
+        done
+    "
+
+    mkdir -p "${HOME}/.config/bluefin"
+    touch "${DEVMODE_MARKER}"
+    echo ""
+    gum style \
+        --foreground 2 --border-foreground 2 --border rounded \
+        --align center --width 60 --padding "1 4" \
+        "Developer Mode is on!  Reboot to apply group changes."
+
+# Configure docker, incus-admin, libvirt, serial permissions (standalone)
+
+# Toggle between the stable and testing image channels
+[group('System')]
+toggle-testing:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+    IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
+    IMAGE_REF="$(jq -r '."image-ref"' < "${IMAGE_INFO_FILE}")"
+    # Strip transport prefix (ostree-image-signed:docker://, ostree-unverified-registry:, etc.)
+    IMAGE_PATH="$(sed -E 's|^.*://||; s|^[a-z-]+:||' <<< "${IMAGE_REF}")"
+    if [[ "${IMAGE_TAG}" == *testing* ]]; then
+        if [[ "${IMAGE_TAG}" == "testing" ]]; then
+            NEW_TAG="stable"
+        else
+            NEW_TAG="${IMAGE_TAG/-testing/}"
+        fi
+        gum confirm "Switch from testing to ${NEW_TAG}?" || exit 0
+    else
+        case "${IMAGE_TAG}" in
+            stable|latest) NEW_TAG="testing" ;;
+            lts)           NEW_TAG="lts-testing" ;;
+            lts-hwe)       NEW_TAG="lts-hwe-testing" ;;
+            *)
+                echo "Cannot toggle testing from channel '${IMAGE_TAG}'."
+                exit 1 ;;
+        esac
+        echo "Testing images may be unstable and are not recommended for daily use."
+        gum confirm "Switch to testing channel (${NEW_TAG})?" || exit 0
+    fi
+    pkexec bootc switch --enforce-container-sigpolicy "${IMAGE_PATH}:${NEW_TAG}"
+
+[group('System')]
+dx-group:
+    #!/usr/bin/pkexec bash
+    append_group() {
+        local group_name="$1"
+        if ! grep -q "^${group_name}:" /etc/group 2>/dev/null; then
+            echo "Appending ${group_name} to /etc/group"
+            grep "^${group_name}:" /usr/lib/group 2>/dev/null | tee -a /etc/group > /dev/null || true
+        fi
+    }
+
+    GROUPS_ADD=("docker" "incus-admin" "libvirt" "dialout")
+
+    for GROUP_ADD in "${GROUPS_ADD[@]}" ; do
+        append_group "${GROUP_ADD}"
+        usermod -aG "${GROUP_ADD}" {{ `id -un` }} 2>/dev/null || true
+    done
+
+    echo "Reboot system and log back in to use docker, libvirt, incus, and serial connections."
+
+# Set up the VM stack: virt-manager flatpak + QEMU extension (UEFI, TPM, USB passthrough)
+[group('System')]
+setup-vms:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    flatpak install --system --noninteractive flathub \
+        org.virt_manager.virt-manager \
+        org.virt_manager.virt_manager.Extension.Qemu
+    mkdir -p "${HOME}/.config/libvirt"
+    if ! grep -q "uri_default" "${HOME}/.config/libvirt/libvirt.conf" 2>/dev/null; then
+        echo 'uri_default = "qemu:///session"' >> "${HOME}/.config/libvirt/libvirt.conf"
+    fi
+    echo "VM stack ready. Supports: Linux/Windows VMs, Windows 11 (UEFI + TPM), USB passthrough."
+
+# Toggle the VM stack on or off
+[group('System')]
+toggle-vms:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if flatpak list --system --columns=application 2>/dev/null | grep -q "org.virt_manager.virt-manager"; then
+        gum confirm "Remove the VM stack (virt-manager + QEMU)?" || exit 0
+        flatpak uninstall --system --noninteractive \
+            org.virt_manager.virt-manager \
+            org.virt_manager.virt_manager.Extension.Qemu 2>/dev/null || true
+        sed -i '/uri_default.*session/d' "${HOME}/.config/libvirt/libvirt.conf" 2>/dev/null || true
+        echo "VM stack removed."
+    else
+        gum confirm "Install the VM stack (virt-manager + QEMU)?" || exit 0
+        just --justfile "{{ justfile() }}" setup-vms
+    fi
+
+# Install system flatpaks
+[group('System')]
+install-system-flatpaks $confirm="1":
+    #!/usr/bin/env bash
+    if [ "$confirm" != 0 ] ; then
+        gum confirm "Install system flatpaks?" || exit 0
+    fi
+    brew bundle --file="${TARGET_FLATPAK_FILE:-/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile}"
+
+# Install default system flatpaks (alias for install-system-flatpaks)
+
+# For additional applications, use: ujust bbrew
+[group('System')]
+bluefin-apps:
+    echo "Installing default system flatpaks..."
+    @ujust install-system-flatpaks
+
+# Check Secure Boot status and key enrollment
+[group('System')]
+check-sb-key:
+    #!/usr/bin/bash
+    echo "== Secure Boot Status =="
+    if [ -d /sys/firmware/efi ]; then
+        if command -v mokutil &> /dev/null; then
+            mokutil --sb-state
+        else
+            echo "mokutil not available — checking EFI vars..."
+            if [ -f /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c ]; then
+                SB=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c | awk '{print $NF}')
+                [ "$SB" = "1" ] && echo "SecureBoot is enabled" || echo "SecureBoot is disabled"
+            else
+                echo "Cannot determine Secure Boot status"
+            fi
+        fi
+        echo ""
+        echo "== Machine Owner Key (MOK) Status =="
+        if command -v mokutil &> /dev/null; then
+            mokutil --list-enrolled 2>/dev/null | head -6 || echo "No MOK keys enrolled or mokutil requires sudo"
+        fi
+        echo ""
+        echo "== Kernel Signature =="
+        uname -r
+        if command -v sbverify &> /dev/null; then
+            sbverify --list /boot/vmlinuz-$(uname -r) 2>/dev/null || echo "sbverify not available (install sbsigntools)"
+        fi
+    else
+        echo "Not an EFI system — Secure Boot does not apply."
+    fi
