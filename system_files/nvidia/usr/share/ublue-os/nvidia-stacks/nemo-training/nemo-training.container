@@ -1,0 +1,23 @@
+[Unit]
+Description=NeMo Training — NGC ${NGC_MONTH} (JupyterLab workspace)
+After=network-online.target
+
+[Container]
+ContainerName=nemo-training
+Image=nvcr.io/nvidia/nemo:${NGC_MONTH}
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--ipc=host
+Ulimit=memlock=-1:-1
+Ulimit=stack=67108864:67108864
+Network=nemo-training-network.network
+PublishPort=8888:8888
+Volume=%h/ai-workspaces/nemo-training:/workspace:z
+Exec=jupyter lab --no-browser --ip=0.0.0.0 --port=8888 --allow-root --ServerApp.token='' --ServerApp.password='' --notebook-dir=/workspace
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

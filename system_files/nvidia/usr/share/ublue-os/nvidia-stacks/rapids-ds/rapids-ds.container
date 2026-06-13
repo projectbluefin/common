@@ -1,0 +1,26 @@
+[Unit]
+Description=RAPIDS Data Science — cuDF + cuML + cuGraph (JupyterLab workspace)
+After=network-online.target
+
+[Container]
+ContainerName=rapids-ds
+# NOTE: RAPIDS does not follow the NGC monthly release train.
+# Tag format: nvcr.io/nvidia/rapidsai/rapidsai-core:<rapids-ver>-cuda<cuda-ver>-runtime-<os>-py<py-ver>
+# Update this tag when RAPIDS releases: https://catalog.ngc.nvidia.com/orgs/nvidia/teams/rapidsai/containers/rapidsai-core
+Image=nvcr.io/nvidia/rapidsai/rapidsai-core:25.02-cuda12.8-runtime-ubuntu24.04-py3.12
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--ipc=host
+Ulimit=memlock=-1:-1
+Ulimit=stack=67108864:67108864
+Network=rapids-ds-network.network
+PublishPort=8888:8888
+Volume=%h/ai-workspaces/rapids-ds:/workspace:z
+Exec=jupyter lab --no-browser --ip=0.0.0.0 --port=8888 --allow-root --ServerApp.token='' --ServerApp.password='' --notebook-dir=/workspace
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
