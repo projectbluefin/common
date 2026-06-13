@@ -2,7 +2,7 @@
 
 # shellcheck disable=2046
 IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
-echo -n "$(jq -r '"\"(.["image-name"]):\(.["image-tag"])"' < "${IMAGE_INFO_FILE}")"
+echo -n "$(jq -r '"\(.["image-name"]):\(.["image-tag"])"' < "${IMAGE_INFO_FILE}")"
 
 if [[ "$(rpm-ostree status --booted)" =~ "signed" ]]; then
 	echo -n " 🔐"
