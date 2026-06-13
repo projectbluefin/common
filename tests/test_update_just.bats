@@ -76,13 +76,25 @@ echo "sudo $*" >> "${COMMAND_LOG}"
 exec "$@"
 MOCK
 
-    for cmd in bootc rpm-ostree; do
+    for cmd in bootc; do
         cat > "${MOCKDIR}/${cmd}" <<MOCK
 #!/bin/bash
 echo "${cmd} \$*" >> "\${COMMAND_LOG}"
 MOCK
         chmod +x "${MOCKDIR}/${cmd}"
     done
+
+    _write_mock "rpm-ostree" <<'MOCK'
+#!/bin/bash
+echo "rpm-ostree $*" >> "${COMMAND_LOG}"
+if [[ "$1" == "status" && "$2" == "--booted" ]]; then
+    if [[ "${MOCK_HAS_LAYERED_PACKAGES:-0}" == "1" ]]; then
+        printf 'State: idle\nDeployments:\n* fedora:fedora/40/x86_64/silverblue\n  Layered packages: howdy\n'
+    else
+        printf 'State: idle\nDeployments:\n* fedora:fedora/40/x86_64/silverblue\n'
+    fi
+fi
+MOCK
 
     _write_mock "flatpak" <<'MOCK'
 #!/bin/bash
@@ -101,11 +113,6 @@ MOCK
 
     _write_mock "grep" <<'MOCK'
 #!/bin/bash
-for arg in "$@"; do
-    if [[ "$arg" == "/etc/rpm-ostreed.conf" ]]; then
-        [[ "${MOCK_LOCK_LAYERING_FALSE:-0}" == "1" ]] && exit 0 || exit 1
-    fi
-done
 exec /usr/bin/grep "$@"
 MOCK
 
@@ -125,7 +132,7 @@ _run() {
         MOCK_ENABLED_TIMER="${MOCK_ENABLED_TIMER:-}" \
         MOCK_FLATPAK_REMOTES="${MOCK_FLATPAK_REMOTES:-}" \
         MOCK_GUM_CHOICE="${MOCK_GUM_CHOICE:-}" \
-        MOCK_LOCK_LAYERING_FALSE="${MOCK_LOCK_LAYERING_FALSE:-0}" \
+        MOCK_HAS_LAYERED_PACKAGES="${MOCK_HAS_LAYERED_PACKAGES:-0}" \
         MOCK_BREW_BIN="${MOCK_BREW_BIN:-${WORKDIR}/missing-brew}" \
         bash "$@"
 }
@@ -149,11 +156,19 @@ _run() {
     ! grep -qF "bootc upgrade" "${COMMAND_LOG}"
 }
 
-@test "update: runs bootc upgrade when LockLayering=false is not detected" {
+@test "update: runs bootc upgrade when no layered packages are present" {
     _run "${UPDATE_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -qF "sudo bootc upgrade" "${COMMAND_LOG}"
     ! grep -qF "rpm-ostree upgrade" "${COMMAND_LOG}"
+}
+
+@test "update: exits early with layered-packages warning when rpm-ostree has layered packages" {
+    MOCK_HAS_LAYERED_PACKAGES=1 _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"Status: Layered Packages Detected"* ]]
+    [[ "${output}" == *"rpm-ostree reset"* ]]
+    ! grep -qF "sudo bootc upgrade" "${COMMAND_LOG}"
 }
 
 @test "update: updates system flatpaks when system remote exists" {

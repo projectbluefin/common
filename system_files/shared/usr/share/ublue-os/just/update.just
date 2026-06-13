@@ -14,12 +14,12 @@ update:
         echo "automatic updates are currently running, use \`journalctl -fexu $SERVICE\` to see logs"
         exit 1
     fi
-    if [ -f /etc/rpm-ostreed.conf ] && grep -q -E -e "^[[:space:]]*LockLayering[[:space:]]*=[[:space:]]*false([[:space:]]*(#.*)?)?$" /etc/rpm-ostreed.conf ; then
-        rpm-ostree upgrade
-    else
-        sudo bootc upgrade
+    if rpm-ostree status --booted 2>/dev/null | grep -q "Layered packages:"; then
+        echo "Status: Layered Packages Detected"
+        echo "Run an \`rpm-ostree reset\` and try again. This removes the Zero Maintenance guarantee, take appropriate precautions!"
+        exit 1
     fi
-    # rpm-ostree used due to bootc upgrade not supporting local layered packages
+    sudo bootc upgrade
     # Updates system Flatpaks
     if flatpak remotes | grep -q system; then
         flatpak update -y
