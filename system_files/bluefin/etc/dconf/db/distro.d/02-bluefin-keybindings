@@ -30,3 +30,8 @@ name='Open up the emoji picker'
 binding='<Super>period'
 command="flatpak run it.mijorus.smile"
 name='Open up the emoji picker (Alt)'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7]
+binding='<Super>e'
+command='nautilus'
+name='Files'
