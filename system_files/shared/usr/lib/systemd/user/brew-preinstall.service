@@ -1,0 +1,18 @@
+[Unit]
+Description=Preinstall OS-managed Homebrew packages
+After=network-online.target ublue-user-setup.service
+Wants=network-online.target
+ConditionUser=!@system
+ConditionPathExists=/var/home/linuxbrew/.linuxbrew/bin/brew
+StartLimitIntervalSec=600
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/brew-preinstall
+RemainAfterExit=true
+Restart=on-failure
+RestartSec=30
+StartLimitBurst=3
+
+[Install]
+WantedBy=graphical-session.target
