@@ -1,0 +1,25 @@
+[Unit]
+Description=Triton Inference Server — NGC ${NGC_MONTH}
+After=network-online.target
+
+[Container]
+ContainerName=triton-serving
+Image=nvcr.io/nvidia/tritonserver:${NGC_MONTH}-py3
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--ipc=host
+Ulimit=memlock=-1:-1
+Ulimit=stack=67108864:67108864
+Network=triton-serving-network.network
+PublishPort=8000:8000
+PublishPort=8001:8001
+PublishPort=8002:8002
+Volume=%h/ai-workspaces/triton-serving/models:/models:z
+Exec=tritonserver --model-repository=/models
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

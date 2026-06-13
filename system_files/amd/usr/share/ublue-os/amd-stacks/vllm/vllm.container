@@ -1,0 +1,27 @@
+[Unit]
+Description=vLLM — ROCm OpenAI-compatible inference server (port 8000)
+After=network-online.target
+
+[Container]
+ContainerName=vllm
+Image=docker.io/vllm/vllm-openai-rocm:latest
+AddDevice=/dev/kfd
+AddDevice=/dev/dri
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--security-opt=seccomp=unconfined
+PodmanArgs=--ipc=host
+PodmanArgs=--group-add=video
+AddCapability=SYS_PTRACE
+Network=vllm-network.network
+PublishPort=8000:8000
+Volume=%h/ai-workspaces/vllm:/root/.cache/huggingface:z
+Environment=HF_HUB_OFFLINE=0
+Exec=--model ${VLLM_MODEL} --host 0.0.0.0 --port 8000 --trust-remote-code
+
+[Service]
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=600
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,24 @@
+[Unit]
+Description=NIM — Stable Diffusion XL (image generation API)
+After=network-online.target
+
+[Container]
+ContainerName=nim-sdxl
+Image=nvcr.io/nim/stabilityai/stable-diffusion-xl:latest
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=label=disable
+PodmanArgs=--ipc=host
+Ulimit=memlock=-1:-1
+Ulimit=stack=67108864:67108864
+Secret=ngc-api-key,type=env,target=NGC_API_KEY
+Network=nim-sdxl-network.network
+PublishPort=8000:8000
+Volume=%h/.cache/nim:/root/.cache/nim:z
+
+[Service]
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=600
+
+[Install]
+WantedBy=default.target
