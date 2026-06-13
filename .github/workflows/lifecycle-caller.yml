@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   lifecycle:
-    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@770424da92549af5e43b11fedc8ca565dd55a7f3 # v0 — update SHA when actions bumps lifecycle.yml
+    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@95dc404b7c69ad65889e3f3bf49ecba5cd3018e6 # v1 — update SHA when actions bumps lifecycle.yml
     with:
       brand_name: "Common"
     secrets: inherit
