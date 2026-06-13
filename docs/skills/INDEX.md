@@ -53,6 +53,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [bonedigger.md](bonedigger.md) | bonedigger + kubestellar-bot — the full self-improvement loop, ujust report, priority escalation, template sync |
 | [hive.md](hive.md) | Hive system architecture — bonedigger/kubestellar-bot/hive triangle, label taxonomy, sync schedule, finding work |
 | [factory-improvement.md](factory-improvement.md) | Self-improving factory loop — gap audit protocol, pipeline uniformity checklist, human gates, known gaps, and priority order for full automation |
+| [nvidia.md](nvidia.md) | NVIDIA GPU support — CDI architecture, per-repo nvidia stacks, NGC container ecosystem, driver/toolkit update procedures, known constraints |
 
 ## Agent instruction files (not skills — loaded separately by tool)
 
