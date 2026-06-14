@@ -3,6 +3,8 @@
 # shellcheck disable=SC1091
 source /usr/lib/ublue/setup-services/libsetup.sh
 
+set -euo pipefail
+
 SYS_VENDOR="$(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null || true)"
 
 # Only run on ASUS hardware
@@ -22,7 +24,7 @@ fi
 
 version-script asus user 1 || exit 0
 
-set -x
+set -x  # trace from here; set -euo pipefail already active from top
 
 eval "$("${BREW_BIN}" shellenv)"
 
