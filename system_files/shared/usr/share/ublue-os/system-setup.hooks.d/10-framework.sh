@@ -29,11 +29,24 @@ fi
 if [[ "$VEN_ID" == "Framework" && "$SYS_ID" == "Laptop 13 ("* ]]; then
     echo "Framework Laptop 13 detected"
 
-    # Older versions of this script applied a modprobe flag to fix 3.5 mm jack headset detection
-    # which is no longer needed because the kernel applies this automatically.
-    if [[ ! -f /etc/modprobe.d/alsa.conf ]]; then
-        echo "Removing obsolete 3.5mm audio jack fix"
-        rm -f /etc/modprobe.d/alsa.conf
+    # 3.5mm audio jack fix: behavior depends on kernel generation.
+    # Fedora kernel (bluefin): fix is no longer needed — kernel handles it natively.
+    #   Remove the file if a previous version of this script left it.
+    # CentOS/RHEL kernel (bluefin-lts): fix is still required on AMD Framework 13.
+    #   Ensure the file is present.
+    if [[ "AuthenticAMD" == "$CPU_VENDOR" ]]; then
+        if grep -q "^ID=fedora" /etc/os-release 2>/dev/null; then
+            if [[ -f /etc/modprobe.d/alsa.conf ]]; then
+                echo "Removing obsolete 3.5mm audio jack fix (Fedora kernel handles this natively)"
+                rm -f /etc/modprobe.d/alsa.conf
+            fi
+        else
+            if [[ ! -f /etc/modprobe.d/alsa.conf ]]; then
+                echo "Applying 3.5mm audio jack fix for non-Fedora kernel"
+                echo 'options snd-hda-intel index=1,0 model=auto,dell-headset-multi' \
+                    > /etc/modprobe.d/alsa.conf
+            fi
+        fi
     fi
 
     # Suspend fix for Framework 13 Ryzen 7040
