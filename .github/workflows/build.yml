@@ -194,6 +194,7 @@ jobs:
 
       - name: Generate GitHub App token for downstream dispatch
         id: app-token
+        continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
@@ -202,6 +203,7 @@ jobs:
           repositories: bluefin,bluefin-lts,dakota
 
       - name: Notify downstream repos of common image update
+        if: steps.app-token.outcome == 'success'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
