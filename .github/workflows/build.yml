@@ -90,6 +90,18 @@ jobs:
             "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
             "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
+      - name: Promote image to root storage for push
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores in rootless user storage; push-image uses
+          # sudo podman push which reads root storage (/var/lib/containers).
+          # Import the already-exported scan archive into root storage.
+          sudo skopeo copy \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "containers-storage:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
+
       - name: Scan image for CVEs
         if: github.event_name != 'merge_group'
         uses: projectbluefin/actions/bootc-build/scan-image@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
