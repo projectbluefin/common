@@ -10,9 +10,27 @@ permissions:
   pull-requests: write
 
 jobs:
-  automerge:
+  # Generate a mergeraptor app token. github-actions[bot] is not in the
+  # main branch bypass allowances but mergeraptor is, so this token is
+  # required for the reusable to squash-merge into main.
+  get-token:
+    runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      token: ${{ steps.app-token.outputs.token }}
+    steps:
+      - name: Get mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+
+  automerge:
+    needs: get-token
     uses: projectbluefin/actions/.github/workflows/reusable-renovate-automerge.yml@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
     with:
       head_sha: ${{ github.event.workflow_run.head_sha }}
       base_branch: main
+    secrets:
+      token: ${{ needs.get-token.outputs.token }}
