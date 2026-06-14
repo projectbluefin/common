@@ -181,6 +181,13 @@ jobs:
             ${{ steps.manifest-tags.outputs.sha_short }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to registry for signing
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Sign, generate SBOM, and attest
         uses: projectbluefin/actions/bootc-build/sign-and-publish@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
         with:
