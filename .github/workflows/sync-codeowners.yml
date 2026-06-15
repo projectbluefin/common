@@ -23,7 +23,7 @@ jobs:
       - name: Require mergeraptor secrets
         run: |
           if [[ -z "${{ secrets.MERGERAPTOR_APP_ID }}" || -z "${{ secrets.MERGERAPTOR_PRIVATE_KEY }}" ]]; then
-            echo "::error::MERGERAPTOR_APP_ID and MERGERAPTOR_PRIVATE_KEY must be set as org/repo secrets."
+            echo "::error::MERGERAPTOR_APP_ID (vars) and MERGERAPTOR_PRIVATE_KEY (secrets) must be set."
             echo "::error::These are required for cross-repo CODEOWNERS sync. Configure the mergeraptor GitHub App."
             exit 1
           fi
@@ -32,7 +32,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          client-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          client-id: ${{ vars.MERGERAPTOR_APP_ID }}
           private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
           owner: projectbluefin
 
