@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   lifecycle:
-    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@3f01fd8e8c186b072c21d0453f2dc66c727f9db8 # v1
+    uses: projectbluefin/actions/.github/workflows/lifecycle.yml@main
     with:
       brand_name: "Common"
     secrets: inherit
