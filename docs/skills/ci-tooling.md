@@ -71,16 +71,28 @@ gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.sha'
 2. Update the `uses:` line: `@<new-sha> # <new-version>`
 3. Renovate handles most updates automatically once pins are tracked
 
-### Internal `projectbluefin/` refs — different policy
+### Internal `projectbluefin/` refs — use `@main`
 
-Internal reusable workflow refs use a coordinated policy, not blanket SHA pinning:
+**All internal `projectbluefin/` reusable workflow refs use `@main`, not SHA pins.**
 
-- `lifecycle-caller.yml` files pin `projectbluefin/common/.github/workflows/lifecycle.yml@<SHA>` — Renovate manages those SHA updates
-- The old `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` exemption was retired when lifecycle ownership moved into `common`
-- Other internal `projectbluefin/` refs follow repo-local policy comments — read the comment before converting
+The `no-floating-action-tags` pre-commit hook already exempts `projectbluefin/*` via negative lookahead — `@main` on internal refs is intentional and passes pre-commit.
 
-Pin `projectbluefin/actions` reusable workflow refs to a SHA anyway, even though the `no-floating-action-tags` hook exempts `projectbluefin/*`. A floating `@main` ref lets upstream changes propagate silently; a SHA-pin makes Renovate open an explicit PR. All image repos (bluefin, bluefin-lts, dakota) are now pinned.
-- Coordinate with maintainers before changing an internal ref policy
+SHA-pinning internal refs caused repeated `startup_failure` cascades (June 2026, bonedigger#27): stale pins silently broke when the pinned commit predated the called file, giving no actionable error. The failure mode is worse than the risk of `@main` drift on internal repos.
+
+**Current state (post June 2026 cleanup):**
+
+| Caller file | Repo(s) | Calls | Ref |
+|---|---|---|---|
+| `lifecycle-caller.yml` | common | `projectbluefin/actions/.github/workflows/lifecycle.yml` | `@main` |
+| `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | `@main` |
+
+These are **different workflows** serving different purposes:
+- `actions/lifecycle.yml` — full lifecycle: pipeline widget, slash commands, label transitions, stale sweep, auto-merge
+- `bonedigger/lifecycle.yml` — bonedigger agent donation fast-track only
+
+**Anti-pattern to avoid:** SHA-pinning internal workflow refs. When a SHA predates the file's existence in the repo, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis. See [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27).
+
+**Trap: bad semver tags.** The `v1.1.0` tag in `projectbluefin/actions` was cut from commit `95dc404b` (May 31 2026), which predates `lifecycle.yml` being added to that repo (June 10). Anyone who pinned to `v1.1.0` got a broken caller. Always verify a tag commit actually contains the file you're calling before pinning to it. Use `v1` (the managed floating tag) or `@main`.
 
 ---
 
