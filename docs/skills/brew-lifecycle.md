@@ -1,3 +1,11 @@
+---
+name: brew-lifecycle
+description: "Manage OS-managed Homebrew packages via brew-preinstall, preinstall.d, tap trust, and image-vs-brew placement rules. Use when adding/removing default brew packages or changing brew-preinstall."
+metadata:
+  context7-sources:
+    - /bootc-dev/bootc
+---
+
 # brew-lifecycle — Homebrew Package Lifecycle for Bluefin
 
 How to add, remove, and manage system-default Homebrew packages across
@@ -40,6 +48,12 @@ Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
 runs at first login after the network is up. It installs all Brewfiles
 found in `/usr/share/ublue-os/homebrew/preinstall.d/` and tracks state
 in `~/.local/share/ublue-os/brew-preinstall-state.json`.
+
+**Path convention:** keep the real implementation in
+`/usr/libexec/brew-preinstall` and leave `/usr/bin/brew-preinstall` as a
+thin compatibility wrapper for systemd units, tests, or user entrypoints.
+This matches the bootc/FHS split: internal image helpers in `/usr/libexec`,
+user-facing commands in `/usr/bin`, static Brewfiles in `/usr/share`.
 
 ### Adding a package to the default set
 

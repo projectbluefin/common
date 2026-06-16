@@ -127,6 +127,11 @@ Confirm the exact path before filing the cleanup issue.
 |---|---|---|
 | `system-setup.hooks.d/10-framework.sh` | system | Intel Framework keyboard karg; Framework 13 Ryzen 7040 suspend fix; AMD 3.5mm jack (kernel-aware) |
 | `user-setup.hooks.d/10-theming.sh` | user | Framework logo/scroll/font; Thelio Astra Ampere logo |
+
+Keep Framework/Thelio theming consolidated in `10-theming.sh`. Do not split
+those same dconf writes across extra per-vendor hooks unless behavior diverges
+for real — duplicate hooks drift, double-stamp version-script state, and make
+rerun behavior harder to reason about.
 | `system-setup.hooks.d/11-asus.sh` | system | Enables asusd.service + asus-shutdown.service once asusctl is installed |
 | `user-setup.hooks.d/11-asus.sh` | user | Installs asusctl-linux + rog-control-center-linux via brew on ASUS hardware |
 | `user-setup.hooks.d/12-framework-color.sh` | user | Assigns factory ICC color profiles to Framework 13/16 displays via colormgr |
