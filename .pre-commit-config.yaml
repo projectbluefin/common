@@ -29,6 +29,6 @@ repos:
       - id: no-floating-action-tags
         name: Block floating GitHub Action tags (@main, @v*)
         language: pygrep
-        entry: 'uses:.*@(main|master|latest|v[0-9])'
+        entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'
         types: [yaml]
         files: '\.github/workflows/'

@@ -73,11 +73,11 @@ gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.sha'
 
 ### Internal `projectbluefin/` refs — managed tags, not SHA pins
 
-**`projectbluefin/actions` and `projectbluefin/bonedigger` use managed floating tags (`@v1`), not SHA pins.**
+**All `projectbluefin/` internal workflow refs use managed floating tags (`@main` or `@v1`), not SHA pins.**
 
-The `no-floating-action-tags` pre-commit hook exempts these two repos via negative lookahead. All other cross-repo refs (including `projectbluefin/testsuite`) must be SHA-pinned and are tracked by Renovate.
+The `no-floating-action-tags` pre-commit hook exempts all `projectbluefin/` refs via a negative lookahead. External refs (`actions/`, `docker/`, `taiki-e/`, etc.) are still required to be SHA-pinned.
 
-SHA-pinning `projectbluefin/actions` and `projectbluefin/bonedigger` caused repeated `startup_failure` cascades (June 2026, bonedigger#27): stale pins silently broke when the pinned commit predated the called file, giving no actionable error. The failure mode is worse than the risk of managed-tag drift.
+SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: every commit to `projectbluefin/actions` requires manual SHA bumps in all consumers (common, bluefin, bluefin-lts, dakota). Worse, a stale pin silently broke when the pinned commit predated the called file's existence, emitting only `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis (June 2026, bonedigger#27). The failure mode is worse than the risk of managed-tag drift.
 
 **Current state (post June 2026 cleanup):**
 
@@ -98,12 +98,9 @@ SHA-pinning `projectbluefin/actions` and `projectbluefin/bonedigger` caused repe
 
 **Scope:** shared pre-commit hook active in `common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`. Parity work pending in other repos.
 
-**Regex:** `uses:(?!.*projectbluefin/(actions|bonedigger)/).*@(main|master|latest|v[0-9])`
+**Regex:** `uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])`
 
-The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. `projectbluefin/actions/` and `projectbluefin/bonedigger/` refs are explicitly exempted — they use managed `@v1` tags. All other refs (including `projectbluefin/testsuite`) are subject to the hook.
-
-A companion hook, `no-sha-pins-for-internal-actions`, blocks SHA pins on `projectbluefin/actions` refs to enforce the managed-tag policy there:
-**Regex:** `uses:.*projectbluefin/actions.*@[0-9a-f]{40}`
+The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. All `projectbluefin/` refs are exempted via negative lookahead — they use managed floating tags by design. All external refs are subject to the hook.
 
 ### What the floating-tag hook blocks
 
@@ -118,11 +115,12 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # also rejected
 
 ### Repos with managed tags (exempt)
 
-Only two internal repos use managed floating tags:
-- `projectbluefin/actions` — `@v1` maintained by `update-v1-tag.yml`
+All `projectbluefin/` internal refs are exempt from the hook. Current usage:
+- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows) or `@main` (lifecycle-caller)
 - `projectbluefin/bonedigger` — `@v1` maintained by bonedigger release process
+- `projectbluefin/testsuite` — SHA-pinned (tracked by Renovate) — exempt from the hook but pinned by convention
 
-All other `projectbluefin/` cross-repo refs (e.g. `projectbluefin/testsuite`) must be SHA-pinned.
+External actions (everything outside `projectbluefin/`) must use full SHA pins.
 
 ### Renovate vs pre-commit
 
