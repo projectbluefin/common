@@ -47,32 +47,11 @@ install-opentabletdriver:
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
-# Install applications from curated Brewfiles (includes full-desktop.Brewfile with GNOME Circle apps)
-bbrew:
-    #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            set -e
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-            set +e
-        else
-            exit 0
-        fi
-    fi
-    echo "Note: Some of these take a while to load, we'll keep working on it."
-    bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
-    [[ -t 0 ]] && ujust --choose || true
-
+# Install CNCF tools from curated Brewfile | use bluefinctl for a full TUI experience
+[group('Apps')]
 cncf:
     #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-        else
-            exit 0
-        fi
-    fi
-    bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+    brew bundle --file=/usr/share/ublue-os/homebrew/cncf.Brewfile
     [[ -t 0 ]] && ujust --choose || true
 
 # Install ASUS laptop tools (asusctl daemon + ROG Control Center) | https://gitlab.com/asus-linux/asusctl

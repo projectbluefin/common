@@ -1,8 +1,6 @@
-tap "valkyrie00/bbrew"
 brew "atuin"
 brew "bat"
 brew "bash-preexec"
-brew "valkyrie00/bbrew/bbrew"
 brew "chezmoi"
 brew "direnv"
 brew "dysk"

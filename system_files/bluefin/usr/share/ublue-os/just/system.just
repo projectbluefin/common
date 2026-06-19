@@ -317,7 +317,7 @@ install-system-flatpaks $confirm="1":
 
 # Install default system flatpaks (alias for install-system-flatpaks)
 
-# For additional applications, use: ujust bbrew
+# For additional applications, use: bluefinctl
 [group('System')]
 bluefin-apps:
     echo "Installing default system flatpaks..."
