@@ -157,9 +157,13 @@ The daily heartbeat ensures the promotion PR stays fresh and gate checks are re-
 
 **dakota** differs from bluefin/lts: rather than squashing git commits, `promote-testing-to-main.yml` resolves the current `:testing` OCI digest and writes it to `.github/release-state.yaml` on the promotion branch.
 
-### Dakota E2E
+### E2E gate model — bluefin and dakota
 
-Dakota's promotion gate runs with `run_e2e: true`. If it gets disabled, re-enable by setting `run_e2e: true` in `dakota/.github/workflows/promote-testing-to-main.yml` and verify the dakota build machine is healthy.
+Both bluefin and dakota run with `run_e2e: false` in their `promote-testing-to-main.yml`. The e2e quality gate is enforced separately by `post-testing-e2e.yml` (bluefin) rather than at the PR gate level.
+
+**Why `run_e2e: false`:** The gate queries GitHub's runs API by `head_sha = <testing-branch-SHA>`. Workflows triggered via `workflow_run` are stored in the API under the **default branch (main) SHA**, so the gate never finds a match regardless of whether E2E passed. This is the structural mismatch documented in [e2e-ci.md — Promotion gate never-stall design](e2e-ci.md#promotion-gate--never-stall-design).
+
+**Restoring `run_e2e: true`:** Only after the `post-testing-e2e.yml` `branches: [main, testing]` fix (and the `promote-testing-to-main.yml` `workflow_run` feedback trigger) have reached `main` via a successful promotion. Until then, re-enabling `run_e2e: true` will permanently block the gate. Follow the bootstrap procedure in [e2e-ci.md — Gate bootstrap for bluefin](e2e-ci.md#gate-bootstrap-for-bluefin-circular-dependency).
 
 ### Approval
 
