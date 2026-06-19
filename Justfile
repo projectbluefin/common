@@ -1,6 +1,7 @@
 just := just_executable()
 
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
+# test_libvirt_helper.bats is excluded — requires a running libvirtd session
 test:
     python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
@@ -26,37 +27,33 @@ build:
     git submodule update --init bluefin-branding
     podman build -t localhost/bluefin-common:latest -f ./Containerfile .
 
-check:
+_fmt mode verb:
     #!/usr/bin/bash
     failed=0
     while read -r file; do
-      echo "Checking syntax: $file"
-      {{ just }} --unstable --fmt --check -f "$file" || failed=1
+      echo "{{ verb }} syntax: $file"
+      {{ just }} --unstable --fmt {{ mode }} -f "$file" || failed=1
     done < <(find . -type f -name "*.just")
-    echo "Checking syntax: Justfile"
-    {{ just }} --unstable --fmt --check -f Justfile || failed=1
+    echo "{{ verb }} syntax: Justfile"
+    {{ just }} --unstable --fmt {{ mode }} -f Justfile || failed=1
     exit "$failed"
 
-fix:
-    #!/usr/bin/bash
-    failed=0
-    while read -r file; do
-      echo "Fixing syntax: $file"
-      {{ just }} --unstable --fmt -f "$file" || failed=1
-    done < <(find . -type f -name "*.just")
-    echo "Fixing syntax: Justfile"
-    {{ just }} --unstable --fmt -f Justfile || failed=1
-    exit "$failed"
+check: (_fmt "--check" "Checking")
+
+fix: (_fmt "" "Fixing")
 
 # Inspect the directory structure of an OCI image
 tree IMAGE="localhost/bluefin-common:latest":
-    echo "FROM alpine:latest" > TreeContainerfile
-    echo "RUN apk add --no-cache tree" >> TreeContainerfile
-    echo "COPY --from={{ IMAGE }} / /mnt/root" >> TreeContainerfile
-    echo "CMD tree /mnt/root" >> TreeContainerfile
+    #!/usr/bin/env bash
+    cat > TreeContainerfile <<'EOF'
+    FROM alpine:latest
+    RUN apk add --no-cache tree
+    COPY --from={{ IMAGE }} / /mnt/root
+    CMD tree /mnt/root
+    EOF
     podman build -t tree-temp -f TreeContainerfile .
     podman run --rm tree-temp
-    rm TreeContainerfile
+    rm -f TreeContainerfile
     podman rmi tree-temp
 
 overlay $BLUEFIN_MERGE="1" $SOURCE="dir":

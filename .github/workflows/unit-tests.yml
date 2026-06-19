@@ -30,12 +30,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
-      - name: Install bats-core
+      - name: Install test deps
         run: |
           sudo apt-get install -y bats
-
-      - name: Install pytest and pytest-cov
-        run: pip install pytest pytest-cov
+          pip install pytest pytest-cov
 
       - name: Run shellcheck — extensionless scripts
         run: |
