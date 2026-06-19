@@ -47,7 +47,7 @@ install-opentabletdriver:
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
-# Install CNCF tools from curated Brewfile | use bluefinctl for a full TUI experience
+# Install CNCF tools from curated Brewfile | run: bctl --screen developer
 [group('Apps')]
 cncf:
     #!/usr/bin/env bash

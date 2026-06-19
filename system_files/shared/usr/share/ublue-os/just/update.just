@@ -19,6 +19,10 @@ update:
         echo "Run an \`rpm-ostree reset\` and try again. This removes the Zero Maintenance guarantee, take appropriate precautions!"
         exit 1
     fi
+    # Hand off to bluefinctl when available — richer progress UI, same update logic
+    if command -v bctl &>/dev/null; then
+        exec bctl update
+    fi
     sudo bootc upgrade
     # Updates system Flatpaks
     if flatpak remotes | grep -q system; then
@@ -39,6 +43,10 @@ alias auto-update := toggle-updates
 # Turn automatic updates on or off
 toggle-updates ACTION="prompt":
     #!/usr/bin/bash
+    # Open the bluefinctl Updates panel when available
+    if command -v bctl &>/dev/null; then
+        exec bctl --screen updates
+    fi
     CURRENT_STATE="disabled"
     if systemctl is-enabled -q rpm-ostreed-automatic.timer; then
         CURRENT_STATE="enabled"

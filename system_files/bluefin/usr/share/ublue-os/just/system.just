@@ -39,9 +39,13 @@ bluefin-cli:
         brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
     fi
 
-# alias for toggle-devmode
+# alias for toggle-devmode — opens the Developer panel in bluefinctl when available
 devmode:
-    @ujust toggle-devmode
+    #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl --screen developer
+    fi
+    ujust toggle-devmode
 
 # Set up the Developer Experience
 [group('System')]
@@ -317,7 +321,7 @@ install-system-flatpaks $confirm="1":
 
 # Install default system flatpaks (alias for install-system-flatpaks)
 
-# For additional applications, use: bluefinctl
+# For additional applications, run: bctl --screen developer
 [group('System')]
 bluefin-apps:
     echo "Installing default system flatpaks..."
