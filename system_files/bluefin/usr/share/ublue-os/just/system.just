@@ -196,9 +196,7 @@ toggle-devmode:
 
     # Post-install: configure libvirt session URI (instant — no spinner needed)
     if [ "${INSTALL_LIBVIRT}" -eq 1 ]; then
-        mkdir -p "${HOME}/.config/libvirt"
-        grep -q "uri_default" "${HOME}/.config/libvirt/libvirt.conf" 2>/dev/null || \
-            echo 'uri_default = "qemu:///session"' >> "${HOME}/.config/libvirt/libvirt.conf"
+        /usr/libexec/ensure-libvirt-session-config
     fi
 
     CURRENT_USER="$(id -un)"
@@ -288,10 +286,7 @@ setup-vms:
     flatpak install --system --noninteractive flathub \
         org.virt_manager.virt-manager \
         org.virt_manager.virt_manager.Extension.Qemu
-    mkdir -p "${HOME}/.config/libvirt"
-    if ! grep -q "uri_default" "${HOME}/.config/libvirt/libvirt.conf" 2>/dev/null; then
-        echo 'uri_default = "qemu:///session"' >> "${HOME}/.config/libvirt/libvirt.conf"
-    fi
+    /usr/libexec/ensure-libvirt-session-config
     echo "VM stack ready. Supports: Linux/Windows VMs, Windows 11 (UEFI + TPM), USB passthrough."
 
 # Toggle the VM stack on or off

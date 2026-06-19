@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
-# Tests for system_files/shared/usr/bin/brew-preinstall
+# Tests for system_files/shared/usr/libexec/brew-preinstall
+# and its /usr/bin wrapper.
 #
-# Strategy: patch the three hardcoded absolute paths in the script to
+# Strategy: patch the hardcoded absolute paths in the libexec script to
 # temp-dir equivalents so tests run without root or real Homebrew.
 # The mock brew's shellenv subcommand adds the mock bin dir to PATH so
 # subsequent `brew` calls (bundle, list, uninstall) all hit the mock.
@@ -9,9 +10,11 @@
 #
 # Run: bats tests/test_brew_preinstall.bats
 
-BREW_PREINSTALL="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/brew-preinstall"
+BREW_PREINSTALL="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/brew-preinstall"
+BREW_PREINSTALL_WRAPPER="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/brew-preinstall"
 WORKDIR=""
 PATCHED_SCRIPT=""
+PATCHED_WRAPPER=""
 
 setup() {
     WORKDIR="$(mktemp -d)"
@@ -50,10 +53,26 @@ BREWMOCK
         -e "s|/usr/share/ublue-os/homebrew/preinstall.d|${WORKDIR}/preinstall.d|g" \
         "${BREW_PREINSTALL}" > "${PATCHED_SCRIPT}"
     chmod +x "${PATCHED_SCRIPT}"
+
+    PATCHED_WRAPPER="${WORKDIR}/brew-preinstall-wrapper"
+    sed \
+        -e "s|/usr/libexec/brew-preinstall|${PATCHED_SCRIPT}|g" \
+        "${BREW_PREINSTALL_WRAPPER}" > "${PATCHED_WRAPPER}"
+    chmod +x "${PATCHED_WRAPPER}"
 }
 
 teardown() {
     rm -rf "${WORKDIR}"
+}
+
+# ---------------------------------------------------------------------------
+# Wrapper
+# ---------------------------------------------------------------------------
+
+@test "brew-preinstall wrapper: delegates to libexec implementation" {
+    run bash "${PATCHED_WRAPPER}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"no Brewfiles"* ]]
 }
 
 # ---------------------------------------------------------------------------

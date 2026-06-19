@@ -36,6 +36,11 @@ bonedigger has two functions:
    - 3+ confirms → adds `priority/p1`
    - 5+ confirms → adds `priority/p0`
 
+**Packaging note:** in common, keep `ujust report` as a thin recipe wrapper in
+`system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` and put the
+real shell implementation in `/usr/libexec/bonedigger-report`. Keep the
+`BONEDIGGER_VERSION` line in the Justfile because Renovate watches that path.
+
 ## bonedigger — what it does NOT do
 
 The **full** issue lifecycle (slash commands, pipeline widget, label transitions, stale sweep, auto-merge on lgtm) lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. It was first deployed to `common` (2026-06-05) then moved to `actions` ([common#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10) to serve all factory repos as a single reusable.
