@@ -3,6 +3,9 @@
 # Show the changelog
 changelogs:
     #!/usr/bin/bash
+    if command -v bctl &>/dev/null; then
+        exec bctl changelogs
+    fi
 
     # Get Image Tag
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"

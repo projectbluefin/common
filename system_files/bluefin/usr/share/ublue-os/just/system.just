@@ -7,6 +7,9 @@
 [no-exit-message]
 bluefin-cli:
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl bluefin-cli
+    fi
     set -e
     BLING_SRC_DIR="/usr/share/ublue-os/bling"
     BLING_SCRIPT="bling.sh"
@@ -51,6 +54,9 @@ devmode:
 [group('System')]
 toggle-devmode:
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl devmode --enable
+    fi
     set -e
     JUSTFILE="{{ justfile() }}"
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
@@ -235,6 +241,9 @@ toggle-devmode:
 [group('System')]
 toggle-testing:
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl toggle-testing
+    fi
     set -euo pipefail
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
@@ -262,30 +271,13 @@ toggle-testing:
     fi
     pkexec bootc switch --enforce-container-sigpolicy "${IMAGE_PATH}:${NEW_TAG}"
 
-[group('System')]
-dx-group:
-    #!/usr/bin/pkexec bash
-    append_group() {
-        local group_name="$1"
-        if ! grep -q "^${group_name}:" /etc/group 2>/dev/null; then
-            echo "Appending ${group_name} to /etc/group"
-            grep "^${group_name}:" /usr/lib/group 2>/dev/null | tee -a /etc/group > /dev/null || true
-        fi
-    }
-
-    GROUPS_ADD=("docker" "incus-admin" "libvirt" "dialout")
-
-    for GROUP_ADD in "${GROUPS_ADD[@]}" ; do
-        append_group "${GROUP_ADD}"
-        usermod -aG "${GROUP_ADD}" {{ `id -un` }} 2>/dev/null || true
-    done
-
-    echo "Reboot system and log back in to use docker, libvirt, incus, and serial connections."
-
 # Set up the VM stack: virt-manager flatpak + QEMU extension (UEFI, TPM, USB passthrough)
 [group('System')]
 setup-vms:
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl setup-vms
+    fi
     set -euo pipefail
     flatpak install --system --noninteractive flathub \
         org.virt_manager.virt-manager \
@@ -297,6 +289,9 @@ setup-vms:
 [group('System')]
 toggle-vms:
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        exec bctl toggle-vms
+    fi
     set -euo pipefail
     if flatpak list --system --columns=application 2>/dev/null | grep -q "org.virt_manager.virt-manager"; then
         gum confirm "Remove the VM stack (virt-manager + QEMU)?" || exit 0
@@ -314,6 +309,10 @@ toggle-vms:
 [group('System')]
 install-system-flatpaks $confirm="1":
     #!/usr/bin/env bash
+    if command -v bctl &>/dev/null; then
+        FLAG=""; [ "$confirm" = "0" ] && FLAG="--yes"
+        exec bctl install-system-flatpaks $FLAG
+    fi
     if [ "$confirm" != 0 ] ; then
         gum confirm "Install system flatpaks?" || exit 0
     fi

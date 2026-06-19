@@ -10,6 +10,9 @@ toggle-tpm2:
 [group('System')]
 powerwash:
     #!/usr/bin/bash
+    if command -v bctl &>/dev/null; then
+        exec bctl powerwash
+    fi
     FIRST_CONFIRMATION=$(gum choose --header='Warning: This is an experimental feature that will reset this device to its factory state.' "No" "Yes - wipe this machine")
     if [[ "$FIRST_CONFIRMATION" != "Yes - wipe this machine" ]]; then
         echo "Powerwash cancelled."
