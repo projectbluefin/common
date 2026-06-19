@@ -3,7 +3,7 @@
 #
 # Run: bats tests/test_profile_d.bats
 
-CAFFEINATE_SCRIPT="$BATS_TEST_DIRNAME/../system_files/bluefin/etc/profile.d/caffeinate.sh"
+CAFFEINATE_SCRIPT="$BATS_TEST_DIRNAME/../system_files/shared/etc/profile.d/caffeinate.sh"
 WORKDIR=""
 
 setup() {

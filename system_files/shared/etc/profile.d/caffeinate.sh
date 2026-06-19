@@ -6,15 +6,17 @@ caffeinate() {
     if [ $# -eq 0 ]; then
         echo "Preventing system sleep. Press Ctrl+C to allow sleep again."
         systemd-inhibit \
-            --what=sleep:idle:handle-lid-switch \
+            --what=idle \
             --who=caffeinate \
             --why="User requested no sleep" \
+            --mode=block \
             sleep infinity
     else
         systemd-inhibit \
-            --what=sleep:idle \
+            --what=idle \
             --who=caffeinate \
             --why="Running: $*" \
+            --mode=block \
             "$@"
     fi
 }
