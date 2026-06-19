@@ -73,11 +73,42 @@ From the Argo MCP, the pattern is:
 1. argo_lint_workflow   → validate manifest
 2. argo_submit_workflow → submit (bluefin immediately, lts/dakota in parallel)
 3. argo_get_workflow    → poll status
-4. argo_logs_workflow   → collect journal output from collect-logs step
+4. argo_logs_workflow   → collect journal output — MUST do while Running or immediately on Succeeded
 ```
 
 Submit bluefin, lts, and dakota simultaneously — bluefin will finish first
 (disk exists), lts mid (BIB build), dakota last (BST build).
+
+### Check for existing log-scan workflows before submitting
+
+Log-scan workflows run automatically (nightly and from CI). Before submitting a
+new one, check if a recent run already has the data you need:
+
+```bash
+# kubectl is available on the local machine — use it to list + sort by age
+kubectl get workflows -n argo --sort-by='.metadata.creationTimestamp' -o json \
+  | python3 -c "
+import json, sys
+for w in sorted(json.load(sys.stdin)['items'],
+                key=lambda x: x['metadata'].get('creationTimestamp',''),
+                reverse=True)[:20]:
+    print(w['status'].get('phase','?'), w['metadata']['creationTimestamp'], w['metadata']['name'])
+"
+```
+
+`argo_list_workflows` returns a count but not names — use the kubectl command
+above to get actual workflow names. `argo_get_workflow` then resolves the detail.
+
+### Polling — do NOT use argo_wait_workflow
+
+`argo_wait_workflow` issues a blocking MCP call that times out before most
+workflows complete. Use `argo_get_workflow` to poll instead:
+
+```
+argo_get_workflow name=<workflow> namespace=argo
+  → check nodeSummary.running / .succeeded counts and phase field
+  → repeat every few minutes until phase = Succeeded or Failed
+```
 
 ## What to look for in journal output
 
@@ -149,10 +180,66 @@ downstream image that broke a bootc/systemd contract. Prioritize over feature wo
 Before submitting heavy lab workflows, verify headroom:
 
 ```
-k8s_nodes_top                            # ghost RAM/CPU
-argo_list_workflows namespace=argo       # active builds
-k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance
+# NOTE: k8s_nodes_top is NOT available — metrics API absent on this cluster.
+# Use kubectl for node resource view:
+bash: kubectl top nodes 2>/dev/null || kubectl describe nodes | grep -A5 Allocated
+
+argo_list_workflows namespace=argo       # active builds (returns count only — see kubectl command above for names)
+k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance  # running VMs (all namespaces)
 ```
 
 The `ghost-heavy-compute` mutex serialises BST and BIB build steps.
 If a nightly or PR build is running, the BST step will queue.
+
+## Log retrieval timing — critical
+
+**Logs from completed workflow pods are only available briefly.** Once Kubernetes
+recycles the pod, `argo_logs_workflow` returns `{"logs":[], "message":"No logs available"}`
+even for Succeeded workflows.
+
+Strategy:
+- Poll `argo_get_workflow` to know when the `collect-logs` step starts (phase Running,
+  nodeSummary shows the collect-logs node running)
+- Call `argo_logs_workflow` **while the workflow is still Running** to capture the journal output
+- Or call it **immediately** after phase transitions to Succeeded
+- If logs are already gone, re-submit a fresh log-scan workflow
+
+## Observed disk check behaviour
+
+The `bib-disk-check` step uses `skopeo inspect` to compare the live image digest
+against the golden disk. Two outcomes observed:
+
+| Output | Meaning | Next step |
+|---|---|---|
+| `stale` | skopeo inspect failed or digest changed | BIB rebuild triggered |
+| `missing` | golden disk file does not exist | BIB build from scratch |
+| `fresh` | digest matches | skip BIB build, boot directly |
+
+`skopeo inspect` can fail transiently on rate limits or network hiccups — this
+treats the disk as stale and triggers a rebuild, adding ~10 min. Expected occasionally.
+
+## BST build timing (dakota)
+
+The BST build (freedesktop-sdk + dakota) takes:
+- **Warm cache (~6h or less since last build):** ~10 min
+- **Cold cache or new components:** 45+ min — builds gcc, python3, flex, etc. from source
+
+Cache is warmed by `bst-cache-warm` CronWorkflow (00:00, 06:00, 12:00, 18:00 UTC).
+If `nightly-dakota` (03:00 UTC) failed, the cache may be in an inconsistent state.
+Check `argo_list_workflows status=["Failed"] namespace=argo` before submitting dakota.
+
+## Namespaces for VMIs
+
+| Variant | VM namespace |
+|---|---|
+| bluefin | `bluefin-test` |
+| lts | `bluefin-lts-test` |
+| dakota | `bluefin-test` |
+
+When checking if VMs are already running:
+```
+k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance namespace=bluefin-test
+k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance namespace=bluefin-lts-test
+```
+No VMIs = no VMs currently booted (the log-scan workflows boot+teardown ephemerally).
+Persistent VMs from failed teardowns are cleaned by `orphan-vm-cleanup` CronWorkflow (every 2h).

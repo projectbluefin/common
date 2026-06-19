@@ -48,6 +48,11 @@ If all five are checked, you're done. If any are unchecked, finish them first.
 | Non-obvious correctness requirement | "Must edit both the override file AND the dconf lock file — editing only one silently has no effect." |
 | Convention not obvious from code | "Renovate automerges digest/patch/minor PRs. Only major bumps need agent review." |
 | Trial-and-error discovery | "SHA pinning for internal `projectbluefin/` refs uses a different policy than third-party — read the comment in the workflow file before converting." |
+| **Project-internal fact correction** | "No `:latest` tag exists on `projectbluefin/bluefin`. The only stream tags are `:testing` and `:stable`. Source: `execute-release.yml`." |
+
+**Project-internal fact drift is a first-class failure mode.** When an agent writes documentation about image names, tags, workflow outputs, registry paths, or any other project-internal fact — and gets it wrong because it used training data instead of reading the source — that is a skill failure. The fix is always the same: read the workflow file, update the skill, add verification commands so the next agent can self-check.
+
+**The rule:** Any skill file containing project-internal facts (image names, tag schemas, published streams, workflow matrix values) **must** include a "Verification" section with the exact shell commands to re-derive those facts from source. See [`image-registry.md`](./image-registry.md) for the reference implementation.
 
 **Do NOT write:**
 

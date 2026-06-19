@@ -14,6 +14,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Validate PR title (Conventional Commits)
         if: github.event_name == 'pull_request'
@@ -69,6 +72,8 @@ jobs:
 
       - name: Guard against ublue-os→projectbluefin image ref regressions
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/check-oci-refs.py
 
       - name: Validate dconf lock/override parity
