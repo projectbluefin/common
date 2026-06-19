@@ -115,3 +115,8 @@ jobs:
 
       - name: Run bats (brew-preinstall)
         run: bats tests/test_brew_preinstall.bats
+
+      - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew bundle list --file=system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile

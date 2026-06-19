@@ -14,6 +14,144 @@ pattern, and the rules for what can and cannot move to brew.
 
 ---
 
+## Current default package set (preinstall.d)
+
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
+is the only file that auto-installs packages for every user on every variant.
+As of 2026-06, it contains 11 packages:
+
+| Package | Purpose | Deps |
+|---|---|---|
+| `fzf` | Fuzzy finder | static |
+| `glow` | Markdown renderer | static |
+| `htop` | Process viewer | `ncurses` |
+| `rclone` | Cloud storage sync | static |
+| `restic` | Backup tool | static |
+| `smartmontools` | Drive SMART monitor | static |
+| `squashfs` | Squashfs tools | `lz4, lzo, xz, zstd` |
+| `starship` | Shell prompt | static |
+| `tcpdump` | Packet analyzer | `libpcap, openssl@4` |
+| `tmux` | Terminal multiplexer | `libevent, ncurses, utf8proc` |
+| `ykman` | YubiKey management | `cryptography, python@3.14` |
+
+**Removed:** `inxi` (system info, redundant with `fastfetch` on the image) and
+`nvtop` (GPU monitor, hardware-specific — not everyone has a GPU).
+
+### What belongs in preinstall.d
+
+`preinstall.d/` is for packages every user gets automatically, managed
+entirely by the OS. The contract is unambiguous:
+
+**Add a line → every user gets it on next login after update.**
+**Remove a line → every user who got it through the managed set gets it
+uninstalled on next login after update.**
+
+**Belongs here:**
+- Universal CLI tools with no hardware prerequisite
+- Tools that should be present before the user does anything
+- Things with broad utility regardless of workflow (backups, prompt, terminal)
+- Static binaries preferred — zero transitive deps is ideal
+
+**Does not belong here:**
+- Hardware-specific tools (`nvtop` — not everyone has a GPU)
+- Tool-specific workflows (`ykman` — not everyone has a YubiKey, but it stays
+  for now as a low-cost dep carrier; revisit if `python@3.14` becomes a problem)
+- Anything that is naturally opt-in (`k8s-tools`, `cncf`, `ide`, etc.) — those
+  go in the other Brewfiles and are only installed when the user runs `ujust bbrew`
+- Packages already on the image (`fastfetch`, `gum`, `just`, `gcc`) — no need
+  to duplicate them in brew
+
+---
+
+## How brew-preinstall works
+
+**Brew is not installed in the OCI image.** The Containerfile is Alpine-based
+and only assembles `/out/` directories (wallpapers, completions, udev rules,
+binaries). The image ships the Brewfiles and the `brew-preinstall.service`
+systemd unit. The actual brew packages are installed at **first user login**.
+
+### Service
+
+`brew-preinstall.service` is a user-level oneshot that fires after
+`network-online.target` and `ublue-user-setup.service`. It is enabled globally
+via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`. Downstream repos
+do **not** need `systemctl --global enable` calls. The service only runs when
+brew is installed at `/var/home/linuxbrew/.linuxbrew/bin/brew`.
+
+### State file
+
+`~/.local/share/ublue-os/brew-preinstall-state.json`
+```json
+{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...] }
+```
+
+### On every login
+
+1. Hash all `preinstall.d/*.Brewfile` files combined.
+2. Compare to stored hash. **Identical → fast exit**, nothing touched.
+3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
+4. Diff `previous_packages` (from state JSON) against `current_packages`
+   (from Brewfiles). Uninstall packages that were in the old set but not
+   the new one — **only if `brew list` confirms they are installed**.
+5. Write new hash + package list to state file atomically (tmp + mv).
+
+**The service is content-addressed, not version-numbered.** Never bump a
+counter to propagate a Brewfile change — just edit the file. The hash change
+triggers re-run automatically.
+
+**Safety rule:** the uninstall step only removes packages that were in the
+*previous managed state file*. If a user independently ran `brew install inxi`
+themselves, it is not in their state file's managed list and will never be
+touched.
+
+### What happens to long-time users on a package removal
+
+Example: user has been running Bluefin since before `inxi`/`nvtop` were removed.
+Their state file lists them in `packages`. On next login after the OS update:
+
+1. Hash changes (Brewfile content changed) → triggers
+2. `brew bundle` runs new 11-package list (no-ops for already-installed)
+3. Diff: `previous = [..., inxi, nvtop, ...]`, `current = [...]` → `removed = [inxi, nvtop]`
+4. `brew list inxi` → installed → `brew uninstall inxi --ignore-dependencies`
+5. `brew list nvtop` → installed → `brew uninstall nvtop --ignore-dependencies`
+6. State file updated with new hash + 11-package list
+
+Result: packages are **silently removed on the next login**. No prompt.
+
+---
+
+## Adding and removing packages — the exact steps
+
+### Add a package
+1. Add a `brew "<name>"` line to
+   `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
+2. Open a PR. No version bumping, no manual trigger.
+3. On next login after the OS update, every user gets the package installed.
+
+### Remove a package
+1. Remove the `brew "<name>"` line from the Brewfile.
+2. Open a PR.
+3. On next login after the OS update, users who got it through the managed set
+   get it uninstalled. Users who installed it themselves are unaffected.
+
+### Add a tap + package from a non-core tap
+
+Homebrew 6.0 syntax — `trusted: true` is required:
+```ruby
+tap "projectbluefin/bluefinctl", trusted: true
+brew "bluefinctl"
+```
+Without `trusted: true` the tap is blocked and the formula is silently
+unavailable. See [Homebrew 6.0 tap trust](#homebrew-60-tap-trust-required-as-of-2026-06-11).
+
+### Add a variant-specific Brewfile
+
+Downstream repos can ship their own Brewfiles by dropping `*.Brewfile` files
+into the same `preinstall.d/` directory in `system_files/<variant>/`. All
+`*.Brewfile` files in the directory are hashed, bundled, and tracked together.
+
+---
+
 ## Homebrew 6.0 tap trust (required as of 2026-06-11)
 
 Homebrew 6.0.0 blocks untrusted taps — formulae/casks from them are silently
@@ -38,73 +176,63 @@ tap "ublue-os/experimental-tap", trusted: true
 mechanism. The correct 6.0 approach is `--trust` at tap-time and
 `trusted: true` in Brewfiles.
 
+### Known trust issues in the codebase (as of 2026-06)
+
+| File | Current code | Status |
+|---|---|---|
+| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
+| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
+| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
 
 ---
 
-## The preinstall.d pattern
+## Confirming the service is working — bonedigger-report
 
-`brew-preinstall.service` is a user-level oneshot systemd service that
-runs at first login after the network is up. It installs all Brewfiles
-found in `/usr/share/ublue-os/homebrew/preinstall.d/` and tracks state
-in `~/.local/share/ublue-os/brew-preinstall-state.json`.
+`bonedigger-report` (`ujust report`) captures `systemctl list-units --state=failed`.
+If `brew-preinstall.service` fails for a user, it appears in the **Failed Systemd
+Units** section of their gist report. This is the primary signal available today.
 
-**Path convention:** keep the real implementation in
-`/usr/libexec/brew-preinstall` and leave `/usr/bin/brew-preinstall` as a
-thin compatibility wrapper for systemd units, tests, or user entrypoints.
-This matches the bootc/FHS split: internal image helpers in `/usr/libexec`,
-user-facing commands in `/usr/bin`, static Brewfiles in `/usr/share`.
+**What is not captured today:**
+- The brew-preinstall state file contents (`~/.local/share/ublue-os/brew-preinstall-state.json`)
+- The brew-preinstall journal log (success path, hash, packages installed/removed)
+- Whether the service ran successfully vs was skipped (brew not installed)
 
-### Adding a package to the default set
-
-1. Add a `brew "<name>"` line to
-   `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
-   in `projectbluefin/common`.
-2. Open a PR. No version bumping, no manual trigger — the content-addressed
-   hash check in `brew-preinstall` detects the change automatically.
-3. On the next login after the OS update, every user gets the package installed.
-
-### Removing a package from the default set
-
-1. Remove the `brew "<name>"` line from the Brewfile.
-2. Open a PR.
-3. On next login, `brew-preinstall` diffs the previous managed package list
-   against the current one and uninstalls packages that were dropped.
-   Packages the user installed outside of the managed set are never touched.
-
-### Adding a variant-specific Brewfile
-
-Downstream repos (bluefin, bluefin-lts, dakota) can ship their own
-Brewfiles by dropping `*.Brewfile` files into the same `preinstall.d/`
-directory. All `*.Brewfile` files in the directory are installed and
-tracked together.
+To add brew-preinstall health to bonedigger-report, append to the summary block
+in `system_files/bluefin/usr/libexec/bonedigger-report`:
+```bash
+BREW_STATE="$(cat ~/.local/share/ublue-os/brew-preinstall-state.json 2>/dev/null || echo 'state file absent')"
+BREW_SVC_STATUS="$(systemctl --user is-active brew-preinstall.service 2>/dev/null || echo unknown)"
+BREW_SVC_LOG="$(journalctl --user -u brew-preinstall.service --no-pager -n 20 2>/dev/null || true)"
+```
+Then include these in the report markdown. This would let maintainers see at
+a glance whether the service ran, which hash it applied, and what it installed.
 
 ---
 
-## How the service works
+## Opt-in Brewfiles (ujust bbrew)
 
-**State file:** `~/.local/share/ublue-os/brew-preinstall-state.json`
-```json
-{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...] }
-```
+These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
+`preinstall.d/`) and are only installed when the user explicitly runs
+`ujust bbrew` and picks from the menu:
 
-**On every login:**
-1. Hash all `preinstall.d/*.Brewfile` files combined.
-2. Compare to stored hash. If identical → fast exit, no brew invoked.
-3. If different: run `brew bundle --file=` on each Brewfile (idempotent).
-4. Diff previous managed package list against current. Uninstall removed packages.
-5. Write new hash + package list to state file.
+- `ai-tools.Brewfile`
+- `artwork.Brewfile`
+- `cli.Brewfile`
+- `cncf.Brewfile`
+- `experimental-ide.Brewfile`
+- `fonts.Brewfile`
+- `ide.Brewfile`
+- `k8s-tools.Brewfile`
+- `swift.Brewfile`
 
-**Key design property:** the service is content-addressed, not version-numbered.
-Never bump a version counter to propagate a Brewfile change — just edit the
-Brewfile. The hash change triggers the re-run automatically.
+Bluefin-specific (in `system_files/bluefin/`):
+- `full-desktop.Brewfile` — GNOME Circle + community flatpaks
 
-**State write is atomic:** the script writes to `${STATE_FILE}.tmp` then
-`mv -f` renames it into place. This ensures the state file is never
-partially written if the process is killed mid-run. Do not revert to a
-direct `> "${STATE_FILE}"` write — corrupt state causes a full re-run on
-next login (slow but safe), and that is the only failure mode worth avoiding
-without sacrificing simplicity.
+These are validated by the `validate-brewfiles.yaml` CI workflow on every PR
+that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
 
 ---
 
@@ -123,8 +251,7 @@ and must never be suggested as a workaround for missing packages.
   system interact with the live OS in ways that differ from the build-time
   installation path, producing unreproducible system state.
 
-**If a use case requires a package with system integration (PAM modules,
-NSS modules, system daemons, udev rules):**
+**If a use case requires a package with system integration:**
 - Bake it into the image via `FEDORA_PACKAGES` in `build_files/base/03-packages.sh` — or
 - Accept that the use case is not supported on stock Bluefin and direct the user
   to a downstream custom image.
@@ -203,10 +330,9 @@ present in the image they consume.
 
 ---
 
-## Enabled by default
+## Path convention
 
-`brew-preinstall.service` is enabled globally via
-`usr/lib/systemd/user-preset/01-brew-preinstall.preset` in common.
-Downstream repos do **not** need `systemctl --global enable` calls.
-The service only runs when brew is installed at
-`/var/home/linuxbrew/.linuxbrew/bin/brew`.
+Keep the real implementation in `/usr/libexec/brew-preinstall` and leave
+`/usr/bin/brew-preinstall` as a thin compatibility wrapper. This matches
+the bootc/FHS split: internal image helpers in `/usr/libexec`, user-facing
+commands in `/usr/bin`, static Brewfiles in `/usr/share`.

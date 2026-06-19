@@ -48,7 +48,7 @@ echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 # Install all packages declared in Brewfiles (brew bundle is idempotent)
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
-    brew bundle --file="${brewfile}" --no-lock
+    brew bundle --file="${brewfile}"
 done
 
 # Uninstall packages removed from our managed set (OS diet).

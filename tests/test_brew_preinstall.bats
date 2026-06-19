@@ -135,12 +135,11 @@ teardown() {
     grep -q "brew bundle" "${WORKDIR}/brew.log"
 }
 
-@test "brew-preinstall: passes --file and --no-lock to brew bundle" {
+@test "brew-preinstall: passes --file to brew bundle" {
     echo 'brew "fd"' > "${WORKDIR}/preinstall.d/tools.Brewfile"
 
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -q "\-\-no-lock" "${WORKDIR}/brew.log"
     grep -q "\-\-file=" "${WORKDIR}/brew.log"
 }
 

@@ -1,8 +1,6 @@
 brew "fzf"
 brew "glow"
 brew "htop"
-brew "inxi"
-brew "nvtop"
 brew "rclone"
 brew "restic"
 brew "smartmontools"
