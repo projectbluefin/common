@@ -198,3 +198,21 @@ jobs:
           image-name: common
           certificate-identity-regexp: >-
             ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/
+
+      - name: Get mergeraptor token for cross-repo dispatch
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          owner: projectbluefin
+          repositories: dakota
+
+      - name: Dispatch common-updated to dakota
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/projectbluefin/dakota/dispatches \
+            -X POST \
+            -f event_type=common-updated \
+            -f '{"client_payload":{"sha":"${{ github.sha }}"}}'
