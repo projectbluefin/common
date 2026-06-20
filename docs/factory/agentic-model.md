@@ -32,6 +32,18 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 
 **Prefer the smallest change that fully satisfies the requirement.** Only add indirection or generalization when a concrete requirement demands it. Resist scope creep — if it was not asked for, don't add it.
 
+## What "autonomous" means for promotions
+
+The factory is autonomous **up to the promotion PR**. For bluefin, bluefin-lts, and dakota:
+
+1. Builds fire automatically (push to `testing` / Renovate digest bump / daily cron)
+2. Post-build E2E runs automatically
+3. On E2E pass, `promote-testing-to-main.yml` opens/updates a squash PR automatically
+4. The release gate cosign-verifies and labels the PR `release/ready` automatically
+5. **A maintainer merges the PR.** This is a deliberate human checkpoint.
+
+Do not report the factory as broken because a promotion PR is open and waiting. Do not report it as autonomous if the PR is not merging. The correct status is: "promotion PR open, awaiting maintainer merge."
+
 ## Branch targets
 
 | Repo | PR target | Notes |

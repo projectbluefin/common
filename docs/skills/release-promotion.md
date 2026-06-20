@@ -195,7 +195,11 @@ Both bluefin and dakota run with `run_e2e: false` in their `promote-testing-to-m
 
 ### Approval
 
-The promotion PR requires **2 reviews from `@projectbluefin/maintainers`** (enforced by merge queue / branch protection). The `github-actions[bot]` token cannot self-approve — at least one human must approve before the PR can be enqueued.
+The promotion PR requires **at least one human `lgtm`** from `@projectbluefin/maintainers` (enforced by merge queue / branch protection in bluefin and bluefin-lts). The `github-actions[bot]` token cannot self-approve.
+
+**This is by design.** The factory is autonomous up to the promotion PR — it builds, tests, cosign-verifies, and opens a clean squash PR automatically. The final merge is a human checkpoint, not a failure of the automation.
+
+Agents must not report the factory as "broken" or "not autonomous" because promotion PRs require a maintainer review. The automation's job ends at: PR open, E2E green, gate passing, `release/ready` label set. From there, a maintainer merges.
 
 `workflow_dispatch` is available on all three `promote-testing-to-main.yml` workflows for out-of-band promotion attempts.
 
