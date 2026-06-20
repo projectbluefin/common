@@ -353,6 +353,42 @@ Strategy:
 - Or call it **immediately** after phase transitions to Succeeded
 - If logs are already gone, re-submit a fresh log-scan workflow
 
+## Known issue: collect-evidence SSH hangs
+
+**Template:** `bluefin-migration-test:collect-evidence` — used as an evidence-collection step in
+some pipelines.
+
+**Symptom:** The step runs for 10+ minutes without log output and eventually hits its
+`activeDeadlineSeconds: 900` deadline, killing the pod and failing the workflow.
+
+**Root cause:** The Python script inside `collect-evidence` uses `subprocess.run()` WITHOUT
+a `timeout=` parameter for every SSH call. If any SSH command hangs on the VM (e.g.,
+`loginctl status` waiting for a GDM session that's still starting, `bootc status` while
+ostree is initialising, or `journalctl` on a large journal), the subprocess blocks
+indefinitely. Since there is no `timeout=`, the Python process never returns from that call.
+The step only dies when Kubernetes kills the pod after `activeDeadlineSeconds` seconds.
+
+**Impact:** Workflows that use `collect-evidence` as a sequential step block the entire DAG
+for up to 15 minutes before the step is killed. All downstream tasks (toggle, reboot,
+verify) never execute.
+
+**Fix applied in `toggle-testing-rebase`:** The `verify-bootc-state` inline template
+(which replaced `collect-evidence` in the toggle pipeline) adds `timeout=<N>` to every
+`subprocess.run()` call:
+```python
+subprocess.run(["dnf", "install", ...], timeout=120)
+remote("sudo bootc status --json", timeout=45)
+remote("cat /usr/share/ublue-os/image-info.json", timeout=15)
+remote("systemctl --failed --no-pager", timeout=15)
+```
+
+**Upstream fix needed:** `projectbluefin/testing-lab` — add `timeout=` to all
+`subprocess.run()` calls in the `collect-evidence` script template. Filed as a lab issue.
+
+**Workaround for existing workflows using collect-evidence:** Set `continueOn: {failed: true}`
+on the collect-evidence step so a timeout doesn't block downstream tasks. Or replace the
+step with a focused inline `verify-bootc-state` template.
+
 ## Observed disk check behaviour
 
 The `bib-disk-check` step uses `skopeo inspect` to compare the live image digest
