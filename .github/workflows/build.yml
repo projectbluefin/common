@@ -233,17 +233,15 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh api repos/projectbluefin/bluefin/dispatches \
+          gh api repos/projectbluefin/bluefin/actions/workflows/track-common.yml/dispatches \
             -X POST \
-            -f event_type=common-updated \
-            -f 'client_payload={"sha":"${{ github.sha }}"}'
+            -F ref=testing
 
       - name: Dispatch common-updated to bluefin-lts
         continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh api repos/projectbluefin/bluefin-lts/dispatches \
+          gh api repos/projectbluefin/bluefin-lts/actions/workflows/track-common.yml/dispatches \
             -X POST \
-            -f event_type=common-updated \
-            -f 'client_payload={"sha":"${{ github.sha }}"}'
+            -F ref=testing
