@@ -219,6 +219,7 @@ jobs:
             bluefin-lts
 
       - name: Dispatch common-updated to dakota
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -228,6 +229,7 @@ jobs:
             -f 'client_payload={"sha":"${{ github.sha }}"}'
 
       - name: Dispatch common-updated to bluefin
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -237,6 +239,7 @@ jobs:
             -f 'client_payload={"sha":"${{ github.sha }}"}'
 
       - name: Dispatch common-updated to bluefin-lts
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
