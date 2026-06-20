@@ -25,16 +25,20 @@ metadata:
 
 ## Build stages
 
-The Containerfile uses two named stages:
+The Containerfile uses three named stages:
 
 ```
-FROM alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
+FROM golang:alpine AS motd-build
+  └─ git clone projectbluefin/motd@v0.2.1
+  └─ go build -ldflags="-s -w" -o /umotd
+
+FROM alpine:latest AS build
   └─ downloads + builds artifacts into /out/{shared,bluefin}/
        ├─ wallpapers
        ├─ ujust completions (generated from just binary)
        ├─ game-devices-udev rules
        ├─ U2F udev rules
-       └─ umotd binary
+       └─ COPY --from=motd-build /umotd /out/shared/usr/bin/umotd
 
 FROM scratch AS ctx
   └─ COPY /system_files/* into layered paths
@@ -42,6 +46,23 @@ FROM scratch AS ctx
 ```
 
 The final `ctx` stage is a scratch image — it contains only the file tree that downstream image builds overlay onto their base. There is no executable entry point.
+
+**`motd-build` stage — Go compiler for umotd:**
+
+`umotd` is built from source from `projectbluefin/motd` using a Go builder stage.
+Do NOT download a pre-built binary — use the builder stage pattern:
+
+```dockerfile
+FROM docker.io/library/golang:alpine@sha256:... AS motd-build
+RUN apk add git && git clone --depth 1 --branch v<VERSION> \
+    https://github.com/projectbluefin/motd /src
+WORKDIR /src
+RUN go build -ldflags="-s -w" -o /umotd .
+```
+
+Then in the `build` stage: `COPY --from=motd-build /umotd /out/shared/usr/bin/umotd`
+
+When updating the motd version: change the `--branch` tag in the Go stage.
 
 ---
 
@@ -88,6 +109,8 @@ RUN curl -fsSLo /path/to/binary https://... && \
     echo "<sha256>  /path/to/binary" | sha256sum -c && \
     chmod +x /path/to/binary
 ```
+
+**Prefer a builder stage over curl downloads.** `umotd` was originally curl-downloaded with a SHA pin; it was migrated to a Go builder stage so no pre-built binary is fetched from an external release. Use builder stages for any first-party binary that can be compiled from source.
 
 **Never add a `curl` download without a paired `sha256sum -c` check.** CI shellcheck will not catch missing SHA checks; this is a supply chain gate enforced by code review.
 
