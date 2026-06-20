@@ -49,29 +49,6 @@ Neither replaces the other. Lab tests run on demand; E2E runs on every push.
 | SSH key secret | `bluefin-test-ssh-key` in `argo` namespace |
 | SSH user | `bluefin-test` |
 
-## Operating model — MCP and Argo only
-
-**All cluster operations go through the `argo_*` and `k8s_*` pi tools or the
-in-cluster MCP server. No SSH to ghost, no raw `kubectl` for routine work.**
-
-| Task | Tool |
-|---|---|
-| Submit workflows | `argo_submit_workflow namespace=argo` |
-| Check workflow status | `argo_get_workflow name=<n> namespace=argo` |
-| Stream logs | `argo_logs_workflow name=<n> namespace=argo` |
-| List pods / VMs | `k8s_pods_list namespace=<ns>` / `k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance` |
-| Health check | `argo_list_workflows namespace=argo` |
-
-The `argo_*` and `k8s_*` tools are pi extensions. They connect to `192.168.1.102:6443`
-directly. If they show `offline` after a ghost reboot, run `/argo-reconnect` and
-`/k8s-reconnect` — no `/reload` needed.
-
-Break-glass (`kubectl` with `~/.kube/bluespeed.yaml` or SSH) is only permitted
-for cluster bootstrap and emergency recovery when MCP is unavailable. Document why.
-
-Full cluster operating model and reboot runbook: `projectbluefin/testing-lab` →
-`docs/cluster-ops.md`.
-
 **Critical networking rule:** log-collection and test pods MUST set
 `nodeSelector: kubernetes.io/hostname: ghost`. KubeVirt masquerade NAT iptables
 rules live in the virt-launcher pod netns. A pod on `exo-1` cannot reach VM IPs.
@@ -107,12 +84,20 @@ Submit bluefin, lts, and dakota simultaneously — bluefin will finish first
 Log-scan workflows run automatically (nightly and from CI). Before submitting a
 new one, check if a recent run already has the data you need:
 
-```
-argo_list_workflows namespace=argo
+```bash
+# kubectl is available on the local machine — use it to list + sort by age
+kubectl get workflows -n argo --sort-by='.metadata.creationTimestamp' -o json \
+  | python3 -c "
+import json, sys
+for w in sorted(json.load(sys.stdin)['items'],
+                key=lambda x: x['metadata'].get('creationTimestamp',''),
+                reverse=True)[:20]:
+    print(w['status'].get('phase','?'), w['metadata']['creationTimestamp'], w['metadata']['name'])
+"
 ```
 
-This returns a count and recent workflow names. Use `argo_get_workflow name=<n> namespace=argo`
-to get detail and status on any specific workflow.
+`argo_list_workflows` returns a count but not names — use the kubectl command
+above to get actual workflow names. `argo_get_workflow` then resolves the detail.
 
 ### Polling — do NOT use argo_wait_workflow
 
@@ -195,17 +180,16 @@ downstream image that broke a bootc/systemd contract. Prioritize over feature wo
 Before submitting heavy lab workflows, verify headroom:
 
 ```
-argo_list_workflows namespace=argo
-k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance namespace=bluefin-test
-k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance namespace=bluefin-lts-test
+# NOTE: k8s_nodes_top is NOT available — metrics API absent on this cluster.
+# Use kubectl for node resource view:
+bash: kubectl top nodes 2>/dev/null || kubectl describe nodes | grep -A5 Allocated
+
+argo_list_workflows namespace=argo       # active builds (returns count only — see kubectl command above for names)
+k8s_resources_list apiVersion=kubevirt.io/v1 kind=VirtualMachineInstance  # running VMs (all namespaces)
 ```
 
 The `ghost-heavy-compute` mutex serialises BST and BIB build steps.
-If a nightly or PR build is running, the BST step will queue automatically.
-
-**Dakota BST workloads take priority** — do not submit a manual dakota workflow
-if a BST build is already running. The mutex queues them safely, but two
-back-to-back BST builds can lock out all other heavy compute for 20–50 minutes.
+If a nightly or PR build is running, the BST step will queue.
 
 ## Log retrieval timing — critical
 
