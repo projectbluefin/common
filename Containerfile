@@ -23,10 +23,10 @@ RUN curl -fsSLo tmp/game-devices-udev-1.0.tar.gz https://codeberg.org/fabiscafe/
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
-RUN install -d /out/bluefin/usr/bin && \
-    curl -fsSLo /out/bluefin/usr/bin/umotd https://github.com/theMimolet/umotd/releases/download/v0.2.1/umotd_0.2.1_linux_amd64 && \
-    echo "2cd5a07344f553e590b432aa5b3a07c5cbd055487468d33514130ae5f05ba02e  /out/bluefin/usr/bin/umotd" | sha256sum -c && \
-    chmod +x /out/bluefin/usr/bin/umotd
+RUN install -d /out/shared/usr/bin && \
+    curl -fsSLo /out/shared/usr/bin/umotd https://github.com/projectbluefin/motd/releases/download/v0.2.1/umotd_0.2.1_linux_amd64 && \
+    echo "7f75e9c2f440448f7f23e8ae3b108d274a96bbc50aaba52776f35c00260e1e49  /out/shared/usr/bin/umotd" | sha256sum -c && \
+    chmod +x /out/shared/usr/bin/umotd
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
