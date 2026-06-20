@@ -29,6 +29,13 @@ UBLUE_PATTERN = re.compile(r"ghcr\.io/ublue-os/")
 UBLUE_EXCEPTIONS = {
     "Containerfile",   # build-time COPY of wallpapers — not a runtime ref
 }
+# Legitimate read-only upstream ublue-os sources that are not migration targets.
+# These are build-time or upstream kernel dependencies, not projectbluefin images.
+UBLUE_ALLOWED_UPSTREAMS = {
+    "ghcr.io/ublue-os/bluefin-wallpapers-gnome",  # build-time wallpaper artwork source
+    "ghcr.io/ublue-os/akmods-nvidia-open",         # upstream NVIDIA kernel modules
+    "ghcr.io/ublue-os/akmods-extra",               # upstream extra kernel modules
+}
 
 ublue_violations = []
 for path in list(Path(".github/workflows").rglob("*.yml")) + \
@@ -43,6 +50,9 @@ for path in list(Path(".github/workflows").rglob("*.yml")) + \
         continue
     for lineno, line in enumerate(text.splitlines(), start=1):
         if UBLUE_PATTERN.search(line):
+            # Skip lines that only reference known legitimate upstream ublue-os sources
+            if any(allowed in line for allowed in UBLUE_ALLOWED_UPSTREAMS):
+                continue
             ublue_violations.append(f"{path}:{lineno}: {line.strip()}")
 
 if ublue_violations:
