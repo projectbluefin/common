@@ -198,3 +198,49 @@ jobs:
           image-name: common
           certificate-identity-regexp: >-
             ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/
+
+  notify-downstream:
+    name: Notify downstream (dakota, bluefin, bluefin-lts)
+    needs: [manifest]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Get mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          owner: projectbluefin
+          repositories: |
+            dakota
+            bluefin
+            bluefin-lts
+
+      - name: Dispatch common-updated to dakota
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/projectbluefin/dakota/dispatches \
+            -X POST \
+            -f event_type=common-updated \
+            -f 'client_payload={"sha":"${{ github.sha }}"}'
+
+      - name: Dispatch common-updated to bluefin
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/projectbluefin/bluefin/dispatches \
+            -X POST \
+            -f event_type=common-updated \
+            -f 'client_payload={"sha":"${{ github.sha }}"}'
+
+      - name: Dispatch common-updated to bluefin-lts
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/projectbluefin/bluefin-lts/dispatches \
+            -X POST \
+            -f event_type=common-updated \
+            -f 'client_payload={"sha":"${{ github.sha }}"}'
