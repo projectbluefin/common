@@ -403,6 +403,29 @@ against the golden disk. Two outcomes observed:
 `skopeo inspect` can fail transiently on rate limits or network hiccups — this
 treats the disk as stale and triggers a rebuild, adding ~10 min. Expected occasionally.
 
+## Known issue: BIB disk builds fail for bluefin-lts and dakota — SELinux PCRE2 mismatch
+
+**Tracking:** [testing-lab#220](https://github.com/projectbluefin/testing-lab/issues/220)
+
+**Symptom:** `bib-img-build` exits with code 1 within ~15 seconds:
+```
+setfiles: file_contexts.bin: Regex version mismatch, expected: 10.46 2025-08-27 actual: 10.44 2024-06-07
+setfiles: Could not set context for kdump-dep-generator.sh: Invalid argument
+CalledProcessError: setfiles returned non-zero exit status 255
+```
+
+**Root cause:** `quay.io/centos-bootc/bootc-image-builder:latest` ships `setfiles`/PCRE2 10.44.
+`bluefin-lts:testing`, `bluefin-lts:lts`, and the dakota BST image ship an SELinux policy
+compiled for PCRE2 10.46. The version mismatch causes `org.osbuild.selinux` to fail.
+
+**Affected:** All `bluefin-lts-*` and `dakota-qa-*` golden disk builds.
+**Unaffected:** `bluefin:testing` and `bluefin:stable` (older SELinux policy, PCRE2 10.44 compatible).
+
+**Fix:** Update `bib-img-build` WorkflowTemplate to a newer `bootc-image-builder` image
+that ships PCRE2 ≥ 10.46. Until fixed, skip all LTS and dakota lab tests that require BIB.
+
+**Workaround:** None available server-side. `bluefin` (non-LTS) tests still work.
+
 ## BST build timing (dakota)
 
 The BST build (freedesktop-sdk + dakota) takes:
