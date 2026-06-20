@@ -17,7 +17,7 @@ jobs:
   # Guard: only release when triggered by schedule/dispatch, or when E2E just turned green and a release is due
   check-release-cadence:
     name: Check release cadence
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     timeout-minutes: 5
     permissions:
       contents: read
@@ -67,7 +67,7 @@ jobs:
     name: Verify promotion criteria
     needs: [check-release-cadence]
     if: needs.check-release-cadence.outputs.due == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     timeout-minutes: 5
     outputs:
       safe: ${{ steps.check.outputs.safe }}
@@ -114,7 +114,7 @@ jobs:
     name: Create monthly snapshot release
     needs: [check-release-cadence, check-promotion-criteria]
     if: needs.check-promotion-criteria.outputs.safe == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -179,7 +179,7 @@ jobs:
     name: Skip notification
     needs: [check-release-cadence, check-promotion-criteria]
     if: needs.check-promotion-criteria.outputs.safe != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     timeout-minutes: 2
     steps:
       - name: Log skip reason

@@ -140,7 +140,7 @@ jobs:
     name: Create and sign multi-arch manifest
     needs: [build_push]
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ghost-runners
     permissions:
       packages: write
       id-token: write      # keyless cosign signing via OIDC
@@ -204,7 +204,7 @@ jobs:
     needs: [manifest]
     if: github.event_name != 'pull_request'
     continue-on-error: true
-    runs-on: ubuntu-24.04
+    runs-on: ghost-runners
     permissions: {}
     steps:
       - name: Get mergeraptor token

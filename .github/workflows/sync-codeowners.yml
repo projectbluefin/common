@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     steps:
       - name: Require mergeraptor secrets
         run: |

@@ -23,7 +23,7 @@ env:
 jobs:
   compose:
     name: Compose PR test image
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     permissions:
       contents: read
       packages: write
