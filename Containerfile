@@ -1,7 +1,7 @@
 FROM docker.io/library/golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS motd-build
 RUN apk add git && \
-    git clone --depth 1 --branch v0.2.1 \
-      https://github.com/projectbluefin/motd /src
+    git clone https://github.com/projectbluefin/motd /src && \
+    git -C /src checkout 405e86c532aed42931b2d398e2761c24b70e978c
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
