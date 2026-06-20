@@ -212,11 +212,6 @@ jobs:
         with:
           app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
           private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
-          owner: projectbluefin
-          repositories: |
-            dakota
-            bluefin
-            bluefin-lts
 
       - name: Dispatch common-updated to dakota
         continue-on-error: true
