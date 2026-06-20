@@ -203,6 +203,7 @@ jobs:
     name: Notify downstream (dakota, bluefin, bluefin-lts)
     needs: [manifest]
     if: github.event_name != 'pull_request'
+    continue-on-error: true
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
