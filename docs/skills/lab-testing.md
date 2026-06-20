@@ -389,6 +389,48 @@ remote("systemctl --failed --no-pager", timeout=15)
 on the collect-evidence step so a timeout doesn't block downstream tasks. Or replace the
 step with a focused inline `verify-bootc-state` template.
 
+## Argo `workflowTemplateRef` resolves at submission time — not lazily
+
+**Critical for lab ops:** When a Workflow uses `workflowTemplateRef`, Argo snapshots the
+WorkflowTemplate at **submission time**. If you update the WorkflowTemplate after submission,
+already-submitted workflows continue using the old definition — even for steps that haven’t
+started yet.
+
+This means:
+- Fixing a bug in a WorkflowTemplate does NOT fix in-flight workflows submitted before the fix
+- You must stop and resubmit to pick up the new template
+- Applies to both cluster WorkflowTemplates and top-level `workflowTemplateRef`
+
+**Symptom:** You update a template to remove a broken step (e.g. `collect-evidence`), resubmit
+a workflow, but the workflow still runs the broken step — because it was submitted before the
+template was updated.
+
+**Workaround:** Always stop stuck old workflows (`argo_stop_workflow`) before resubmitting.
+Verify the new workflow started AFTER the template update by checking `startedAt` in
+`argo_get_workflow` vs. the template’s `resourceVersion`.
+
+## toggle-testing-rebase and migration-upgrade-test only live on cluster
+
+During this session, two WorkflowTemplates were created ad-hoc and applied to the ghost
+cluster but are **not yet in the testing-lab GitOps repo**:
+
+- `toggle-testing-rebase` — provision + toggle + reboot + verify, both directions
+- `migration-upgrade-test` — ensure-disk from ublue-os image + provision + migration-sequence
+
+Argo CD will NOT overwrite these (no conflicting GitOps definition exists), but they are not
+managed and will be lost if the cluster is reset. File a PR to testing-lab to add them to
+`argo/workflow-templates/`. See testing-lab#220 tracker thread for context.
+
+## ublue-os image package inventory
+
+Only two container packages exist under `ublue-os` on GHCR:
+- `ghcr.io/ublue-os/bluefin:latest` — main non-NVIDIA
+- `ghcr.io/ublue-os/bluefin-nvidia:latest` — NVIDIA variant
+
+There is NO `ublue-os/bluefin-lts` or LTS NVIDIA package. LTS-to-projectbluefin migration
+testing is not possible from a ublue-os source image. Migration tests only cover the main
+and NVIDIA variants.
+
 ## Observed disk check behaviour
 
 The `bib-disk-check` step uses `skopeo inspect` to compare the live image digest
