@@ -1,6 +1,6 @@
 ---
 name: brew-lifecycle
-description: "Manage OS-managed Homebrew packages via brew-preinstall, preinstall.d, tap trust, and image-vs-brew placement rules. Use when adding/removing default brew packages or changing brew-preinstall."
+description: "Manage OS-managed Homebrew packages via brew-preinstall, preinstall.d, tap trust, and image-vs-brew placement rules. Use when adding/removing default brew packages, moving a tool from the RPM image to brew, changing brew-preinstall behaviour, or auditing what belongs on the image vs in brew."
 metadata:
   context7-sources:
     - /bootc-dev/bootc
@@ -11,6 +11,23 @@ metadata:
 How to add, remove, and manage system-default Homebrew packages across
 the Bluefin factory. Covers the brew-preinstall service, the preinstall.d
 pattern, and the rules for what can and cannot move to brew.
+
+---
+
+## When to Use
+
+- Adding or removing a package from `preinstall.d/system-cli.Brewfile`
+- Moving a self-contained CLI tool off the RPM image and into brew
+- Adding or removing a tap (`trusted: true` requirements, Brewfile syntax)
+- Debugging a failed or skipped `brew-preinstall.service`
+- Deciding whether a new tool belongs on the image or in a Brewfile
+- Auditing image diet (removing dead-weight packages from bluefin/lts/dakota)
+
+## When NOT to Use
+
+- Installing system-level packages (udev rules, kernel modules, daemons, firmware): those stay on the image as RPMs regardless
+- `rpm-ostree install` is never the answer — see the rule below
+- Adding user-installed (opt-in) packages: those go in the opt-in Brewfiles (`cli.Brewfile`, `cncf.Brewfile`, etc.), not `preinstall.d/`
 
 ---
 
@@ -336,3 +353,25 @@ Keep the real implementation in `/usr/libexec/brew-preinstall` and leave
 `/usr/bin/brew-preinstall` as a thin compatibility wrapper. This matches
 the bootc/FHS split: internal image helpers in `/usr/libexec`, user-facing
 commands in `/usr/bin`, static Brewfiles in `/usr/share`.
+
+---
+
+## Red Flags
+
+- Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
+- Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
+- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
+- Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
+- Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`
+
+## Verification
+
+After any change to `preinstall.d/` or `brew-preinstall`:
+
+- [ ] Package obeys the "can move to brew" rule: self-contained CLI, no system-level deps
+- [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
+- [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
+- [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
+- [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login
+- [ ] Merging order followed if the change spans repos: common → bluefin → bluefin-lts → dakota
