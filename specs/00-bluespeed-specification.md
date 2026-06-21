@@ -427,7 +427,7 @@ The pre-built vector store (embeddings + chunks + metadata) is published as an O
 
 ```bash
 # Built by CI, pulled by users
-podman pull ghcr.io/ublue-os/bluefin-knowledge:latest
+podman pull ghcr.io/projectbluefin/bluefin-knowledge:latest
 ```
 
 ### Knowledge Pipeline CI
@@ -463,7 +463,7 @@ graph TD
     end
 
     subgraph Publish["4. Publish"]
-        OCI["OCI artifact<br/>ghcr.io/ublue-os/<br/>bluefin-knowledge:latest"]
+        OCI["OCI artifact<br/>ghcr.io/projectbluefin/<br/>bluefin-knowledge:latest"]
         MANIFEST["Updated manifest<br/>(chunk hashes)"]
     end
 
@@ -643,8 +643,8 @@ jobs:
 
       - name: Pull previous manifest
         run: |
-          podman pull ghcr.io/ublue-os/bluefin-knowledge:latest || true
-          podman cp $(podman create ghcr.io/ublue-os/bluefin-knowledge:latest):/manifest.json ./prev-manifest.json || echo '{}' > prev-manifest.json
+          podman pull ghcr.io/projectbluefin/bluefin-knowledge:latest || true
+          podman cp $(podman create ghcr.io/projectbluefin/bluefin-knowledge:latest):/manifest.json ./prev-manifest.json || echo '{}' > prev-manifest.json
 
       - name: Crawl sources
         run: bluespeed-ingest crawl --sources sources.yaml --output ./raw/
@@ -665,15 +665,15 @@ jobs:
 
       - name: Push OCI artifact
         run: |
-          podman build -t ghcr.io/ublue-os/bluefin-knowledge:latest \
+          podman build -t ghcr.io/projectbluefin/bluefin-knowledge:latest \
             -f Containerfile.knowledge .
-          podman push ghcr.io/ublue-os/bluefin-knowledge:latest
+          podman push ghcr.io/projectbluefin/bluefin-knowledge:latest
 
       - name: Tag with date
         run: |
-          podman tag ghcr.io/ublue-os/bluefin-knowledge:latest \
-            ghcr.io/ublue-os/bluefin-knowledge:$(date +%Y%m%d)
-          podman push ghcr.io/ublue-os/bluefin-knowledge:$(date +%Y%m%d)
+          podman tag ghcr.io/projectbluefin/bluefin-knowledge:latest \
+            ghcr.io/projectbluefin/bluefin-knowledge:$(date +%Y%m%d)
+          podman push ghcr.io/projectbluefin/bluefin-knowledge:$(date +%Y%m%d)
 ```
 
 #### User-Side Update Flow
@@ -682,7 +682,7 @@ Users don't interact with the pipeline. The knowledge base updates alongside eve
 
 ```mermaid
 graph LR
-    CI["GitHub Actions<br/>(daily build)"] -->|push| GHCR["ghcr.io/ublue-os/<br/>bluefin-knowledge:latest"]
+    CI["GitHub Actions<br/>(daily build)"] -->|push| GHCR["ghcr.io/projectbluefin/<br/>bluefin-knowledge:latest"]
     GHCR -->|podman auto-update<br/>or system update| LOCAL["User's local<br/>knowledge.db"]
     LOCAL -->|query| MCP["bluefin-mcp"]
 
@@ -838,7 +838,7 @@ Semantic search across the full knowledge base. Use for conceptual, explanatory,
 {
   "results": [
     {
-      "chunk_text": "## Switching Streams\n\nUse `bootc switch` to change streams:\n\n```\nsudo bootc switch ghcr.io/ublue-os/bluefin:stable --enforce-container-sigpolicy\n```",
+      "chunk_text": "## Switching Streams\n\nUse `bootc switch` to change streams:\n\n```\nsudo bootc switch ghcr.io/projectbluefin/bluefin:stable --enforce-container-sigpolicy\n```",
       "source_name": "bluefin-docs",
       "source_url": "https://docs.projectbluefin.io/administration#switching-streams",
       "section": "Update Streams — Switching Streams",
@@ -2914,7 +2914,7 @@ bluespeed-ingest \
   --output bluefin-knowledge.db
 
 # Publish as OCI artifact
-podman push bluefin-knowledge.db ghcr.io/ublue-os/bluefin-knowledge:latest
+podman push bluefin-knowledge.db ghcr.io/projectbluefin/bluefin-knowledge:latest
 ```
 
 The `sources.yaml` defines what to ingest:
