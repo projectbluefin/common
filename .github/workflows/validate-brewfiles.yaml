@@ -28,9 +28,8 @@ jobs:
             echo "::group:: ===$(basename "$brewfile")==="
 
             echo "Syncing taps..."
-            grep -E -e "^tap" "$brewfile" | sed -E 's/tap "([^"]+)".*/\1/' | while read -r tap_name; do
-              brew tap --trust "$tap_name" > /dev/null 2>&1 || true
-            done
+            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
+            brew bundle --file=./taps.Brewfile > /dev/null 2>&1 || true
 
             # Extract combined list for parallel check
             FORMULAS=$(grep -E '^\s*brew\s+["'\'']' "$brewfile" | sed -E 's/^\s*brew\s+["'\'']([^"'\'']+)["'\''].*/formula \1/' || true)
@@ -56,6 +55,8 @@ jobs:
 
             echo "::endgroup::"
           done < <(find "system_files/shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0)
+
+          rm -f taps.Brewfile
 
           if grep -q "FAIL" "$STATUS_FILE"; then
             echo "Validation complete. Some Brewfiles FAILED."
