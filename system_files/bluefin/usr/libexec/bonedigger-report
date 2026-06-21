@@ -7,6 +7,8 @@ OTEL_CONFIG_SOURCE="/usr/share/ublue-os/otel/ujust-report-config.yaml"
 REPORT_ROOT="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}/ujust-report"
 mkdir -p "$REPORT_ROOT"
 REPORT_DIR="$(mktemp -d "${REPORT_ROOT}/report-XXXXXX")"
+LOCAL_REPORT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report"
+LOCAL_REPORT_DIR=""
 OTEL_CONFIG=""
 OTEL_STDERR=""
 HAS_OTEL=0
@@ -17,6 +19,19 @@ cleanup() {
     [[ -n "$OTEL_STDERR" ]] && rm -f "$OTEL_STDERR"
 }
 trap cleanup EXIT
+
+persist_local_copy() {
+    local file
+
+    LOCAL_REPORT_DIR="${LOCAL_REPORT_ROOT}/last"
+    rm -rf "$LOCAL_REPORT_DIR"
+    mkdir -p "$LOCAL_REPORT_DIR"
+
+    for file in summary.md journal.txt metrics.otlp.jsonl logs.otlp.jsonl; do
+        [[ -f "$REPORT_DIR/$file" ]] || continue
+        cp -f "$REPORT_DIR/$file" "$LOCAL_REPORT_DIR/$file"
+    done
+}
 
 echo ""
 gum style \
@@ -501,6 +516,14 @@ gum style \
     "✓ Report uploaded"
 gum style --margin "0 2" "$GIST_URL"
 echo ""
+
+if ! persist_local_copy; then
+    gum style --foreground 214 --margin "0 2" \
+        "Optional local copy could not be saved; the gist upload succeeded."
+else
+    gum style --foreground 245 --margin "0 2" \
+        "Local copy kept at: $LOCAL_REPORT_DIR/"
+fi
 
 ENCODED_URL="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$GIST_URL" 2>/dev/null || printf '%s' "$GIST_URL" | sed 's|:|%3A|g; s|/|%2F|g; s|@|%40|g')"
 ISSUE_JOINER='&'

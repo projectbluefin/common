@@ -79,3 +79,13 @@ bonedigger’s `sync-templates.yml` continues to propagate issue templates to fa
 bonedigger's `sync-templates.yml` propagates issue templates from `bonedigger/templates/` to factory repos.
 
 Requires `MERGERAPTOR_APP_ID` (var) and `MERGERAPTOR_PRIVATE_KEY` (secret) on the bonedigger repo. PAT-based auth was replaced with mergeraptor app token in bonedigger#21.
+
+## Lessons Learned
+
+### Persist local report copies before cleanup (2026-06-20)
+
+`/usr/libexec/bonedigger-report` builds its gist payload inside a temporary report
+directory and removes that directory via `trap cleanup EXIT`. Any optional local
+copy (`summary.md`, `journal.txt`, OTEL attachments) must be copied to a stable
+location before the script exits, and copy failures must never abort a
+successful gist upload.
