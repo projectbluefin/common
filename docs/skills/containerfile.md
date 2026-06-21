@@ -54,15 +54,17 @@ Do NOT download a pre-built binary — use the builder stage pattern:
 
 ```dockerfile
 FROM docker.io/library/golang:alpine@sha256:... AS motd-build
-RUN apk add git && git clone --depth 1 --branch v<VERSION> \
-    https://github.com/projectbluefin/motd /src
+RUN apk add git && git clone https://github.com/projectbluefin/motd /src && \
+    git -C /src checkout <COMMIT_SHA>
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 ```
 
 Then in the `build` stage: `COPY --from=motd-build /umotd /out/shared/usr/bin/umotd`
 
-When updating the motd version: change the `--branch` tag in the Go stage.
+When updating the motd version: find the target commit SHA on projectbluefin/motd and
+update the `git -C /src checkout <COMMIT_SHA>` line. Do not use `--branch` or a tag —
+git tags are mutable and bypass the immutable pin.
 
 ---
 
