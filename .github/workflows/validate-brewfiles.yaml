@@ -27,8 +27,8 @@ jobs:
           while IFS= read -r -d '' brewfile ; do
             echo "::group:: ===$(basename "$brewfile")==="
 
-            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
             echo "Syncing taps..."
+            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
             brew bundle --file=./taps.Brewfile > /dev/null 2>&1 || true
 
             # Extract combined list for parallel check
