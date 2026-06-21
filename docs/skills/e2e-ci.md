@@ -36,12 +36,17 @@ metadata:
 
 - Runs on PRs to `main` and on `merge_group`
 - Builds the PR's `common` layer candidate first
-- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:latest` by overlaying `/system_files/shared` and `/system_files/bluefin`
+- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:stable` by overlaying `/system_files/shared` and `/system_files/bluefin`
 - Recompiles GSettings schemas in the composed image
 - Pushes the composed image to GHCR and runs the local testsuite wrapper with `suites: common`
 
 This is the pre-merge gate for common-layer changes, so regressions can fail before merge instead of waiting for post-merge E2E.
 In branch protection today it is still an advisory/non-required signal; `build.yml` remains the required merge check.
+
+Use a stable downstream base for this PR-time compose gate. The moving `:testing`
+stream belongs in `promotion-candidate-e2e.yml`; using it here makes unrelated
+downstream churn (for example missing CLI tools in the current testing image)
+fail `common` PRs that only change the shared layer.
 
 ## Promotion-candidate feedback loop
 

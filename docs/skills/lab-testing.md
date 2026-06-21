@@ -61,7 +61,7 @@ rules live in the virt-launcher pod netns. A pod on `exo-1` cannot reach VM IPs.
 | `bluefin:stable` | `ghcr.io/projectbluefin/bluefin:stable` | `/var/tmp/bluefin-golden/stable/` | ⚠️ built by `ensure-disk` on demand | ~20 min first time |
 | `lts:testing` | `ghcr.io/projectbluefin/bluefin-lts:testing` | `/var/tmp/bluefin-golden/lts-testing/` | ⚠️ built by `ensure-disk` on demand | ~20 min first time |
 | `lts` (stable) | `ghcr.io/projectbluefin/bluefin-lts:lts` | `/var/tmp/bluefin-golden/lts/` | ⚠️ built by `ensure-disk` on demand | ~20 min first time |
-| `lts-hwe` | `ghcr.io/projectbluefin/bluefin-lts:lts-hwe` | `/var/tmp/bluefin-golden/lts-hwe/` | ⚠️ built by `ensure-disk` on demand | ~20 min first time |
+| `lts-hwe` | `ghcr.io/projectbluefin/bluefin-lts-hwe:stable` | `/var/tmp/bluefin-golden/lts-hwe/` | ⚠️ built by `ensure-disk` on demand | ~20 min first time |
 | `dakota` | built from BST on ghost | `/var/tmp/dakota-golden/<tag>/` | ⏳ needs BST build | ~10 min warm cache, ~45 min cold |
 
 **Key distinction — `image` vs `image-tag` in `bib-build-and-push:ensure-disk`:**
@@ -198,13 +198,13 @@ Run all three live toggle workflows in parallel:
 ```
 toggle-live-bluefin    bluefin:stable → bluefin:testing → bluefin:stable
 toggle-live-lts        bluefin-lts:lts → bluefin-lts:lts-testing → lts
-toggle-live-lts-hwe    bluefin-lts:lts-hwe → lts-hwe-testing → lts-hwe  ← see note
+toggle-live-lts-hwe    bluefin-lts-hwe:stable → testing → stable
 ```
 
-**`lts-hwe` status:** As of 2026-06, `ghcr.io/projectbluefin/bluefin-lts:lts-hwe` and
-`:lts-hwe-testing` are not yet published to GHCR. The `ujust toggle-testing` recipe
-has the `lts-hwe` code path but the image variant has not shipped. Skip the lts-hwe
-workflow until the variant appears in the image registry. Monitor:
+**`lts-hwe` status:** The HWE variant is published as its own image package:
+`ghcr.io/projectbluefin/bluefin-lts-hwe:{stable,testing}`. It does **not** use
+`bluefin-lts:lts-hwe` or `:lts-hwe-testing` tags. Use the dedicated image name
+when exercising the HWE toggle flow. Monitor:
 ```bash
 ghcr.io/projectbluefin/bluefin-lts  # check available tags
 ```
@@ -423,9 +423,9 @@ managed and will be lost if the cluster is reset. File a PR to testing-lab to ad
 
 ## ublue-os image package inventory
 
-Only two container packages exist under `ublue-os` on GHCR:
-- `ghcr.io/ublue-os/bluefin:latest` — main non-NVIDIA
-- `ghcr.io/ublue-os/bluefin-nvidia:latest` — NVIDIA variant
+Only two historical container packages existed under the `ublue-os` org:
+- `ublue-os/bluefin` — main non-NVIDIA
+- `ublue-os/bluefin-nvidia` — NVIDIA variant
 
 There is NO `ublue-os/bluefin-lts` or LTS NVIDIA package. LTS-to-projectbluefin migration
 testing is not possible from a ublue-os source image. Migration tests only cover the main
