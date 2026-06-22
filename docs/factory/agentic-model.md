@@ -74,6 +74,52 @@ Branching from the wrong base (e.g. `testing` when target is `main`, or vice ver
 git log feat/my-change ^projectbluefin/<target> --oneline  # must show ONLY your commits
 ```
 
+## Testing-first model
+
+**The standard for all image-producing repos** (`bluefin`, `dakota`; `bluefin-lts` migrating).
+
+### Invariants
+
+- All PRs target `testing`. **Never open a content PR against `main`.**
+- `main` only receives squash-merge promotion commits from `auto/promote-testing-to-main`.
+- GHA-only changes (workflow files, docs, markdown) **must not** trigger image builds.
+- `:testing` tag publishes on every BST/Containerfile-changing push to `testing`.
+- `:stable` / `:latest` tag publishes when `main` receives a promotion commit.
+
+### CI pipeline shape
+
+```
+PR → testing branch
+  └─ build.yml (push trigger, paths-ignore) → BST/container build → :testing published
+  └─ e2e gate (post-merge-e2e.yml or testsuite) → pass/fail
+  └─ promote-testing-to-main.yml → opens auto/promote-testing-to-main PR (weekly or on e2e pass)
+       └─ human merges PR → main → publish stable tags
+```
+
+### paths-ignore pattern (required in build.yml push trigger)
+
+```yaml
+push:
+  branches: [main, testing]
+  paths-ignore:
+    - '.github/workflows/**'   # workflow changes don't affect the image
+    # .github/actions/** intentionally NOT ignored if local composite actions are used
+    - 'docs/**'
+    - '**.md'
+    - 'AGENTS.md'
+```
+
+### Migration checklist (for adopting testing-first in a repo)
+
+- [ ] `build.yml` push trigger includes `testing`, with `paths-ignore` block above
+- [ ] `promote-testing-to-main.yml` source is `testing` → target is `main`
+- [ ] Renovate `baseBranchPatterns` targets `testing`, not `main`
+- [ ] `track-common.yml` (or equivalent) targets `testing`
+- [ ] Any `sync-main-to-testing.yml` fast-forward workflow is removed
+- [ ] Branch protection: `main` requires PRs; `testing` allows direct push for automation
+- [ ] `agentic-model.md` branch table updated to `testing`
+- [ ] Repo `AGENTS.md` fast-path updated to say "PRs target testing, never main"
+
 ## Sensitive paths
 
 Changes to these paths require maintainer review before merge:
