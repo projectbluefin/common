@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1091
+# shellcheck disable=SC1090,SC1091
 LIBSETUP="${LIBSETUP:-/usr/lib/ublue/setup-services/libsetup.sh}"
 # SYSROOT: prefix for /sys, /proc, /etc reads — override in tests to use a fake filesystem
 SYSROOT="${SYSROOT:-}"
