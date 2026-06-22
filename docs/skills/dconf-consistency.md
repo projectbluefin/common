@@ -60,6 +60,14 @@ The E2E `common` suite validates dconf state post-merge.
 
 If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
 
+## Overriding Flatpak desktop metadata
+
+For a Flatpak app whose launcher is not tracked in-tree, add a same-ID `.desktop` file under
+`system_files/bluefin/usr/share/applications/` to override the exported launcher metadata at image
+build time. Preserve the upstream `Exec=`, `Icon=`, and `X-Flatpak=` entries unless you are
+intentionally changing launch behavior; use the override for metadata-only tweaks such as
+`Keywords=` additions.
+
 ## dconf profile lookup order and CI test interference
 
 The dconf profile shipped by bluefin images (`/etc/dconf/profile/user`) is:
