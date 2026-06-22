@@ -5,7 +5,7 @@
   ],
   "packageRules": [
     {
-      "description": "Automerge chore dep updates (digest, pin, patch, minor) when CI passes",
+      "description": "Automerge digest/pin/patch/minor via GitHub native auto-merge (merge queue handles squash)",
       "matchUpdateTypes": [
         "digest",
         "pin",
@@ -13,8 +13,7 @@
         "minor"
       ],
       "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash"
+      "platformAutomerge": true
     }
   ]
 }

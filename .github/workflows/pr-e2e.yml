@@ -9,6 +9,9 @@ on:
       - "LICENSE"
       - ".gitignore"
       - ".gitattributes"
+      - "docs/**"
+      - "AGENTS.md"
+      - ".github/workflows/**"
   merge_group:
 
 concurrency:
