@@ -284,7 +284,7 @@ Python `os.environ['VAR']` inside a bash heredoc with `VAR=$(...)` fails — the
 | Repo | PR target | Notes |
 |---|---|---|
 | `projectbluefin/bluefin` | `testing` | Never `main` |
-| `projectbluefin/bluefin-lts` | `main` | actions AGENTS.md previously said `testing` — now fixed |
+| `projectbluefin/bluefin-lts` | `testing` | Never `main` — testing-first, same as bluefin and dakota |
 | `projectbluefin/bootc-installer` | `dev` | Default branch is `dev`, not `main` |
 | `projectbluefin/testsuite` | `main` | Merge queue enforced — doc changes still need CI green |
 | All others | `main` | Standard |

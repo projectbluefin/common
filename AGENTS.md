@@ -80,9 +80,9 @@ actions ────────────────────────
 common ──────────────────────────┐         reusable-build.yml
 (shared OCI layer)               │         sign-and-publish
                                  ▼         scan-image (planned)
-bluefin  (main→stable)       ←── images ──→ testsuite (e2e gate)
-bluefin-lts (main→lts)       ←── images ──→ testsuite (e2e gate)
-dakota  (main→:latest)       ←── images ──→ testsuite (e2e gate)
+bluefin  (testing→main→stable)  ←── images ──→ testsuite (e2e gate)
+bluefin-lts (testing→main→lts)  ←── images ──→ testsuite (e2e gate)
+dakota  (testing→main→latest)   ←── images ──→ testsuite (e2e gate)
                                  │
                                  ▼
                                 iso (installation media)

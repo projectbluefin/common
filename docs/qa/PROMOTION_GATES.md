@@ -38,7 +38,7 @@ general availability
 
 **Location:** `bluefin-lts/.github/workflows/post-merge-e2e.yml`
 
-**Trigger:** After merge to `main` in bluefin-lts
+**Trigger:** After merge to `testing` in bluefin-lts
 
 **Tests:**
 - Runs `smoke,common` testsuite suites against `:lts-testing`

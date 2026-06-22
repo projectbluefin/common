@@ -49,7 +49,7 @@ pip install behave qecore dogtail   # NOT qecore-headless — that's the runner 
 ```bash
 just check                    # Justfile + script syntax
 pre-commit run --all-files    # lint/format checks (pip install pre-commit first)
-# PRs target: testing branch (bluefin), main branch (bluefin-lts)
+# PRs target: testing branch (bluefin, bluefin-lts, dakota)
 # See docs/build.md for full local image build prerequisites
 ```
 
@@ -66,7 +66,7 @@ just vm-e2e            # full VM e2e test (requires QEMU)
 | Repo | PR target | Notes |
 |---|---|---|
 | bluefin | `testing` | Never target `main`, `stable`, or `latest` directly |
-| bluefin-lts | `main` | |
+| bluefin-lts | `testing` | Never target `main` directly |
 | bootc-installer | `dev` | `main` is protected by merge queue |
 | common | `main` | |
 | documentation | `main` | Doc-only changes can push directly |
