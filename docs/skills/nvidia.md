@@ -78,8 +78,11 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
 ### `projectbluefin/common`
 
 - `system_files/nvidia/usr/libexec/ublue-nvidia-flatpak-runtime-sync` — syncs the correct
-  `org.freedesktop.Platform.GL.nvidia-<version>` Flatpak runtime on first boot. Needed for
-  Flatpak apps to use the GPU. Triggered by `ublue-nvidia-flatpak-runtime-sync.service`.
+  `org.freedesktop.Platform.GL.nvidia-<version>` Flatpak runtime when a new driver version
+  is detected on boot. Also runs `flatpak update --system --noninteractive` in the same pass
+  so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
+  extension). Needed for Flatpak apps to use the GPU. Triggered by
+  `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
 - `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset` —
   enables `nvidia-cdi-refresh.{path,service}` for CDI spec auto-generation.
 
