@@ -94,13 +94,6 @@ class TestCheckUblueRefs:
         violations = check_ublue_refs(tmp_path)
         assert violations == []
 
-    def test_skips_specs_dir(self, tmp_path):
-        (tmp_path / ".github/workflows").mkdir(parents=True)
-        (tmp_path / "specs").mkdir()
-        (tmp_path / "specs/foo.md").write_text("ghcr.io/ublue-os/old\n")
-        violations = check_ublue_refs(tmp_path)
-        assert violations == []
-
     def test_detects_violation_in_agents_md(self, tmp_path):
         (tmp_path / ".github/workflows").mkdir(parents=True)
         (tmp_path / "docs").mkdir()

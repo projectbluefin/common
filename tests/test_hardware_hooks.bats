@@ -107,6 +107,7 @@ EOF
     run bash "${FRAMEWORK_HOOK}"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"Intel Framework Laptop detected"* ]]
+    [[ "${output}" == *"mock: grubby update"* ]]
 }
 
 @test "10-framework: skips kargs fix if hid_sensor_hub already present" {
@@ -201,6 +202,7 @@ EOF
     run bash "${ASUS_HOOK}"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"ASUS hardware detected"* ]]
+    [[ "${output}" == *"mock: systemctl enable asusd.service asus-shutdown.service"* ]]
 }
 
 @test "11-asus: detects ASUS (short form) and runs setup" {

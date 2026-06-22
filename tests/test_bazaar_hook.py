@@ -61,6 +61,46 @@ def _run_hook(env: dict) -> str:
     return buf.getvalue().strip()
 
 
+def _run_hook_with_mock(env: dict) -> tuple:
+    """Like _run_hook but also returns the Popen mock for action-stage tests."""
+    env_defaults = {
+        "BAZAAR_HOOK_INITIATED_UNIX_STAMP": "0",
+        "BAZAAR_HOOK_INITIATED_UNIX_STAMP_USEC": "0",
+        "BAZAAR_HOOK_ID": "",
+        "BAZAAR_HOOK_TYPE": "",
+        "BAZAAR_HOOK_WAS_ABORTED": "",
+        "BAZAAR_HOOK_DIALOG_ID": "",
+        "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "",
+        "BAZAAR_APPID": "",
+        "BAZAAR_TS_APPID": "",
+        "BAZAAR_TS_TYPE": "",
+        "BAZAAR_HOOK_STAGE": "",
+        "BAZAAR_HOOK_STAGE_IDX": "",
+    }
+    env_defaults.update(env)
+
+    loader = importlib.machinery.SourceFileLoader("bazaar_hook", str(HOOK_PATH))
+    spec = importlib.util.spec_from_loader("bazaar_hook", loader)
+
+    popen_calls = []
+    with patch.dict(os.environ, env_defaults, clear=True):
+        with patch("subprocess.Popen") as mock_popen:
+            mock_popen.return_value = MagicMock()
+            mock_popen.side_effect = lambda args, **kwargs: (popen_calls.append(args), MagicMock())[1]
+            mod = importlib.util.module_from_spec(spec)
+            old_stdout = sys.stdout
+            buf = io.StringIO()
+            sys.stdout = buf
+            try:
+                spec.loader.exec_module(mod)
+            except SystemExit:
+                pass
+            finally:
+                sys.stdout = old_stdout
+
+    return buf.getvalue().strip(), popen_calls
+
+
 # ---------------------------------------------------------------------------
 # JetBrains hook
 # ---------------------------------------------------------------------------
@@ -133,11 +173,13 @@ class TestJetbrainsHook:
         assert resp == "abort"
 
     def test_action_spawns_ujust_and_returns_empty(self):
-        resp = _run_hook({
+        resp, popen_calls = _run_hook_with_mock({
             "BAZAAR_HOOK_ID": "jetbrains-toolbox",
             "BAZAAR_HOOK_STAGE": "action",
         })
         assert resp == ""
+        assert len(popen_calls) == 1
+        assert "ujust install-jetbrains-toolbox" in " ".join(popen_calls[0])
 
     def test_teardown_returns_deny(self):
         resp = _run_hook({
@@ -210,20 +252,24 @@ class TestCodeHook:
         assert resp == "abort"
 
     def test_action_vscode_spawns_brew_and_returns_empty(self):
-        resp = _run_hook({
+        resp, popen_calls = _run_hook_with_mock({
             "BAZAAR_HOOK_ID": "code",
             "BAZAAR_HOOK_STAGE": "action",
             "BAZAAR_TS_APPID": "com.visualstudio.code",
         })
         assert resp == ""
+        assert len(popen_calls) == 1
+        assert "visual-studio-code-linux" in " ".join(popen_calls[0])
 
     def test_action_codium_spawns_brew_and_returns_empty(self):
-        resp = _run_hook({
+        resp, popen_calls = _run_hook_with_mock({
             "BAZAAR_HOOK_ID": "code",
             "BAZAAR_HOOK_STAGE": "action",
             "BAZAAR_TS_APPID": "com.vscodium.codium",
         })
         assert resp == ""
+        assert len(popen_calls) == 1
+        assert "vscodium-linux" in " ".join(popen_calls[0])
 
     def test_teardown_returns_deny(self):
         resp = _run_hook({
