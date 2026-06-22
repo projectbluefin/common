@@ -12,9 +12,18 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 - **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.
 - **Max 4 open PRs per agent at once.** No WIP PRs.
 - **One PR per feature.** Never batch unrelated changes into a single PR. Each logical fix or feature gets its own branch and PR, even if the code changes are small. Reviewers should be able to review and revert independently.
+- **Check for existing PRs before opening.** Before creating a branch for any issue, run:
+  `gh pr list --repo projectbluefin/<repo> --state open --search "<topic>"`
+  If an open PR already covers the work, comment on it rather than opening a duplicate.
 - **Ask before opening PRs.** Do not open PRs autonomously. Present the plan and the diff, get explicit human approval, then open. Exception: Renovate bot PRs are pre-approved.
 - **`just check` before every commit** in repos that have a Justfile.
 - **`pre-commit run --all-files` before every commit** in repos with `.pre-commit-config.yaml`.
+- **Staging audit before every commit.** Never use `git add -A` or `git add .`. After any script execution, build step, or cross-repo checkout, run:
+  ```bash
+  git status                        # check for unexpected tracked paths
+  git diff --cached --name-only     # verify only intended files are staged
+  ```
+  Nested `.git` directories (worktrees, auxiliary clones) stage as gitlinks and silently corrupt history.
 - **Never push directly to a protected branch.** Always open a PR. PRs require `lgtm` from a human.
 - **Doc-only exception in `common`:** `docs/` edits and `AGENTS.md` changes may be pushed directly to `main` — no PR required. Before using this exception, confirm every changed path is under `docs/` or is `AGENTS.md`:
   ```bash
