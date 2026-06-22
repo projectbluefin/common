@@ -53,7 +53,7 @@ The final `ctx` stage is a scratch image — it contains only the file tree that
 Do NOT download a pre-built binary — use the builder stage pattern:
 
 ```dockerfile
-FROM docker.io/library/golang:alpine@sha256:... AS motd-build
+FROM docker.io/library/golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS motd-build
 RUN apk add git && git clone https://github.com/projectbluefin/motd /src && \
     git -C /src checkout <COMMIT_SHA>
 WORKDIR /src
