@@ -29,10 +29,15 @@ fi
 
 version-script "oem-${VENDOR}" user 1 || exit 0
 
-set -x
+set -xeuo pipefail
 eval "$("${BREW_BIN}" shellenv)"
 
 brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
+
+if [[ "${VENDOR}" == "ASUS" ]]; then
+    systemctl --user daemon-reload
+    systemctl --user enable --now asusd-user.service || true
+fi
 
 if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
     dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
