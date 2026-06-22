@@ -11,6 +11,7 @@ OEM_DIR="/usr/share/ublue-os/oem"
 # Add a case arm + oem/<Name>/ directory to support a new OEM.
 CHASSIS_VENDOR=$(cat /sys/devices/virtual/dmi/id/chassis_vendor 2>/dev/null || true)
 SYS_VENDOR=$(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null || true)
+PRODUCT_NAME=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null || true)
 
 case "${CHASSIS_VENDOR}:${SYS_VENDOR}" in
     Framework:*)        VENDOR="Framework" ;;
@@ -27,19 +28,26 @@ if [[ ! -x "${BREW_BIN}" ]]; then
     exit 0
 fi
 
-version-script "oem-${VENDOR}" user 1 || exit 0
-
 set -xeuo pipefail
 eval "$("${BREW_BIN}" shellenv)"
 
-brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
+if version-script "oem-${VENDOR}" user 2; then
+    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
 
-if [[ "${VENDOR}" == "ASUS" ]]; then
-    systemctl --user daemon-reload
-    systemctl --user enable --now asusd-user.service || true
+    if [[ "${VENDOR}" == "ASUS" ]]; then
+        systemctl --user daemon-reload
+        systemctl --user enable --now asusd-user.service || true
+    fi
+
+    if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
+        dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
+            "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
+    fi
 fi
 
-if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
-    dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
-        "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
+if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \
+    [[ -f "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" ]]; then
+    install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"
+    install -m 0644 "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" \
+        "${HOME}/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf"
 fi
