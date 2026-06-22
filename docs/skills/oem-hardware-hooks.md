@@ -126,15 +126,51 @@ Confirm the exact path before filing the cleanup issue.
 | Hook | Type | What it does |
 |---|---|---|
 | `system-setup.hooks.d/10-framework.sh` | system | Intel Framework keyboard karg; Framework 13 Ryzen 7040 suspend fix; AMD 3.5mm jack (kernel-aware) |
-| `user-setup.hooks.d/10-theming.sh` | user | Framework logo/scroll/font; Thelio Astra Ampere logo |
-
-Keep Framework/Thelio theming consolidated in `10-theming.sh`. Do not split
-those same dconf writes across extra per-vendor hooks unless behavior diverges
-for real — duplicate hooks drift, double-stamp version-script state, and make
-rerun behavior harder to reason about.
 | `system-setup.hooks.d/11-asus.sh` | system | Enables asusd.service + asus-shutdown.service once asusctl is installed |
-| `user-setup.hooks.d/11-asus.sh` | user | Installs asusctl-linux + rog-control-center-linux via brew on ASUS hardware |
+| `user-setup.hooks.d/10-theming.sh` | user | Framework scroll/font tweaks; Thelio Astra Ampere logo (non-brew vendors) |
+| `user-setup.hooks.d/20-oem-brew.sh` | user | Generic OEM brew install + logo set (data-driven, see below) |
 | `user-setup.hooks.d/12-framework-color.sh` | user | Assigns factory ICC color profiles to Framework 13/16 displays via colormgr |
+
+## OEM brew hook — data-driven pattern
+
+`20-oem-brew.sh` is a single generic hook. It detects the vendor, looks up
+`/usr/share/ublue-os/oem/<Vendor>/`, installs packages, and sets the logo.
+The logo in the top-left menu reflects that HWE brew packages are installed
+and active — a plain `u` means stock, a vendor logo means the OEM stack is running.
+
+### Adding a new OEM
+
+1. Add a `case` arm in `20-oem-brew.sh` mapping the DMI vendor string → canonical name:
+   ```bash
+   *:LENOVO*) VENDOR="Lenovo" ;;
+   ```
+   (`CHASSIS_VENDOR:SYS_VENDOR` — use whichever field is reliable for that hardware.)
+
+2. Create the data directory:
+   ```
+   system_files/shared/usr/share/ublue-os/oem/<Vendor>/
+     packages.Brewfile   # tap + cask declarations (trusted: true required)
+     logo                # icon name, e.g. "lenovo-logo-symbolic"
+   ```
+
+3. Add the vendor logo SVG to:
+   `system_files/shared/usr/share/icons/hicolor/scalable/actions/<name>-symbolic.svg`
+
+That's it. No new hook file, no version bump to existing hooks.
+
+### OEM directories
+
+| Vendor | Packages | Logo |
+|---|---|---|
+| `Framework` | `framework_tool`, `framework-wallpapers` | `framework-logo-symbolic` |
+| `ASUS` | `asusctl-linux`, `rog-control-center-linux` | `asus-rog-symbolic` |
+
+### Version stamp
+
+The stamp slug is `oem-<Vendor> user 1`. This is intentionally separate from
+the old `asus user 1` stamp — existing ASUS machines that already ran the old
+`11-asus.sh` will pick up the new generic hook and get the logo set on next login.
+The brew installs are idempotent (already-installed casks are skipped by brew).
 
 **WirePlumber rules for Framework Desktop (AMD Ryzen AI Max 300):**
 `system_files/shared/usr/share/wireplumber/wireplumber.conf.d/51-framework-desktop.conf`
@@ -231,4 +267,5 @@ with `colormgr` is required for auto-assignment on these systems.
 
 ## Known gaps (tracking issues)
 
-- `user-setup.hooks.d/20-framework.sh` (framework_tool + wallpapers via brew) not yet migrated — depends on brew tap trust landing first (common#665 / common#672)
+- `20-framework.sh` in `projectbluefin/bluefin` is superseded by `20-oem-brew.sh` in common — file a cleanup issue in bluefin to delete it after common ships.
+- `apps.just` ASUS recipe still calls `brew install --cask` directly without `--trust`; update to use Brewfile or `--trust` flag.

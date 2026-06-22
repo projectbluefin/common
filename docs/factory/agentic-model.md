@@ -50,7 +50,7 @@ Do not report the factory as broken because a promotion PR is open and waiting. 
 |---|---|---|
 | `common` | `main` | No testing branch — direct to main |
 | `bluefin` | `testing` | Never `main` |
-| `bluefin-lts` | `testing` | Testing-first model (same as bluefin and dakota). PRs target `testing`; promote-testing-to-main.yml promotes on Tuesday 04:00 UTC; execute-release.yml copies :testing→:stable. lts branch archived. |
+| `bluefin-lts` | `main` | `main→lts` is the promotion path; migration to `testing` model in progress (issue bluefin-lts/issues/346) |
 | `dakota` | `testing` | Never `main` — testing-first model, same as bluefin (PR 1004) |
 | `knuckle` | `main` | Installer — no testing branch |
 | `bootc-installer` | `dev` | Active work branch; `prod` triggers Flatpak release CI — never target `prod` directly |

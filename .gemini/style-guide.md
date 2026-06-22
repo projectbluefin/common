@@ -238,8 +238,7 @@ AI-assisted commits must include attribution:
 ```
 feat(just): add new system management recipe
 
-Assisted-by: Claude Sonnet 4.6 via GitHub Copilot
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot
 ```
 
 ## Comments and Documentation
