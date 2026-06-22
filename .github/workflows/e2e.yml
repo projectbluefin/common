@@ -40,9 +40,6 @@ jobs:
           - name: Dakota
             image: ghcr.io/projectbluefin/dakota:testing
             suites: common
-            allow_failure: true # Non-blocking: flip to false when infra is confirmed stable (see issue #497)
-    # Non-blocking: flip to false when infra is confirmed stable (see issue #497)
-    continue-on-error: ${{ matrix.allow_failure == true }}
     name: "E2E — ${{ matrix.name }}"
     permissions:
       contents: read
