@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1091
-source /usr/lib/ublue/setup-services/libsetup.sh
+LIBSETUP="${LIBSETUP:-/usr/lib/ublue/setup-services/libsetup.sh}"
+# SYSROOT: prefix for /sys reads — override in tests to use a fake filesystem
+SYSROOT="${SYSROOT:-}"
+source "${LIBSETUP}"
 
-SYS_VENDOR="$(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null || true)"
+SYS_VENDOR="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/sys_vendor" 2>/dev/null || true)"
 
 # Only run on ASUS hardware
 if [[ ! "$SYS_VENDOR" =~ ASUSTeK|ASUS ]]; then

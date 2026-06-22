@@ -169,6 +169,35 @@ promote-testing-to-main.yml (daily + on push)
 
 The daily heartbeat ensures the promotion PR stays fresh and gate checks are re-run.
 
+### Commit title surfaces — PR title vs merged release trigger
+
+`reusable-promote-squash.yml` emits **two different titles** during promotion:
+
+- Promotion branch commit: `chore: promote <source_branch> to <target_branch>`
+- Promotion PR title: `ci(promote): <primary_image> <source_branch> → <target_branch> <date>`
+
+This distinction matters for `execute-release.yml`.
+
+All three image repos currently use GitHub squash settings:
+
+- `squash_merge_commit_title: COMMIT_OR_PR_TITLE`
+- `use_squash_pr_title_as_default: false`
+
+Because the auto-promotion branch contains a **single commit**, the squash merge on the target branch keeps the commit subject (`chore: promote ...`) rather than the PR title (`ci(promote): ...`).
+
+**Canonical rule:** `execute-release.yml` must match the commit message that lands on the target branch, not just the PR title.
+
+Current correct trigger subjects:
+
+| Repo / branch | Target-branch commit subject to match |
+|---|---|
+| bluefin `main` | `^chore: promote testing to main` |
+| bluefin-lts `main` | `^chore: promote testing to main` |
+| bluefin-lts `lts` | `^chore: promote main to lts` |
+| dakota `main` | `^chore: promote testing to main` |
+
+`ci(promote): ...` is still the correct PR title format for the open promotion PR, but **`ci(promote)` alone is not a reliable `execute-release` trigger** under the current squash-merge settings.
+
 ### After merge: sync back
 
 `sync-main-to-testing.yml` fires on every push to `main` and merges `main` back into `testing` (using `reusable-sync-branches.yml` from `projectbluefin/actions`). This prevents `testing` from falling behind after the squash-merge, which would block the next promotion PR.

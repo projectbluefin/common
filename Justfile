@@ -3,7 +3,7 @@ just := just_executable()
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 # test_libvirt_helper.bats is excluded — requires a running libvirtd session
 test:
-    python3 -m pytest tests/test_hooks.py -v --cov=tests --cov-report=term-missing
+    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_privileged_setup.bats
@@ -21,6 +21,8 @@ test:
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_hardware_hooks.bats
+    bats tests/test_nvidia_flatpak_sync.bats
 
 # Build the bluefin-common container locally
 build:

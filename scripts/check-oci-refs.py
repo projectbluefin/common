@@ -17,9 +17,12 @@ Source of truth for valid image names and tags:
 Do not update the allowed list below from memory. Read the workflow files.
 """
 from pathlib import Path
+import json
+import os
 import re
-import subprocess
 import sys
+import urllib.request
+import urllib.error
 
 # ── Check 1: no ublue-os refs ────────────────────────────────────────────────
 # The org migration from ublue-os to projectbluefin is complete.
@@ -39,66 +42,69 @@ UBLUE_ALLOWED_UPSTREAMS = {
 
 UBLUE_SKIP_DIRS = {"docs/factory", "specs"}
 
-ublue_violations = []
-for path in list(Path(".github/workflows").rglob("*.yml")) + \
-            list(Path(".github/workflows").rglob("*.yaml")) + \
-            list(Path("docs").rglob("*.md")) + \
-            [Path("AGENTS.md")]:
-    if any(path.as_posix().startswith(d) for d in UBLUE_SKIP_DIRS):
-        continue
-    if path.name in UBLUE_EXCEPTIONS:
-        continue
-    try:
-        text = path.read_text()
-    except FileNotFoundError:
-        continue
-    for lineno, line in enumerate(text.splitlines(), start=1):
-        if UBLUE_PATTERN.search(line):
-            # Skip lines that only reference known legitimate upstream ublue-os sources
-            if any(allowed in line for allowed in UBLUE_ALLOWED_UPSTREAMS):
-                continue
-            ublue_violations.append(f"{path}:{lineno}: {line.strip()}")
-
-if ublue_violations:
-    print("\nERROR: ghcr.io/ublue-os/ references found. The org migration is complete.")
-    print("All runtime image refs must use ghcr.io/projectbluefin/.\n")
-    for v in ublue_violations:
-        print(f"  {v}")
-    sys.exit(1)
-
 # ── Check 2: all projectbluefin image:tag refs in docs exist in GHCR ─────────
-# Parse docs/ and AGENTS.md for ghcr.io/projectbluefin/IMAGE:TAG.
-# Validate each tag exists. Fail if any don't.
-# This prevents committing docs that reference non-existent image tags.
 TAG_PATTERN = re.compile(
     r"ghcr\.io/projectbluefin/([a-zA-Z0-9_/-]+):([a-zA-Z0-9._-]+)"
 )
 
-refs: dict[str, list[str]] = {}  # "image:tag" -> [locations]
-for path in list(Path("docs").rglob("*.md")) + [Path("AGENTS.md")]:
-    try:
-        text = path.read_text()
-    except FileNotFoundError:
-        continue
-    for lineno, line in enumerate(text.splitlines(), start=1):
-        for m in TAG_PATTERN.finditer(line):
-            image, tag = m.group(1), m.group(2)
-            # Skip digest-style tags (sha256-...)
-            if tag.startswith("sha256"):
-                continue
-            key = f"{image}:{tag}"
-            refs.setdefault(key, []).append(f"{path}:{lineno}")
 
-if not refs:
-    print("✓ No projectbluefin image:tag refs found in docs.")
-    sys.exit(0)
+def check_ublue_refs(root=None):
+    """Check 1: scan for ghcr.io/ublue-os/ refs that should have been migrated.
 
-import json, os, urllib.request, urllib.error
+    Returns a list of violation strings (empty = clean).
+    """
+    root = Path(root) if root is not None else Path(".")
+    violations = []
+    paths = (
+        list((root / ".github/workflows").rglob("*.yml"))
+        + list((root / ".github/workflows").rglob("*.yaml"))
+        + list((root / "docs").rglob("*.md"))
+        + [root / "AGENTS.md"]
+    )
+    for path in paths:
+        rel = path.as_posix()
+        if any(rel.startswith(str(root / d)) for d in UBLUE_SKIP_DIRS):
+            continue
+        if path.name in UBLUE_EXCEPTIONS:
+            continue
+        try:
+            text = path.read_text()
+        except FileNotFoundError:
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if UBLUE_PATTERN.search(line):
+                if any(allowed in line for allowed in UBLUE_ALLOWED_UPSTREAMS):
+                    continue
+                violations.append(f"{path}:{lineno}: {line.strip()}")
+    return violations
+
+
+def collect_tag_refs(root=None):
+    """Check 2: collect ghcr.io/projectbluefin/IMAGE:TAG refs from docs.
+
+    Returns dict mapping "image:tag" -> [location strings].
+    """
+    root = Path(root) if root is not None else Path(".")
+    refs: dict[str, list[str]] = {}
+    paths = list((root / "docs").rglob("*.md")) + [root / "AGENTS.md"]
+    for path in paths:
+        try:
+            text = path.read_text()
+        except FileNotFoundError:
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for m in TAG_PATTERN.finditer(line):
+                image, tag = m.group(1), m.group(2)
+                if tag.startswith("sha256"):
+                    continue
+                key = f"{image}:{tag}"
+                refs.setdefault(key, []).append(f"{path}:{lineno}")
+    return refs
+
 
 def tag_exists_in_ghcr(image: str, tag: str) -> bool:
     """Return True if image:tag exists in GHCR under projectbluefin."""
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-    # Use the GHCR container package versions API and paginate
     page = 1
     while True:
         url = (
@@ -130,25 +136,48 @@ def tag_exists_in_ghcr(image: str, tag: str) -> bool:
     return False
 
 
-missing = []
-for key, locations in sorted(refs.items()):
-    image, tag = key.rsplit(":", 1)
-    exists = tag_exists_in_ghcr(image, tag)
-    status = "✅" if exists else "❌"
-    print(f"  {status} ghcr.io/projectbluefin/{key}")
-    if not exists:
-        for loc in locations:
-            print(f"       referenced at: {loc}")
-        missing.append(key)
+def main(root=None):
+    """Run both OCI ref checks. Returns exit code (0 = clean, 1 = violations)."""
+    if root is None:
+        root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
 
-if missing:
-    print(
-        "\nERROR: The following image:tag refs in docs do not exist in GHCR:\n"
-        + "\n".join(f"  ghcr.io/projectbluefin/{m}" for m in missing)
-        + "\n\nRead execute-release.yml and build-image-testing.yml in each repo"
-        "\nbefore writing image names or tags. Do not use training data."
-        "\nSee docs/skills/image-registry.md#verification for the exact commands."
-    )
-    sys.exit(1)
+    violations = check_ublue_refs(root)
+    if violations:
+        print("\nERROR: ghcr.io/ublue-os/ references found. The org migration is complete.")
+        print("All runtime image refs must use ghcr.io/projectbluefin/.\n")
+        for v in violations:
+            print(f"  {v}")
+        return 1
 
-print(f"\n✓ All {len(refs)} image:tag refs validated against GHCR.")
+    refs = collect_tag_refs(root)
+    if not refs:
+        print("✓ No projectbluefin image:tag refs found in docs.")
+        return 0
+
+    missing = []
+    for key, locations in sorted(refs.items()):
+        image, tag = key.rsplit(":", 1)
+        exists = tag_exists_in_ghcr(image, tag)
+        status = "✅" if exists else "❌"
+        print(f"  {status} ghcr.io/projectbluefin/{key}")
+        if not exists:
+            for loc in locations:
+                print(f"       referenced at: {loc}")
+            missing.append(key)
+
+    if missing:
+        print(
+            "\nERROR: The following image:tag refs in docs do not exist in GHCR:\n"
+            + "\n".join(f"  ghcr.io/projectbluefin/{m}" for m in missing)
+            + "\n\nRead execute-release.yml and build-image-testing.yml in each repo"
+            "\nbefore writing image names or tags. Do not use training data."
+            "\nSee docs/skills/image-registry.md#verification for the exact commands."
+        )
+        return 1
+
+    print(f"\n✓ All {len(refs)} image:tag refs validated against GHCR.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -3,10 +3,13 @@
 # Workaround for: https://github.com/flatpak/flatpak/issues/3907
 set -euo pipefail
 
-SYSTEM_NVIDIA_VERSION=$(cat /sys/module/nvidia/version)
+# NVIDIA_VERSION_FILE: override in tests to avoid reading real /sys
+NVIDIA_VERSION_FILE="${NVIDIA_VERSION_FILE:-/sys/module/nvidia/version}"
+
+SYSTEM_NVIDIA_VERSION=$(cat "${NVIDIA_VERSION_FILE}")
 FLATPAK_NVIDIA_VERSION=$(echo "${SYSTEM_NVIDIA_VERSION}" | tr '.' '-')
 
-case "${1}" in
+case "${1:-}" in
     check)
         # Exit 0 if sync is needed (versions mismatch), exit 1 if already in sync
         if flatpak info --system org.freedesktop.Platform.GL.nvidia-"${FLATPAK_NVIDIA_VERSION}" >/dev/null 2>&1 && \
