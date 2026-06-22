@@ -887,6 +887,24 @@ The reusable `reusable-renovate-automerge.yml` uses direct `--squash` merge (cor
 
 Do not "simplify" this back to the reusable — it will silently break again.
 
+## Ruleset required status check names must match exact CI job names
+
+The two branch rulesets on `main` must use the **exact** job names from `build.yml`. Wrong names silently block the merge queue — checks never arrive, queue waits forever.
+
+Correct names (as of 2026-06-22):
+
+| Ruleset | Required checks |
+|---|---|
+| `main — merge queue` (ID 17513003) | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
+| `main-review-required-with-renovate-bypass` (ID 17070417) | *(no required status checks — bypass actors cover Renovate/mergeraptor; merge queue ruleset handles build gate)* |
+
+**Past breakage:** ruleset 17070417 had `"Build and push image"` (no arch suffix) — never matched any actual check, blocked every Renovate PR. Fixed 2026-06-22 by removing the check entirely from the review ruleset and using correct names in the merge queue ruleset.
+
+If `build.yml` job names change, update both rulesets immediately via:
+```bash
+gh api --method PUT repos/projectbluefin/common/rulesets/17513003 --input ruleset.json
+```
+
 ---
 
 ## create-github-app-token — do not use `owner` + `repositories` for cross-repo scoping
