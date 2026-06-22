@@ -3,12 +3,44 @@ name: ci-tooling
 description: "Pre-commit floating-tag guard, SHA pinning policy, skill-drift workflow, and Renovate OCI digest tracking for projectbluefin repos. Use when editing .github/workflows/ files, enforcing SHA pinning, or understanding pre-commit policy guards."
 metadata:
   type: procedure
+  context7-sources:
+    - /pre-commit/pre-commit.com
 ---
 
 # CI tooling
 
+## When to Use
+
+- Editing `.github/workflows/` or `.pre-commit-config.yaml`
+- Debugging pre-commit failures around floating tags, auto-fix hooks, or schema validation
+- Updating shared CI policy that propagates across factory repos
+- Auditing whether a workflow change belongs in repo-local CI or `projectbluefin/actions`
+
+## When NOT to Use
+
+- User-facing image content changes in `system_files/` or `Containerfile`
+- Release promotion logic and stream semantics (use `release-promotion.md`)
+- Issue lifecycle or queue automation (use `label-workflow.md` or bonedigger skills)
+- One-off PR status checks with no reusable CI pattern to capture
+
+---
+
+## Core Process
+
+1. Read the workflow or pre-commit hook before describing it; do not rely on memory.
+2. Classify the ref or tool involved: external action, internal `projectbluefin/*` reusable, schema validator, or local hook.
+3. Apply the policy in this order: artifact-protecting CI gates first, agent-enforced process conventions second.
+4. Run the lightest verification that matches the change (`pre-commit`, `actionlint`, or direct source inspection).
+5. If the session uncovered a non-obvious CI trap, write it back here in the same change.
+
+---
+
 ## Contents
+- [When to Use](#when-to-use)
+- [When NOT to Use](#when-not-to-use)
+- [Core Process](#core-process)
 - [AI commit attribution (mandatory)](#ai-commit-attribution-mandatory)
+- [pre-commit auto-fix hooks modify files and abort the commit](#pre-commit-auto-fix-hooks-modify-files-and-abort-the-commit)
 - [SHA pinning policy](#sha-pinning-policy)
 - [Floating-tag guard](#floating-tag-guard)
 - [Skill drift detection](#skill-drift-detection)
@@ -31,6 +63,23 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 The `validate.yml` attribution check was removed — it is **not** a CI gate. A missing or single trailer does not block your PR. Including both trailers is the expected convention but will never cause `exit 1`.
 
 Note: `pi`-authored commits use `Assisted-by: <Model> via pi`. The `Co-authored-by: Copilot` trailer is optional but conventional.
+
+---
+
+## pre-commit auto-fix hooks modify files and abort the commit
+
+When a pre-commit hook fixes a file in place, treat that run as a **failed gate that also produced a patch**. The hook output typically ends with `Files were modified by this hook`, the commit does not proceed, and you must review + re-stage the modified files before retrying.
+
+Typical loop:
+
+```bash
+pre-commit run --all-files
+git diff -- docs/skills/ci-tooling.md   # or inspect all modified files
+git add <fixed-files>
+pre-commit run --all-files
+```
+
+Do **not** assume the original staged snapshot is still current after an auto-fix hook. Re-stage the files the hook touched, or the next commit attempt will either fail again or commit an older index state than the working tree.
 
 ---
 
@@ -100,6 +149,16 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 **Regex:** `uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])`
 
 The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. All `projectbluefin/` refs are exempted via negative lookahead — they use managed floating tags by design. All external refs are subject to the hook.
+
+### If you narrow the exemption, include reusable-workflow subpaths
+
+If the exemption is narrowed from `projectbluefin/.*` to specific internal repos (for example `actions|bonedigger`), the negative lookahead must allow an optional subpath before `@`:
+
+```regex
+uses:(?!.*projectbluefin\/(?:actions|bonedigger)(?:\/[^@]*)?@).*@(main|master|latest|v[0-9]+)\b
+```
+
+The key fragment is `(?:\/[^@]*)?`. Without it, reusable workflow refs such as `projectbluefin/actions/.github/workflows/lifecycle.yml@main` or `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@v1` can be falsely matched as forbidden floating tags.
 
 ### What the floating-tag hook blocks
 
@@ -846,3 +905,29 @@ Note: `vars.MERGERAPTOR_APP_ID` (variable, not secret) does **not** resolve in c
 https://github.com/organizations/projectbluefin/settings/secrets/actions
 
 The job has `continue-on-error: true` — build stays green while dispatches fail. Downstream tracking falls back to Renovate (bluefin/bluefin-lts) and dakota's daily cron.
+
+---
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "pre-commit fixed it, so the commit probably succeeded." | Auto-fix hooks modify files **and fail the run**; re-stage the files and rerun the hooks. |
+| "The regex already exempts `projectbluefin/actions`; subpaths will work too." | Reusable workflows add `/.github/workflows/...` before `@`; without an optional subpath, pygrep rules can still flag them. |
+| "This is only a process convention, so CI details are not worth documenting." | Factory CI policy is shared infrastructure; undocumented traps get rediscovered across multiple repos. |
+| "I know what this workflow publishes." | Read the workflow file. Project-internal CI facts drift faster than model memory. |
+
+## Red Flags
+
+- A commit fails with `Files were modified by this hook` and you retry without `git add`-ing the changed files
+- A local floating-tag hook suddenly starts flagging internal reusable workflow refs
+- A PR targets `testing` but the branch was created from `main`
+- A doc about CI policy describes current workflow behavior without quoting or deriving it from source
+
+## Verification
+
+- [ ] Read the workflow or hook being documented, not a secondary doc
+- [ ] If pre-commit modified files, review the diff and re-stage them before retrying
+- [ ] For `.github/workflows/` changes, run `pre-commit run --all-files` and `actionlint .github/workflows/*.yml`
+- [ ] For doc-only CI skill updates, verify the examples and regexes against the current repo files they describe
+- [ ] If a named tool's behavior matters (for example `pre-commit`), verify it against Context7 and record the library ID in frontmatter
