@@ -3,6 +3,8 @@ Description=Trigger system updates on AC power connect
 After=network-online.target
 Wants=network-online.target
 ConditionACPower=true
+StartLimitBurst=1
+StartLimitIntervalSec=3600
 
 [Service]
 Type=oneshot
