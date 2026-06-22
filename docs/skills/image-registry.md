@@ -81,6 +81,18 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 `image-vendor` is set at build time via `00-image-info.sh`. The helper reads it dynamically — do not hardcode the registry path.
 
+## Release-notes repo mapping
+
+Runtime tools that need GitHub releases must derive the source repo from the
+current image name/ref, not from the tag alone.
+
+- `dakota` and `dakota-nvidia` → `projectbluefin/dakota`
+- `bluefin-lts*` variants → `projectbluefin/bluefin-lts`
+- `bluefin*` variants → `projectbluefin/bluefin`
+
+Why this matters: tags like `testing` and `stable` are shared across repos, so
+`image-tag` alone cannot tell Dakota apart from Bluefin.
+
 ## Build-time ublue-os source (wallpapers only)
 
 The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile.md`](containerfile.md) for details.
