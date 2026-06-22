@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 ConditionACPower=true
 StartLimitBurst=1
-StartLimitIntervalSec=3600
+StartLimitIntervalSec=21600
 
 [Service]
 Type=oneshot
