@@ -28,11 +28,11 @@ metadata:
 The Containerfile uses three named stages:
 
 ```
-FROM golang:alpine AS motd-build
+FROM golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS motd-build
   └─ git clone projectbluefin/motd@v0.2.1
   └─ go build -ldflags="-s -w" -o /umotd
 
-FROM alpine:latest AS build
+FROM alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
   └─ downloads + builds artifacts into /out/{shared,bluefin}/
        ├─ wallpapers
        ├─ ujust completions (generated from just binary)
