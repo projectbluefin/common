@@ -41,8 +41,14 @@ You are an agent in this loop. Your work compounds. See [`docs/skills/hive.md`](
 > Image names, tags, workflow outputs, config values — all derivable from source.
 > `gh api`, `read`, `bash` are here. Guessing is never acceptable.
 
+> **Before using any tool: look up its docs via Context7 first. Always.**
+> Training data is stale. bootc, cosign, skopeo, buildah, ostree, rpm-ostree, just, GitHub Actions — every tool has live, authoritative docs.
+> Pattern: `resolve-library-id` → `get-library-docs` → implement → cite the doc.
+> Flag-hunting and trial-and-error are banned. If the answer is in the docs, find it there.
+
 ```
 1. docs/SKILL.md              # find the skill for your task
+2. Context7: resolve the tool's library ID, read its docs, then act
 3. docs/factory/agentic-model.md  # cross-repo rules if working across repos
 4. just check && pre-commit run --all-files  # before every commit
 ```

@@ -46,6 +46,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [oem-hardware-hooks.md](oem-hardware-hooks.md) | OEM first-boot setup hooks in common: hook directories, version-script contract, shellcheck SC1091 pattern, what belongs here vs downstream, migration checklist |
 | [image-registry.md](image-registry.md) | projectbluefin OCI image registry — all production images at `ghcr.io/projectbluefin/` |
 | [devmode.md](devmode.md) | `ujust devmode` setup wizard — DX is a product feature, not an image; what it installs, UX flow, tap strategy, group logic, legacy -dx migration advisory, known caveats |
+| [bootc.md](bootc.md) | bootc — the foundational OS image tool. Mandatory Context7 lookup rule, filesystem layout constraints, factory build pattern, what NOT to do |
 | [containerfile.md](containerfile.md) | Containerfile build structure — multi-stage build, wallpaper source caveat, ujust completion generation, SHA verification pattern, `just overlay` local testing |
 | [skill-drift.md](skill-drift.md) | How the skill-drift CI check works — path mapping, what counts as a satisfying update, waiver process |
 | [human-gates.md](human-gates.md) | The 4 decision gates (Design/Security/Breakage/Merge) — when to stop, how to signal, verification evidence requirement |
