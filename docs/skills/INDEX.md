@@ -21,8 +21,6 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 
 | File | What it covers |
 |---|---|
-| [../qa/PROMOTION_GATES.md](../qa/PROMOTION_GATES.md) | Current promotion pipeline — what gates exist vs. are still planned; today's real pre-promotion checklist |
-| [../qa/HARDWARE_CANARY.md](../qa/HARDWARE_CANARY.md) | Hardware canary program design intent and current manual process |
 | [../hardware-testing.md](../hardware-testing.md) | Hardware test report format, 7 hardware-only bug categories, promotion policy for hardware blockers |
 
 ## Skill docs

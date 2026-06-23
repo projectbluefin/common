@@ -15,7 +15,8 @@ Load this when cutting a release, evaluating whether a monthly tag is safe to cr
 - [Emergency hotfix release](#emergency-hotfix-release)
 - [Supply chain — current state and planned improvements](#supply-chain--current-state-and-planned-improvements)
 - [Verifying a published artifact](#verifying-a-published-artifact)
-- [Weekly gated release model](#weekly-gated-release-model)
+- [How common updates reach downstream :testing builds](#how-common-updates-reach-downstream-testing-builds)
+- [PR-based release model (current)](#pr-based-release-model-current)
 - [Troubleshooting the testing→main squash promotion](#troubleshooting-the-testingmain-squash-promotion)
 
 ---
@@ -193,79 +194,27 @@ Current correct trigger subjects:
 |---|---|
 | bluefin `main` | `^chore: promote testing to main` |
 | bluefin-lts `main` | `^chore: promote testing to main` |
-| bluefin-lts `lts` | `^chore: promote main to lts` |
 | dakota `main` | `^chore: promote testing to main` |
 
 `ci(promote): ...` is still the correct PR title format for the open promotion PR, but **`ci(promote)` alone is not a reliable `execute-release` trigger** under the current squash-merge settings.
 
-### After merge: sync back
-
-`sync-main-to-testing.yml` fires on every push to `main` and merges `main` back into `testing` (using `reusable-sync-branches.yml` from `projectbluefin/actions`). This prevents `testing` from falling behind after the squash-merge, which would block the next promotion PR.
-
 ### Repo variants
 
-| Repo | testing source | target tag | fast_forward_branch |
-|---|---|---|---|
-| bluefin | `testing` branch | `stable` | — |
-| bluefin-lts | `testing` branch | `lts` | `lts` |
-| dakota | `testing` OCI tag | `stable` | — |
+| Repo | source | target tag |
+|---|---|---|
+| bluefin | `testing` branch | `stable` |
+| bluefin-lts | `testing` branch | `stable` |
+| dakota | `testing` OCI tag | `stable` |
 
-**bluefin-lts** fast-forwards the `lts` branch to the squash merge commit after each promotion so that `lts` always points to the latest promoted content.
+### E2E gate model
 
-**dakota** differs from bluefin/lts: rather than squashing git commits, `promote-testing-to-main.yml` resolves the current `:testing` OCI digest and writes it to `.github/release-state.yaml` on the promotion branch.
-
-### E2E gate model — bluefin and dakota
-
-Both bluefin and dakota run with `run_e2e: false` in their `promote-testing-to-main.yml`. The e2e quality gate is enforced separately by `post-testing-e2e.yml` (bluefin) rather than at the PR gate level.
+All three repos run with `run_e2e: false` in `promote-testing-to-main.yml`. The e2e quality gate runs separately via `post-testing-e2e.yml` (bluefin) rather than at the PR gate level.
 
 **Why `run_e2e: false`:** The gate queries GitHub's runs API by `head_sha = <testing-branch-SHA>`. Workflows triggered via `workflow_run` are stored in the API under the **default branch (main) SHA**, so the gate never finds a match regardless of whether E2E passed. This is the structural mismatch documented in [e2e-ci.md — Promotion gate never-stall design](e2e-ci.md#promotion-gate--never-stall-design).
 
-**Restoring `run_e2e: true`:** Only after the `post-testing-e2e.yml` `branches: [main, testing]` fix (and the `promote-testing-to-main.yml` `workflow_run` feedback trigger) have reached `main` via a successful promotion. Until then, re-enabling `run_e2e: true` will permanently block the gate. Follow the bootstrap procedure in [e2e-ci.md — Gate bootstrap for bluefin](e2e-ci.md#gate-bootstrap-for-bluefin-circular-dependency).
+### Merge model
 
-### Approval
-
-The promotion PR requires **at least one human `lgtm`** from `@projectbluefin/maintainers` (enforced by merge queue / branch protection in bluefin and bluefin-lts). The `github-actions[bot]` token cannot self-approve.
-
-**This is by design.** The factory is autonomous up to the promotion PR — it builds, tests, cosign-verifies, and opens a clean squash PR automatically. The final merge is a human checkpoint, not a failure of the automation.
-
-Agents must not report the factory as "broken" or "not autonomous" because promotion PRs require a maintainer review. The automation's job ends at: PR open, E2E green, gate passing, `release/ready` label set. From there, a maintainer merges.
-
-`workflow_dispatch` is available on all three `promote-testing-to-main.yml` workflows for out-of-band promotion attempts.
-
-## Promotion pipeline consistency epic (#516)
-
-The three image repos (bluefin, bluefin-lts, dakota) currently use inconsistent pipeline models. Epic [#516](https://github.com/projectbluefin/common/issues/516) tracks bringing them into alignment on a shared "build once, promote the artifact" model.
-
-**Known gaps being tracked:**
-
-| Issue | Repo | Gap | Status |
-|---|---|---|---|
-| [#517](https://github.com/projectbluefin/common/issues/517) | bluefin-lts | Rebuilds from source for production — `:lts` never tested as shipped | Open — blocked on bluefin-lts PR #73 |
-| [#518](https://github.com/projectbluefin/common/issues/518) | bluefin | `:testing` tag pushed before e2e | ✅ Closed |
-| [#519](https://github.com/projectbluefin/common/issues/519) | bluefin-lts | No 7-day promotion floor | ✅ Implemented (7-day floor present in `scheduled-lts-release.yml`) |
-| [#520](https://github.com/projectbluefin/common/issues/520) | dakota | Weekly promotion ran Sunday, not Tuesday | ✅ Closed |
-| [#521](https://github.com/projectbluefin/common/issues/521) | dakota | No cosign verify before final promotion | ✅ Closed |
-| [#522](https://github.com/projectbluefin/common/issues/522) | dakota | No full e2e at weekly promotion time | ✅ Closed |
-| [#523](https://github.com/projectbluefin/common/issues/523) | common | No shared release-pipeline.md spec | Open |
-| [#524](https://github.com/projectbluefin/common/issues/524) | all repos | No TOCTOU SHA guard before final skopeo copy | ✅ Closed |
-| — | bluefin | No `environment: production` on weekly stable promotion | ✅ Fixed 2026-06-07 (bluefin PR #432) |
-| — | bluefin-lts | TODO(#94): missing `environment: production` on promote job | ✅ Fixed 2026-06-07 (bluefin-lts PR #114) |
-| — | bluefin-lts | `renovate-automerge.yml` missing `--base main` filter | ✅ Fixed 2026-06-07 (bluefin-lts PR #114) |
-| — | bluefin-lts | `pr-e2e-smoke.yml` ran on all PRs including CI-only changes | ✅ Fixed 2026-06-07 (bluefin-lts PR #115) |
-| — | dakota | `weekly-testing-promotion.yml` used inline `curl` cosign install | ✅ Fixed 2026-06-07 (dakota PR #730) |
-| — | bluefin, bluefin-lts | Duplicate `generate-release.yml` (local SBOM+release-card) vs `reusable-release.yml` in actions | ✅ Fixed 2026-06-07 (bluefin PR #438, bluefin-lts PR #118) |
-| — | bluefin-lts | `scheduled-lts-release.yml` used fragile dispatch+poll (`gh workflow run` → sleep → `gh run list` poll → `gh run watch`) | ✅ Fixed 2026-06-07 (bluefin-lts PR #118 — replaced with `workflow_call` to `reusable-release.yml`) |
-| — | bluefin, bluefin-lts, dakota | Local `renovate.yml` duplicated runner logic; `renovate-automerge.yml` duplicated PR-lookup+merge logic | ✅ Fixed 2026-06-07 (all three repos PR merged — call `reusable-renovate.yml` + `reusable-renovate-automerge.yml` from actions) |
-| — | bluefin | `no-floating-action-tags` pre-commit hook missing `(?!.*projectbluefin/)` exemption — would fail on valid internal `@main` refs | ✅ Fixed 2026-06-09 (bluefin PR #472) |
-| — | bluefin | `generate-release.yml` orphaned after `execute-release.yml` adopted `reusable-release.yml` | ✅ Fixed 2026-06-09 (bluefin PR #472 — deleted) |
-| — | bluefin-lts | Enqueue step missing mergeability poll loop — race condition on PR creation | ✅ Fixed 2026-06-09 (bluefin-lts PR #129) |
-| — | bluefin-lts | `promote-testing-to-main.yml` missing `close-failure-issue` job — conflict issues never auto-closed | ✅ Fixed 2026-06-09 (bluefin-lts PR #129) |
-| — | dakota | `release.yml` orphaned after `execute-release.yml` adopted `reusable-release.yml` | ✅ Fixed 2026-06-09 (dakota PR #760 — deleted) |
-| — | dakota | `promote-testing-to-main.yml` missing daily schedule — promotion PR could go stale | ✅ Fixed 2026-06-09 (dakota PR #760) |
-| — | dakota | `execute-release.yml` used `project_name: Bluefin dakota` (wrong casing) | ✅ Fixed 2026-06-09 (dakota PR #760) |
-| — | common | `promotion-candidate-e2e.yml` auto-filed issues with emoji in title | ✅ Fixed 2026-06-09 (common PR #539) |
-
-**⚠️ bluefin-lts PR #73 (`feat/shared-workflow-migration`)** is pending review and rewrites the LTS build workflows + renames all LTS images. Do not implement #517 until #73 merges.
+Promotion PRs auto-merge via the merge queue with **0 approvals required**. `Lint & syntax` is the only required check. `workflow_dispatch` is available on all three `promote-testing-to-main.yml` workflows for out-of-band promotion.
 
 ## Related docs
 
@@ -273,8 +222,7 @@ The three image repos (bluefin, bluefin-lts, dakota) currently use inconsistent 
 |---|---|
 | CI workflow purposes | [workflow-map.md](workflow-map.md) |
 | E2E gates | [e2e-ci.md](e2e-ci.md) |
-| Promotion gates (QA model) | [../qa/PROMOTION_GATES.md](../qa/PROMOTION_GATES.md) |
-| Supply chain tooling (shared) | ✅ Landed — keyless cosign, SBOM, SLSA L2, Trivy via `projectbluefin/actions` composites |
+| Supply chain tooling (shared) | Keyless cosign, SBOM, SLSA L2, Trivy via `projectbluefin/actions` composites |
 
 ---
 

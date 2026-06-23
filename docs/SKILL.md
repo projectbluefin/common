@@ -34,7 +34,6 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | Work on E2E test changes | `docs/skills/e2e-ci.md` |
 | Debug post-merge E2E CI, MOTD, or brew-setup masking | `docs/skills/e2e-ci.md` |
 | Understand the common release and promotion pipeline | `docs/skills/release-promotion.md` |
-| Understand the promotion pipeline (what gates exist today) | `docs/qa/PROMOTION_GATES.md` |
 | **QA** | |
 | Understand QA coverage, test matrix, or running tests | `docs/skills/qa.md` |
 | Submit a hardware test report | `docs/hardware-testing.md` |
