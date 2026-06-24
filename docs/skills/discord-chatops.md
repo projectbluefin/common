@@ -21,14 +21,14 @@ webhooks for read-only notifications.
 | Channel | Type | ID | What posts here |
 |---|---|---|---|
 | `#factory` | Text | `1519233261438631936` | CI failures (GitHub webhook), Botkube lifecycle commands |
-| `#releases` | Forum | TBD (human must create) | Release threads (one thread per release, via composite action) |
+| `#releases` | Forum | `1519239480526110761` | Release threads (one thread per release, via composite action) |
 
 ## Webhook IDs
 
 | Webhook | Channel | ID | Secret name |
 |---|---|---|---|
 | `factory-ci` | `#factory` | `1519233290643705936` | `DISCORD_FACTORY_WEBHOOK` |
-| releases webhook | `#releases` | TBD | `DISCORD_RELEASES_WEBHOOK` |
+| releases-notify | `#releases` | `1519239518752870470` | `DISCORD_RELEASES_WEBHOOK` |
 
 Human must create `#releases` forum channel (Discord UI: Server Settings > Channels > + > Forum > name: releases),
 then create a webhook on it and store the URL as `DISCORD_RELEASES_WEBHOOK` in GitHub org secrets.
@@ -129,7 +129,7 @@ No code changes needed.
 | Discord bot app created | Done | Bot: Bluefin#0600, App ID: 1519228970032169050 |
 | `#factory` text channel | Done | ID: 1519233261438631936 |
 | `factory-ci` webhook | Done | ID: 1519233290643705936, store URL as `DISCORD_FACTORY_WEBHOOK` in org secrets |
-| `#releases` Forum channel | Pending human | Discord UI: Server Settings > Channels > + > Forum > name: releases |
+| `#releases` Forum channel | Done | ID: 1519239480526110761, webhook ID: 1519239518752870470 |
 | `Maintainer` role | Pending human | Discord Server Settings > Roles > Create Role |
 | GitHub App "Bluefin Botkube" | Pending human | github.com/organizations/projectbluefin/settings/apps |
 | k8s secrets on ghost | Pending human | See Secrets section above |
@@ -137,7 +137,7 @@ No code changes needed.
 | Botkube ArgoCD manifests | PR open | projectbluefin/testing-lab feat/botkube-chatops |
 | `discord-release-notify` action | PR open | projectbluefin/actions feat/discord-release-notify |
 | Restrict github-dispatch to Maintainer | Pending human | Discord Developer Portal > App Commands > Permissions |
-| `DISCORD_RELEASES_WEBHOOK` org secret | Pending human | After #releases created, create webhook, store URL in org secrets |
+| `DISCORD_RELEASES_WEBHOOK` org secret | Pending human | URL: https://discord.com/api/webhooks/1519239518752870470/<token> — store in GitHub org secrets |
 
 ## Where each file lives
 
