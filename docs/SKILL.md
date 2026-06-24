@@ -21,6 +21,7 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | **Issues and labels** | |
 | Understand the issue lifecycle or label taxonomy | `docs/skills/label-workflow.md` |
 | Check the PR queue or merge ruleset | `docs/skills/queue-dashboard.md` |
+| Review an incoming PR — checklists, lab tests, report | `docs/skills/pr-review.md` |
 | Understand the hive system / kubestellar-bot loop | `docs/skills/hive.md` |
 | Check on-call / hive state for the whole org | `docs/skills/hive.md` |
 | **Work in this repo — system_files/** | |
