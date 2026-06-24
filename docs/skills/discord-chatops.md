@@ -18,10 +18,13 @@ webhooks for read-only notifications.
 
 ## Channel layout
 
+Category: `/usr/factory` (ID: `1519241025254592617`)
+
 | Channel | Type | ID | What posts here |
 |---|---|---|---|
-| `#factory` | Text | `1519233261438631936` | CI failures (GitHub webhook), Botkube lifecycle commands |
+| `#factory` | Text | `1519233261438631936` | CI failures (GitHub webhook), Botkube !release commands |
 | `#releases` | Forum | `1519239480526110761` | Release threads (one thread per release, via composite action) |
+| `#hive` | Text | `1507425837891457114` | Hive queue updates |
 
 ## Webhook IDs
 
