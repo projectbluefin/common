@@ -64,6 +64,7 @@ Apply to every PR regardless of type:
 - [ ] `TimeoutStartSec=` is adequate for the work being done (e.g., large flatpak updates need 900s+, not 600s)
 - [ ] `RemainAfterExit=yes` is appropriate — correct for one-shot setup services that should stay "active" after completion
 - [ ] `[Install]` section: its absence is intentional for udev-started units (document in review); its presence is required for timer-started or manually-enabled units
+- [ ] **Enable mechanism present**: if `[Install]` / `WantedBy=` is set, confirm a preset file (`.preset`) or systemctl enable call will activate it in the built image — a unit file without an enable mechanism ships as a no-op (PR #767: preset existed in source but image pre-dated its merge, so service was disabled)
 - [ ] Service name reflects current behavior — if a "firstboot" service was generalized to run on every boot, the name should be updated (PR #767: service is no longer firstboot-only)
 
 ### shell script
@@ -144,6 +145,17 @@ systemctl cat <unit-name>.service
 systemctl status <unit-name>.service
 journalctl -u <unit-name>.service -b
 ```
+
+> ⚠️ **Always check `systemctl is-enabled` in the baseline.** A clean boot and empty `systemctl --failed` does NOT mean the service is working — it may simply not be enabled. If a unit is disabled, it never runs and produces no journal output. This is silent: no errors, no warnings, just a no-op.
+>
+> ```bash
+> systemctl is-enabled <unit-name>.service
+> # "disabled" means it will never run at boot regardless of WantedBy
+> ```
+>
+> If the service is disabled in the baseline, the review must also confirm there is a preset file or explicit `WantedBy=` + want symlink that will enable it in the built image. A unit file shipping without an enable mechanism means the change does nothing for users until the preset is also present.
+>
+> **Common scenario:** a preset file is added in the same or a prior PR but the current testing image was built before it merged — the service appears disabled in the lab even though the preset is correct in source. Always cross-check the preset file in the repo against the running image state.
 
 ### Expected QEMU noise (ignore these)
 
@@ -246,6 +258,53 @@ grep "flatpak update" /usr/libexec/ublue-nvidia-flatpak-runtime-sync
 # 3. Service not in failed state on first boot with nvidia
 systemctl --failed | grep nvidia
 # expected: no output
+```
+
+#### Worked example — PR #767 (flatpak appstream every-boot)
+
+**Baseline state** (bluefin:testing, 3 workflows, all Succeeded):
+
+| Artifact | Baseline state |
+|---|---|
+| `flatpak-appstream-firstboot.service` | Exists, unit file matches pre-PR content |
+| `systemctl is-enabled flatpak-appstream-firstboot.service` | **`disabled`** — no want symlink anywhere |
+| Journal for the service | `-- No entries --` — never ran at boot |
+| `ConditionPathExists=!/var/lib/flatpak/.appstream-refreshed` | Present (firstboot guard, PR removes it) |
+| `ExecStartPost=/bin/touch ...` | Present (flag file creator, PR removes it) |
+| `StartLimitBurst=3` location | In `[Service]` — misplaced (PR correctly moves to `[Unit]`) |
+| `/var/lib/flatpak/.appstream-refreshed` flag file | Absent (fresh VM — correct) |
+| Preset `02-flatpak-appstream-firstboot.preset` | In repo source, but **not yet active** in this image build |
+
+**Critical finding:** The service is **disabled** in the current testing image. The preset file exists in the repo but the image was built before it merged — so neither the old firstboot-only behavior nor the new every-boot behavior is active or verifiable yet. A clean lab boot here produces no journal output and no failures, but it is entirely a no-op — not a green signal.
+
+**Open question for PR author:** Is the preset landing in the same PR? If not, the every-boot behavior won't activate until a subsequent build includes the preset.
+
+**Post-merge verification checklist for PR #767** (requires a rebuilt image that includes the preset):
+
+```bash
+# 1. Service is now enabled
+systemctl is-enabled flatpak-appstream-firstboot.service
+# expected: enabled
+
+# 2. Firstboot guard removed — no ConditionPathExists line
+systemctl cat flatpak-appstream-firstboot.service | grep ConditionPathExists
+# expected: no output
+
+# 3. StartLimitBurst in [Unit] not [Service]
+systemctl cat flatpak-appstream-firstboot.service
+# expected: StartLimitBurst=3 appears after [Unit] header, not after [Service] header
+
+# 4. WantedBy target confirmed (verify graphical.target issue was addressed)
+systemctl cat flatpak-appstream-firstboot.service | grep WantedBy
+# expected: WantedBy=multi-user.target
+
+# 5. Service ran this boot
+journalctl -u flatpak-appstream-firstboot.service -b
+# expected: entries showing appstream refresh
+
+# 6. No flag file created (every-boot, not one-shot)
+ls /var/lib/flatpak/.appstream-refreshed 2>/dev/null && echo "EXISTS" || echo "absent (correct)"
+# expected: absent (correct)
 ```
 
 ---
