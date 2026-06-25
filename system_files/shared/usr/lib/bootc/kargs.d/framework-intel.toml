@@ -1,0 +1,2 @@
+# Blacklist hid_sensor_hub to fix keyboard interrupt conflict on Intel Framework laptops
+kargs = ["module_blacklist=hid_sensor_hub"]

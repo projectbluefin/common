@@ -6,7 +6,7 @@ LIBSETUP="${LIBSETUP:-/usr/lib/ublue/setup-services/libsetup.sh}"
 SYSROOT="${SYSROOT:-}"
 source "${LIBSETUP}"
 
-version-script framework system 2 || exit 0
+version-script framework system 3 || exit 0
 
 set -x
 
@@ -15,15 +15,14 @@ VEN_ID="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/chassis_vendor")"
 BIOS_VERSION="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/bios_version" 2>/dev/null)"
 SYS_ID="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/product_name")"
 
-# Intel Framework: blacklist hid_sensor_hub to fix keyboard interrupt conflict
+# Intel Framework hid_sensor_hub karg has been moved to /usr/lib/bootc/kargs.d/framework-intel.toml
+# On version bump to 3, clean up any grubby-applied karg from previous runs
 if [[ ":Framework:" =~ :$VEN_ID: ]]; then
 	if [[ "GenuineIntel" == "$CPU_VENDOR" ]]; then
 		KARGS=$(grubby --info=DEFAULT | grep args || true)
-		if [[ ! $KARGS =~ "hid_sensor_hub" ]]; then
-			echo "Intel Framework Laptop detected, applying needed keyboard fix"
-			plymouth display-message --text="Updating kargs - Please wait, this may take a while" || true
-			grubby --update-kernel=ALL --args="module_blacklist=hid_sensor_hub"
-			reboot
+		if [[ $KARGS =~ "module_blacklist=hid_sensor_hub" ]]; then
+			echo "Removing legacy grubby karg (now handled declaratively via bootc kargs.d)"
+			grubby --update-kernel=ALL --remove-args="module_blacklist=hid_sensor_hub"
 		fi
 	fi
 fi

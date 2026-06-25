@@ -90,14 +90,14 @@ teardown() {
 # 10-framework.sh — Intel Framework (kargs fix)
 # ---------------------------------------------------------------------------
 
-@test "10-framework: detects Intel Framework and applies hid_sensor_hub blacklist" {
+@test "10-framework: detects Intel Framework and cleans up legacy grubby karg" {
     echo "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
     printf 'vendor_id\t: GenuineIntel\n' > "${WORKDIR}/proc/cpuinfo"
-    # grubby --info returns no existing hid_sensor_hub karg
-    cat > "${WORKDIR}/bin/grubby" << 'EOF'
+    # grubby --info returns existing hid_sensor_hub karg
+    cat > "${WORKDIR}/bin/grubby" << EOF
 #!/bin/bash
-case "$1" in
-    --info=DEFAULT) echo 'args="quiet splash"' ;;
+case "\$1" in
+    --info=DEFAULT) echo 'args="quiet module_blacklist=hid_sensor_hub splash"' ;;
     --update-kernel=ALL) echo "mock: grubby update" >&2 ;;
 esac
 exit 0
@@ -106,7 +106,7 @@ EOF
 
     run bash "${FRAMEWORK_HOOK}"
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"Intel Framework Laptop detected"* ]]
+    [[ "${output}" == *"Removing legacy grubby karg"* ]]
     [[ "${output}" == *"mock: grubby update"* ]]
 }
 
