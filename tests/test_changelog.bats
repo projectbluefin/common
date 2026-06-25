@@ -38,13 +38,16 @@ setup() {
     export IMAGE_INFO_FILE="${IMAGE_INFO}"
 
     # Mock jq:
-    #   - '.["image-tag"]' query  → returns $MOCK_TAG (ignores stdin — IMAGE_INFO_FILE set above)
-    #   - all other invocations   → echo a mock changelog body
+    #   - '.["image-tag"]' query  → returns $MOCK_TAG
+    #   - '.["image-name"]' query → returns $MOCK_NAME
     cat > "${MOCKDIR}/jq" << 'EOF'
 #!/bin/bash
 for arg in "$@"; do
     if [[ "$arg" == *'image-tag'* ]]; then
         echo "${MOCK_TAG:-latest}"
+        exit 0
+    elif [[ "$arg" == *'image-name'* ]]; then
+        echo "${MOCK_NAME:-bluefin}"
         exit 0
     fi
 done
@@ -181,4 +184,10 @@ teardown() {
 @test "changelog: exits 0 on lts tag" {
     MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
+}
+
+@test "changelog: dakota image name selects projectbluefin/dakota repo" {
+    MOCK_NAME="dakota" MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/dakota" "${CURL_CALLS}"
 }
