@@ -1,0 +1,13 @@
+[Unit]
+Description=Trigger system updates on AC power connect
+After=network-online.target
+Wants=network-online.target
+ConditionACPower=true
+StartLimitBurst=1
+StartLimitIntervalSec=21600
+
+[Service]
+Type=oneshot
+# Wait for network to settle after AC connect before triggering updates
+ExecStartPre=/bin/sleep 60
+ExecStart=/usr/bin/systemctl start uupd.service
