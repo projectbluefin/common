@@ -26,6 +26,8 @@ case "${1:-}" in
         flatpak install --system --noninteractive -y flathub \
             org.freedesktop.Platform.GL.nvidia-"${FLATPAK_NVIDIA_VERSION}" \
             org.freedesktop.Platform.GL32.nvidia-"${FLATPAK_NVIDIA_VERSION}"
+        echo "Updating system Flatpaks after NVIDIA driver change"
+        flatpak update --system --noninteractive -y
         ;;
     *)
         echo "Usage: $0 {check|sync}"

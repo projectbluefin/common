@@ -1,0 +1,11 @@
+[Unit]
+Description=Auto Update Timer For Universal Blue
+Wants=network-online.target
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

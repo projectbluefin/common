@@ -1,0 +1,4 @@
+# Trigger system updates when AC power is connected.
+# ACTION=="change" avoids firing on boot device enumeration.
+# ATTR{type}=="Mains" matches all AC adapters regardless of kernel name.
+ACTION=="change", SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ATTR{online}=="1", RUN+="/usr/bin/systemctl start --no-block uupd-on-ac.service"

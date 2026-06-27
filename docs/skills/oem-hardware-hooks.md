@@ -168,7 +168,12 @@ and active — a plain `u` means stock, a vendor logo means the OEM stack is run
 3. Add the vendor logo SVG to:
    `system_files/shared/usr/share/icons/hicolor/scalable/actions/<name>-symbolic.svg`
 
-That's it. No new hook file, no version bump to existing hooks.
+4. If the OEM also needs user-session config files (for example a WirePlumber
+   snippet), place them in the same `oem/<Vendor>/` directory and have
+   `20-oem-brew.sh` install them into the user's home directory.
+
+No new hook file is needed. Bump the hook version only when existing machines
+must re-run the hook to pick up a new payload.
 
 ### OEM directories
 
@@ -179,14 +184,17 @@ That's it. No new hook file, no version bump to existing hooks.
 
 ### Version stamp
 
-The stamp slug is `oem-<Vendor> user 1`. This is intentionally separate from
+The stamp slug is `oem-<Vendor> user 2`. This is intentionally separate from
 the old `asus user 1` stamp — existing ASUS machines that already ran the old
 `11-asus.sh` will pick up the new generic hook and get the logo set on next login.
 The brew installs are idempotent (already-installed casks are skipped by brew).
 
 **WirePlumber rules for Framework Desktop (AMD Ryzen AI Max 300):**
-`system_files/shared/usr/share/wireplumber/wireplumber.conf.d/51-framework-desktop.conf`
-— raises HDMI output priority to 1100, internal mic priority to 2100.
+ship the snippet as OEM data in
+`system_files/shared/usr/share/ublue-os/oem/Framework/51-framework-desktop.conf`
+and let `20-oem-brew.sh` install it to
+`~/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf`
+on Framework Desktop machines only (`product_name == "Framework Desktop"`).
 
 ---
 
@@ -220,13 +228,22 @@ Bazzite swaps wireplumber from their own COPR (`ublue-os/bazzite`) and enables
 `wireplumber-sysconf.service` in deck builds to process those directories. Stock
 WirePlumber 0.5.x (what bluefin ships) has no `hardware-profiles/` loader.
 
-**For common:** place ALSA node rules directly in:
-```
-system_files/shared/usr/share/wireplumber/wireplumber.conf.d/<name>.conf
+**For common:** do not drop OEM-specific WirePlumber snippets into
+`system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` — that ships
+globally to every machine. If the rule only applies to one OEM family, store it in
+that vendor's `oem/<Vendor>/` directory and have the OEM user hook copy it into the
+user's WirePlumber fragment directory:
+
+```bash
+install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"
+install -m 0644 "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" \
+  "${HOME}/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf"
 ```
 
-The `node.name` match (PCI address or pattern) already scopes the rule to the target
-hardware — no hardware-profiles directory structure needed:
+WirePlumber's documented user fragment path is
+`~/.config/wireplumber/wireplumber.conf.d/`. The `node.name` match (PCI address or
+pattern) still scopes the rule to the target hardware — no hardware-profiles
+directory structure needed:
 
 ```conf
 monitor.alsa.rules = [
@@ -243,6 +260,23 @@ monitor.alsa.rules = [
 ```
 
 Use `~` prefix for regex matching to avoid PCI minor-revision fragility.
+
+If you add a new OEM payload to an existing versioned setup hook and want current
+users to receive it, bump that hook's `version-script` version. Otherwise existing
+machines skip the new logic forever because the old stamp already exists.
+
+If an OEM payload only applies to one model within a vendor family, gate the copy
+on DMI `product_name` as well as vendor. `Framework` alone is too broad — it would
+also match Framework laptops.
+
+If the OEM payload is a user-level config file that should survive failed setup
+retries, run its copy step **after** the versioned work block and make it
+idempotent (`install -d` + `install`). That way existing stamped systems still get
+the file and repeated logins safely refresh it.
+
+## Sources
+
+- WirePlumber config fragments and user override path: Context7 `/websites/pipewire_pages_freedesktop_wireplumber`
 
 ---
 

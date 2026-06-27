@@ -12,7 +12,10 @@ changelogs:
     TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
 
     # Select the correct upstream repo based on image stream
-    if [[ "$TAG" =~ ^lts ]]; then
+    IMAGE_NAME="$(jq -r '.["image-name"] // empty' < "${IMAGE_INFO_FILE}")"
+    if [[ "$IMAGE_NAME" == "dakota" ]]; then
+        REPO="projectbluefin/dakota"
+    elif [[ "$TAG" =~ ^lts ]]; then
         REPO="projectbluefin/bluefin-lts"
     else
         REPO="projectbluefin/bluefin"

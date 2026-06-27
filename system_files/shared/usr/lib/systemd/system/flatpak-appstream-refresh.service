@@ -1,21 +1,19 @@
 [Unit]
-Description=Refresh Flatpak remote metadata (first boot)
+Description=Refresh Flatpak remote metadata
 Documentation=https://docs.projectbluefin.io
 After=network-online.target flatpak-system-helper.service
 Wants=network-online.target
 ConditionPathExists=/usr/bin/flatpak
-ConditionPathExists=!/var/lib/flatpak/.appstream-refreshed
+ExecCondition=bash -c 'v=$(busctl get-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Metered 2>/dev/null | cut -d" " -f2); [ "$v" != "1" ] && [ "$v" != "2" ]'
 StartLimitIntervalSec=600
+StartLimitBurst=3
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/flatpak update --appstream --system --noninteractive
-ExecStartPost=/bin/touch /var/lib/flatpak/.appstream-refreshed
 RemainAfterExit=yes
 Restart=on-failure
 RestartSec=60
 
-StartLimitBurst=3
-
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target

@@ -1,16 +1,27 @@
 ---
-name: common-nvidia
+name: nvidia
 version: "1.0"
 last_updated: 2026-06-23
 tags: [nvidia, gpu, drivers, akmods]
-description: >-
-  NVIDIA GPU support across the factory image lineages. Use when adding GPU drivers,
-  debugging akmod build failures, or understanding the bluefin/bluefin-lts/dakota NVIDIA split.
+description: "NVIDIA GPU support architecture, CDI-first container model, per-repo responsibilities, driver/toolkit version updates, and flatpak runtime sync. Use when editing any nvidia-related file in system_files/nvidia/, bluefin build scripts, bluefin-lts nvidia overlay, or dakota nvidia elements."
 metadata:
   type: reference
 ---
 
 # NVIDIA GPU Support — Agent Skill
+
+## When to Use
+
+- Editing `system_files/nvidia/` in `projectbluefin/common`
+- Modifying nvidia build scripts in `bluefin`, `bluefin-lts`, or `dakota`
+- Updating NVIDIA driver or container toolkit versions
+- Debugging flatpak GPU access or CDI spec generation failures
+- Adding new nvidia-related services or presets
+
+## When NOT to Use
+
+- Filing issues or making changes in `ublue-os/*` — tell the human to report upstream manually
+- Modifying the closed-source driver path — factory only ships open kernel modules (Turing+)
 
 ## What this covers
 
@@ -78,8 +89,11 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
 ### `projectbluefin/common`
 
 - `system_files/nvidia/usr/libexec/ublue-nvidia-flatpak-runtime-sync` — syncs the correct
-  `org.freedesktop.Platform.GL.nvidia-<version>` Flatpak runtime on first boot. Needed for
-  Flatpak apps to use the GPU. Triggered by `ublue-nvidia-flatpak-runtime-sync.service`.
+  `org.freedesktop.Platform.GL.nvidia-<version>` Flatpak runtime when a new driver version
+  is detected on boot. Also runs `flatpak update --system --noninteractive` in the same pass
+  so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
+  extension). Needed for Flatpak apps to use the GPU. Triggered by
+  `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
 - `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset` —
   enables `nvidia-cdi-refresh.{path,service}` for CDI spec auto-generation.
 
@@ -228,3 +242,17 @@ commit SHA from `github:NVIDIA/nvidia-container-toolkit.git`. Driver bump: see t
 - **`golang-github-nvidia-container-toolkit` exclusion** in bluefin is intentional. It is
   Fedora's Go rewrite of NCT and is a different package from NVIDIA's official C toolkit.
   Do not remove the exclusion.
+
+---
+
+## Verification
+
+Before closing any nvidia-related PR:
+
+- [ ] Changes to `system_files/nvidia/` tested to not break non-nvidia builds (shared layer affects all variants)
+- [ ] No `ublue-os/*` repos were written to (file upstream issues manually)
+- [ ] CDI preset not accidentally removed — `80-nvidia-container-toolkit.preset` still enables `nvidia-cdi-refresh.{path,service}`
+- [ ] If editing `ublue-nvidia-flatpak-runtime-sync`: both `check` (exit 0 = needs sync, exit 1 = already synced) and `sync` (installs GL extension + updates all system flatpaks) branches are consistent
+- [ ] `golang-github-nvidia-container-toolkit` exclusion in bluefin build script is still present
+- [ ] `TimeoutStartSec` in `ublue-nvidia-flatpak-runtime-sync.service` is >= 900 (GL install + full flatpak update)
+- [ ] `just check` and `pre-commit run --all-files` pass clean

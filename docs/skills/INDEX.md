@@ -52,8 +52,10 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [bonedigger.md](bonedigger.md) | bonedigger + kubestellar-bot — the full self-improvement loop, ujust report, priority escalation, template sync |
 | [hive.md](hive.md) | Hive system architecture — bonedigger/kubestellar-bot/hive triangle, label taxonomy, sync schedule, finding work |
 | [factory-improvement.md](factory-improvement.md) | Self-improving factory loop — gap audit protocol, pipeline uniformity checklist, human gates, known gaps, and priority order for full automation |
+| [discord-chatops.md](discord-chatops.md) | Discord ChatOps — Botkube on ghost k3s, mcp-discord MCP server, #factory/#releases channel layout, release thread format, RBAC model, secrets policy, implementation task order |
 | [factory-onboarding.md](factory-onboarding.md) | How to onboard a repo into the factory model — two-output rule, banned anti-patterns (no changelog files), skill-drift CI wiring, AGENTS.md mandate |
 | [nvidia.md](nvidia.md) | NVIDIA GPU support — CDI architecture, per-repo nvidia stacks, NGC container ecosystem, driver/toolkit update procedures, known constraints |
+| [pr-review.md](pr-review.md) | PR reviewer's guide — PR type taxonomy, per-type review checklists, lab testing guide, CI gate interpretation, ghost-lab requeue, OEM hook review pattern, test quality checklist |
 
 ## Agent instruction files (not skills — loaded separately by tool)
 

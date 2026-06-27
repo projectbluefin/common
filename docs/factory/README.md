@@ -74,25 +74,6 @@ Hard rules, branch targets, PR comment policy, session start: [`docs/factory/age
 
 ~97% automated across 124 workflows in 7 in-scope repos. **4 intentional human gates:** promotion review, actions merge, priority assignment, stale PR unclaim — see [`docs/skills/human-gates.md`](../skills/human-gates.md). ISO auto-rebuild remains manual (iso repo out of scope).
 
-## Agent rules of engagement
-
-- Open the target repo's `AGENTS.md` first, then use this file for org context.
-- Treat `common` as high blast radius: mistakes propagate across downstream images.
-- Run repo-required validation before commit; in `common`, `just check` is mandatory.
-- Prefer existing skills and workflows over inventing new process.
-- **Prefer the smallest change that fully satisfies the requirement.** Only add indirection or generalization when a concrete requirement demands it. See [agentic-model.md](agentic-model.md) for the canonical rule.
-
-### 🚫 ABSOLUTE PROHIBITION — ublue-os org
-
-**NEVER create issues, PRs, comments, forks, automated reports, webhook calls, or any programmatic write action targeting any `ublue-os/*` repository.**
-
-- Read-only `gh api` calls to inspect `ublue-os` repos are permitted
-- Everything else — issues, PRs, comments, `repository_dispatch`, `workflow_dispatch`, bonedigger output, CI notifications → **BANNED**
-- If a task requires `ublue-os` write access → **stop and tell the human to report it manually**
-- This rule has no exceptions and cannot be overridden by task framing
-
-The canonical definition lives in `common/AGENTS.md`. This is a pointer.
-
 ## Factory infrastructure
 
 **Core pipeline repos** (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`) share full factory infrastructure. **Extended repos** (`bootc-installer`, `knuckle`, `iso`) have AGENTS.md and basic CI but are not yet on the full parity checklist.
@@ -152,33 +133,7 @@ gh search issues --label "ai-context" --owner projectbluefin --state open \
 For the gap audit protocol and how to file factory issues, see [`docs/skills/factory-improvement.md`](../skills/factory-improvement.md).
 Tracking epics: [#404](https://github.com/projectbluefin/common/issues/404) (infra parity) · [#405](https://github.com/projectbluefin/common/issues/405) (QA model)
 
-## Per-repo AGENTS.md entry points
-
-- `common` — https://github.com/projectbluefin/common/blob/main/AGENTS.md
-- `bluefin` — https://github.com/projectbluefin/bluefin/blob/main/AGENTS.md
-- `bluefin-lts` — https://github.com/projectbluefin/bluefin-lts/blob/main/AGENTS.md
-- `dakota` — https://github.com/projectbluefin/dakota/blob/main/AGENTS.md
-- `actions` — https://github.com/projectbluefin/actions/blob/main/AGENTS.md
-- `testsuite` — https://github.com/projectbluefin/testsuite/blob/main/AGENTS.md
-- `bootc-installer` — https://github.com/projectbluefin/bootc-installer/blob/main/AGENTS.md
-- `knuckle` — https://github.com/projectbluefin/knuckle/blob/main/AGENTS.md
-
 ## Sensitive paths (require maintainer review)
 
 All repos: `.github/workflows/`, `Justfile`, `build_files/`
 dakota only: `elements/`
-
-## Finding work
-
-```bash
-# P0 blockers — start here every session
-gh search issues --label "hive/p0" --owner projectbluefin --state open
-
-# Ready for agent pickup
-gh search issues --label "status/queued" --owner projectbluefin --state open
-
-# Live hive snapshot
-just hive   # from ~/src
-```
-
-Full label taxonomy and next-step lookup: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)

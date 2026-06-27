@@ -240,24 +240,13 @@ Lifecycle state changes now live in `projectbluefin/common`:
 2. `/approve` moves issues directly to `status/queued`
 3. `status/approved` has been removed from the lifecycle
 
-See [bonedigger-overview](./bonedigger-overview.md) for intake/reporting mechanics and [label-workflow](./label-workflow.md) for the lifecycle state machine.
-
-## Integration with Trail of Bits CI
-
-The skill-drift CI validates that this guide stays synchronized with code changes:
-
-- **Code changes**: When workflows, scripts, or systems change, corresponding skill docs must update
-- **Trigger**: On every PR, `skill-drift-check.yml` compares code changes to skill updates
-- **Enforcement**: If code changes without skill updates, the check fails and the PR is blocked
-- **Waiver**: If the code change truly needs no skill update, note this in the PR description
-
-Read [skill-drift documentation](./SKILL_DRIFT_CI.md) for how to handle CI failures.
+See [label-workflow](./label-workflow.md) for the lifecycle state machine.
 
 ## See also
 
 - [label-workflow](./label-workflow.md) — Lifecycle state machine and slash commands
 - [queue-dashboard](./queue-dashboard.md) — Repository-wide queue view
-- [REGRESSION_CONTRACT](../qa/REGRESSION_CONTRACT.md) — Feature parity across streams
+- [skill-drift](./skill-drift.md) — How the skill-drift CI check works
 
 ---
 

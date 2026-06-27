@@ -16,7 +16,6 @@ metadata:
 - [Triage tiers](#triage-tiers)
 - [PR review workflow](#pr-review-workflow)
 - [Rebase pattern for fork PRs](#rebase-pattern-for-fork-prs)
-- [Known infra issues](#known-infra-issues-as-of-2026-06-04)
 
 ---
 
@@ -70,10 +69,6 @@ gh pr merge <new-N> --squash --admin
 - Agent can still admin-merge with `--admin` — this bypasses approval requirement
 - Use judgment: skip only if there is an active objection or the PR is clearly not ready
 
-### Previously blocked by submodule boundary — now unblocked
-- PRs touching `system_files/shared/**` are now **directly mergeable** — the aurorafin-shared submodule has been removed and these files live here
-- Edit `system_files/shared/` directly in this repo
-
 ### CHANGES_REQUESTED
 - Read the review comment to understand what's needed
 - If it's a **stale doc** — rebase, update the content, admin-merge
@@ -120,17 +115,12 @@ gh pr merge <new-N> --squash --admin
 
 > Note: you cannot push back to the original fork branch. Always create a new branch on origin.
 
-## Known infra issues (as of 2026-06-04)
+## Known infra issues
 
-### E2E disabled in pr-e2e.yml
-The `e2e` job in `pr-e2e.yml` has `if: false` — it is **intentionally skipped** while the
-GNOME smoke suite is known broken. The `compose` job still builds and pushes the test image.
-Re-enable by removing the `if: false` once the suite is fixed.
-
-### Validate failures from pre-existing shellcheck issues
-Historical PRs may show `validate` failures caused by shellcheck warnings in `build.yml` and
-`validate-brewfiles.yaml` that have since been fixed on `main`. These are safe to admin-merge
-— the failures do not exist on the current codebase.
+### E2E in pr-e2e.yml runs but tests mostly skip
+The `e2e` job calls `run-testsuite.yml` which runs the `common` suite against the composed PR image.
+The workflow completes successfully but most scenarios skip (AT-SPI not configured on GHA runners).
+The `compose` job output (the PR image at `ghcr.io/projectbluefin/common:e2e-pr-N-sha`) is the real gate — it proves the image builds and can be booted. Full AT-SPI test coverage is tracked in [#553](https://github.com/projectbluefin/common/issues/553).
 
 ### Fork PRs and Compose failures
 Fork PRs will always show `Compose PR test image: FAILURE` because the GitHub Actions token
@@ -138,12 +128,6 @@ cannot push to `ghcr.io/projectbluefin/*` from a fork context. This is expected 
 not a code defect. Admin-merge these safely when the code change is correct.
 
 ## Common PR comment templates
-
-**Previously blocked by submodule — now unblocked:**
-```
-This PR touches system_files/shared/ — which is now directly editable here since
-the aurorafin-shared submodule was removed. Rebase onto main and reopen.
-```
 
 **Superseded:**
 ```

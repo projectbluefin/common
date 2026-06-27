@@ -5,6 +5,7 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 
 ## Hard rules
 
+- **The standard is the codebase itself.** Use what is in production already. When making technical decisions (like choosing a GitHub Action or CLI tool), your first step is to grep the existing codebase. If a tool (e.g., `ublue-os/remove-unwanted-software`) is already heavily used across the org's repos, that is the standard. Use it.
 - **AGENTS.md is the per-repo contract.** Read it before touching anything.
 - **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
 - **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.

@@ -330,26 +330,6 @@ A separate `manifest` job then downloads both digest artifacts, creates the mult
 
 ---
 
-## release-state.yaml schema validation
-
-`.github/release-state.yaml` is validated against the JSON schema in `projectbluefin/actions/docs/schemas/release-state.schema.json` via a `check-jsonschema` pre-commit hook. The hook is configured in `.pre-commit-config.yaml`:
-
-```yaml
-- repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: <pinned-sha>  # see .pre-commit-config.yaml for current pin
-  hooks:
-    - id: check-jsonschema
-      name: Validate release-state.yaml against schema
-      files: ^\.github/release-state\.yaml$
-      args:
-        - --schemafile
-        - https://raw.githubusercontent.com/projectbluefin/actions/main/docs/schemas/release-state.schema.json
-```
-
-The hook is dormant until `.github/release-state.yaml` exists in the repo (promote workflows write it at first promotion).
-
----
-
 ## Shellcheck in validate.yml
 
 `validate.yml` runs shellcheck on all `.sh` files under `system_files/` plus the non-extension helper `ublue-rollback-helper`.

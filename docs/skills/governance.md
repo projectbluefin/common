@@ -56,7 +56,6 @@ triage permissions.
 | `bluefin-lts` | same as bluefin | same + `image-versions.yml` exempt (Renovate) |
 | `dakota` | same as bluefin | same + `elements/` |
 | `knuckle` | `@castrojo @p5 @m2Giles @tulilirockz` | `.github/workflows/`, `Justfile` |
-| `knuckle` | same as bluefin | same as bluefin |
 
 ## Sync workflow
 

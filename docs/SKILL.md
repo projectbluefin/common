@@ -21,6 +21,7 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | **Issues and labels** | |
 | Understand the issue lifecycle or label taxonomy | `docs/skills/label-workflow.md` |
 | Check the PR queue or merge ruleset | `docs/skills/queue-dashboard.md` |
+| Review an incoming PR — checklists, lab tests, report | `docs/skills/pr-review.md` |
 | Understand the hive system / kubestellar-bot loop | `docs/skills/hive.md` |
 | Check on-call / hive state for the whole org | `docs/skills/hive.md` |
 | **Work in this repo — system_files/** | |
@@ -45,6 +46,11 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | Understand the bonedigger lifecycle bot | `docs/skills/bonedigger.md` |
 | Understand the skill-drift CI check | `docs/skills/skill-drift.md` |
 | Need to write a skill update / unsure what counts | `docs/skills/skill-improvement.md` |
+| **Discord and ChatOps** | |
+| Set up or manage the factory Discord server | `docs/skills/discord-chatops.md` |
+| Add a new repo to Discord failure notifications | `docs/skills/discord-chatops.md` |
+| Trigger a release from Discord | `docs/skills/discord-chatops.md` |
+| Use mcp-discord to manage channels/roles/webhooks | `docs/skills/discord-chatops.md` |
 
 ## Improving skill docs
 

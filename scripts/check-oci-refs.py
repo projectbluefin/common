@@ -40,7 +40,7 @@ UBLUE_ALLOWED_UPSTREAMS = {
     "ghcr.io/ublue-os/akmods-extra",               # upstream extra kernel modules
 }
 
-UBLUE_SKIP_DIRS = {"docs/factory", "specs"}
+UBLUE_SKIP_DIRS = {"docs/factory"}
 
 # ── Check 2: all projectbluefin image:tag refs in docs exist in GHCR ─────────
 TAG_PATTERN = re.compile(

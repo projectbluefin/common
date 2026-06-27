@@ -1,8 +1,5 @@
 ---
 name: lab-testing
-version: "1.0"
-last_updated: 2026-06-23
-tags: [lab, testing, kubevirt, qemu]
 description: "KubeVirt lab testing for common — how to boot bluefin, bluefin-lts, and dakota on ghost and verify common-layer changes before promotion. Use when testing a common PR or change against real variant images on the homelab cluster."
 metadata:
   type: reference
@@ -480,6 +477,138 @@ The BST build (freedesktop-sdk + dakota) takes:
 Cache is warmed by `bst-cache-warm` CronWorkflow (00:00, 06:00, 12:00, 18:00 UTC).
 If `nightly-dakota` (03:00 UTC) failed, the cache may be in an inconsistent state.
 Check `argo_list_workflows status=["Failed"] namespace=argo` before submitting dakota.
+
+## PR-specific composed image lab testing
+
+The `pr-e2e.yml` workflow composes a full test image for every PR:
+`ghcr.io/projectbluefin/common:e2e-pr-{pr_number}-{sha_short}`
+
+**Critical:** `sha_short` is the first 7 chars of `GITHUB_SHA`, which for `pull_request`
+events is the **merge commit** (PR branch merged into base) — NOT the PR branch HEAD.
+To find the correct tag:
+
+```bash
+# 1. Get the merge commit for the PR
+gh api "repos/projectbluefin/common/commits/$(gh pr view <N> --json headRefOid -q .headRefOid)" \
+  --jq .sha | cut -c1-7
+# That's wrong — GITHUB_SHA is the auto-merge commit, not the branch HEAD.
+
+# Correct: check what tag was actually pushed to GHCR
+gh api "orgs/projectbluefin/packages/container/common/versions?per_page=50" \
+  --jq '.[].metadata.container.tags[]?' | grep "e2e-pr-<N>-"
+```
+
+The composed image exists in GHCR only briefly. The `pr-image-gc` CronWorkflow
+(`nightly at 03:00`) removes old PR images. If the image is gone, push an empty commit
+on the PR branch to retrigger `pr-e2e.yml`:
+
+```bash
+cd /var/home/jorge/src/common
+git fetch origin <branch-name>
+git checkout -B <branch-name> FETCH_HEAD
+git commit --allow-empty -m "ci: retrigger PR E2E to rebuild composed image
+
+Image was GC'd from GHCR by pr-image-gc cron.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+git push origin <branch-name>
+# Then check GHCR for the new tag:
+gh api "orgs/projectbluefin/packages/container/common/versions?per_page=20" \
+  --jq '.[].metadata.container.tags[]?' | grep "e2e-pr-<N>-"
+```
+
+### Build the containerdisk first
+
+`bluefin-qa-pipeline` has an `assert-cd` gate that fails if the containerdisk for the
+image tag is not in the local Zot registry. The `build-containerdisk` WorkflowTemplate
+must run successfully before submitting the qa-pipeline for a PR-specific tag:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: build-cd-pr<N>-
+  namespace: argo
+spec:
+  workflowTemplateRef:
+    name: build-containerdisk
+  arguments:
+    parameters:
+    - name: image
+      value: ghcr.io/projectbluefin/common
+    - name: image-tag
+      value: e2e-pr-<N>-<sha>     # exact tag from GHCR, not branch HEAD
+    - name: containerdisk-tag
+      value: e2e-pr-<N>-<sha>
+    - name: force
+      value: "false"
+    - name: disk-size
+      value: "20"
+```
+
+Then submit the qa-pipeline:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: pr<N>-actual-
+  namespace: argo
+spec:
+  workflowTemplateRef:
+    name: bluefin-qa-pipeline
+  arguments:
+    parameters:
+    - name: image
+      value: ghcr.io/projectbluefin/common
+    - name: image-tag
+      value: e2e-pr-<N>-<sha>
+    - name: suites
+      value: smoke
+    - name: namespace
+      value: bluefin-test
+```
+
+The `build-containerdisk` step takes ~20 minutes. The `assert-cd` check output
+`missing` followed by `install-to-disk` beginning is expected — the pipeline builds
+the containerdisk on demand.
+
+### Build-containerdisk failure modes
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| `manifest unknown` pulling image | Image was GC'd from GHCR | Re-trigger `pr-e2e.yml` via empty commit |
+| `sfdisk: cannot open /dev/loop0: Invalid argument` + `Size: 0` | Loop device contention (multiple concurrent builds) | Wait for other `build-cd-sync-*` runs to finish, then retry |
+| `readlink /var/lib/containers/storage/overlay/.../diff: no such file or directory` | Ghost containers storage overlay corruption | **Infrastructure issue** — needs ghost containers storage reset; file a lab issue |
+| `no such table: ContainerConfig` | Podman SQLite DB corrupted on ghost | **Infrastructure issue** — all containerdisk builds will fail until ghost containers storage is cleaned |
+
+When ghost's containers storage is corrupted, ALL `build-containerdisk` and
+`build-cd-sync-*` workflows fail systemically. The `digest-watch` CronWorkflow will
+generate a flood of failing retries every 5 minutes. Check for this pattern:
+
+```
+argo_list_workflows namespace=argo status=["Failed"]
+# If you see many build-cd-sync-* failures in the last 10-15 min → ghost storage issue
+# Check logs for "no such table: ContainerConfig" or readlink errors
+```
+
+This requires human intervention to clean ghost's containers storage. File an issue
+in `projectbluefin/testing-lab` with the error and the failing workflow names.
+
+### Auto-triggered vs. PR-specific pipeline
+
+The `pr-label-poller` CronWorkflow triggers `bluefin-qa-pipeline` automatically when
+a PR has the `lab-test` label. This auto-triggered run uses:
+- `image-tag: testing` (not the PR-specific composed image)
+- `containerdisk-tag: testing` (existing pre-built disk)
+
+The auto-triggered run passes quickly (the `testing` containerdisk exists) but tests
+the **base bluefin:testing** image, NOT the PR's new files. It confirms the VM boots
+and smoke tests pass, but cannot verify PR-specific artifacts.
+
+To verify PR-specific changes (new units, udev rules, drop-ins), you must:
+1. Build a containerdisk from the PR-specific composed image (see above)
+2. Submit the qa-pipeline with the PR-specific `image-tag`
 
 ## Namespaces for VMIs
 

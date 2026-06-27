@@ -71,6 +71,19 @@ gh api repos/projectbluefin/actions/contents/.github/workflows/reusable-build.ym
 
 Do not describe the build process from memory. Read that file.
 
+### Kernel arguments
+
+bootc supports declarative kernel arguments via TOML files in `/usr/lib/bootc/kargs.d/`.
+When adding or modifying kernel arguments for the OS image, **always use declarative TOML files** instead of runtime `grubby` commands in setup scripts.
+
+```toml
+# /usr/lib/bootc/kargs.d/my-feature.toml
+kargs = ["module_blacklist=my_module", "my_arg=1"]
+```
+
+This ensures arguments are baked into the image, reproducible, and applied reliably without requiring runtime modification of the bootloader config.
+Source: bootc docs → "Kernel arguments" (resolve via Context7).
+
 ### Image structure rules
 
 bootc images have constraints on what goes where in the filesystem. Before

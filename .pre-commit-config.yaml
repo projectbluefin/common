@@ -32,3 +32,8 @@ repos:
         entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'
         types: [yaml]
         files: '\.github/workflows/'
+      - id: no-discord-token
+        name: Block Discord bot tokens
+        language: pygrep
+        entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
+        exclude: '\.pre-commit-config\.yaml$'
