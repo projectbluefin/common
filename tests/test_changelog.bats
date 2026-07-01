@@ -85,7 +85,8 @@ fi
 EOF
     chmod +x "${MOCKDIR}/grep"
 
-    export PATH="${MOCKDIR}:${PATH}"
+    # Exclude non-standard directories (like user's local bin where 'bctl' may exist) to keep tests isolated and repeatable
+    export PATH="${MOCKDIR}:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
     SCRIPT_FILE="${WORKDIR}/changelog.sh"
     _extract_script "${SCRIPT_FILE}"
