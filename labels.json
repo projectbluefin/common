@@ -2,12 +2,12 @@
   {
     "name": "status/claimed",
     "color": "e8b86d",
-    "description": "Actively being worked. Owner: open a PR with Closes #NNN."
+    "description": "RETIRED: Use standard Branch-as-State GitHub Flow."
   },
   {
     "name": "status/discussing",
     "color": "7c83fd",
-    "description": "Under discussion. Maintainer: reach consensus then comment /approve."
+    "description": "RETIRED: Use standard Branch-as-State GitHub Flow."
   },
   {
     "name": "status/hold",
@@ -17,7 +17,7 @@
   {
     "name": "status/queued",
     "color": "a467dc",
-    "description": "Ready to claim. Contributor: comment /claim to take this."
+    "description": "RETIRED: Use standard Branch-as-State GitHub Flow."
   },
   {
     "name": "status/triage",
