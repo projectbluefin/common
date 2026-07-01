@@ -95,7 +95,7 @@ def collect_tag_refs(root=None):
         for lineno, line in enumerate(text.splitlines(), start=1):
             for m in TAG_PATTERN.finditer(line):
                 image, tag = m.group(1), m.group(2)
-                if tag.startswith("sha256"):
+                if tag.startswith("sha256") or tag.startswith("e2e-pr-"):
                     continue
                 key = f"{image}:{tag}"
                 refs.setdefault(key, []).append(f"{path}:{lineno}")

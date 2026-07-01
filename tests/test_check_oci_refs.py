@@ -135,6 +135,15 @@ class TestCollectTagRefs:
         refs = collect_tag_refs(tmp_path)
         assert refs == {}
 
+    def test_skips_e2e_pr_tags(self, tmp_path):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs/guide.md").write_text(
+            "Placeholder ghcr.io/projectbluefin/common:e2e-pr-<N>-<sha>\n"
+            "Placeholder ghcr.io/projectbluefin/common:e2e-pr-N-sha\n"
+        )
+        refs = collect_tag_refs(tmp_path)
+        assert refs == {}
+
     def test_collects_multiple_distinct_refs(self, tmp_path):
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs/guide.md").write_text(
