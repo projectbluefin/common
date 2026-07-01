@@ -432,6 +432,7 @@ rows:
             - com.getpostman.Postman
             - me.iepure.devtoolbox
             - io.kinvolk.Headlamp
+            - app.freelens.Freelens
             - de.leopoldluley.Clapgrep
             - com.mardojai.ForgeSparks
             - io.dbeaver.DBeaverCommunity
