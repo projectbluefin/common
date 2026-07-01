@@ -374,21 +374,38 @@ We retain lightweight automation for metadata, sync, and release promotion:
 ## Quick reference for new contributors
 
 **I want to report a bug:**
-→ Open an issue → use the Bug Report template → fill it out → done. Maintainers triage it.
+→ Open an issue ➔ use the Bug Report template ➔ fill it out ➔ done. Maintainers triage it.
 
 **I want to propose a feature:**
-→ Open an issue → use the Feature Request template → be specific → done. Vague proposals wait indefinitely in `status/discussing`.
+→ Open an issue ➔ use the Feature Request template ➔ be specific ➔ done. Vague proposals wait in discussion.
 
 **I want to implement something:**
-1. Find an issue with `status/queued` in the target repo
-2. Comment `/claim`
-3. Read the issue + the repo's `AGENTS.md`
-4. Branch, build, test, PR with "Closes #NNN"
+1. Find an open, unassigned issue in the target repo.
+2. Assign yourself to the issue (using standard GitHub assignee feature).
+3. Read the issue + the repo's `AGENTS.md` operating contract.
+4. Create a branch (`fix/NNN-description` or `feat/NNN-description`), build, test locally, and open a PR with `Closes #NNN` in its description.
 
-**I'm a maintainer and want to queue work for agents:**
-1. Find a triaged issue (has `kind/` and `area/` set)
-2. Comment `/approve`
-3. Done — automation queues it immediately
+**I'm a maintainer and want to assign work:**
+1. Find a triaged issue (has `kind/` and `area/` labels set).
+2. Assign the issue to a contributor or agent.
 
-**I need to stop automation from touching something:**
-→ Comment `/hold` with a reason, or add `status/hold` manually
+**I need to hold or pause work on an issue:**
+→ Apply the `status/hold` label manually and comment with the reason and expected duration.
+
+---
+
+## Red Flags
+
+- **Using slash comments (`/approve`, `/claim`, `/unclaim`)**: These legacy triggers are retired. Do not use them or write new workflows that consume them.
+- **Applying FSM labels (`status/queued`, `status/claimed`, `status/discussing`)**: These labels are retired. All active status states must be handled via standard GitHub assignments, PR linkages, or project board pipelines.
+- **Ignoring trailing white-spaces in edits**: Pre-commit will fail. Run `pre-commit run --all-files` before pushing.
+- **Filing bugs with `needs-triage`**: This is an invalid label. Always use `status/triage`.
+
+---
+
+## Verification
+
+- [ ] All issue templates (`.github/ISSUE_TEMPLATE/*.yml`) are free of retired label references (`needs-triage`, `status/approved`).
+- [ ] No workflows inline are parsing issue/PR comments for active state transitions.
+- [ ] Pull requests contain standard keyword linkages (`Closes #NNN`) in their descriptions to automatically manage issue closure.
+- [ ] All local files format cleanly under `pre-commit run --all-files`.
