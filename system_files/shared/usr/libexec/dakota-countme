@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# /usr/libexec/dakota-countme
+# Weekly user-counting client for Dakota (bootc) systems
+set -euo pipefail
+
+IMAGE_INFO="/usr/share/ublue-os/image-info.json"
+STATE_DIR="${STATE_DIRECTORY:-/var/lib/dakota-countme}"
+NOW=$(date +%s)
+WEEK=604800
+
+# 1. Enforce that we are running on Dakota
+if [ ! -f "$IMAGE_INFO" ]; then
+    exit 0
+fi
+
+IMAGE_NAME=$(jq -r '."image-name" // empty' "$IMAGE_INFO")
+if [ "$IMAGE_NAME" != "dakota" ]; then
+    exit 0
+fi
+
+# Ensure state directory exists
+if [ ! -d "$STATE_DIR" ]; then
+    mkdir -p "$STATE_DIR"
+fi
+
+EPOCH_FILE="${STATE_DIR}/epoch"
+LASTRUN_FILE="${STATE_DIR}/lastrun"
+
+# 2. Initialize epoch file on first run
+if [ ! -f "$EPOCH_FILE" ]; then
+    echo "$NOW" > "$EPOCH_FILE"
+fi
+EPOCH=$(cat "$EPOCH_FILE")
+
+# 3. Throttling: only run once per 7-day window
+if [ -f "$LASTRUN_FILE" ]; then
+    LASTRUN=$(cat "$LASTRUN_FILE")
+    if (( NOW - LASTRUN < WEEK )); then
+        exit 0
+    fi
+fi
+
+# 4. Compute Fedora-style week bucket
+WEEKS=$(( (NOW - EPOCH) / WEEK + 1 ))
+if (( WEEKS == 1 )); then
+    BUCKET=1    # First week
+elif (( WEEKS >= 2 && WEEKS <= 4 )); then
+    BUCKET=2    # First month (weeks 2-4)
+elif (( WEEKS >= 5 && WEEKS <= 24 )); then
+    BUCKET=3    # First 6 months (weeks 5-24)
+else
+    BUCKET=4    # >6 months
+fi
+
+# 5. Extract image metadata
+IMAGE_TAG=$(jq -r '."image-tag" // "unknown"' "$IMAGE_INFO")
+IMAGE_FLAVOR=$(jq -r '."image-flavor" // "unknown"' "$IMAGE_INFO")
+ARCH=$(uname -m)
+OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo "unknown")
+
+# 6. Formulate request
+USER_AGENT="dakota-countme (${IMAGE_NAME} ${OS_VERSION}; ${IMAGE_FLAVOR}; Linux.${ARCH})"
+URL="https://countme.projectbluefin.io/metalink?repo=${IMAGE_NAME}&tag=${IMAGE_TAG}&flavor=${IMAGE_FLAVOR}&arch=${ARCH}&countme=${BUCKET}"
+
+# 7. Ping the server (empty GET)
+if curl -sf --retry 3 --max-time 10 -H "User-Agent: ${USER_AGENT}" "$URL" >/dev/null; then
+    echo "$NOW" > "$LASTRUN_FILE"
+fi
