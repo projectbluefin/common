@@ -174,8 +174,8 @@ rows:
             fr: "Nos applications préférées"
             id: "Aplikasi favorit kami"
             pl: "Nasze ulubione aplikacje"
-          light-banner: file:///run/host/etc/bazaar/11-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/11-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/11-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/11-bluefin-night.png
           banner-fit: cover
           banner-text-halign: end
           banner-text-valign: start
@@ -215,8 +215,8 @@ rows:
             fr: "Surfez sur le web avec votre navigateur préféré"
             id: "Jelajahi internet dengan peramban favoritmu"
             pl: "Surfuj po sieci swoją ulubioną przeglądarką"
-          light-banner: file:///run/host/etc/bazaar/01-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/01-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/01-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/01-bluefin-night.png
           banner-fit: cover
           banner-text-halign: start
           banner-text-valign: start
@@ -249,8 +249,8 @@ rows:
             fr: "La liberté de la musique"
             id: "Rasakan bebasnya musik"
             pl: "Wolność muzyki"
-          light-banner: file:///run/host/etc/bazaar/02-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/02-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/02-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/02-bluefin-night.png
           banner-fit: cover
           banner-text-halign: end
           banner-text-valign: end
@@ -288,8 +288,8 @@ rows:
             fr: "Travaillez malin"
             id: "Bekerjalah lebih pintar"
             pl: "Pracuj mądrzej"
-          light-banner: file:///run/host/etc/bazaar/03-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/03-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/03-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/03-bluefin-night.png
           banner-fit: cover
           banner-text-halign: start
           banner-text-valign: end
@@ -331,8 +331,8 @@ rows:
             fr: "Protocole 3: Protégez le pilote"
             id: "Protokol 3: Lindungi Sang Pilot"
             pl: "Protokół trzeci: Chronić pilota"
-          light-banner: file:///run/host/etc/bazaar/04-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/04-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/04-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/04-bluefin-night.png
           banner-fit: cover
           banner-text-halign: start
           banner-text-valign: end
@@ -373,8 +373,8 @@ rows:
             fr: "Équipé pour toute éventualité"
             id: "Siapkan diri, lengkapi alatmu"
             pl: "Przygotuj i zaopatrz się"
-          light-banner: file:///run/host/etc/bazaar/05-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/05-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/05-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/05-bluefin-night.png
           banner-fit: cover
           banner-text-halign: start
           banner-text-valign: end
@@ -420,8 +420,8 @@ rows:
             fr: "Déchainez la puissance du Cloud Native"
             id: "Manfaatkan kekuatan Cloud Native"
             pl: "Uwolnij moc dystrybucji Cloud Native"
-          light-banner: file:///run/host/etc/bazaar/06-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/06-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/06-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/06-bluefin-night.png
           banner-fit: cover
           banner-text-halign: end
           banner-text-valign: start
@@ -468,8 +468,8 @@ rows:
             fr: "Investissez dans l'avenir"
             id: "Persiapkan generasi masa depan"
             pl: "Zainwestuj w przyszłość"
-          light-banner: file:///run/host/etc/bazaar/10-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/10-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/10-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/10-bluefin-night.png
           banner-fit: cover
           banner-text-halign: start
           banner-text-valign: end
@@ -506,8 +506,8 @@ rows:
             fr: "Explorez le meilleur de l'IA open source"
             id: "Jelajahi yang terbaik dari AI sumber terbuka"
             pl: "Odkrywaj open sourcowe rozwiązania SI"
-          light-banner: file:///run/host/etc/bazaar/08-bluefin-day.jxl
-          dark-banner: file:///run/host/etc/bazaar/08-bluefin-night.jxl
+          light-banner: file:///run/host/etc/bazaar/08-bluefin-day.png
+          dark-banner: file:///run/host/etc/bazaar/08-bluefin-night.png
           banner-fit: cover
           banner-text-halign: end
           banner-text-valign: end

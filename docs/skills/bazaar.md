@@ -52,7 +52,7 @@ The currently installed stable release (`v0.8.2`) expects the legacy schema stru
           category:
             title:
               en: "Bluefin Recommends"
-            light-banner: file:///run/host/etc/bazaar/11-bluefin-day.jxl
+            light-banner: file:///run/host/etc/bazaar/11-bluefin-day.png
             appids:
               - org.gnome.Calculator
   ```

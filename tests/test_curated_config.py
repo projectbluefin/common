@@ -37,6 +37,14 @@ def test_curated_uses_legacy_schema_shape():
             assert "appids" in category
             assert isinstance(category["appids"], list)
 
+            # Banners must be PNG (never JXL) to prevent stable Bazaar 0.8.2 crashes on Gnome runtimes
+            if "light-banner" in category:
+                assert category["light-banner"].endswith(".png")
+                assert not category["light-banner"].endswith(".jxl")
+            if "dark-banner" in category:
+                assert category["dark-banner"].endswith(".png")
+                assert not category["dark-banner"].endswith(".jxl")
+
 
 def test_bazaar_config_valid():
     data = _load_yaml(BAZAAR)
