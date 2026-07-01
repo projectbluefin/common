@@ -144,7 +144,6 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
-| `lifecycle-caller.yml` | common | `projectbluefin/actions/.github/workflows/lifecycle.yml` | `@main` |
 | `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | `@v1` |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@main` |
 
@@ -186,7 +185,7 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # CORRECT — int
 ### Repos with managed tags (exempt)
 
 All `projectbluefin/` internal refs are exempt from the hook. Current usage:
-- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows) or `@main` (lifecycle-caller)
+- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
 - `projectbluefin/bonedigger` — `@v1` maintained by bonedigger release process
 - `projectbluefin/testsuite` — `@main` (managed floating tag, same policy as all internal refs)
 

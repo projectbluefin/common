@@ -119,18 +119,10 @@ git push origin main
 
 This includes skill updates, INDEX.md, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`.
 
-## Lifecycle automation
+## Lifecycle governance
 
-| Repo | Workflow | State |
-|---|---|---|
-| `bluefin` | `lifecycle-caller.yml` | ✅ live |
-| `common` | `lifecycle-caller.yml` | ✅ live |
-| `bluefin-lts` | `lifecycle-caller.yml` | ✅ live |
-| `dakota` | `lifecycle-caller.yml` | ✅ live |
-| `knuckle` | `lifecycle-caller.yml` | ✅ live |
+We use standard, zero-maintenance branch-as-state model for the factory's lifecycle. Issues have static labels for categorization (type, area, priority) while the active work state is tracked purely through branches, PR associations, standard assignees, and projects.
 
-`common` owns the reusable `.github/workflows/lifecycle.yml`. Each repo's `lifecycle-caller.yml` calls that workflow at a pinned `common` commit SHA.
+The legacy comment-based active FSM previously driven by `lifecycle-caller.yml` is **retired**.
 
-Lifecycle labels now come from `labels.json` and are synced by `sync-labels.yml` across the factory.
-
-Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.
+Metadata and triage labels are synced from `labels.json` across all core repos via `sync-labels.yml` to maintain a consistent taxonomy.

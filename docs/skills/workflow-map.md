@@ -30,7 +30,6 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `sync-codeowners.yml` | Keeps CODEOWNERS/policy state in sync. Has a `dry_run` boolean `workflow_dispatch` input — always run with `dry_run: true` first to preview changes before applying. Workflow makes irreversible `PUT/DELETE /collaborators` API calls across 4 downstream repos. | Governance / CODEOWNERS automation work |
 | `scorecard.yml` | Weekly OpenSSF Scorecard analysis. Runs on schedule and on push to main. Uploads SARIF to the GitHub Security tab. | Adjusting security posture reporting |
 | `release.yml` | Monthly/versioned OCI release flow. Triggered by schedule, `workflow_dispatch`, or automatically when `E2E` completes green on main. Uses git-cliff for changelog generation ([common#592](https://github.com/projectbluefin/common/pull/592)). | Changing versioned layer release behavior |
-| `lifecycle-caller.yml` | Issue/PR lifecycle — slash commands, widget, label guard, stale sweep. Calls `projectbluefin/actions/.github/workflows/lifecycle.yml@main` (moved from `common` in [#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10). Uses `@main` — not a SHA pin — to prevent `startup_failure` from stale pins. Do not add lifecycle logic inline here; all logic lives in the `actions` reusable. | Changing factory lifecycle automation |
 
 > **Workflows that do not exist in `common` and must not be re-added:**
 > - `backfill-pipeline.yml` — issue widget backfill. If needed, run as a local script; do not add CI plumbing for a one-shot task.
@@ -54,7 +53,8 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 
 ### Factory operations
 
-`lifecycle-caller.yml` and `sync-codeowners.yml` are factory-policy workflows rather than image-test workflows. Lifecycle ownership lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. The `lifecycle-caller.yml` in each repo is a thin caller using `@main` — no SHA pinning for internal refs.
+We use a simple, zero-maintenance branch-as-state model. The legacy comment-based active FSM previously driven by `lifecycle-caller.yml` is retired. Standard GitHub project automation, assignees, and native `Closes #NNN` PR keywords handle status transitions natively.
+`sync-codeowners.yml` is a factory-policy workflow rather than an image-test workflow. The caller in each repo is a thin caller using `@main` — no SHA pinning for internal refs.
 
 ## Which skill to load next
 
