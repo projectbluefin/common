@@ -1,9 +1,9 @@
 ---
 name: bazaar
-version: "1.0"
+version: "1.1"
 last_updated: 2026-07-01
 tags: [bazaar, curated, flatpak, apps]
-description: "Use when editing Bazaar config or hooks in common. Covers curated schema migration, Bluefin-owned files, and local preview workflow."
+description: "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers sRGB JXL-to-PNG image conversions, Type=simple requirements, and local ujust preview workflows."
 metadata:
   type: procedure
   context7-sources:
@@ -18,6 +18,11 @@ metadata:
 - Porting curated-page structure across Bazaar schema versions
 - Changing Bazaar hook behavior for app install interception
 - Validating Bazaar behavior locally before opening a PR
+- Modifying the background `bazaar.service` systemd service definition
+
+## When NOT to use
+
+- Editing general Flatpak preferences or system-wide flatpak overrides unrelated to Bazaar's hooks or configuration.
 
 ## Files and ownership
 
@@ -77,49 +82,41 @@ rows:
 
 When porting content between repos/variants, **always check the active schema shape** to avoid rendering failures or parser errors.
 
-## Local preview workflow (Non-Root / Sudo-Free)
+## Core Process: Local Preview Workflow
 
-Instead of installing files to `/etc/bazaar` (which requires `sudo`), you can launch the Bazaar flatpak directly against files in your local workspace using command-line arguments. This is the preferred non-root preview workflow.
+Since the curated layout references PNG banners (converted from JXL files inside the branding submodule), the local environment needs those PNGs to exist in `/etc/bazaar` on the host to avoid rendering blank/empty spaces.
 
-1. **Kill any lingering background Bazaar processes first.** Since Bazaar runs as a search provider daemon, starting it with a new config requires killing existing background processes:
-   ```bash
-   # List active bazaar/bwrap processes and locate their PIDs
-   ps -ef | grep -E 'bazaar|Bazaar' | grep -v grep
+Always use the automated preview recipes which handle JXL conversion via a non-root `podman` container and reload the systemd service:
 
-   # Kill the exact PIDs (never use pkill/killall)
-   kill <PID1> <PID2>
-   ```
-
-2. **Launch with workspace overrides:**
-   To load the custom curated config directly from your workspace without copying it to `/etc`:
-   ```bash
-   flatpak run --filesystem=host io.github.kolunmi.Bazaar \
-     --extra-curated-config=/absolute/path/to/system_files/bluefin/etc/bazaar/curated.yaml
-   ```
-
-3. **Verify the logs:**
-   If there are validation or schema errors, Bazaar will output them directly to stdout/stderr:
-   - `property 'banner' doesn't exist on type BzCuratedRow` indicates that the old version of Bazaar is trying to parse the modern schema format.
-   - `property 'start-on-curated' doesn't exist on type BzMainConfig` indicates that the old version of Bazaar is trying to parse modern options in `bazaar.yaml`.
-
-
-## Validation
-
+### From the checked-out workspace:
 ```bash
-# Curated/Bazaar config shape regression
-python3 -m pytest tests/test_curated_config.py -v
-
-# Hook behavior
-python3 -m pytest tests/test_hooks.py tests/test_bazaar_hook.py -v
-
-# Repo standard validation
-just check
-pre-commit run --all-files
-just test
+# Formats, builds/converts JXL banners to PNG, copies all config files to /etc/bazaar, and restarts the service
+just bazaar-preview
 ```
 
-## Common pitfalls
+### From any terminal on a dev machine (targeting a common checkout directory):
+```bash
+ujust bazaar-preview /path/to/common
+```
 
-- Editing curated content without local preview causes UI regressions to slip through.
-- Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
-- Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
+## Common Pitfalls & Rationalizations
+
+- **"I can just run djxl locally."** -> This fails in CI and on many developer machines because `djxl` is not installed on the host. Always use the automated `podman` JXL-to-PNG loop.
+- **"I'll use the legacy -C sRGB flag."** -> Newer versions of `djxl` throw `Unknown argument: -C` and abort the build. Always use `--color_space=sRGB` to preserve full sRGB pixel colors.
+- **"Using Type=oneshot on bazaar.service is fine."** -> If the systemd service is `oneshot`, and the command `bazaar --no-window` runs as a persistent daemon, systemd will block forever waiting for the service to start, hanging the user's terminal. Always use `Type=simple`.
+
+## Red Flags
+
+- `bazaar.service` containing `Type=oneshot` or `RemainAfterExit=yes` for the background daemon.
+- `Containerfile` or preview scripts referencing the deprecated `-C` flag for `djxl`.
+- Local previews displaying blank/missing banners (indicates PNGs were not successfully compiled or copied to `/etc/bazaar`).
+- Open PRs modifying `curated.yaml` without matching unit tests in `tests/test_curated_config.py`.
+
+## Verification
+
+Before declaring a Bazaar task complete, ensure:
+- [ ] `just check` passes.
+- [ ] `pre-commit run --all-files` passes.
+- [ ] All python unit tests (`tests/test_curated_config.py`, `tests/test_hooks.py`) are green.
+- [ ] Banners in the preview list have `.png` extensions (not `.jxl`).
+- [ ] Converted PNG banners are non-empty and show correct color matching on standard GTK loaders.
