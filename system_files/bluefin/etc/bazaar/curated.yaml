@@ -16,6 +16,18 @@ rows:
           subtitle: "Latest weekly updates from the GNOME community and ecosystem"
           image: file:///run/host/etc/bazaar/02-bluefin-day.png
           uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-gnome-notes.md
+        - title: "Games & Entertainment"
+          subtitle: "Protocol Three: Protect the Pilot"
+          image: file:///run/host/etc/bazaar/04-bluefin-day.png
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-games.md
+        - title: "Sustainability & Education"
+          subtitle: "Curated applications to protect the planet and empower learners"
+          image: file:///run/host/etc/bazaar/10-bluefin-day.png
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-sustainability.md
+        - title: "AI and Machine Learning"
+          subtitle: "Run open-source models completely offline and secure"
+          image: file:///run/host/etc/bazaar/08-bluefin-day.png
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-ai.md
 
   - section:
       title: "Bluefin Recommends"
@@ -73,37 +85,6 @@ rows:
   - banner:
       height: 400
       image:
-        light-uri: file:///run/host/etc/bazaar/04-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/04-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#85d0b0"
-      dark-color: "#080914"
-  - section:
-      title: "Games"
-      subtitle:
-        string: "Protocol Three: Protect the Pilot"
-      appids:
-        list:
-          - com.valvesoftware.Steam
-          - com.heroicgameslauncher.hgl
-          - com.discordapp.Discord
-          - net.lutris.Lutris
-          - com.vysp3r.ProtonPlus
-          - com.dec05eba.gpu_screen_recorder
-          - com.github.Matoking.protontricks
-          - com.obsproject.Studio
-          - com.feaneron.Boatswain
-          - com.valvesoftware.SteamLink
-          - org.gnome.Mahjongg
-          - io.github.fragglet.sdl_sopwith
-          - io.github.sepehr_rs.Sudoku
-          - org.wesnoth.Wesnoth
-          - org.endlessaccess.threadbare
-
-  - banner:
-      height: 400
-      image:
         light-uri: file:///run/host/etc/bazaar/05-bluefin-day.png
         dark-uri: file:///run/host/etc/bazaar/05-bluefin-night.png
         fit: cover
@@ -137,50 +118,3 @@ rows:
           - org.mozilla.vpn
           - org.cryptomator.Cryptomator
           - io.github.zarestia_dev.rclone-manager
-
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/10-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/10-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#7f4f39"
-      dark-color: "#2b1c2c"
-  - section:
-      title: "Sustainability & Education"
-      subtitle:
-        string: "Invest in the Future"
-      appids:
-        list:
-          - org.endlessos.Key
-          - io.github.david_swift.Flashcards
-          - dev.bragefuglseth.Keypunch
-          - org.tuxpaint.Tuxpaint
-          - im.bernard.Memorado
-          - io.github.josephmawa.Egghead
-          - page.codeberg.lo_vely.Nucleus
-          - org.turbowarp.TurboWarp
-          - as.may.moat
-          - app.drey.MultiplicationPuzzle
-          - io.github.josephmawa.SpellingBee
-
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/08-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/08-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#ffb267"
-      dark-color: "#004466"
-  - section:
-      title: "AI and Machine Learning"
-      subtitle:
-        string: "Explore the best of open source AI"
-      appids:
-        list:
-          - com.jeffser.Alpaca
-          - io.github.qwersyk.Newelle
-          - ai.jan.Jan
-          - ink.whis.Whis
