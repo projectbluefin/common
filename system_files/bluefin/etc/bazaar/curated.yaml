@@ -7,15 +7,15 @@ rows:
         - title: "Bluefin Release Notes"
           subtitle: "Latest stable updates from Project Bluefin"
           image: file:///run/host/etc/bazaar/11-bluefin-day.png
-          uri: file:///run/host/etc/bazaar/article-bluefin-notes.md
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-bluefin-notes.md
         - title: "Developer Experience"
           subtitle: "Developer Mode tooling, Brewfiles, and setup guide"
           image: file:///run/host/etc/bazaar/06-bluefin-day.png
-          uri: file:///run/host/etc/bazaar/article-devtools.md
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-devtools.md
         - title: "GNOME Release Notes"
           subtitle: "Discover the latest GNOME desktop environment features"
           image: https://raw.githubusercontent.com/GNOME/gnome-logo/master/logo/gnome-logo.png
-          uri: file:///run/host/etc/bazaar/article-gnome-notes.md
+          uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-gnome-notes.md
   - banner:
       height: 400
       image:
