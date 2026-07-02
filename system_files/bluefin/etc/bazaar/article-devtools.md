@@ -9,34 +9,44 @@ Welcome to the **Developer Experience (DX)** in Project Bluefin! Bluefin provide
 Click any app name to open its installation card directly in Bazaar and install it onto your system:
 
 ### Core Developer Tools (Exposed from system-dx-flatpaks.Brewfile)
-*   [GNOME Builder](appstream://org.gnome.Builder) — Elegant, native GNOME IDE built for GTK4 development.
-*   [Dev Toolbox](appstream://me.iepure.devtoolbox) — Offline hub containing hashes, formatting, and conversion utilities.
-*   [Clapgrep](appstream://de.leopoldluley.Clapgrep) — Highly responsive, visual search UI powered by ripgrep.
-*   [Embellish](appstream://io.github.getnf.embellish) — Install and configure custom Nerd Fonts effortlessly.
-*   [Tavern](appstream://com.github.tuna_os.Tavern) — A lightweight flatpak application manager and companion tool.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🔨 **GNOME Builder** | Elegant, native GNOME IDE built for GTK4 development. | **[Install](appstream://org.gnome.Builder)** |
+| 🧰 **Dev Toolbox** | Offline hub containing hashes, formatting, and conversion utilities. | **[Install](appstream://me.iepure.devtoolbox)** |
+| 🔍 **Clapgrep** | Highly responsive, visual search UI powered by ripgrep. | **[Install](appstream://de.leopoldluley.Clapgrep)** |
+| 🔠 **Embellish** | Install and configure custom Nerd Fonts effortlessly. | **[Install](appstream://io.github.getnf.embellish)** |
+| 🍺 **Tavern** | A lightweight flatpak application manager and companion tool. | **[Install](appstream://com.github.tuna_os.Tavern)** |
 
 ### Kubernetes & Container Management (Exposed from cncf.Brewfile)
-*   [Podman Desktop](appstream://io.podman_desktop.PodmanDesktop) — Graphical management tool for containers, pods, and volumes.
-*   [Headlamp](appstream://io.kinvolk.Headlamp) — A beautiful, highly extensible dashboard for your Kubernetes clusters.
-*   [OpenLens](appstream://dev.k8slens.OpenLens) — Powerful, fully featured desktop IDE for Kubernetes workflows.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🐳 **Podman Desktop** | Graphical management tool for containers, pods, and volumes. | **[Install](appstream://io.podman_desktop.PodmanDesktop)** |
+| ☸️ **Headlamp** | A beautiful, highly extensible dashboard for your Kubernetes clusters. | **[Install](appstream://io.kinvolk.Headlamp)** |
+| 🕶️ **OpenLens** | Powerful, fully featured desktop IDE for Kubernetes workflows. | **[Install](appstream://dev.k8slens.OpenLens)** |
 
 ### System Utilities (Exposed from system-flatpaks.Brewfile)
-*   [Flatseal](appstream://com.github.tchx84.Flatseal) — Graphical permission editor for sandboxed Flatpak applications.
-*   [Warehouse](appstream://io.github.flattool.Warehouse) — Manage installed Flatpaks, manage user data, and clean up orphan runtimes.
-*   [Extension Manager](appstream://com.mattjakeman.ExtensionManager) — Search, install, and configure GNOME shell extensions.
-*   [Mission Center](appstream://io.missioncenter.MissionCenter) — Native GTK system monitor for hardware resource tracking.
-*   [Ignition](appstream://io.github.flattool.Ignition) — Setup and configure your Flatpak permissions and configurations.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🛡️ **Flatseal** | Graphical permission editor for sandboxed Flatpak applications. | **[Install](appstream://com.github.tchx84.Flatseal)** |
+| 📦 **Warehouse** | Manage installed Flatpaks, manage user data, and clean up orphan runtimes. | **[Install](appstream://io.github.flattool.Warehouse)** |
+| ⚙️ **Extension Manager** | Search, install, and configure GNOME shell extensions. | **[Install](appstream://com.mattjakeman.ExtensionManager)** |
+| 📊 **Mission Center** | Native GTK system monitor for hardware resource tracking. | **[Install](appstream://io.missioncenter.MissionCenter)** |
+| 🚀 **Ignition** | Setup and configure your Flatpak permissions and configurations. | **[Install](appstream://io.github.flattool.Ignition)** |
 
 ### AI & Machine Learning (Exposed from ai-tools.Brewfile)
-*   [Jan AI](appstream://ai.jan.Jan) — Run open-source LLMs locally on your workstation with a gorgeous native UI.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🤖 **Jan AI** | Run open-source LLMs locally on your workstation with a gorgeous native UI. | **[Install](appstream://ai.jan.Jan)** |
 
 ### GNOME Circle & Desktop Enhancements (Exposed from full-desktop.Brewfile)
-*   [Gradia](appstream://be.alexandervanhee.gradia) — Dynamic custom styling and CSS gradient compiler for GTK.
-*   [Damask](appstream://app.drey.Damask) — Elegant automatic wallpaper scheduler and rotater.
-*   [Elastic](appstream://app.drey.Elastic) — Design spring physics and curves for native GTK4 animations.
-*   [Fotema](appstream://app.fotema.Fotema) — Modern, privacy-first photo gallery and viewer.
-*   [Impression](appstream://io.gitlab.adhami3310.Impression) — Write OCI images and ISOs to USB drives with absolute simplicity.
-*   [Smile](appstream://it.mijorus.smile) — The best native emoji picker for the GNOME desktop.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🌈 **Gradia** | Dynamic custom styling and CSS gradient compiler for GTK. | **[Install](appstream://be.alexandervanhee.gradia)** |
+| 🖼️ **Damask** | Elegant automatic wallpaper scheduler and rotater. | **[Install](appstream://app.drey.Damask)** |
+| 〰️ **Elastic** | Design spring physics and curves for native GTK4 animations. | **[Install](appstream://app.drey.Elastic)** |
+| 📷 **Fotema** | Modern, privacy-first photo gallery and viewer. | **[Install](appstream://app.fotema.Fotema)** |
+| 💾 **Impression** | Write OCI images and ISOs to USB drives with absolute simplicity. | **[Install](appstream://io.gitlab.adhami3310.Impression)** |
+| 😀 **Smile** | The best native emoji picker for the GNOME desktop. | **[Install](appstream://it.mijorus.smile)** |
 
 ---
 

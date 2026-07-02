@@ -9,29 +9,39 @@ Welcome to **Gaming & Entertainment** on Project Bluefin! Bluefin is designed to
 Click any application name below to open its installation card directly in Bazaar and begin playing:
 
 ### Core Launchers
-*   [Steam](appstream://com.valvesoftware.Steam) — The ultimate entertainment platform. Play thousands of native Linux and Windows titles via Proton.
-*   [Heroic Games Launcher](appstream://com.heroicgameslauncher.hgl) — Open-source games launcher for Epic Games, GOG, and Prime Gaming.
-*   [Lutris](appstream://net.lutris.Lutris) — Open gaming platform that unifies all your game launchers, emulators, and runners under one interface.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🎮 **Steam** | The ultimate entertainment platform. Play thousands of native Linux/Windows titles via Proton. | **[Install](appstream://com.valvesoftware.Steam)** |
+| 🛡️ **Heroic Games Launcher** | Open-source games launcher for Epic Games, GOG, and Prime Gaming. | **[Install](appstream://com.heroicgameslauncher.hgl)** |
+| 🕹️ **Lutris** | Open gaming platform that unifies all your game launchers, emulators, and runners. | **[Install](appstream://net.lutris.Lutris)** |
 
 ### Compatibility & Runtimes
-*   [ProtonPlus](appstream://com.vysp3r.ProtonPlus) — Elegant, easy-to-use wine and proton manager to download and manage custom GE-Proton builds.
-*   [Protontricks](appstream://com.github.Matoking.protontricks) — A simple wrapper for winetricks to easily tweak games running under Proton.
-*   [Steam Link](appstream://com.valvesoftware.SteamLink) — Stream games from your primary gaming rig directly to your Bluefin workstation.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| ➕ **ProtonPlus** | Elegant, easy-to-use manager to download and manage custom GE-Proton builds. | **[Install](appstream://com.vysp3r.ProtonPlus)** |
+| 🔧 **Protontricks** | A simple wrapper for winetricks to easily tweak games running under Proton. | **[Install](appstream://com.github.Matoking.protontricks)** |
+| 🔗 **Steam Link** | Stream games from your primary gaming rig directly to your Bluefin workstation. | **[Install](appstream://com.valvesoftware.SteamLink)** |
 
 ### Recording & Streaming
-*   [OBS Studio](appstream://com.obsproject.Studio) — Professional free and open-source software for video recording and live streaming.
-*   [GPU Screen Recorder](appstream://com.dec05eba.gpu_screen_recorder) — An extremely fast screen recorder that captures your screen with almost zero performance impact.
-*   [Boatswain](appstream://com.feaneron.Boatswain) — Native GNOME application to control and configure Elgato Stream Deck devices.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🎥 **OBS Studio** | Professional free and open-source software for video recording and live streaming. | **[Install](appstream://com.obsproject.Studio)** |
+| ⚡ **GPU Screen Recorder** | Extremely fast screen recorder that captures your screen with almost zero performance impact. | **[Install](appstream://com.dec05eba.gpu_screen_recorder)** |
+| ⚓ **Boatswain** | Native GNOME application to control and configure Elgato Stream Deck devices. | **[Install](appstream://com.feaneron.Boatswain)** |
 
 ### Community & Chat
-*   [Discord](appstream://com.discordapp.Discord) — All-in-one voice, video, and text chat service for gaming and hanging out with friends.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 💬 **Discord** | All-in-one voice, video, and text chat service for gaming and hanging out with friends. | **[Install](appstream://com.discordapp.Discord)** |
 
 ### Fun & Casual Games
-*   [Battle for Wesnoth](appstream://org.wesnoth.Wesnoth) — Free, turn-based tactical strategy game with a high fantasy theme.
-*   [GNOME Mahjongg](appstream://org.gnome.Mahjongg) — Classic tile-matching solitaire game built natively for GNOME.
-*   [Sudoku](appstream://io.github.sepehr_rs.Sudoku) — Clean and minimal logic-based number-placement puzzle game.
-*   [Sopwith](appstream://io.github.fragglet.sdl_sopwith) — Classic side-scrolling biplane shoot-em-up game.
-*   [Threadbare](appstream://org.endlessaccess.threadbare) — Interactive, narrative adventure built with accessibility in mind.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| ⚔️ **Battle for Wesnoth** | Free, turn-based tactical strategy game with a high fantasy theme. | **[Install](appstream://org.wesnoth.Wesnoth)** |
+| 🀄 **GNOME Mahjongg** | Classic tile-matching solitaire game built natively for GNOME. | **[Install](appstream://org.gnome.Mahjongg)** |
+| 🧩 **Sudoku** | Clean and minimal logic-based number-placement puzzle game. | **[Install](appstream://io.github.sepehr_rs.Sudoku)** |
+| 🛩️ **Sopwith** | Classic side-scrolling biplane shoot-em-up game. | **[Install](appstream://io.github.fragglet.sdl_sopwith)** |
+| 🧶 **Threadbare** | Interactive, narrative adventure built with accessibility in mind. | **[Install](appstream://org.endlessaccess.threadbare)** |
 
 ---
 

@@ -9,21 +9,27 @@ Welcome to the **Sustainability & Education** hub on Project Bluefin! We believe
 Click any application name below to open its installation card directly in Bazaar and begin exploring:
 
 ### Learning & Education
-*   [Endless Key](appstream://org.endlessos.Key) — A massive library of offline educational resources, interactive games, and books for learners of all ages.
-*   [Flashcards](appstream://io.github.david_swift.Flashcards) — An elegant, lightweight tool to create, organize, and study digital flashcard decks.
-*   [Keypunch](appstream://dev.bragefuglseth.Keypunch) — Improve your typing speed and accuracy with a beautiful, minimalist typing tutor.
-*   [Tux Paint](appstream://org.tuxpaint.Tuxpaint) — Award-winning drawing program for children with an easy-to-use interface and fun sound effects.
-*   [Memorado](appstream://im.bernard.Memorado) — A simple, native app designed to help you train your memory and cognitive skills daily.
-*   [Egghead](appstream://io.github.josephmawa.Egghead) — An interactive quiz and study tool to reinforce key educational concepts.
-*   [Spelling Bee](appstream://io.github.josephmawa.SpellingBee) — Challenge your spelling skills and vocabulary with an interactive spelling game.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🔑 **Endless Key** | A massive library of offline educational resources, interactive games, and books for learners. | **[Install](appstream://org.endlessos.Key)** |
+| 📇 **Flashcards** | An elegant, lightweight tool to create, organize, and study digital flashcard decks. | **[Install](appstream://io.github.david_swift.Flashcards)** |
+| ⌨️ **Keypunch** | Improve your typing speed and accuracy with a beautiful, minimalist typing tutor. | **[Install](appstream://dev.bragefuglseth.Keypunch)** |
+| 🎨 **Tux Paint** | Award-winning drawing program for children with an easy-to-use interface and fun sound effects. | **[Install](appstream://org.tuxpaint.Tuxpaint)** |
+| 🧠 **Memorado** | A simple, native app designed to help you train your memory and cognitive skills daily. | **[Install](appstream://im.bernard.Memorado)** |
+| 🥚 **Egghead** | An interactive quiz and study tool to reinforce key educational concepts. | **[Install](appstream://io.github.josephmawa.Egghead)** |
+| 🐝 **Spelling Bee** | Challenge your spelling skills and vocabulary with an interactive spelling game. | **[Install](appstream://io.github.josephmawa.SpellingBee)** |
 
 ### Code & Engineering Education
-*   [TurboWarp](appstream://org.turbowarp.TurboWarp) — A blazing-fast, sandboxed environment for the Scratch programming language that compiles projects to JavaScript.
-*   [Nucleus](appstream://page.codeberg.lo_vely.Nucleus) — A highly interactive, native playground to visualize and study scientific and physics simulations.
-*   [Multiplication Puzzle](appstream://app.drey.MultiplicationPuzzle) — A fun, interactive math-oriented puzzle game designed to sharpen arithmetic skills.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| ⚡ **TurboWarp** | Blazing-fast environment for Scratch that compiles projects to optimized JavaScript. | **[Install](appstream://org.turbowarp.TurboWarp)** |
+| 🔬 **Nucleus** | A highly interactive, native playground to visualize and study scientific/physics simulations. | **[Install](appstream://page.codeberg.lo_vely.Nucleus)** |
+| 🧮 **Multiplication Puzzle** | A fun, interactive math-oriented puzzle game designed to sharpen arithmetic skills. | **[Install](appstream://app.drey.MultiplicationPuzzle)** |
 
 ### Earth & Sustainability
-*   [Moat](appstream://as.may.moat) — A native GTK tool to monitor and audit local hardware power consumption, helping you optimize and minimize your energy footprint.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🌱 **Moat** | Native GTK tool to monitor/audit local hardware power consumption, helping you save energy. | **[Install](appstream://as.may.moat)** |
 
 ---
 

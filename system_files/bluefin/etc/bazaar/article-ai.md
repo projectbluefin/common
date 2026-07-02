@@ -9,12 +9,16 @@ Welcome to the **AI and Machine Learning** hub on Project Bluefin! Bluefin is a 
 Click any application name below to open its installation card directly in Bazaar and begin exploring:
 
 ### Local LLMs & Chat
-*   [Jan AI](appstream://ai.jan.Jan) — Run open-source LLMs locally on your workstation with a gorgeous native UI, full model directory, and local server options.
-*   [Alpaca](appstream://com.jeffser.Alpaca) — A simple, native client for running and interacting with local llama.cpp models.
-*   [Newelle](appstream://io.github.qwersyk.Newelle) — A beautiful, lightweight GTK4 interface designed for interacting with multiple AI models and APIs.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🦙 **Jan AI** | Run open-source LLMs locally with a gorgeous native UI, full model directory, and local server. | **[Install](appstream://ai.jan.Jan)** |
+| 🏔️ **Alpaca** | A simple, native client for running and interacting with local llama.cpp models. | **[Install](appstream://com.jeffser.Alpaca)** |
+| 💬 **Newelle** | A beautiful, lightweight GTK4 interface designed for interacting with multiple AI models/APIs. | **[Install](appstream://io.github.qwersyk.Newelle)** |
 
 ### Local Audio & Transcription
-*   [Whis](appstream://ink.whis.Whis) — Native, highly optimized offline transcription tool powered by OpenAI's Whisper model. Perfect for converting voice memos and recordings into text with total privacy.
+| App | Description | Action |
+| :--- | :--- | :---: |
+| 🎙️ **Whis** | Highly optimized offline transcription tool powered by OpenAI's Whisper with total privacy. | **[Install](appstream://ink.whis.Whis)** |
 
 ---
 
