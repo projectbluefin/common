@@ -12,20 +12,11 @@ rows:
           subtitle: "Developer Mode tooling, Brewfiles, and setup guide"
           image: file:///run/host/etc/bazaar/06-bluefin-day.png
           uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-devtools.md
-        - title: "GNOME Release Notes"
-          subtitle: "Discover the latest GNOME desktop environment features"
-          image: https://raw.githubusercontent.com/GNOME/gnome-logo/master/logo/gnome-logo.png
+        - title: "This Week in GNOME (TWIG)"
+          subtitle: "Latest weekly updates from the GNOME community and ecosystem"
+          image: file:///run/host/etc/bazaar/02-bluefin-day.png
           uri: file:///var/home/jorge/src/common/system_files/bluefin/etc/bazaar/article-gnome-notes.md
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/11-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/11-bluefin-night.png
-        fit: cover
-        can-shrink: true
-        alt: "Bluefin desktop screenshot"
-      light-color: "#a5897b"
-      dark-color: "#0d0e19"
+
   - section:
       title: "Bluefin Recommends"
       subtitle:
@@ -46,57 +37,6 @@ rows:
           - com.github.ADBeveridge.Raider
           - io.github.kelvinnovais.Kasasa
           - net.codelogistics.letters
-
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/01-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/01-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#252b57"
-      dark-color: "#1f2843"
-  - section:
-      title: "Browsers"
-      subtitle:
-        string: "Use the web with your favorite browser"
-      appids:
-        list:
-          - org.mozilla.firefox
-          - com.brave.Browser
-          - com.google.Chrome
-          - com.microsoft.Edge
-          - com.opera.Opera
-          - com.vivaldi.Vivaldi
-          - org.ecosia.Browser
-
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/02-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/02-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#64aec7"
-      dark-color: "#10202c"
-  - section:
-      title: "Media"
-      subtitle:
-        string: "The Freedom of Music"
-      appids:
-        list:
-          - com.spotify.Client
-          - app.ytmdesktop.ytmdesktop
-          - de.haeckerfelix.Shortwave
-          - io.bassi.Amberol
-          - org.videolan.VLC
-          - com.github.wwmm.easyeffects
-          - me.timschneeberger.jdsp4linux
-          - org.jellyfin.JellyfinDesktop
-          - tv.plex.PlexDesktop
-          - com.plexamp.Plexamp
-          - com.rafaelmardojai.Blanket
-          - org.nickvision.tubeconverter
 
   - banner:
       height: 400
@@ -197,45 +137,6 @@ rows:
           - org.mozilla.vpn
           - org.cryptomator.Cryptomator
           - io.github.zarestia_dev.rclone-manager
-
-  - banner:
-      height: 400
-      image:
-        light-uri: file:///run/host/etc/bazaar/06-bluefin-day.png
-        dark-uri: file:///run/host/etc/bazaar/06-bluefin-night.png
-        fit: cover
-        can-shrink: true
-      light-color: "#906860"
-      dark-color: "#241a23"
-  - section:
-      title: "Developers"
-      subtitle:
-        string: "Unleash the power of Cloud Native"
-      overflow-count: 12
-      appids:
-        list:
-          - io.podman_desktop.PodmanDesktop
-          - org.gnome.Builder
-          - com.getpostman.Postman
-          - me.iepure.devtoolbox
-          - io.kinvolk.Headlamp
-          - app.freelens.Freelens
-          - de.leopoldluley.Clapgrep
-          - com.mardojai.ForgeSparks
-          - io.dbeaver.DBeaverCommunity
-          - cc.arduino.IDE2
-          - dev.geopjr.Calligraphy
-          - io.github.lo2dev.Echo
-          - org.gnome.design.IconLibrary
-          - io.github.ronniedroid.concessio
-          - io.github.nokse22.asciidraw
-          - dev.geopjr.Collision
-          - io.github.tobagin.digger
-          - app.drey.Elastic
-          - io.github.mfat.sshpilot
-          - io.github.shonebinu.Brief
-          - io.github.getnf.embellish
-          - de.wwwtech.gitte
 
   - banner:
       height: 400

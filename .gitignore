@@ -7,3 +7,5 @@ knuckle/
 __pycache__/
 *.pyc
 .worktrees/
+system_files/bluefin/etc/bazaar/*.png
+system_files/bluefin/etc/bazaar/curated-dev.yaml

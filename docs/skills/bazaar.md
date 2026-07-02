@@ -1,9 +1,9 @@
 ---
 name: bazaar
-version: "2.0"
-last_updated: 2026-07-01
+version: "2.1"
+last_updated: 2026-07-02
 tags: [bazaar, curated, flatpak, apps]
-description: "Use when editing Bazaar config or hooks in common. Covers new curated schema (post-0.8.3), JXL→PNG banner conversion, Bluefin-owned files, and local preview workflow."
+description: "Use when editing Bazaar config or hooks in common. Covers new curated schema (post-0.8.3), JXL→PNG banner conversion, Bluefin-owned files, and sandboxed hot-reloading local preview workflow."
 metadata:
   type: procedure
   context7-sources:
@@ -76,20 +76,20 @@ rows:
 
 ## Banner image conversion (JXL → PNG)
 
-Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `--color_space=sRGB`.
+Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `-C sRGB`.
 
 **Containerfile pattern:**
 ```dockerfile
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
       name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
+      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" -C sRGB; \
     done
 ```
 
 **Critical rules:**
 - `curated.yaml` must reference `.png` paths, never `.jxl` — Bazaar crashes on JXL due to a libdex fiber scheduling regression on modern GNOME runtimes (issue #497).
-- The correct djxl flag is `--color_space=sRGB` (long form). The short form `-C` does not exist in the `libjxl-tools` version used in the Alpine build stage — using it causes "Unknown argument" error and a silent build failure.
+- The correct djxl flag is `-C sRGB` (short form). The long form `--color_space=sRGB` is not supported by the build-stage djxl binary and causes "Unknown argument" errors.
 - The `RUN` step **must** include `set -e`. Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
 
 ## bazaar.service requirements
@@ -111,7 +111,7 @@ RestartSec=5
 
 ### Userspace prototype (no root needed)
 
-**Never write to `/etc` for prototype work.** Use `--extra-curated-config` directly — Bazaar hot-reloads on every save.
+**Never write to `/etc` for prototype work.** Use `--extra-content-config` directly — Bazaar hot-reloads on every save.
 
 1. **Install v0.9.0+ from CI** if not yet on Flathub stable:
    ```bash
@@ -133,14 +133,18 @@ RestartSec=5
    kill <PID1> <PID2>
    ```
 
-3. **Launch with prototype config** — hot-reload is automatic on file save:
+3. **Block Built-in Fallbacks & Launch isolated Bazaar** — hot-reload is automatic on file save:
    ```bash
-   setsid flatpak run --filesystem=host io.github.kolunmi.Bazaar \
-     --extra-curated-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-prototype.yaml \
+   # Block the development-mode example.yaml fallback copy by creating it as a directory:
+   rm -rf ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+   mkdir -p ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+
+   setsid flatpak run --nofilesystem=host --filesystem=home io.github.kolunmi.Bazaar \
+     --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml \
      > /tmp/bazaar-proto.log 2>&1 &
    disown
    ```
-   v0.9.0 rejects the legacy system `curated.yaml` (`property 'css' doesn't exist`) and only renders the prototype — a clean slate.
+   v0.9.0 development builds of Bazaar copy and load the built-in development `example.yaml` page when no host `/etc` configs are accessible, resulting in layout duplication (example rows + your custom rows). Hiding the host filesystem with `--nofilesystem=host` and blocking `example.yaml` with a directory forces Bazaar to only load your custom `--extra-content-config` file.
 
 4. **Article markdown files** for `uri: file:///` paths in articles rows:
    ```bash
@@ -151,17 +155,23 @@ RestartSec=5
    EOF
    ```
 
+### Menu Launcher and Shortcut Integration
+
+The `just bazaar-preview` command automatically overrides the personal GNOME Shell application launcher at `~/.local/share/applications/io.github.kolunmi.Bazaar.desktop`. It configures the launcher to use our isolated sandbox arguments (`--nofilesystem=host --filesystem=home`) and points it to the checkout's hot-reloaded `curated-dev.yaml`.
+
+This means **clicking on the Bazaar icon in the desktop, dock, or GNOME application menu instantly loads your repository configurations and updates on save!**
+
+To run it:
+```bash
+just bazaar-preview
+```
+
 ### System install (requires root)
 
 Use the `ujust bazaar-preview` recipe which automates JXL→PNG conversion and writes to `/etc/bazaar`:
 
 ```bash
 ujust bazaar-preview
-```
-
-Or from the common source tree:
-```bash
-just bazaar-preview
 ```
 
 ## Validation
