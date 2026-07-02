@@ -123,6 +123,7 @@ def assemble_gnome():
             return False
 
         title = item.find("title").text
+        title = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27BF]', '', title).strip()
         link = item.find("link").text
         description_html = item.find("description").text
 
@@ -131,6 +132,9 @@ def assemble_gnome():
         parser = HTMLToMarkdown()
         parser.feed(description_html)
         markdown_body = "".join(parser.markdown)
+
+        # Strip emojis to conform with emoji-free user preferences
+        markdown_body = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27BF]', '', markdown_body)
 
         # Post-processing to clean up multiple newlines and spaces
         markdown_body = re.sub(r'\n{3,}', '\n\n', markdown_body)
@@ -184,7 +188,10 @@ def assemble_bluefin(token=None):
     try:
         tag_name = release.get("tag_name", "stable")
         name = release.get("name", "Project Bluefin Release")
+        name = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27BF]', '', name).strip()
         body = release.get("body", "")
+        # Strip emojis from body
+        body = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27BF]', '', body)
 
         output_path = "system_files/bluefin/etc/bazaar/article-bluefin-notes.md"
         os.makedirs(os.path.dirname(output_path), exist_ok=True)

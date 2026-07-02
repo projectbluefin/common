@@ -103,11 +103,11 @@ Update on what happened across the GNOME project in the week from June 19 to Jun
 >
 > This new release features:
 >
-> 🖼 Image generation support (supporting an integrated stablediffusion instance or cloud models)
+>  Image generation support (supporting an integrated stablediffusion instance or cloud models)
 >
-> 💬 New chat redesign: a more minimal and space efficient layout
+>  New chat redesign: a more minimal and space efficient layout
 >
-> 🐞 Minor improvements like support for STDIO MCP Servers
+>  Minor improvements like support for STDIO MCP Servers
 >
 > Get it on [Flathub](https://flathub.org/apps/details/io.github.qwersyk.Newelle)
 >
@@ -170,7 +170,7 @@ A simple Git GUI for GNOME
 [Christian](https://matrix.to/#@christian:kruse.cool) says
 
 >
-> Gitte, a simple Git client for GNOME built with GTK4, libadwaita and Relm4, just got its 0.8.0 release! 🎉
+> Gitte, a simple Git client for GNOME built with GTK4, libadwaita and Relm4, just got its 0.8.0 release!
 >
 > The headline feature this time is cherry-picking: you can now grab one or more commits straight from the commit log and apply them onto your current branch. Diffs also learned to handle the awkward cases gracefully. Binary files and overly large diffs are now clearly marked as such across all diff views, and there’s a new “filtered files” option that lets you configure paths which are treated like binary files and kept out of diffs. In the working copy view you can filter what’s shown to new, tracked or all files.
 >
@@ -290,7 +290,7 @@ Bouncer is an application to help you choose the correct firewall zone for wirel
 
 ## Miscellaneous
 
-[Evangelos “GeopJr” Paterakis 🏳️‍⚧️🏳️‍🌈](https://matrix.to/#@geopjr:gnome.org) reports
+[Evangelos “GeopJr” Paterakis ️‍️️‍](https://matrix.to/#@geopjr:gnome.org) reports
 
 >
 > This week I launched [a small unofficial website](https://gtk4android.geopjr.dev/) to share a few demo test builds of some GTK, Granite and libadwaita apps on Android. Give them a try!
