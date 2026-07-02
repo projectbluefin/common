@@ -343,6 +343,25 @@ bazaar-preview source="{{ invocation_directory() }}":
     done
     sudo -v
     flatpak info io.github.kolunmi.Bazaar >/dev/null
+
+    # Generate PNG banners using podman if they aren't already built on the host
+    BRANDING_DIR="${SRC_DIR}/bluefin-branding/system_files/etc/bazaar"
+    if [[ -d "${BRANDING_DIR}" ]]; then
+        echo "Converting JXL banners to PNG via podman..."
+        TMP_PNG_DIR=$(mktemp -d)
+        podman run --rm -v "${SRC_DIR}":/workspace:z -v "${TMP_PNG_DIR}":/out:z docker.io/library/alpine:latest sh -c "
+            set -e
+            apk add -q libjxl-tools &&
+            for f in /workspace/bluefin-branding/system_files/etc/bazaar/*.jxl; do
+                name=\$(basename \"\$f\" .jxl)
+                djxl \"\$f\" \"/out/\${name}.png\" --color_space=sRGB
+            done
+        "
+        sudo install -d -m0755 /etc/bazaar
+        sudo install -m0644 "${TMP_PNG_DIR}"/*.png /etc/bazaar/
+        rm -rf "${TMP_PNG_DIR}"
+    fi
+
     sudo install -d -m0755 /etc/bazaar
     sudo install -m0644 "${BAZAAR_DIR}/bazaar.yaml" /etc/bazaar/bazaar.yaml
     sudo install -m0644 "${BAZAAR_DIR}/curated.yaml" /etc/bazaar/curated.yaml

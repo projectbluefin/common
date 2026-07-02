@@ -1,9 +1,9 @@
 ---
 name: bazaar
-version: "1.1"
+version: "2.0"
 last_updated: 2026-07-01
 tags: [bazaar, curated, flatpak, apps]
-description: "Use when editing Bazaar config or hooks in common. Covers curated schema migration, JXL→PNG banner conversion, Bluefin-owned files, and local preview workflow."
+description: "Use when editing Bazaar config or hooks in common. Covers new curated schema (post-0.8.3), JXL→PNG banner conversion, Bluefin-owned files, and local preview workflow."
 metadata:
   type: procedure
   context7-sources:
@@ -39,103 +39,86 @@ metadata:
 | `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
 | `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
 
-## Curated schema and compatibility notes
+## Curated schema — current format (post-0.8.3 / PR #1655)
 
-Bazaar supports two distinct configuration schemas depending on the installed Flatpak version. Because stable releases may lag behind upstream GitHub commits, agents must verify the local version's expected format before editing.
+Bazaar upstream merged **PR #1655 "Rework Curated System"** on 2026-06-23. This is a **breaking schema change**. Bluefin `curated.yaml` has been migrated to the new format.
 
-### 1. Legacy Schema (Stable `v0.8.2` and below)
-The currently installed stable release (`v0.8.2`) expects the legacy schema structure:
-- Root-level **`css:`** block containing raw GTK CSS strings.
-- **`rows`** is a list where each row maps to a map containing **`sections`**:
-  ```yaml
-  css: |
-    .global-section { margin: 15px; }
-  rows:
-    - sections:
-        - expand-horizontally: true
-          classes:
-            - global-section
-          category:
-            title:
-              en: "Bluefin Recommends"
-            light-banner: file:///run/host/etc/bazaar/11-bluefin-day.png
-            appids:
-              - org.gnome.Calculator
-  ```
-- **Limitations in `v0.8.2`**:
-  - Direct row types like `banner`, `articles`, `featured-carousel`, or `section` do NOT exist.
-  - The `start-on-curated: true` option in `bazaar.yaml` does NOT exist and will fail main config validation.
-
-### 2. Modern Schema (Upstream `master` / Post-`v0.8.2` tags)
-Newer unreleased or upstream commits use a simplified schema where `rows` contains typed entries directly, and does not support the root-level `css:` block:
+**Current schema uses typed row entries:**
 ```yaml
 rows:
   - banner:
-      height: 250
+      height: 400
       image:
-        light-uri: https://getaurora.dev/aurora-text-logo.svg
+        light-uri: file:///run/host/etc/bazaar/11-bluefin-day.png
+        dark-uri: file:///run/host/etc/bazaar/11-bluefin-night.png
+        fit: cover
+        can-shrink: true
+        alt: "Bluefin desktop screenshot"
+      light-color: "#a5897b"
+      dark-color: "#0d0e19"
   - section:
-      title: "Welcome to Bazaar"
+      title: "Bluefin Recommends"
+      subtitle:
+        string: "Our Favorite Applications"
       appids:
         list:
           - org.gnome.Calculator
 ```
 
-When porting content between repos/variants, **always check the active schema shape** to avoid rendering failures or parser errors.
+**Key schema rules:**
+- Root `css:` block does NOT exist in the new schema — remove it entirely.
+- `rows` is a list of typed entries: `banner`, `section`, `articles`, `featured-carousel`.
+- Each entry has exactly one key (`banner:`, `section:`, etc.).
+- `section.subtitle` is a markdown object: `subtitle: string: "..."` (not a plain string).
+- `section.appids` is `appids: list: [...]` (not a bare list).
+- `banner` and `section` are separate rows — one banner per section, both as siblings in `rows`.
+- `section.overflow-count` enables a "Show More" button for sections with many apps.
 
 ## Banner image conversion (JXL → PNG)
 
-Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile`. The conversion uses `djxl` with the `-C sRGB` flag to force sRGB color space translation (prevents washed-out or dark images on standard GTK loaders that ignore embedded ICC profiles).
+Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `--color_space=sRGB`.
 
 **Containerfile pattern:**
 ```dockerfile
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
       name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" -C sRGB; \
+      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 ```
 
 **Critical rules:**
-- `curated.yaml` must reference `.png` paths, never `.jxl` — stable Bazaar v0.8.2 crashes on JXL due to a libdex regression on modern GNOME runtimes.
-- The `RUN` step **must** include `set -e` (or `|| exit 1` per iteration). Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
-- Do not change `-C sRGB` to `--color_space=sRGB` — only `-C` is supported by the version of `djxl` used in the build stage. Verify against the actual binary before changing.
+- `curated.yaml` must reference `.png` paths, never `.jxl` — Bazaar crashes on JXL due to a libdex fiber scheduling regression on modern GNOME runtimes (issue #497).
+- The correct djxl flag is `--color_space=sRGB` (long form). The short form `-C` does not exist in the `libjxl-tools` version used in the Alpine build stage — using it causes "Unknown argument" error and a silent build failure.
+- The `RUN` step **must** include `set -e`. Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
 
 ## bazaar.service requirements
 
-`bazaar.service` must be `Type=simple`. The `bazaar --no-window` process runs as a persistent background daemon. Setting `Type=oneshot` causes `systemctl` to hang indefinitely waiting for the service to exit.
+`bazaar.service` must be `Type=simple` with `Restart=on-failure`. The `bazaar --no-window` process runs as a persistent background daemon.
 
 ```ini
 [Service]
 Type=simple
-ExecStart=/usr/bin/flatpak run --no-instance io.github.kolunmi.Bazaar --no-window
+ExecStart=flatpak run --command=bazaar io.github.kolunmi.Bazaar --no-window
+StandardOutput=journal
+Restart=on-failure
+RestartSec=5
 ```
 
+`Type=oneshot` causes `systemctl` to hang indefinitely waiting for the service to exit.
 
+## Local preview workflow
 
-Instead of installing files to `/etc/bazaar` (which requires `sudo`), you can launch the Bazaar flatpak directly against files in your local workspace using command-line arguments. This is the preferred non-root preview workflow.
+Use the `ujust bazaar-preview` recipe which automates the JXL→PNG conversion and installs directly to `/etc/bazaar`:
 
-1. **Kill any lingering background Bazaar processes first.** Since Bazaar runs as a search provider daemon, starting it with a new config requires killing existing background processes:
-   ```bash
-   # List active bazaar/bwrap processes and locate their PIDs
-   ps -ef | grep -E 'bazaar|Bazaar' | grep -v grep
+```bash
+ujust bazaar-preview
+```
 
-   # Kill the exact PIDs (never use pkill/killall)
-   kill <PID1> <PID2>
-   ```
-
-2. **Launch with workspace overrides:**
-   To load the custom curated config directly from your workspace without copying it to `/etc`:
-   ```bash
-   flatpak run --filesystem=host io.github.kolunmi.Bazaar \
-     --extra-curated-config=/absolute/path/to/system_files/bluefin/etc/bazaar/curated.yaml
-   ```
-
-3. **Verify the logs:**
-   If there are validation or schema errors, Bazaar will output them directly to stdout/stderr:
-   - `property 'banner' doesn't exist on type BzCuratedRow` indicates that the old version of Bazaar is trying to parse the modern schema format.
-   - `property 'start-on-curated' doesn't exist on type BzMainConfig` indicates that the old version of Bazaar is trying to parse modern options in `bazaar.yaml`.
-
+Or from the common source tree:
+```bash
+just bazaar-preview
+```
 
 ## Validation
 
@@ -158,24 +141,25 @@ just test
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
-- Using `--color_space=sRGB` instead of `-C sRGB` breaks the conversion with "Unknown argument" error.
 
 ## Red Flags
 
-- `curated.yaml` contains `banner:`, `articles:`, `featured-carousel:`, or `start-on-curated:` keys — these crash stable Bazaar v0.8.2.
+- `curated.yaml` contains root `css:` key — this is the old schema; migrate to `rows` with `banner`/`section` types.
+- `curated.yaml` uses `rows[].sections[].category` structure — old schema; migrate to new typed rows.
 - Banner entries reference `.jxl` paths instead of `.png`.
 - `bazaar.service` has `Type=oneshot` — will hang `systemctl` indefinitely.
-- `Containerfile` JXL conversion loop is missing `set -e` — silent build failures silently produce no PNG.
-- A curated section has a `subtitle` but no `title` — stops the curated page from loading.
-- djxl flag changed from `-C sRGB` to `--color_space=sRGB` without verifying the installed binary supports the long form.
+- `Containerfile` JXL conversion loop is missing `set -e` — silent build failures produce no PNG.
+- `djxl` invocation uses `-C sRGB` — this flag does not exist; use `--color_space=sRGB`.
+- `section.subtitle` is a bare string — must be `subtitle: string: "..."`.
+- `section.appids` is a bare list — must be `appids: list: [...]`.
 
 ## Verification
 
-- [ ] `curated.yaml` uses legacy schema only: `css`/`rows`/`sections`/`category` — no `banner`/`carousel`/`articles` keys
-- [ ] All `light-banner` and `dark-banner` entries end in `.png`
-- [ ] All curated `sections` have a `title` key under `category`
-- [ ] `bazaar.service` is `Type=simple`
+- [ ] `curated.yaml` uses new schema: `rows[]` with `banner`/`section` row types, no root `css`
+- [ ] All banner `uri`/`light-uri`/`dark-uri` entries end in `.png`
+- [ ] All `section` entries have `title` and `appids.list`
+- [ ] `bazaar.service` is `Type=simple` with `Restart=on-failure`
 - [ ] `Containerfile` JXL conversion `RUN` step begins with `set -e`
-- [ ] `djxl` invocation uses `-C sRGB`
+- [ ] `djxl` invocation uses `--color_space=sRGB` (not `-C sRGB`)
 - [ ] `python3 -m pytest tests/test_curated_config.py -v` passes
 - [ ] `just check && pre-commit run --all-files` passes
