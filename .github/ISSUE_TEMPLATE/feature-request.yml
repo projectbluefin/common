@@ -14,12 +14,9 @@ body:
 
         > **How this gets built:**
         > ```
-        > filed ──▶ discussing ──▶ approved ──▶ queued ──▶ claimed ──▶ done
-        >        [status/         [status/     [status/   [status/
-        >         discussing]      approved]    queued]    claimed]
+        > filed ──▶ pull request (with Closes #NNN) ──▶ done
         > ```
-        > Your proposal enters discussion. A maintainer approves it when the spec is clear.
-        > Then a contributor or agent `/claim`s it and builds it.
+        > Your proposal enters discussion. Once the spec is clear, the work is assigned to a contributor or agent who implements it.
 
   - type: textarea
     id: problem

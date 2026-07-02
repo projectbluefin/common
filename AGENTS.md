@@ -49,8 +49,9 @@ You are an agent in this loop. Your work compounds. See [`docs/skills/hive.md`](
 ```
 1. docs/SKILL.md              # find the skill for your task
 2. Context7: resolve the tool's library ID, read its docs, then act
-3. docs/factory/agentic-model.md  # cross-repo rules if working across repos
-4. just check && pre-commit run --all-files  # before every commit
+3. docs/factory/agentic-factory.modelith.md  # load lifecycle/domain contract before lifecycle or factory implementation work
+4. docs/factory/agentic-model.md  # cross-repo rules if working across repos
+5. just check && pre-commit run --all-files  # before every commit
 ```
 
 **Doc-only changes** (docs/ and AGENTS.md) → push directly to `main`, no PR needed. Before using this exception, verify all staged changes are docs-only:
@@ -122,12 +123,10 @@ testsuite gates `:latest` promotion in all three image repos.
 
 ### Issue lifecycle
 
-`filed → triage → queued → claimed → done`
+We use a simple, GitOps-first **Branch-as-State** model. Mutable issue state-machines (labels, slash commands, and background bots) are retired in favor of standard GitHub Flow. We track active work via standard GitHub issue assignees and automatic PR closing (`Closes #NNN`).
 
-Full workflow, label taxonomy, epics, project board, and PR lifecycle:
+Full guidelines are documented in:
 [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md)
-
-Lifecycle automation source of truth: `.github/workflows/lifecycle.yml`
 
 ### Mandatory gates
 

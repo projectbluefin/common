@@ -16,8 +16,9 @@ New workflows must self-heal: retry on transient failures, fast-fail on bad toke
 
 1. Target repo `AGENTS.md` — start here
 2. This file — org map, infrastructure topology, parity matrix
-3. [`docs/factory/agentic-model.md`](agentic-model.md) — cross-repo hard rules, branch targets, PR policy, session start
-4. Relevant `docs/skills/*` files — lazy-load for the specific task; use [`docs/SKILL.md`](../SKILL.md) as the router
+3. [`docs/factory/agentic-factory.modelith.md`](agentic-factory.modelith.md) — load lifecycle/domain contract before lifecycle or factory implementation work
+4. [`docs/factory/agentic-model.md`](agentic-model.md) — cross-repo hard rules, branch targets, PR policy, session start
+5. Relevant `docs/skills/*` files — lazy-load for the specific task; use [`docs/SKILL.md`](../SKILL.md) as the router
 
 ## Mission and product boundary
 
@@ -64,10 +65,9 @@ For the workflow-by-workflow purpose map inside `common`, see [`../skills/workfl
 
 ## Agentic operating model
 
-`filed → triage → queued → claimed → done`
+We use a lightweight, GitOps-first **Branch-as-State** model for the factory's lifecycle. Issues have static labels for categorization (type, area, priority) while the active work state is tracked purely through branches, PR associations, standard assignees, and projects. Mutable label-based FSMs and comment commands (like `/claim` or `/approve`) are retired.
 
-Lifecycle automation source: `.github/workflows/lifecycle.yml` (deployed to all factory repos via `lifecycle-caller.yml`).
-Full lifecycle, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
+Full workflow, label taxonomy, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
 Hard rules, branch targets, PR comment policy, session start: [`docs/factory/agentic-model.md`](agentic-model.md)
 
 ## Automation coverage
@@ -81,11 +81,11 @@ Hard rules, branch targets, PR comment policy, session start: [`docs/factory/age
 The following are wired across the factory today (applies to core pipeline repos unless noted):
 
 - **AGENTS.md** — per-repo operating contract (all repos including extended)
-- **Label taxonomy** — canonical definitions in `labels.json` (67 labels; includes `hardware/*` for promotion gates), synced to all repos by `sync-labels.yml` (⚠️ requires `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY` secrets — issue #511); key labels: `hive/p0`, `hive/p1`, `status/queued`, `status/claimed`, `agent/blocked`, `source:*`, `hardware/blocker`
+- **Label taxonomy** — canonical definitions in `labels.json` (67 labels; includes `hardware/*` for promotion gates), synced to all repos by `sync-labels.yml` (⚠️ requires `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY` secrets — issue #511); key labels: `hive/p0`, `hive/p1`, `agent/blocked`, `source:*`, `hardware/blocker`
 - **Squash-only merge + delete-branch-on-merge**
 - **5 standard issue templates**
 - **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
-- **lifecycle.yml** — common-owned issue/PR lifecycle: slash commands, widget, label guard, stale sweep. Active in all 6 core pipeline repos via `lifecycle-caller.yml`.
+- **GitOps Flow** — standard, zero-maintenance branch-as-state model using standard GitHub projects and `Closes #NNN` PR linkages. The legacy active FSM bot is retired.
 - **bonedigger** — scoped to ujust report filing and priority auto-escalation only
 - **skill-drift.yml** — PR advisory gate for doc/impl parity (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`; `testsuite` pending)
 - **pre-commit** — json/yaml/toml hygiene and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`)
@@ -104,7 +104,7 @@ The following are wired across the factory today (applies to core pipeline repos
 | pre-commit | ✅ | ✅ | ✅ | ✅ | — | — |
 | skill-drift.yml | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | no-floating-action-tags | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| lifecycle.yml caller | ✅ | ✅ (PR) | ✅ (PR) | ✅ (PR) | ✅ (PR) | ✅ (PR) |
+| GitOps Flow (standard) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Renovate config | ✅ | ✅ | ❓ org-inherited | ❌ | ✅ | ✅ |
 | Post-merge e2e | ✅ | ✅ | ✅ | partial | — | — |
 | Pre-merge e2e | ✅ (common suite) | ✅ (pr-smoke) | ❌ | ❌ | — | — |

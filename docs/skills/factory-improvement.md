@@ -139,7 +139,7 @@ must have ALL of:
 | Requirement | Check command |
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
-| `lifecycle-caller.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/lifecycle-caller.yml` |
+| GitOps Flow (standard) | Verify the repo uses standard branching targets (`testing`/`main`) and keyword associations |
 | `skill-drift.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/skill-drift.yml` |
 | Hive labels present | `gh label list --repo projectbluefin/{repo} \| grep hive` |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
@@ -203,7 +203,7 @@ gh search issues --label "status/queued,area/ci" --owner projectbluefin --state 
 
 ## What "Done" Looks Like
 
-- [ ] Every factory repo has identical infrastructure (AGENTS.md, lifecycle-caller.yml, skill-drift, hive labels, pre-commit, squash-only)
+- [ ] Every factory repo has identical infrastructure (AGENTS.md, standard GitOps flow, skill-drift, hive labels, pre-commit, squash-only)
 - [ ] Every pipeline stage has a gate: pre-merge CI, post-merge e2e, promotion smoke
 - [ ] All rules exist in exactly one canonical location with one-line pointers elsewhere
 - [ ] Renovate is running across all repos

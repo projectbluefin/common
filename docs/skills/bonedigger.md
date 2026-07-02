@@ -21,8 +21,8 @@ user runs ujust report
   └─ bonedigger agent collects system diagnostics
        └─ scrubs PII on-device
             └─ files structured issue to image repo
-                 └─ lifecycle bot moves issue through pipeline
-                      └─ kubestellar-bot picks up status/queued issue
+                 └─ issue triaged and assigned to agent
+                      └─ kubestellar-bot detects assigned issue
                            └─ dispatches agent to implement fix
                                 └─ PR shipped back to image repo
                                      └─ merged → better OS
@@ -46,16 +46,14 @@ real shell implementation in `/usr/libexec/bonedigger-report`. Keep the
 
 ## bonedigger — what it does NOT do
 
-The **full** issue lifecycle (slash commands, pipeline widget, label transitions, stale sweep, auto-merge on lgtm) lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. It was first deployed to `common` (2026-06-05) then moved to `actions` ([common#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10) to serve all factory repos as a single reusable.
+The legacy **full** issue lifecycle (slash commands, pipeline widget, label transitions, stale sweep, auto-merge on lgtm) previously driven by `projectbluefin/actions/.github/workflows/lifecycle.yml` is **retired**. All active FSM tracking is replaced by Branch-as-State GitHub Flow.
 
-bonedigger **does** still provide its own slim `lifecycle.yml` for bonedigger-specific features: agent donation fast-track and ujust-report intake. This is called separately from the actions lifecycle — see Integration status below.
-
-See [`label-workflow.md`](./label-workflow.md) for the full lifecycle reference.
+See [`label-workflow.md`](./label-workflow.md) for the modern lightweight lifecycle reference.
 
 ## kubestellar-bot - what it does
 
 kubestellar-bot is the implementation agent layer. It:
-- Monitors `status/queued` issues across all factory repos
+- Monitors open, unassigned, triaged issues across all factory repos
 - Dispatches agents to claim and implement fixes
 - Manages the PR lifecycle from claim → ship
 - Reports progress back to the hive dashboard
@@ -64,16 +62,9 @@ kubestellar-bot does NOT make design or security decisions. Those hit a human ga
 
 ## Integration status
 
-The factory has two lifecycle workflows serving different purposes:
-
-| Workflow | Location | Called by | Purpose |
-|---|---|---|---|
-| Full lifecycle | `projectbluefin/actions/.github/workflows/lifecycle.yml@main` | `common` via `lifecycle-caller.yml` | Pipeline widget, slash commands, label transitions, stale sweep, auto-merge |
-| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
+The mutable label-based active FSM automation is **retired**. We use a standard branch-as-state model where keyword associations and projects handle transitions.
 
 All internal `projectbluefin/` workflow refs use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. See [`ci-tooling.md`](./ci-tooling.md) § Internal refs.
-
-If you find a `lifecycle-caller.yml` still pointing at `projectbluefin/common`, it is stale — delete it or update the target to `projectbluefin/actions`.
 
 bonedigger’s `sync-templates.yml` continues to propagate issue templates to factory repos.
 

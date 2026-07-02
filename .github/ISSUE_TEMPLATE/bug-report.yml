@@ -1,6 +1,6 @@
 name: "Bug report"
 description: "Something is broken. You are the only person who can confirm it."
-labels: ["kind/bug", "needs-triage"]
+labels: ["kind/bug", "status/triage"]
 type: "Bug"
 body:
   - type: markdown
@@ -23,12 +23,10 @@ body:
       value: |
         > **How this gets resolved:**
         > ```
-        > filed ──▶ triage ──▶ approved ──▶ queued ──▶ claimed ──▶ done
-        >        [status/    [status/     [status/   [status/
-        >         triage]     approved]    queued]    claimed]
+        > filed ──▶ pull request (with Closes #NNN) ──▶ done
         > ```
-        > You filed it. A maintainer sets kind/area/priority and removes `status/triage`.
-        > `/approve` queues it. A contributor or agent `/claim`s it and ships the fix.
+        > You filed it. A maintainer triages it, sets kind/area/priority, and assigns it.
+        > A contributor builds the fix and opens a PR referencing this issue.
 
   - type: checkboxes
     id: checks

@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly Dakota Count Me telemetry reporting
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=/usr/share/ublue-os/image-info.json
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=dakota-countme
+ExecStart=/usr/libexec/dakota-countme

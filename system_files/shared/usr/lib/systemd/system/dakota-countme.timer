@@ -1,0 +1,13 @@
+[Unit]
+Description=Weekly Dakota Count Me telemetry timer
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=/usr/share/ublue-os/image-info.json
+
+[Timer]
+OnBootSec=10m
+OnUnitInactiveSec=3d
+AccuracySec=1h
+RandomizedDelaySec=1d
+
+[Install]
+WantedBy=timers.target

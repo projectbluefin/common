@@ -23,69 +23,61 @@ metadata:
 
 ## The one-line model
 
-**Humans decide what gets built. Agents build it.**
+**Git branches are the state machine. Standard GitHub Flow is the engine.**
 
-Humans file, triage, and approve work. Agents claim, implement, and ship it.
-Labels are the handoff signal between the two.
+We use a simple, lightweight, GitOps-first DevOps pipeline. Issues have static labels for categorization (type, area, priority) while the active work state is tracked purely through branches, PR associations, standard assignees, and projects. Mutable label-based FSMs and slash commands (like `/claim` or `/approve`) are retired.
 
 ---
 
 ## Automation ownership
 
-The lifecycle automation lives in **`projectbluefin/common/.github/workflows/lifecycle.yml`**
-and is called by every factory repo. Common owns:
+The legacy comment-based active FSM previously driven by `.github/workflows/lifecycle.yml` is retired.
 
-- Label definitions (`labels.json`, 67 labels) and cross-repo sync (`sync-labels.yml`)
-  > ⚠️ `sync-labels.yml` requires `MERGERAPTOR_APP_ID` + `MERGERAPTOR_PRIVATE_KEY` org secrets to push to downstream repos. See issue #511.
-- Slash commands (`/approve`, `/claim`, `/unclaim`, `/wontfix`, `/hold`, `/unhold`)
-- Issue widget (the pipeline status block embedded in each issue body)
-- Label guard (blocks `/approve` if `kind/` or `area/` is missing)
-- Stale-claim sweep (daily — returns inactive claims after 7 days)
-
-**bonedigger** handles only: `ujust report` issue filing and priority auto-escalation from `ujust confirm` counts.
+Our current automation is focused exclusively on static validation, OCI builds, and release promotion:
+- **Repository Sync**: Label definitions are managed via `labels.json` and cross-repo sync workflows to ensure consistent tags (`kind/`, `area/`, `priority/`).
+- **PR Association**: Standard GitHub PR closing keyword syntax (`Closes #NNN` in PR descriptions) natively handles closing resolved issues upon merge, requiring no background state-machine code.
+- **Auto-Promotion and Gates**: Automated squash promotion is run via `projectbluefin/actions/.github/workflows/reusable-promote-squash.yml` to advance `testing` branch changes to `main` (stable).
+- **bonedigger**: Handles automated client reporting, `ujust report` issue generation, and automated cycle prioritization based on client confirmation counts.
 
 ---
 
 ## Next-step reference
 
-Every issue and PR always has exactly one actor who owns it. The issue body widget shows your current stage and the exact next action. Find the active label below if you need the quick lookup.
+Under our branch-as-state model, we focus primarily on standard GitHub issue assignments and standard pull requests (PRs).
 
 ### Issues
 
-| Label | 🟠 Actor | Next action |
+| Component | 🟠 Actor | Next action |
 |---|---|---|
-| `status/triage` | **Human** triager | Set `kind/` + `area/`, then comment `/approve` or add `status/discussing` |
-| `status/discussing` | **Human** maintainer | Drive to consensus, update spec in issue body, then comment `/approve` |
-| `status/queued` | **Agent** / contributor | Comment `/claim` |
-| `status/claimed` | **Agent** | Implement → open PR with `Closes #NNN` |
-| `agent/blocked` | **Human** | Read the issue comment → unblock → remove label |
-| `status/hold` | *nobody* | Intentionally paused — read comments for reason |
+| Issue Opened | **Human** triager | Set `kind/` + `area/` + `priority/`, then assign to a contributor or mark as open. |
+| In Discussion | **Human** maintainer / team | Drive spec/design to consensus in the issue comments. |
+| Assigned / In Progress | **Assignee** | Work on feature/bugfix branch. |
+| block/hold | **Human** / *nobody* | Add comment describing any blockers or reason for hold. |
 
 ### PRs
 
 | Label | 🟠 Actor | Next action |
 |---|---|---|
-| `pr/needs-review` | **Human** reviewer | Review → add `lgtm` or request changes |
-| `lgtm` + CI green | *automation* | Merges automatically |
-| Changes requested | **Agent** | Address feedback → re-request review |
-| `do-not-merge` | **Human** | Investigate → remove when resolved |
+| `pr/needs-review` | **Human** reviewer | Review ➔ add `lgtm` or request changes |
+| `lgtm` + CI green | *automation* | Enqueue to merge queue or merge automatically |
+| Changes requested | **Agent** / contributor | Address feedback ➔ push updates |
+| `do-not-merge` | **Human** | Investigate ➔ remove when blocker resolved |
 
 ---
 
 ## Issue lifecycle
 
-Issues follow one of two entry paths depending on type, then converge into a shared pipeline:
+Our lifecycle is direct, visual, and zero-maintenance:
 
 ```
-BUG:     filed → status/triage    → status/queued → status/claimed → done
-FEATURE: filed → status/discussing → status/queued → status/claimed → done
+Issue Filed ➔ Triaged & Assigned ➔ Branch Work ➔ Pull Request Open ➔ Merge (Done)
 ```
 
-`/approve` moves an issue directly to `status/queued`. There is no intermediate `status/approved` label.
-
-Blocking overlays (can be applied at any stage):
-- `status/hold` — paused intentionally, do not touch
-- `agent/blocked` — agent stuck, needs human input
+We link code directly to design goals:
+1. **Assignment**: Contributors or agents claim an issue by being assigned to it in GitHub (using the native UI/projects).
+2. **Implementation**: Developers create scoped feature/fix branches (`fix/NNN-short-description`).
+3. **Association**: The pull request includes standard keyword linkage (`Closes #NNN`) in its description.
+4. **Merge**: Once E2E tests pass and the PR is approved (`lgtm`), it is merged into the branch, and the issue closes automatically.
 
 ---
 
@@ -95,164 +87,119 @@ Blocking overlays (can be applied at any stage):
 
 Use the issue templates — they set the right initial labels automatically.
 
-If filing without a template, include enough context that someone else can act on it without asking you follow-up questions. Issues that require clarification stay in triage indefinitely.
+If filing without a template, include enough context that someone else can act on it without asking follow-up questions. Issues that require clarification stay in discussion or triage indefinitely.
 
-**Bug reports** get `status/triage` automatically.
-**Feature requests** get `status/discussing` automatically.
+- **Bug reports** get tagged with `kind/bug` and `status/triage` automatically.
+- **Feature requests** get tagged with `kind/enhancement` automatically.
 
 ### Triaging a bug (maintainers and triagers)
 
-When you see `status/triage`:
+When a new bug is filed:
 
-1. Is this valid? Is it a duplicate?
-   - Invalid or duplicate → close with explanation; add `kind/wontfix` if you want to track the decision
-   - Needs more data → ask for `ujust report` output in a comment, leave `status/triage` in place
-2. Set **exactly one** `kind/` label
-3. Set **one or more** `area/` labels
-4. Optionally set one `priority/` label (backlog ordering) or `hive/p0`/`hive/p1` (current-cycle urgency)
-5. Remove `status/triage`
-
-If the bug needs design discussion before anyone implements a fix, add `status/discussing` after removing `status/triage`.
+1. **Validity Check**: Is this a valid report? If it is invalid or a duplicate, close it with an explanation and tag with `kind/wontfix`.
+2. **Details**: If you need more data, ask for `ujust report` output in a comment.
+3. **Categorization**: Set **one or more** `area/` labels.
+4. **Prioritization**: Optionally set a `priority/` label or `hive/p0`/`hive/p1` cycle labels.
+5. **Assignment**: Assign the issue to yourself, a contributor, or an agent.
 
 ### Advancing a feature discussion
 
-When an issue in `status/discussing` reaches consensus on approach:
+When a feature request reaches consensus:
 
-1. Update the issue description with the agreed spec — it needs to be clear enough for a contributor who wasn't part of the discussion to act on it
-2. Comment `/approve`
+1. Update the issue description with the agreed spec. The description should be concrete and self-contained so that any contributor or agent can implement it immediately without context gaps.
+2. Mark the issue as ready by assigning it or adding a cycle priority label (`hive/*`).
 
-### Approving work
+### Reviewing PRs
 
-When an issue is fully scoped and ready for implementation:
+PRs opened by contributors or agents carry `pr/needs-review` automatically. When you see it:
 
-- Comment `/approve`
-
-The lifecycle automation checks that the issue has exactly one `kind/` label and at least one
-`area/` label. If either is missing, the command is rejected with an explanation.
-On success, `status/triage` / `status/discussing` is removed and `status/queued` is added.
-The issue widget updates to show the new stage and next action.
-
-**Manual fallback (if automation is down):**
-```
-Add: status/queued
-Remove: status/triage (or status/discussing)
-```
-
-### Reviewing agent PRs
-
-PRs opened by agents carry `pr/needs-review` automatically. When you see it:
-
-1. Verify the diff solves the stated issue (not just technically correct — actually the right fix)
-2. Check `agent-tested` is present (e2e passed)
-3. If it looks good: add `lgtm` — the PR will merge when CI is green
-4. If something is wrong: leave a review comment — the agent will address it on next run
-5. To block merge entirely: add `do-not-merge`
+1. **Correctness**: Verify the diff solves the stated issue safely.
+2. **Attribution**: Check for appropriate co-author and assistant-by trailers.
+3. **Approval**: If it looks good, add the `lgtm` label. The PR will automatically merge once CI completes successfully.
+4. **Block**: To block merge entirely, add `do-not-merge`.
 
 ### Unblocking a stuck agent
 
-When an issue has `agent/blocked`:
+When an issue has `agent/blocked` or an agent leaves a comment asking for decisions:
 
-1. Read the comment the agent left — it will state exactly what it needs
-2. Provide the answer or decision as a comment on the issue
-3. Remove `agent/blocked`
-
-The agent resumes on its next run.
+1. Read the agent's comment to understand the options/blocker.
+2. Provide the answer or decision as a comment on the issue.
+3. Remove any blocker labels or ping the agent.
 
 ### Pausing work
 
-- `status/hold` — add to prevent any agent from claiming. Always add a comment explaining why and when it can be unpaused.
-- `needs-human/agent-oops` — agent made an error that requires manual correction. Do not re-trigger agents on this issue; fix the underlying problem by hand first.
+- **Hold**: Set the `status/hold` label to signal a paused feature or dependency. Always comment on the issue explaining the reason and duration of the hold.
+- **Oops**: Use `needs-human/agent-oops` if an agent made a significant error. Fix the underlying problem by hand before resuming agent runs.
 
 ---
 
-## Agent workflow
+## Agent / Contributor workflow
 
 ### Finding work
 
 ```bash
-# All factory repos — start here
-gh search issues --label "status/queued" --owner projectbluefin --state open
+# Find open, unassigned, triaged issues across the org
+gh search issues --assignee "" --owner projectbluefin --state open
 
-# Single repo
-gh issue list --repo projectbluefin/common --label "status/queued" --state open
-
-# Live hive snapshot (if available)
-just hive   # from ~/src
+# Find open, unassigned issues in a single repository
+gh issue list --repo projectbluefin/common --assignee "" --state open
 ```
 
-**Pick order:** `hive/p0` first → `hive/p1` → `priority/p0` → `priority/p1` → `priority/p2` → unlabeled.
+**Pick order**: Triaged issues with cycle priority labels (`hive/p0` first ➔ `hive/p1`) ➔ backlog priority labels (`priority/p0` ➔ `priority/p1` ➔ `priority/p2`) ➔ unassigned/unlabeled issues.
 
-Check each candidate issue for `status/hold` before claiming — those are off-limits.
+Avoid any issue with the `status/hold` label — those are off-limits.
 
 ### Claiming an issue
 
-Comment `/claim` on the issue. The lifecycle automation will:
-1. Replace `status/queued` with `status/claimed`
-2. Assign the issue to you
-3. Update the issue widget
-
-**Manual fallback (if automation is down):**
-```
-Add: status/claimed
-Remove: status/queued
-Assign: yourself
-```
+We use native GitHub features for claiming work:
+1. Assign yourself to the issue in GitHub (using `gh issue edit <number> --add-assignee "@me"` or via the web UI).
+2. The assignment acts as the claim. No comment-based commands are needed.
 
 ### Working
 
-- Read the target repo's `AGENTS.md` — it specifies the required validation commands for that repo
-- Create a branch: `fix/NNN-short-description` or `feat/NNN-short-description`
-- Run the repo's validation gate before every commit (see `AGENTS.md`)
+- Read the target repo's `AGENTS.md` — it specifies the required validation commands for that repo.
+- Create a branch: `fix/NNN-short-description` or `feat/NNN-short-description`.
+- Run the repo's validation gate before every commit (e.g. `just check && pre-commit run --all-files`).
 - Follow Conventional Commits for PR titles: `fix:`, `feat:`, `chore:`, etc.
 
 ### Signaling a blocker
 
 When you cannot proceed without a human decision:
 
-1. Add `agent/blocked` to the **issue** (not the PR)
-2. Comment on the issue with:
-   - What you need (specific, not vague)
-   - Why you're blocked (the exact ambiguity or missing information)
-   - What the options are, if you can enumerate them
-3. Stop. Do not open a partial PR. Do not guess.
+1. Add the `agent/blocked` label to the **issue** (not the PR).
+2. Leave a detailed comment on the issue describing:
+   - What you need (be specific and clear).
+   - The exact ambiguity or missing information.
+   - Proposed options to resolve it.
+3. Stop. Do not open a partial PR, and do not guess.
 
 ### Opening a PR
 
-- Title: Conventional Commits format (`fix: ...`, `feat: ...`, `chore(deps): ...`)
-- Body: `Closes #NNN` + what changed + why
-- Follow the target repo's `AGENTS.md` for attribution trailers
-- Labels are set automatically where wired: `source:agent`, `size/*`, `agent-tested` after e2e
+- **Title**: Conventional Commits format (`fix: ...`, `feat: ...`, `chore(deps): ...`).
+- **Body**: Include `Closes #NNN` to link and automatically close the issue upon PR merge.
+- **Attribution**: Include the required attribution trailers on any automated commits.
+- **Labels**: PR labels such as `source:agent`, `size/*`, and `agent-tested` will be applied automatically by workflows.
 
 ### Unclaiming
 
-If you cannot finish the work:
-```
-Comment: /unclaim
-```
-
-**Manual fallback:**
-```
-Remove: status/claimed
-Add: status/queued
-Unassign yourself
+If you are unable to complete the work, unassign yourself from the issue using the standard GitHub CLI or web UI:
+```bash
+gh issue edit <number> --remove-assignee "@me"
 ```
 
 ---
 
 ## Label reference
 
-### Lifecycle — defines where an issue is
+### Lifecycle — active categorization labels
 
-> **Invariants:** at most one lifecycle label active at a time (except overlays `status/hold` and `agent/blocked`, which can coexist with any stage)
+> **Note**: Active label-based FSM states (`status/queued`, `status/claimed`, `status/discussing`) have been retired in favor of native GitHub features. We retain a minimal set of status labels for passive triage and overlay signals.
 
 | Label | Color | Who sets it | Meaning |
 |---|---|---|---|
-| `status/triage` | 🟣 lavender | Auto on issue open | New issue. Human: set `kind/` + `area/`, then comment `/approve` or add `status/discussing`. |
-| `status/discussing` | 🔵 blue | Auto on features; human for bugs needing design | Under discussion. Human: reach consensus, update spec, then comment `/approve`. |
-| `status/queued` | 🟣 purple | Lifecycle automation (`/approve`) | In the work pool. Contributor: comment `/claim` to take it. |
-| `status/claimed` | 🟡 amber | Lifecycle automation (`/claim`) | Actively being worked. Owner: open PR with `Closes #NNN`. |
-| `status/hold` | ⬜ gray | Human | Off-limits — do not claim or touch. Read comments for reason. |
-| `agent/blocked` | 🔴 red | Agent | Agent stuck; needs human decision. Read the issue comment. |
+| `status/triage` | 🟣 lavender | Auto on issue open | New issue awaiting categorization and triage. |
+| `status/hold` | ⬜ gray | Human | Intentionally paused/held — do not work on. Read comments for reason. |
+| `agent/blocked` | 🔴 red | Agent | Agent is stuck and needs human input. Read the issue comment. |
 
 ### Kind — what type of work?
 
@@ -413,21 +360,12 @@ gh search issues --label "hardware/blocker" --owner projectbluefin --state open
 
 ## What automation does
 
-All lifecycle automation runs from `projectbluefin/common/.github/workflows/lifecycle.yml`.
-Do not set these labels manually unless the workflow is down.
+The mutable lifecycle active FSM automation is retired. Standard GitHub project automation and keywords handle status transitions natively.
 
-| Trigger | What the lifecycle workflow does |
-|---|---|
-| Issue opened | Adds `status/triage`, inserts pipeline widget in issue body |
-| Issue labeled (`kind/enhancement` + `size/L` or `size/XL`) | Posts one-time epic-check comment if `kind/epic` not present and reminder not yet sent |
-| `/approve` comment (write+) | **Guard:** checks for `kind/` + `area/`. Rejects with comment if missing. On pass: removes `status/triage`/`status/discussing`, adds `status/queued`, updates widget. |
-| `/claim` comment | Removes `status/queued`, adds `status/claimed`, assigns commenter, updates widget |
-| `/unclaim` comment | Removes `status/claimed`, re-adds `status/queued`, unassigns, updates widget |
-| `/wontfix [reason]` (write+) | Adds `kind/wontfix`, closes issue as not-planned, posts reason |
-| `/hold [reason]` (write+) | Adds `status/hold`, posts comment with reason |
-| `/unhold` (write+) | Removes `status/hold`, posts comment |
-| PR opened | Adds `pr/needs-review` |
-| Daily schedule | Stale sweep: any `status/claimed` issue with no activity for 7 days is returned to `status/queued` |
+We retain lightweight automation for metadata, sync, and release promotion:
+- **PR Opened**: Automatically adds `pr/needs-review` to incoming pull requests.
+- **Repository Label Sync**: Synchronizes definitions from `labels.json` across all core repos.
+- **Auto-Promotion (Squash PRs)**: Compares trees and automatically generates release candidate promotion PRs.
 
 **bonedigger** handles only: ujust report issue detection/parsing and priority auto-escalation from `ujust confirm` counts (3+ → `priority/p1`, 5+ → `priority/p0`).
 
@@ -436,21 +374,38 @@ Do not set these labels manually unless the workflow is down.
 ## Quick reference for new contributors
 
 **I want to report a bug:**
-→ Open an issue → use the Bug Report template → fill it out → done. Maintainers triage it.
+→ Open an issue ➔ use the Bug Report template ➔ fill it out ➔ done. Maintainers triage it.
 
 **I want to propose a feature:**
-→ Open an issue → use the Feature Request template → be specific → done. Vague proposals wait indefinitely in `status/discussing`.
+→ Open an issue ➔ use the Feature Request template ➔ be specific ➔ done. Vague proposals wait in discussion.
 
 **I want to implement something:**
-1. Find an issue with `status/queued` in the target repo
-2. Comment `/claim`
-3. Read the issue + the repo's `AGENTS.md`
-4. Branch, build, test, PR with "Closes #NNN"
+1. Find an open, unassigned issue in the target repo.
+2. Assign yourself to the issue (using standard GitHub assignee feature).
+3. Read the issue + the repo's `AGENTS.md` operating contract.
+4. Create a branch (`fix/NNN-description` or `feat/NNN-description`), build, test locally, and open a PR with `Closes #NNN` in its description.
 
-**I'm a maintainer and want to queue work for agents:**
-1. Find a triaged issue (has `kind/` and `area/` set)
-2. Comment `/approve`
-3. Done — automation queues it immediately
+**I'm a maintainer and want to assign work:**
+1. Find a triaged issue (has `kind/` and `area/` labels set).
+2. Assign the issue to a contributor or agent.
 
-**I need to stop automation from touching something:**
-→ Comment `/hold` with a reason, or add `status/hold` manually
+**I need to hold or pause work on an issue:**
+→ Apply the `status/hold` label manually and comment with the reason and expected duration.
+
+---
+
+## Red Flags
+
+- **Using slash comments (`/approve`, `/claim`, `/unclaim`)**: These legacy triggers are retired. Do not use them or write new workflows that consume them.
+- **Applying FSM labels (`status/queued`, `status/claimed`, `status/discussing`)**: These labels are retired. All active status states must be handled via standard GitHub assignments, PR linkages, or project board pipelines.
+- **Ignoring trailing white-spaces in edits**: Pre-commit will fail. Run `pre-commit run --all-files` before pushing.
+- **Filing bugs with `needs-triage`**: This is an invalid label. Always use `status/triage`.
+
+---
+
+## Verification
+
+- [ ] All issue templates (`.github/ISSUE_TEMPLATE/*.yml`) are free of retired label references (`needs-triage`, `status/approved`).
+- [ ] No workflows inline are parsing issue/PR comments for active state transitions.
+- [ ] Pull requests contain standard keyword linkages (`Closes #NNN`) in their descriptions to automatically manage issue closure.
+- [ ] All local files format cleanly under `pre-commit run --all-files`.

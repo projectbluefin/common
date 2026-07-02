@@ -90,11 +90,12 @@ The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpap
 
 ## CountMe telemetry reporting
 
-Our images participate in Fedora's weekly CountMe telemetry to track installation statistics anonymously:
+Our images participate in weekly CountMe telemetry to track installation statistics anonymously:
 - **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, they use a dnf5-based helper service.
-- **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it utilizes a custom weekly systemd service/timer (`bluefin-countme.timer` triggering `/usr/libexec/dakota-countme`).
-  - It generates and maintains an installation epoch cookie in `/var/lib/dakota-countme-epoch` to mimic Fedora's week-based age buckets.
-  - It performs a weekly query to Fedora's metalink using a `libdnf5`-format User Agent with `os_name="Dakota"` (e.g. `libdnf5/5.2.9 (Dakota;${VERSION_ID};${ARCH}) hawkey`).
+- **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it uses a production-grade client-server implementation:
+  - **Systemd units:** `dakota-countme.timer` and `dakota-countme.service`, centralized in `common/system_files/shared/`, trigger `/usr/libexec/dakota-countme`.
+  - **State directory:** Uses a secure systemd `StateDirectory=/var/lib/dakota-countme/` with `DynamicUser=yes`; the `epoch` and `lastrun` files are stored there to track installation age buckets.
+  - **Server & request format:** Queries our custom Cloudflare Worker at `https://countme.projectbluefin.io` with query parameters `?repo=${IMAGE_NAME}&tag=${IMAGE_TAG}&flavor=${IMAGE_FLAVOR}&arch=${ARCH}&countme=${BUCKET}` and a `dakota-countme` User-Agent.
 
 ### Dashboard processing dependency
 
