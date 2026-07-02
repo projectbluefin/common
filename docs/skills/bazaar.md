@@ -109,7 +109,51 @@ RestartSec=5
 
 ## Local preview workflow
 
-Use the `ujust bazaar-preview` recipe which automates the JXL→PNG conversion and installs directly to `/etc/bazaar`:
+### Userspace prototype (no root needed)
+
+**Never write to `/etc` for prototype work.** Use `--extra-curated-config` directly — Bazaar hot-reloads on every save.
+
+1. **Install v0.9.0+ from CI** if not yet on Flathub stable:
+   ```bash
+   # Find latest successful CI build artifact ID
+   RUN_ID=$(gh api 'repos/kolunmi/bazaar/actions/runs?per_page=1&branch=main&status=success' \
+     --jq '.workflow_runs[0].id')
+   ARTIFACT_ID=$(gh api "repos/kolunmi/bazaar/actions/runs/${RUN_ID}/artifacts" \
+     --jq '.artifacts[] | select(.name | test("x86_64")) | .id')
+   curl -sL -H "Authorization: token $(gh auth token)" \
+     "https://api.github.com/repos/kolunmi/bazaar/actions/artifacts/${ARTIFACT_ID}/zip" \
+     -o /tmp/bazaar-head.zip
+   unzip -o /tmp/bazaar-head.zip -d /tmp/bazaar-head/
+   flatpak install --bundle --user --assumeyes /tmp/bazaar-head/Bazaar.flatpak
+   ```
+
+2. **Kill any running Bazaar processes** (exact PIDs only, never pkill):
+   ```bash
+   ps -ef | grep -E 'bazaar|Bazaar' | grep -v grep
+   kill <PID1> <PID2>
+   ```
+
+3. **Launch with prototype config** — hot-reload is automatic on file save:
+   ```bash
+   setsid flatpak run --filesystem=host io.github.kolunmi.Bazaar \
+     --extra-curated-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-prototype.yaml \
+     > /tmp/bazaar-proto.log 2>&1 &
+   disown
+   ```
+   v0.9.0 rejects the legacy system `curated.yaml` (`property 'css' doesn't exist`) and only renders the prototype — a clean slate.
+
+4. **Article markdown files** for `uri: file:///` paths in articles rows:
+   ```bash
+   mkdir -p /tmp/bazaar-proto
+   cat > /tmp/bazaar-proto/article.md << 'EOF'
+   # Article Title
+   Body in **markdown**. Links and *formatting* work.
+   EOF
+   ```
+
+### System install (requires root)
+
+Use the `ujust bazaar-preview` recipe which automates JXL→PNG conversion and writes to `/etc/bazaar`:
 
 ```bash
 ujust bazaar-preview
