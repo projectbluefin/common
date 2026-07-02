@@ -18,6 +18,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      - name: Set up Homebrew desktop file fallbacks statically
+        run: |
+          sudo mkdir -p /home/linuxbrew/.linuxbrew/share/applications/
+          sudo mkdir -p /home/linuxbrew/.linuxbrew/share/icons/hicolor/128x128/apps/
+          sudo mkdir -p /home/linuxbrew/.linuxbrew/share/icons/hicolor/scalable/apps/
+          sudo chown -R "$USER":"$USER" /home/linuxbrew/
+
+          # Statically create the OpenLens desktop file as if it was installed from Homebrew
+          cat << 'EOF' > /home/linuxbrew/.linuxbrew/share/applications/openlens.desktop
+          [Desktop Entry]
+          Name=OpenLens
+          Comment=Kubernetes Client
+          Exec=openlens
+          Icon=openlens
+          Type=Application
+          EOF
+
+          # Download OpenLens icon
+          curl -sL -o /home/linuxbrew/.linuxbrew/share/icons/hicolor/128x128/apps/openlens.png \
+            https://avatars.githubusercontent.com/u/108342416?s=128
+
+          # Statically create the Tavern desktop file as if it was installed from Homebrew
+          cat << 'EOF' > /home/linuxbrew/.linuxbrew/share/applications/tavern.desktop
+          [Desktop Entry]
+          Name=Tavern
+          Comment=Container Manager
+          Exec=tavern
+          Icon=tavern
+          Type=Application
+          EOF
+
+          # Download Tavern SVG icon
+          curl -sL -o /home/linuxbrew/.linuxbrew/share/icons/hicolor/scalable/apps/tavern.svg \
+            https://raw.githubusercontent.com/tuna-os/Tavern/main/data/icons/hicolor/scalable/apps/dev.hanthor.Tavern.svg
+
       - name: Run page assembly script
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -30,7 +65,7 @@ jobs:
           git config --local user.name "Copilot"
 
           # Check if there are any changes in the generated articles
-          git add system_files/bluefin/etc/bazaar/article-gnome-notes.md system_files/bluefin/etc/bazaar/article-bluefin-notes.md
+          git add system_files/bluefin/etc/bazaar/article-*.md
 
           if ! git diff --cached --quiet; then
             git commit -m "docs(bazaar): assemble curation pages statically"

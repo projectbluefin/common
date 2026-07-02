@@ -74,22 +74,38 @@ rows:
 - `banner` and `section` are separate rows — one banner per section, both as siblings in `rows`.
 - `section.overflow-count` enables a "Show More" button for sections with many apps.
 
+## Non-Flathub Icon Resolution (Homebrew & System .desktop Files)
+
+Non-Flathub applications included in curation pages (such as Homebrew apps or developer CLI tools like OpenLens or Tavern) must have high-fidelity app tiles just like Flathub flatpaks.
+
+Because Flathub appstream paths are not predictable on the CDN, we query the official Flathub v2 API first:
+`https://flathub.org/api/v2/appstream/{appid}`
+
+For non-Flathub applications:
+1. The nightly assembly action check-runs local/Homebrew paths for `.desktop` launcher files.
+2. It parses the launcher to find the specified `Icon=name`.
+3. It locates the referenced icon file (PNG or SVG) in standard Linux icon themes and Homebrew paths (`/home/linuxbrew/.linuxbrew/share/icons/`, `/usr/share/icons/`, etc.).
+4. It encodes the located asset as an inline, self-contained base64 Data URI directly into the final compiled markdown article:
+   `data:image/svg+xml;base64,...` or `data:image/png;base64,...`
+
+This prevents downstream broken image links and eliminates filesystem sandboxing issues.
+
 ## Banner image conversion (JXL → PNG)
 
-Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `-C sRGB`.
+Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `--color_space=sRGB`.
 
 **Containerfile pattern:**
 ```dockerfile
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
       name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" -C sRGB; \
+      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 ```
 
 **Critical rules:**
 - `curated.yaml` must reference `.png` paths, never `.jxl` — Bazaar crashes on JXL due to a libdex fiber scheduling regression on modern GNOME runtimes (issue #497).
-- The correct djxl flag is `-C sRGB` (short form). The long form `--color_space=sRGB` is not supported by the build-stage djxl binary and causes "Unknown argument" errors.
+- The correct djxl flag is `--color_space=sRGB` (long form). The short form `-C sRGB` is not supported by some build-stage alpine djxl binaries.
 - The `RUN` step **must** include `set -e`. Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
 
 ## bazaar.service requirements
@@ -203,7 +219,7 @@ just test
 - Banner entries reference `.jxl` paths instead of `.png`.
 - `bazaar.service` has `Type=oneshot` — will hang `systemctl` indefinitely.
 - `Containerfile` JXL conversion loop is missing `set -e` — silent build failures produce no PNG.
-- `djxl` invocation uses `-C sRGB` — this flag does not exist; use `--color_space=sRGB`.
+- `djxl` invocation uses `-C sRGB` — some build-stage alpine binaries do not support the short flag; use `--color_space=sRGB`.
 - `section.subtitle` is a bare string — must be `subtitle: string: "..."`.
 - `section.appids` is a bare list — must be `appids: list: [...]`.
 
@@ -215,5 +231,6 @@ just test
 - [ ] `bazaar.service` is `Type=simple` with `Restart=on-failure`
 - [ ] `Containerfile` JXL conversion `RUN` step begins with `set -e`
 - [ ] `djxl` invocation uses `--color_space=sRGB` (not `-C sRGB`)
+- [ ] Non-Flathub app icons resolve statically during the assembly script step using local/Homebrew .desktop icon retrieval and base64 SVG/PNG encoding.
 - [ ] `python3 -m pytest tests/test_curated_config.py -v` passes
 - [ ] `just check && pre-commit run --all-files` passes
