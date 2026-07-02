@@ -15,7 +15,8 @@ test:
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
     bats tests/test_ublue_fastfetch.bats
-    bats tests/test_ublue_motd.bats
+    bats tests/test_umotd_integration.bats
+    bats tests/test_bonedigger_report.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
     bats tests/test_dynamic_wallpaper.bats
