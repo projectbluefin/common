@@ -7,4 +7,3 @@ knuckle/
 __pycache__/
 *.pyc
 .worktrees/
-system_files/bluefin/etc/bazaar/curated-prototype.yaml
