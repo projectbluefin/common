@@ -1,6 +1,21 @@
 # https://github.com/bazaar-org/bazaar/blob/main/docs/overview.md
 
 rows:
+  - articles:
+      aspect-ratio: 1.777
+      list:
+        - title: "Bluefin Release Notes"
+          subtitle: "Latest stable updates from Project Bluefin"
+          image: file:///run/host/etc/bazaar/11-bluefin-day.png
+          uri: file:///run/host/etc/bazaar/article-bluefin-notes.md
+        - title: "Developer Experience"
+          subtitle: "Developer Mode tooling, Brewfiles, and setup guide"
+          image: file:///run/host/etc/bazaar/06-bluefin-day.png
+          uri: file:///run/host/etc/bazaar/article-devtools.md
+        - title: "GNOME Release Notes"
+          subtitle: "Discover the latest GNOME desktop environment features"
+          image: https://raw.githubusercontent.com/GNOME/gnome-logo/master/logo/gnome-logo.png
+          uri: file:///run/host/etc/bazaar/article-gnome-notes.md
   - banner:
       height: 400
       image:
@@ -9,7 +24,6 @@ rows:
         fit: cover
         can-shrink: true
         alt: "Bluefin desktop screenshot"
-        can-shrink: true
       light-color: "#a5897b"
       dark-color: "#0d0e19"
   - section:
