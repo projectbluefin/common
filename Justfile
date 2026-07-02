@@ -36,6 +36,7 @@ bazaar-preview:
         echo "Converting JXL banners to PNG via podman..."
         TMP_PNG_DIR=$(mktemp -d)
         podman run --rm -v $(pwd):/workspace:z -v "${TMP_PNG_DIR}":/out:z docker.io/library/alpine:latest sh -c "
+            set -e
             apk add -q libjxl-tools &&
             for f in /workspace/bluefin-branding/system_files/etc/bazaar/*.jxl; do
                 name=\$(basename \"\$f\" .jxl)
