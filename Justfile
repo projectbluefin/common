@@ -62,7 +62,18 @@ bazaar-preview:
         # Insert extra flags into Exec= lines (avoid double insertions if run multiple times)
         sed -i 's|Exec=/usr/bin/flatpak run|Exec=/usr/bin/flatpak run --nofilesystem=host --filesystem=home|g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
         sed -i 's|io.github.kolunmi.Bazaar |io.github.kolunmi.Bazaar --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml |g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
-        echo "GNOME menu shortcut successfully configured with hot-reload!"
+
+        # Add MimeType handler for appstream:// protocol scheme links
+        if ! grep -q 'MimeType=' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop; then
+            echo "MimeType=x-scheme-handler/appstream;" >> ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        else
+            sed -i 's|MimeType=|MimeType=x-scheme-handler/appstream;|g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        fi
+
+        # Configure xdg-mime to make our local preview desktop file the default for appstream:// scheme handler
+        xdg-mime default io.github.kolunmi.Bazaar.desktop x-scheme-handler/appstream || true
+        update-desktop-database ~/.local/share/applications/ || true
+        echo "GNOME menu shortcut and appstream:// protocol association successfully configured with hot-reload!"
     else
         echo "Warning: Could not locate a source Bazaar desktop file to override. GNOME launcher shortcut will not be overridden."
     fi

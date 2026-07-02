@@ -4,36 +4,36 @@ Welcome to the **Sustainability & Education** hub on Project Bluefin! We believe
 
 ---
 
-## 🌍 Recommended Applications
+## Recommended Applications
 
 Click any application name below to open its installation card directly in Bazaar and begin exploring:
 
 ### Learning & Education
 | App | Description | Action |
 | :--- | :--- | :---: |
-| 🔑 **Endless Key** | A massive library of offline educational resources, interactive games, and books for learners. | **[Install](appstream://org.endlessos.Key)** |
-| 📇 **Flashcards** | An elegant, lightweight tool to create, organize, and study digital flashcard decks. | **[Install](appstream://io.github.david_swift.Flashcards)** |
-| ⌨️ **Keypunch** | Improve your typing speed and accuracy with a beautiful, minimalist typing tutor. | **[Install](appstream://dev.bragefuglseth.Keypunch)** |
-| 🎨 **Tux Paint** | Award-winning drawing program for children with an easy-to-use interface and fun sound effects. | **[Install](appstream://org.tuxpaint.Tuxpaint)** |
-| 🧠 **Memorado** | A simple, native app designed to help you train your memory and cognitive skills daily. | **[Install](appstream://im.bernard.Memorado)** |
-| 🥚 **Egghead** | An interactive quiz and study tool to reinforce key educational concepts. | **[Install](appstream://io.github.josephmawa.Egghead)** |
-| 🐝 **Spelling Bee** | Challenge your spelling skills and vocabulary with an interactive spelling game. | **[Install](appstream://io.github.josephmawa.SpellingBee)** |
+| **Endless Key** | A massive library of offline educational resources, interactive games, and books for learners. | **[Install](appstream://org.endlessos.Key)** |
+| **Flashcards** | An elegant, lightweight tool to create, organize, and study digital flashcard decks. | **[Install](appstream://io.github.david_swift.Flashcards)** |
+| **Keypunch** | Improve your typing speed and accuracy with a beautiful, minimalist typing tutor. | **[Install](appstream://dev.bragefuglseth.Keypunch)** |
+| **Tux Paint** | Award-winning drawing program for children with an easy-to-use interface and fun sound effects. | **[Install](appstream://org.tuxpaint.Tuxpaint)** |
+| **Memorado** | A simple, native app designed to help you train your memory and cognitive skills daily. | **[Install](appstream://im.bernard.Memorado)** |
+| **Egghead** | An interactive quiz and study tool to reinforce key educational concepts. | **[Install](appstream://io.github.josephmawa.Egghead)** |
+| **Spelling Bee** | Challenge your spelling skills and vocabulary with an interactive spelling game. | **[Install](appstream://io.github.josephmawa.SpellingBee)** |
 
 ### Code & Engineering Education
 | App | Description | Action |
 | :--- | :--- | :---: |
-| ⚡ **TurboWarp** | Blazing-fast environment for Scratch that compiles projects to optimized JavaScript. | **[Install](appstream://org.turbowarp.TurboWarp)** |
-| 🔬 **Nucleus** | A highly interactive, native playground to visualize and study scientific/physics simulations. | **[Install](appstream://page.codeberg.lo_vely.Nucleus)** |
-| 🧮 **Multiplication Puzzle** | A fun, interactive math-oriented puzzle game designed to sharpen arithmetic skills. | **[Install](appstream://app.drey.MultiplicationPuzzle)** |
+| **TurboWarp** | Blazing-fast environment for Scratch that compiles projects to optimized JavaScript. | **[Install](appstream://org.turbowarp.TurboWarp)** |
+| **Nucleus** | A highly interactive, native playground to visualize and study scientific/physics simulations. | **[Install](appstream://page.codeberg.lo_vely.Nucleus)** |
+| **Multiplication Puzzle** | A fun, interactive math-oriented puzzle game designed to sharpen arithmetic skills. | **[Install](appstream://app.drey.MultiplicationPuzzle)** |
 
 ### Earth & Sustainability
 | App | Description | Action |
 | :--- | :--- | :---: |
-| 🌱 **Moat** | Native GTK tool to monitor/audit local hardware power consumption, helping you save energy. | **[Install](appstream://as.may.moat)** |
+| **Moat** | Native GTK tool to monitor/audit local hardware power consumption, helping you save energy. | **[Install](appstream://as.may.moat)** |
 
 ---
 
-## 📝 The Sustainability & Education Lore
+## The Sustainability & Education Lore
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 

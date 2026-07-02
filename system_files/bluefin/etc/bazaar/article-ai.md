@@ -4,25 +4,25 @@ Welcome to the **AI and Machine Learning** hub on Project Bluefin! Bluefin is a 
 
 ---
 
-## 🤖 Recommended local AI Applications
+## Recommended local AI Applications
 
 Click any application name below to open its installation card directly in Bazaar and begin exploring:
 
 ### Local LLMs & Chat
 | App | Description | Action |
 | :--- | :--- | :---: |
-| 🦙 **Jan AI** | Run open-source LLMs locally with a gorgeous native UI, full model directory, and local server. | **[Install](appstream://ai.jan.Jan)** |
-| 🏔️ **Alpaca** | A simple, native client for running and interacting with local llama.cpp models. | **[Install](appstream://com.jeffser.Alpaca)** |
-| 💬 **Newelle** | A beautiful, lightweight GTK4 interface designed for interacting with multiple AI models/APIs. | **[Install](appstream://io.github.qwersyk.Newelle)** |
+| **Jan AI** | Run open-source LLMs locally with a gorgeous native UI, full model directory, and local server. | **[Install](appstream://ai.jan.Jan)** |
+| **Alpaca** | A simple, native client for running and interacting with local llama.cpp models. | **[Install](appstream://com.jeffser.Alpaca)** |
+| **Newelle** | A beautiful, lightweight GTK4 interface designed for interacting with multiple AI models/APIs. | **[Install](appstream://io.github.qwersyk.Newelle)** |
 
 ### Local Audio & Transcription
 | App | Description | Action |
 | :--- | :--- | :---: |
-| 🎙️ **Whis** | Highly optimized offline transcription tool powered by OpenAI's Whisper with total privacy. | **[Install](appstream://ink.whis.Whis)** |
+| **Whis** | Highly optimized offline transcription tool powered by OpenAI's Whisper with total privacy. | **[Install](appstream://ink.whis.Whis)** |
 
 ---
 
-## 📝 Cloud-Native AI Lore & Architecture
+## Cloud-Native AI Lore & Architecture
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 
