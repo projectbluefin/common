@@ -97,7 +97,7 @@ def collect_tag_refs(root=None):
                 image, tag = m.group(1), m.group(2)
                 if tag.startswith("sha256"):
                     continue
-                # Skip template/placeholder tags (e.g., ending in hyphen, containing uppercase letters, or template variables)
+                # Skip template/placeholder tags used in docs examples.
                 if (
                     tag.endswith("-")
                     or tag.endswith("_")
