@@ -97,6 +97,15 @@ def collect_tag_refs(root=None):
                 image, tag = m.group(1), m.group(2)
                 if tag.startswith("sha256"):
                     continue
+                # Skip template/placeholder tags used in docs examples.
+                if (
+                    tag.endswith("-")
+                    or tag.endswith("_")
+                    or any(c.isupper() for c in tag)
+                    or "placeholder" in tag
+                    or "number" in tag
+                ):
+                    continue
                 key = f"{image}:{tag}"
                 refs.setdefault(key, []).append(f"{path}:{lineno}")
     return refs

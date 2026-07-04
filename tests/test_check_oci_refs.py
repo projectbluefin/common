@@ -171,6 +171,16 @@ class TestCollectTagRefs:
         refs = collect_tag_refs(tmp_path)
         assert len(refs["bluefin:stable"]) == 2
 
+    def test_skips_placeholder_tags(self, tmp_path):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs/guide.md").write_text(
+            "ghcr.io/projectbluefin/common:e2e-pr-<N>-<sha>\n"
+            "ghcr.io/projectbluefin/common:e2e-pr-N-sha\n"
+            "ghcr.io/projectbluefin/common:e2e-pr-{pr_number}-{sha_short}\n"
+        )
+        refs = collect_tag_refs(tmp_path)
+        assert refs == {}
+
 
 # ---------------------------------------------------------------------------
 # tag_exists_in_ghcr

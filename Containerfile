@@ -35,7 +35,7 @@ COPY bluefin-branding/system_files/etc/bazaar /tmp/bazaar-banners
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
       name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" -C sRGB; \
+      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 
 COPY --from=motd-build /umotd /out/shared/usr/bin/umotd
