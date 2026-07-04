@@ -8,7 +8,7 @@ Click a tile to install.
 
 ## JetBrains
 
-![JetBrains](appstream://com.jetbrains.CLion,appstream://com.jetbrains.DataGrip,appstream://com.jetbrains.GoLand,appstream://com.jetbrains.IntelliJ-IDEA-Community,appstream://com.jetbrains.PhpStorm,appstream://com.jetbrains.PyCharm-Community,appstream://com.jetbrains.Rider,appstream://com.jetbrains.RubyMine,appstream://com.jetbrains.RustRover,appstream://com.jetbrains.WebStorm)
+![JetBrains](appstream://com.jetbrains.CLion,appstream://com.jetbrains.DataGrip,appstream://com.jetbrains.GoLand,appstream://com.jetbrains.IntelliJ-IDEA-Community,appstream://com.jetbrains.PhpStorm,appstream://com.jetbrains.PyCharm-Community,appstream://com.jetbrains.Rider,appstream://com.jetbrains.RubyMine,appstream://com.jetbrains.RustRover,appstream://com.jetbrains.WebStorm,appstream://com.google.AndroidStudio)
 
 ## AI apps
 
