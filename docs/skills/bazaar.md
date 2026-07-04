@@ -213,6 +213,32 @@ YAML wiring was valid.
 guards against this regression by scanning every `article-*.md` for `<div` and
 `style="` fragments.
 
+### Native app-tile grids — the real way to show a "grid of apps"
+
+Bazaar's markdown renderer (`bge-markdown-render.c`, upstream `bazaar-org/bazaar`)
+treats a normal Markdown image (`![alt](https://...)`) as a full-width
+"screenshot" widget wrapped in a button that opens a screenshot gallery viewer —
+**not** a small inline icon. Using a regular image URL to fake a small app-tile
+grid renders each icon huge and clicking it opens a screenshot viewer, not an
+install action. Don't do this.
+
+Instead, `markdown_bind_inline_uri()` in `src/bz-article.c` special-cases any
+image `src` starting with `appstream://`: it calls
+`build_appstream_wrap_box()`, which renders a real flow-box grid of native
+`BzAppTile` widgets — the exact same tiles used on the Explore/Search pages,
+at the correct size, with the real icon, name, and install action Bazaar
+already knows how to render. Multiple appids can be combined into a single
+grid by comma-joining `appstream://` URIs inside one image:
+
+```markdown
+![Grid caption](appstream://com.visualstudio.code,appstream://com.vscodium.codium,appstream://dev.zed.Zed)
+```
+
+This is the correct pattern for any "app grid" / "install page" style section
+in a curated article — never hand-roll a table of hotlinked Flathub icon URLs.
+See `article-devtools.md` for a real example (IDEs, terminal editors, Podman
+Desktop/Virtual Machines, Headlamp/OpenLens grids).
+
 ### Real "Click to Install" links only work for hooked appids
 
 An `appstream://<appid>` link only produces a genuine click-to-install action
@@ -245,6 +271,17 @@ the shebang line), and a new `hooks:` entry + confirmation dialog in
 `bazaar.yaml`. Add matching state-machine tests to both `tests/test_hooks.py`
 and `tests/test_bazaar_hook.py`.
 
+**`just bazaar-preview` cannot test hooks end-to-end.** The preview
+deliberately launches with `--nofilesystem=host --filesystem=home` so the
+sandbox never sees `/run/host/etc/bazaar/` — this is what stops it from also
+loading (and being confused by) your real system's `/etc/bazaar/bazaar.yaml`.
+But that also means the hook wiring in `bazaar.yaml` is never loaded during
+preview, so clicking an app tile's Install button always falls through to the
+normal Flatpak install flow — this is expected, not a bug. Verify hook logic
+with `pytest tests/test_hooks.py tests/test_bazaar_hook.py` (state machine
+unit tests), and verify end-to-end behavior only via a real built image or
+the `projectbluefin/testsuite` AT-SPI lab.
+
 ## Validation
 
 ```bash
@@ -269,6 +306,7 @@ just test
 - Adding a hook in `hooks.py` but forgetting to mirror it in `usr/libexec/bazaar-hook` and `bazaar.yaml` — the in-image copy is what actually runs on real Bluefin installs.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
 - Writing article Markdown as raw HTML `<div>` card grids — Bazaar's renderer does not reliably display these; use Markdown tables instead (see "Article Markdown authoring" above).
+- Using a plain `![alt](https://...icon-url)` to fake a small app-tile grid — renders as a giant full-width "screenshot" widget that opens a gallery viewer on click. Use the native `![](appstream://id1,appstream://id2,...)` grid syntax instead (see "Native app-tile grids" above).
 
 ## Red Flags
 

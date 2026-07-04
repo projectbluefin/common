@@ -28,23 +28,15 @@ This opens an interactive picker covering IDEs and editors, Docker and Podman De
 
 ### GUI IDEs and casks
 
-| Tool | What it's for | Install |
-|---|---|---|
-| VS Code | Full-featured GUI IDE with the standard Microsoft extension marketplace and the Dev Containers extension preinstalled. | **[Install](appstream://com.visualstudio.code)** |
-| VS Code Insiders | Nightly VS Code build for testing upcoming editor features. | `ujust devmode` |
-| VSCodium | Telemetry-free build of VS Code from open source. | **[Install](appstream://com.vscodium.codium)** |
-| Antigravity | Google's AI-native IDE. | `ujust devmode` |
-| Zed | GPU-accelerated, high-performance native code editor. | **[Install](appstream://dev.zed.Zed)** |
-| JetBrains Toolbox | Installer and updater for the full JetBrains IDE lineup (IntelliJ, PyCharm, GoLand, etc). | **[Install](appstream://com.jetbrains.IntelliJIdea)** |
+Click a tile to install. These redirect to the Homebrew build behind the scenes because none of them officially support Flatpak — Bazaar shows a one-time confirmation dialog, then runs the install in a terminal.
+
+![GUI IDEs](appstream://com.visualstudio.code,appstream://com.vscodium.codium,appstream://dev.zed.Zed,appstream://com.jetbrains.PyCharm-Community)
+
+VS Code is the recommended starting point — the Dev Containers extension is preinstalled. VS Code Insiders (nightly builds) and Antigravity (Google's AI-native IDE) don't have a Flatpak/Homebrew hook wired up yet; install them with `ujust devmode`.
 
 ### Terminal editors
 
-| Tool | What it's for | Install |
-|---|---|---|
-| Neovim | Extensible Vim-fork with a modern Lua plugin ecosystem. | **[Install](appstream://io.neovim.nvim)** |
-| Helix | Modal terminal editor with built-in LSP and tree-sitter support. | **[Install](appstream://com.helix_editor.Helix)** |
-| micro | Simple, modern terminal editor with familiar keybindings. | **[Install](appstream://io.github.zyedidia.micro)** |
-| vim | Classic modal editor. | **[Install](appstream://org.vim.Vim)** |
+![Terminal editors](appstream://io.neovim.nvim,appstream://com.helix_editor.Helix,appstream://org.vim.Vim,appstream://io.github.zyedidia.micro)
 
 ### VS Code extensions shipped by default
 
@@ -68,11 +60,11 @@ To switch the Dev Containers extension to Podman instead of Docker, add these se
 "dev.containers.dockerSocketPath": "/run/user/1000/podman/podman.sock"
 ```
 
+![Podman Desktop and Virtual Machines](appstream://io.podman_desktop.PodmanDesktop,appstream://org.virt_manager.virt-manager)
+
 | Tool | What it's for | Install |
 |---|---|---|
 | Docker | Container engine plus `docker-compose`, `lazydocker`, and `dive` for image inspection. | `ujust devmode` |
-| Podman Desktop | Graphical management tool for containers, pods, and volumes. | **[Install](appstream://io.podman_desktop.PodmanDesktop)** |
-| Virtual Machines (virt-manager + QEMU) | Full GUI for creating and managing local VMs. | `ujust devmode` |
 | Lima | Lightweight Linux VMs with automatic file sharing and port forwarding, KVM-backed. | `ujust devmode` |
 | incus | System container and VM manager (LXD successor). | `ujust devmode` |
 | devcontainer CLI | Build and open devcontainers from the command line, matching VS Code's Remote Containers. | Installed automatically by `ujust devmode` |
@@ -193,10 +185,7 @@ Incubating and sandbox CNCF projects:
 
 Graphical Kubernetes tools:
 
-| Tool | What it's for | Install |
-|---|---|---|
-| Headlamp | Extensible, easy-to-use dashboard for Kubernetes clusters. | **[Install](appstream://io.kinvolk.Headlamp)** |
-| OpenLens | Full-featured desktop IDE for Kubernetes workflows. | **[Install](appstream://dev.k8slens.OpenLens)** |
+![Headlamp and OpenLens](appstream://io.kinvolk.Headlamp,appstream://dev.k8slens.OpenLens)
 
 ---
 
