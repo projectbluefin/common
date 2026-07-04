@@ -248,17 +248,22 @@ must correspond to an actual (even if unofficial/abandoned) app listing on
 Flathub, otherwise there's no Install button to click at all.
 
 Hooked appids today (redirect to `brew install` instead of the Flatpak):
-`com.jetbrains.*` / `com.google.AndroidStudio` (jetbrains-toolbox hook),
-`com.visualstudio.code` (code hook), `com.vscodium.codium` (code hook),
-`dev.zed.Zed` (zed hook), `io.neovim.nvim` (neovim hook),
-`com.helix_editor.Helix` (helix hook), `org.vim.Vim` (vim hook),
-`io.github.zyedidia.micro` (micro hook).
+`com.visualstudio.code`, `com.vscodium.codium`, `dev.zed.Zed`,
+`org.gnu.emacs`, `com.jetbrains.CLion`, `com.jetbrains.DataGrip`,
+`com.jetbrains.GoLand`, `com.jetbrains.IntelliJ-IDEA-Community`,
+`com.jetbrains.PhpStorm`, `com.jetbrains.PyCharm-Community`,
+`com.jetbrains.PyCharm-Professional`, `com.jetbrains.Rider`,
+`com.jetbrains.RubyMine`, `com.jetbrains.RustRover`,
+`com.jetbrains.WebStorm`, `ai.opencode.opencode`,
+`ai.lmstudio.lm-studio`, `io.neovim.nvim`, `com.helix_editor.Helix`,
+`org.vim.Vim`, `io.github.zyedidia.micro`.
 
-Pure CLI/daemon tools with no Flatpak identity at all (Docker, Lima, incus)
-and tools with no Flathub listing (Antigravity) can **never** get a real
-click-to-install link — don't label their table rows "Install" with a fake
-`appstream://` link; use the actual `ujust`/`brew` command as plain text
-instead. Verify an appid is real before wiring a new hook:
+`jetbrains-toolbox` remains as a fallback for unmatched `com.jetbrains.*`
+and `com.google.AndroidStudio`; directly mapped JetBrains appids must be
+excluded from that fallback to avoid hijacking cask-specific hooks.
+
+Pure CLI/daemon tools and tools with no Flathub listing can **never** get a
+real click-to-install link. Verify an appid is real before wiring a new hook:
 
 ```bash
 curl -s "https://flathub.org/api/v2/search" -X POST \

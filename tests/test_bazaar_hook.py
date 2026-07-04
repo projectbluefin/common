@@ -142,6 +142,15 @@ class TestJetbrainsHook:
         })
         assert resp == "pass"
 
+    def test_setup_direct_mapped_jetbrains_app_returns_pass(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "jetbrains-toolbox",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "com.jetbrains.CLion",
+        })
+        assert resp == "pass"
+
     def test_setup_dialog_returns_ok(self):
         resp = _run_hook({
             "BAZAAR_HOOK_ID": "jetbrains-toolbox",
@@ -316,6 +325,58 @@ class TestZedHook:
     def test_teardown_returns_deny(self):
         resp = _run_hook({
             "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown",
+        })
+        assert resp == "deny"
+
+
+# ---------------------------------------------------------------------------
+# GUI cask hooks
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "hook_id,appid,cask,tap",
+    [
+        ("emacs", "org.gnu.emacs", "emacs-app-linux", "ublue-os/experimental-tap"),
+        ("clion", "com.jetbrains.CLion", "clion-linux", "ublue-os/experimental-tap"),
+        ("datagrip", "com.jetbrains.DataGrip", "datagrip-linux", "ublue-os/experimental-tap"),
+        ("goland", "com.jetbrains.GoLand", "goland-linux", "ublue-os/experimental-tap"),
+        ("intellij", "com.jetbrains.IntelliJ-IDEA-Community", "intellij-idea-linux", "ublue-os/experimental-tap"),
+        ("phpstorm", "com.jetbrains.PhpStorm", "phpstorm-linux", "ublue-os/experimental-tap"),
+        ("pycharm", "com.jetbrains.PyCharm-Community", "pycharm-linux", "ublue-os/experimental-tap"),
+        ("rider", "com.jetbrains.Rider", "rider-linux", "ublue-os/experimental-tap"),
+        ("rubymine", "com.jetbrains.RubyMine", "rubymine-linux", "ublue-os/experimental-tap"),
+        ("rustrover", "com.jetbrains.RustRover", "rustrover-linux", "ublue-os/experimental-tap"),
+        ("webstorm", "com.jetbrains.WebStorm", "webstorm-linux", "ublue-os/experimental-tap"),
+        ("opencode-desktop", "ai.opencode.opencode", "opencode-desktop-linux", "ublue-os/experimental-tap"),
+        ("lm-studio", "ai.lmstudio.lm-studio", "lm-studio-linux", "ublue-os/tap"),
+    ],
+)
+class TestGuiCaskHooks:
+    def test_setup_install_returns_ok(self, hook_id, appid, cask, tap):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": appid,
+        })
+        assert resp == "ok"
+
+    def test_action_spawns_expected_cask(self, hook_id, appid, cask, tap):
+        resp, popen_calls = _run_hook_with_mock({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "action",
+            "BAZAAR_TS_APPID": appid,
+        })
+        assert resp == ""
+        assert len(popen_calls) == 1
+        args = " ".join(popen_calls[0])
+        assert cask in args
+        assert tap in args
+
+    def test_teardown_returns_deny(self, hook_id, appid, cask, tap):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "teardown",
         })
         assert resp == "deny"

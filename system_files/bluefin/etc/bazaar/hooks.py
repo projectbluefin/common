@@ -40,9 +40,147 @@ def spawn_brew_formula(formula):
         'bash', '-c', f'{brew} install {formula}'
     ])
 
+GUI_CASK_HOOKS = {
+    'code': {
+        'appids': ('com.visualstudio.code', 'com.vscodium.codium'),
+        'tap': 'ublue-os/tap',
+        'casks': {
+            'com.visualstudio.code': 'visual-studio-code-linux',
+            'com.vscodium.codium': 'vscodium-linux',
+        },
+    },
+    'zed': {
+        'appids': ('dev.zed.Zed',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {
+            'dev.zed.Zed': 'zed-linux',
+        },
+    },
+    'emacs': {
+        'appids': ('org.gnu.emacs',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {
+            'org.gnu.emacs': 'emacs-app-linux',
+        },
+    },
+    'clion': {
+        'appids': ('com.jetbrains.CLion',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.CLion': 'clion-linux'},
+    },
+    'datagrip': {
+        'appids': ('com.jetbrains.DataGrip',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.DataGrip': 'datagrip-linux'},
+    },
+    'goland': {
+        'appids': ('com.jetbrains.GoLand',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.GoLand': 'goland-linux'},
+    },
+    'intellij': {
+        'appids': ('com.jetbrains.IntelliJ-IDEA-Community',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.IntelliJ-IDEA-Community': 'intellij-idea-linux'},
+    },
+    'phpstorm': {
+        'appids': ('com.jetbrains.PhpStorm',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.PhpStorm': 'phpstorm-linux'},
+    },
+    'pycharm': {
+        'appids': ('com.jetbrains.PyCharm-Community', 'com.jetbrains.PyCharm-Professional'),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {
+            'com.jetbrains.PyCharm-Community': 'pycharm-linux',
+            'com.jetbrains.PyCharm-Professional': 'pycharm-linux',
+        },
+    },
+    'rider': {
+        'appids': ('com.jetbrains.Rider',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.Rider': 'rider-linux'},
+    },
+    'rubymine': {
+        'appids': ('com.jetbrains.RubyMine',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.RubyMine': 'rubymine-linux'},
+    },
+    'rustrover': {
+        'appids': ('com.jetbrains.RustRover',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.RustRover': 'rustrover-linux'},
+    },
+    'webstorm': {
+        'appids': ('com.jetbrains.WebStorm',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'com.jetbrains.WebStorm': 'webstorm-linux'},
+    },
+    'opencode-desktop': {
+        'appids': ('ai.opencode.opencode',),
+        'tap': 'ublue-os/experimental-tap',
+        'casks': {'ai.opencode.opencode': 'opencode-desktop-linux'},
+    },
+    'lm-studio': {
+        'appids': ('ai.lmstudio.lm-studio',),
+        'tap': 'ublue-os/tap',
+        'casks': {'ai.lmstudio.lm-studio': 'lm-studio-linux'},
+    },
+}
+
+def handle_gui_cask_hook(hook_cfg):
+    appids = hook_cfg['appids']
+    tap = hook_cfg['tap']
+    casks = hook_cfg['casks']
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and transaction_appid in appids:
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'download':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                cask = casks[transaction_appid]
+                spawn_brew_tap_cask(tap, cask)
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
 def handle_jetbrains():
 
     def appid_is_jetbrains(appid):
+        direct_jetbrains_appids = (
+            'com.jetbrains.CLion',
+            'com.jetbrains.DataGrip',
+            'com.jetbrains.GoLand',
+            'com.jetbrains.IntelliJ-IDEA-Community',
+            'com.jetbrains.PhpStorm',
+            'com.jetbrains.PyCharm-Community',
+            'com.jetbrains.PyCharm-Professional',
+            'com.jetbrains.Rider',
+            'com.jetbrains.RubyMine',
+            'com.jetbrains.RustRover',
+            'com.jetbrains.WebStorm',
+        )
+        if appid in direct_jetbrains_appids:
+            return False
         return appid.startswith('com.jetbrains.') or appid == ('com.google.AndroidStudio')
 
     match stage:
@@ -73,77 +211,6 @@ def handle_jetbrains():
 
         case 'teardown':
             # always prevent installation of JetBrains flatpaks
-            return 'deny'
-
-def handle_code():
-
-    def appid_is_code(appid):
-        return appid == ('com.visualstudio.code') or appid == ('com.vscodium.codium')
-
-    match stage:
-        case 'setup':
-            if transaction_type == 'install' and appid_is_code(transaction_appid):
-                return 'ok'
-            else:
-                return 'pass'
-
-        case 'setup-dialog':
-            return 'ok'
-
-        case 'teardown-dialog':
-            if dialog_response_id == 'download':
-                return 'ok'
-            else:
-                return 'abort'
-
-        case 'catch':
-            return 'abort'
-
-        case 'action':
-            try:
-                if transaction_appid == ('com.vscodium.codium'):
-                    spawn_brew_tap_cask('ublue-os/tap', 'vscodium-linux')
-                else:
-                    spawn_brew_tap_cask('ublue-os/tap', 'visual-studio-code-linux')
-            except:
-                pass
-            return ''
-
-        case 'teardown':
-            return 'deny'
-
-def handle_zed():
-
-    def appid_is_zed(appid):
-        return appid == ('dev.zed.Zed')
-
-    match stage:
-        case 'setup':
-            if transaction_type == 'install' and appid_is_zed(transaction_appid):
-                return 'ok'
-            else:
-                return 'pass'
-
-        case 'setup-dialog':
-            return 'ok'
-
-        case 'teardown-dialog':
-            if dialog_response_id == 'download':
-                return 'ok'
-            else:
-                return 'abort'
-
-        case 'catch':
-            return 'abort'
-
-        case 'action':
-            try:
-                spawn_brew_tap_cask('ublue-os/experimental-tap', 'zed-linux')
-            except:
-                pass
-            return ''
-
-        case 'teardown':
             return 'deny'
 
 def handle_cli_editor(appid_match, formula):
@@ -195,10 +262,24 @@ response = 'pass'
 match hook_id:
     case 'jetbrains-toolbox':
         response = handle_jetbrains()
-    case 'code':
-        response = handle_code()
-    case 'zed':
-        response = handle_zed()
+    case (
+        'code'
+        | 'zed'
+        | 'emacs'
+        | 'clion'
+        | 'datagrip'
+        | 'goland'
+        | 'intellij'
+        | 'phpstorm'
+        | 'pycharm'
+        | 'rider'
+        | 'rubymine'
+        | 'rustrover'
+        | 'webstorm'
+        | 'opencode-desktop'
+        | 'lm-studio'
+    ):
+        response = handle_gui_cask_hook(GUI_CASK_HOOKS[hook_id])
     case 'neovim':
         response = handle_neovim()
     case 'helix':
