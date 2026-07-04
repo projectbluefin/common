@@ -27,11 +27,18 @@ def spawn_and_detach(args):
 def spawn_ujust(id):
     spawn_and_detach(['flatpak-spawn', '--host', 'xdg-terminal-exec', '-x', f'ujust {id}'])
 
-def spawn_brew(app):
+def spawn_brew_tap_cask(tap, app):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} tap --trust ublue-os/tap && {brew} install --cask {app}'
+        'bash', '-c', f'{brew} tap --trust {tap} && {brew} install --cask {app}'
+    ])
+
+def spawn_brew_formula(formula):
+    brew = '/home/linuxbrew/.linuxbrew/bin/brew'
+    spawn_and_detach([
+        'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
+        'bash', '-c', f'{brew} install {formula}'
     ])
 
 def handle_jetbrains():
@@ -96,15 +103,92 @@ def handle_code():
         case 'action':
             try:
                 if transaction_appid == ('com.vscodium.codium'):
-                    spawn_brew('ublue-os/tap/vscodium-linux')
+                    spawn_brew_tap_cask('ublue-os/tap', 'vscodium-linux')
                 else:
-                    spawn_brew('ublue-os/tap/visual-studio-code-linux')
+                    spawn_brew_tap_cask('ublue-os/tap', 'visual-studio-code-linux')
             except:
                 pass
             return ''
 
         case 'teardown':
             return 'deny'
+
+def handle_zed():
+
+    def appid_is_zed(appid):
+        return appid == ('dev.zed.Zed')
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and appid_is_zed(transaction_appid):
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'download':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                spawn_brew_tap_cask('ublue-os/experimental-tap', 'zed-linux')
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
+def handle_cli_editor(appid_match, formula):
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and transaction_appid == appid_match:
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'download':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                spawn_brew_formula(formula)
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
+def handle_neovim():
+    return handle_cli_editor('io.neovim.nvim', 'nvim')
+
+def handle_helix():
+    return handle_cli_editor('com.helix_editor.Helix', 'helix')
+
+def handle_vim():
+    return handle_cli_editor('org.vim.Vim', 'vim')
+
+def handle_micro():
+    return handle_cli_editor('io.github.zyedidia.micro', 'micro')
 
 # ---
 
@@ -114,6 +198,16 @@ match hook_id:
         response = handle_jetbrains()
     case 'code':
         response = handle_code()
+    case 'zed':
+        response = handle_zed()
+    case 'neovim':
+        response = handle_neovim()
+    case 'helix':
+        response = handle_helix()
+    case 'vim':
+        response = handle_vim()
+    case 'micro':
+        response = handle_micro()
 
 print(response)
 sys.exit(0)

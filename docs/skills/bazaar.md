@@ -213,6 +213,38 @@ YAML wiring was valid.
 guards against this regression by scanning every `article-*.md` for `<div` and
 `style="` fragments.
 
+### Real "Click to Install" links only work for hooked appids
+
+An `appstream://<appid>` link only produces a genuine click-to-install action
+if a hook in `hooks.py`/`bazaar-hook` intercepts that exact appid. Bazaar only
+fires a hook when the user attempts a real Flatpak transaction — so the appid
+must correspond to an actual (even if unofficial/abandoned) app listing on
+Flathub, otherwise there's no Install button to click at all.
+
+Hooked appids today (redirect to `brew install` instead of the Flatpak):
+`com.jetbrains.*` / `com.google.AndroidStudio` (jetbrains-toolbox hook),
+`com.visualstudio.code` (code hook), `com.vscodium.codium` (code hook),
+`dev.zed.Zed` (zed hook), `io.neovim.nvim` (neovim hook),
+`com.helix_editor.Helix` (helix hook), `org.vim.Vim` (vim hook),
+`io.github.zyedidia.micro` (micro hook).
+
+Pure CLI/daemon tools with no Flatpak identity at all (Docker, Lima, incus)
+and tools with no Flathub listing (Antigravity) can **never** get a real
+click-to-install link — don't label their table rows "Install" with a fake
+`appstream://` link; use the actual `ujust`/`brew` command as plain text
+instead. Verify an appid is real before wiring a new hook:
+
+```bash
+curl -s "https://flathub.org/api/v2/search" -X POST \
+  -H "Content-Type: application/json" -d '{"query":"<tool name>"}'
+```
+
+Adding a new hook requires three matching edits: `hooks.py` (source of
+truth), `usr/libexec/bazaar-hook` (in-image copy — keep byte-identical except
+the shebang line), and a new `hooks:` entry + confirmation dialog in
+`bazaar.yaml`. Add matching state-machine tests to both `tests/test_hooks.py`
+and `tests/test_bazaar_hook.py`.
+
 ## Validation
 
 ```bash
@@ -233,6 +265,8 @@ just test
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
+- Wiring a fake `appstream://<appid>` "Click to Install" link for an appid with no real Flathub listing — the button never appears in Bazaar because there's no transaction to intercept.
+- Adding a hook in `hooks.py` but forgetting to mirror it in `usr/libexec/bazaar-hook` and `bazaar.yaml` — the in-image copy is what actually runs on real Bluefin installs.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
 - Writing article Markdown as raw HTML `<div>` card grids — Bazaar's renderer does not reliably display these; use Markdown tables instead (see "Article Markdown authoring" above).
 

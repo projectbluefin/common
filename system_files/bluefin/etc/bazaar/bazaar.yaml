@@ -57,3 +57,103 @@ hooks:
             # styling
             style: suggested
     shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: zed
+    when: before-transaction
+    dialogs:
+      - id: zed-warning
+        title: >-
+          Zed is not supported in this format
+        body-use-markup: true
+        body: >-
+          This is <a href="https://zed.dev/">Zed</a> and is not
+          officially supported on Flatpak. We recommend using the
+          Homebrew version of the app instead.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: neovim
+    when: before-transaction
+    dialogs:
+      - id: neovim-warning
+        title: >-
+          Neovim is not supported in this format
+        body-use-markup: true
+        body: >-
+          This is <a href="https://neovim.io/">Neovim</a> and is not
+          officially supported on Flatpak. We recommend using the
+          Homebrew version instead.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: helix
+    when: before-transaction
+    dialogs:
+      - id: helix-warning
+        title: >-
+          Helix is not supported in this format
+        body-use-markup: true
+        body: >-
+          This is <a href="https://helix-editor.com/">Helix</a> and is
+          not officially supported on Flatpak. We recommend using the
+          Homebrew version instead.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: vim
+    when: before-transaction
+    dialogs:
+      - id: vim-warning
+        title: >-
+          vim is not supported in this format
+        body-use-markup: true
+        body: >-
+          This is <a href="https://www.vim.org/">vim</a> and is not
+          officially supported on Flatpak. We recommend using the
+          Homebrew version instead.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: micro
+    when: before-transaction
+    dialogs:
+      - id: micro-warning
+        title: >-
+          micro is not supported in this format
+        body-use-markup: true
+        body: >-
+          This is <a href="https://micro-editor.github.io/">micro</a>
+          and is not officially supported on Flatpak. We recommend
+          using the Homebrew version instead.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py

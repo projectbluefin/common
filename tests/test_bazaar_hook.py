@@ -280,6 +280,98 @@ class TestCodeHook:
 
 
 # ---------------------------------------------------------------------------
+# Zed hook
+# ---------------------------------------------------------------------------
+
+class TestZedHook:
+    def test_setup_install_zed_returns_ok(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "dev.zed.Zed",
+        })
+        assert resp == "ok"
+
+    def test_setup_non_zed_returns_pass(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "org.mozilla.firefox",
+        })
+        assert resp == "pass"
+
+    def test_action_zed_spawns_brew_and_returns_empty(self):
+        resp, popen_calls = _run_hook_with_mock({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "action",
+            "BAZAAR_TS_APPID": "dev.zed.Zed",
+        })
+        assert resp == ""
+        assert len(popen_calls) == 1
+        assert "zed-linux" in " ".join(popen_calls[0])
+        assert "ublue-os/experimental-tap" in " ".join(popen_calls[0])
+
+    def test_teardown_returns_deny(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown",
+        })
+        assert resp == "deny"
+
+
+# ---------------------------------------------------------------------------
+# CLI editor hooks (Neovim, Helix, vim, micro)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "hook_id,appid,formula",
+    [
+        ("neovim", "io.neovim.nvim", "nvim"),
+        ("helix", "com.helix_editor.Helix", "helix"),
+        ("vim", "org.vim.Vim", "vim"),
+        ("micro", "io.github.zyedidia.micro", "micro"),
+    ],
+)
+class TestCliEditorHooks:
+    def test_setup_install_returns_ok(self, hook_id, appid, formula):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": appid,
+        })
+        assert resp == "ok"
+
+    def test_setup_non_matching_returns_pass(self, hook_id, appid, formula):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "org.mozilla.firefox",
+        })
+        assert resp == "pass"
+
+    def test_action_spawns_formula_and_returns_empty(self, hook_id, appid, formula):
+        resp, popen_calls = _run_hook_with_mock({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "action",
+            "BAZAAR_TS_APPID": appid,
+        })
+        assert resp == ""
+        assert len(popen_calls) == 1
+        assert formula in " ".join(popen_calls[0])
+
+    def test_teardown_returns_deny(self, hook_id, appid, formula):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "teardown",
+        })
+        assert resp == "deny"
+
+
+# ---------------------------------------------------------------------------
 # Unknown hook ID
 # ---------------------------------------------------------------------------
 
