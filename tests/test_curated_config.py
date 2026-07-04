@@ -68,3 +68,34 @@ def test_bazaar_config_valid():
     data = _load_yaml(BAZAAR)
 
     assert "curated-config-paths" in data
+
+
+def test_article_markdown_avoids_raw_html_card_layouts():
+    """Bazaar's Markdown renderer does not reliably render raw HTML div/flexbox
+    card layouts (see article-devtools.md regression, common#issue "dx page busted").
+    Articles must stick to plain Markdown (tables, lists, links) instead.
+    """
+    bazaar_dir = ROOT / "system_files/bluefin/etc/bazaar"
+    article_files = sorted(bazaar_dir.glob("article-*.md"))
+    assert article_files, "expected at least one Bazaar article markdown file"
+
+    # <div> layout containers and inline "style=" attributes are what broke
+    # article-devtools.md (a raw HTML flexbox card-wall). A single bare <img>
+    # tag (e.g. a screenshot in article-bluefin-notes.md) is fine.
+    banned_html_fragments = ("<div", "style=\"")
+    placeholder_markers = ("lorem ipsum",)
+
+    for article in article_files:
+        text = article.read_text(encoding="utf-8")
+        lowered = text.lower()
+
+        for fragment in banned_html_fragments:
+            assert fragment not in lowered, (
+                f"{article.name} contains raw HTML ({fragment!r}); "
+                "use plain Markdown tables/lists instead"
+            )
+
+        for marker in placeholder_markers:
+            assert marker not in lowered, (
+                f"{article.name} still contains placeholder text ({marker!r})"
+            )

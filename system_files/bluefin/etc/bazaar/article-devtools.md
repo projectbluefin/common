@@ -1,208 +1,186 @@
 # Developer Experience (DX)
 
-Welcome to the **Developer Experience (DX)** in Project Bluefin! Bluefin provides an out-of-the-box, world-class cloud-native workstation. Rather than layering developer packages on the host system, we leverage **Developer Mode** to turn on developer tools in-place using Homebrew and Flatpaks.
+Bluefin's Developer Experience isn't a separate image or a bolt-on flavor — it's an in-place setup flow layered onto your existing workstation with Homebrew and Flatpak. Nothing is baked into the base image; you turn on exactly the tools you need, when you need them.
 
----
-
-## Developer Flatpaks (Exposed from Brewfiles)
-
-Click any app name to open its installation card directly in Bazaar and install it onto your system:
-
-### Core Developer Tools (Exposed from system-dx-flatpaks.Brewfile)
-
-<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;">
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/org/gnome/Builder/18ce275bf2230a495c992e08b5fbf088/icons/128x128/org.gnome.Builder.png" width="48" height="48" style="margin-bottom: 8px;" alt="GNOME Builder">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">GNOME Builder</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Elegant, native GNOME IDE built for GTK4 development.</div>
-    <a href="appstream://org.gnome.Builder" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/me/iepure/devtoolbox/640a058cc8ec23f49c5b63ac55b669d0/icons/128x128/me.iepure.devtoolbox.png" width="48" height="48" style="margin-bottom: 8px;" alt="Dev Toolbox">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Dev Toolbox</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Offline hub containing hashes, formatting, and conversion utilities.</div>
-    <a href="appstream://me.iepure.devtoolbox" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/de/leopoldluley/Clapgrep/2c342b98ecd697635b29746840224f16/icons/128x128/de.leopoldluley.Clapgrep.png" width="48" height="48" style="margin-bottom: 8px;" alt="Clapgrep">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Clapgrep</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Highly responsive, visual search UI powered by ripgrep.</div>
-    <a href="appstream://de.leopoldluley.Clapgrep" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/github/getnf.embellish/4abc21c0b6a1fad3d85d29fcaeb9afcc/icons/128x128/io.github.getnf.embellish.png" width="48" height="48" style="margin-bottom: 8px;" alt="Embellish">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Embellish</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Install and configure custom Nerd Fonts effortlessly.</div>
-    <a href="appstream://io.github.getnf.embellish" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMTI4IDEyOCI+CiAgPGRlZnM+CiAgICA8IS0tIEJhY2tncm91bmQgcGxhdGUgZ3JhZGllbnQ6IGRhcmsgd2FybSBjaGFyY29hbCB0byBkZWVwIHNsYXRlIC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWQiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzJkMmEyNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxODE2MTUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICAKICAgIDwhLS0gR29sZCB3b29kL2FjY2VudCBncmFkaWVudCAtLT4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ29sZEdyYWQiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2U4YTMxNyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNhMDY0MGMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CgogICAgPCEtLSBCZWVyL0xpcXVpZCBncmFkaWVudCAoQW1iZXIgQWxlKSAtLT4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmVlckdyYWQiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2Y3YjczMSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI2ViOTgxMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNhODVhMDMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICAKICAgIDwhLS0gR2xhc3MgSGlnaGxpZ2h0IGdyYWRpZW50IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnbGFzc0hpZ2hsaWdodCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAuNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjMwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjEiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3MCUiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMC4wIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjQiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CgogICAgPCEtLSBGb2FtIGdyYWRpZW50IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJmb2FtR3JhZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2YxZjJmNiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIAogICAgPCEtLSBGb2FtIHNoYWRvdyAtLT4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTEwJSIgeT0iLTEwJSIgd2lkdGg9IjEyMCUiIGhlaWdodD0iMTIwJSI+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSI0IiBzdGREZXZpYXRpb249IjQiIGZsb29kLWNvbG9yPSIjMDAwMDAwIiBmbG9vZC1vcGFjaXR5PSIwLjMiLz4KICAgIDwvZmlsdGVyPgogIDwvZGVmcz4KCiAgPCEtLSBSb3VuZGVkIGJhc2UgcGxhdGUgKEdOT01FIEFwcCBJY29uIFN0eWxlKSAtLT4KICA8cmVjdCB4PSI4IiB5PSI4IiB3aWR0aD0iMTEyIiBoZWlnaHQ9IjExMiIgcng9IjI2IiBmaWxsPSJ1cmwoI2JnR3JhZCkiIHN0cm9rZT0iIzExMGYwZSIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgCiAgPCEtLSBPdXRlciBnbG93aW5nIGFjY2VudCByaW5nIC0tPgogIDxyZWN0IHg9IjExIiB5PSIxMSIgd2lkdGg9IjEwNiIgaGVpZ2h0PSIxMDYiIHJ4PSIyMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2dvbGRHcmFkKSIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjgiLz4KCiAgPCEtLSBCZWVyIE11ZyBHcm91cCAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLCA0KSI+CiAgICA8IS0tIE11ZyBIYW5kbGUgLS0+CiAgICA8cGF0aCBkPSJNIDgwIDUwIFEgMTAyIDUwIDEwMiA3MCBRIDEwMiA5MCA4MCA5MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTFiMTJjIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbHRlcj0idXJsKCNzaGFkb3cpIi8+CiAgICA8cGF0aCBkPSJNIDgwIDUwIFEgMTAyIDUwIDEwMiA3MCBRIDEwMiA5MCA4MCA5MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmJjNTMxIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPHBhdGggZD0iTSA4MCA1MCBRIDEwMiA1MCAxMDIgNzAgUSAxMDIgOTAgODAgOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNCIvPgoKICAgIDwhLS0gTXVnIEJvZHkgKEFtYmVyIEJlZXIgR2xhc3MpIC0tPgogICAgPHJlY3QgeD0iMzYiIHk9IjQwIiB3aWR0aD0iNDgiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0idXJsKCNiZWVyR3JhZCkiIHN0cm9rZT0iIzgzNGMwMyIgc3Ryb2tlLXdpZHRoPSIyIiBmaWx0ZXI9InVybCgjc2hhZG93KSIvPgoKICAgIDwhLS0gVmVydGljYWwgR2xhc3MgSGlnaGxpZ2h0cyAoUmlkZ2VzKSAtLT4KICAgIDxyZWN0IHg9IjQyIiB5PSI0NCIgd2lkdGg9IjgiIGhlaWdodD0iNTAiIHJ4PSI0IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjE1Ii8+CiAgICA8cmVjdCB4PSI1NiIgeT0iNDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjUwIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC4yIi8+CiAgICA8cmVjdCB4PSI3MCIgeT0iNDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjUwIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC4xNSIvPgogICAgCiAgICA8IS0tIEN1cnZlZCBiYXNlIGhpZ2hsaWdodCAtLT4KICAgIDxwYXRoIGQ9Ik0gNDAgOTAgUSA2MCA5NSA4MCA5MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC4yNSIvPgoKICAgIDwhLS0gR2xhc3MgUmltIC8gVG9wIEhpZ2hsaWdodCAtLT4KICAgIDxyZWN0IHg9IjM2IiB5PSI0MCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjU4IiByeD0iMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnbGFzc0hpZ2hsaWdodCkiIHN0cm9rZS13aWR0aD0iMiIvPgoKICAgIDwhLS0gU3RhciAvIFNwYXJrbGUgb2YgZnJlc2huZXNzIC0tPgogICAgPHBhdGggZD0iTSAzMCAzNSBMIDMyIDQwIEwgMzcgNDIgTCAzMiA0NCBMIDMwIDQ5IEwgMjggNDQgTCAyMyA0MiBMIDI4IDQwIFoiIGZpbGw9IiNmYmM1MzEiIG9wYWNpdHk9IjAuOSIvPgogICAgCiAgICA8IS0tIEZvYW0gSGVhZCAoRmx1ZmZ5IHdoaXRlIGJ1YmJsZXMgb3ZlcmZsb3dpbmcpIC0tPgogICAgPCEtLSBTaGFkb3cgZm9yIHRoZSBmb2FtIC0tPgogICAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgICA8Y2lyY2xlIGN4PSI0NCIgY3k9IjM4IiByPSIxMiIgZmlsbD0idXJsKCNmb2FtR3JhZCkiLz4KICAgICAgPGNpcmNsZSBjeD0iNjAiIGN5PSIzNCIgcj0iMTQiIGZpbGw9InVybCgjZm9hbUdyYWQpIi8+CiAgICAgIDxjaXJjbGUgY3g9Ijc2IiBjeT0iMzgiIHI9IjEyIiBmaWxsPSJ1cmwoI2ZvYW1HcmFkKSIvPgogICAgICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjI4IiByPSIxMSIgZmlsbD0idXJsKCNmb2FtR3JhZCkiLz4KICAgICAgPGNpcmNsZSBjeD0iNjgiIGN5PSIyOCIgcj0iMTEiIGZpbGw9InVybCgjZm9hbUdyYWQpIi8+CiAgICAgIDxjaXJjbGUgY3g9IjM2IiBjeT0iNDQiIHI9IjgiIGZpbGw9InVybCgjZm9hbUdyYWQpIi8+CiAgICAgIDxjaXJjbGUgY3g9Ijg0IiBjeT0iNDQiIHI9IjgiIGZpbGw9InVybCgjZm9hbUdyYWQpIi8+CiAgICA8L2c+CgogICAgPCEtLSBGb2FtIElubmVyIEhpZ2hsaWdodHMgKGdpdmluZyBkZXB0aCB0byBidWJibGVzKSAtLT4KICAgIDxjaXJjbGUgY3g9IjQyIiBjeT0iMzYiIHI9IjEwIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjYiLz4KICAgIDxjaXJjbGUgY3g9IjU4IiBjeT0iMzIiIHI9IjEyIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjYiLz4KICAgIDxjaXJjbGUgY3g9Ijc0IiBjeT0iMzYiIHI9IjEwIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjYiLz4KICAgIDxjaXJjbGUgY3g9IjQ4IiBjeT0iMjYiIHI9IjkiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuNiIvPgogICAgPGNpcmNsZSBjeD0iNjYiIGN5PSIyNiIgcj0iOSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC42Ii8+CiAgICAKICAgIDwhLS0gTGl0dGxlIGZsb2F0aW5nIGZvYW0gYnViYmxlcyAtLT4KICAgIDxjaXJjbGUgY3g9IjMyIiBjeT0iMjIiIHI9IjMiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9Ijg4IiBjeT0iMjgiIHI9IjQiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9Ijc4IiBjeT0iMTgiIHI9IjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPgo=" width="48" height="48" style="margin-bottom: 8px;" alt="Tavern">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Tavern</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">A lightweight flatpak application manager and companion tool.</div>
-    <a href="appstream://com.github.tuna_os.Tavern" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-</div>
-
-### Kubernetes & Container Management (Exposed from cncf.Brewfile)
-
-<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;">
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/podman_desktop/PodmanDesktop/569123bc656b5391894690837db722c3/icons/128x128/io.podman_desktop.PodmanDesktop.png" width="48" height="48" style="margin-bottom: 8px;" alt="Podman Desktop">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Podman Desktop</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Graphical management tool for containers, pods, and volumes.</div>
-    <a href="appstream://io.podman_desktop.PodmanDesktop" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/kinvolk/Headlamp/b1795a2d5e9a6cb6b7b94b48acd842ea/icons/128x128/io.kinvolk.Headlamp.png" width="48" height="48" style="margin-bottom: 8px;" alt="Headlamp">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Headlamp</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">A beautiful, highly extensible dashboard for your Kubernetes clusters.</div>
-    <a href="appstream://io.kinvolk.Headlamp" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/dev/k8slens/OpenLens/0deca74adfe62ba9e8176f860db1b6a4/icons/128x128/dev.k8slens.OpenLens.png" width="48" height="48" style="margin-bottom: 8px;" alt="OpenLens">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">OpenLens</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Powerful, fully featured desktop IDE for Kubernetes workflows.</div>
-    <a href="appstream://dev.k8slens.OpenLens" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-</div>
-
-### System Utilities (Exposed from system-flatpaks.Brewfile)
-
-<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;">
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/com/github/tchx84.Flatseal/462bde383c024a52b3132ae3df79704a/icons/128x128/com.github.tchx84.Flatseal.png" width="48" height="48" style="margin-bottom: 8px;" alt="Flatseal">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Flatseal</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Graphical permission editor for sandboxed Flatpak applications.</div>
-    <a href="appstream://com.github.tchx84.Flatseal" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/github/flattool.Warehouse.desktop/e0c756d408a1a2aa2653a7f78004e6b4/icons/128x128/io.github.flattool.Warehouse.desktop.png" width="48" height="48" style="margin-bottom: 8px;" alt="Warehouse">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Warehouse</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Manage installed Flatpaks, manage user data, and clean up orphan runtimes.</div>
-    <a href="appstream://io.github.flattool.Warehouse" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/com/mattjakeman/ExtensionManager/325202b426bf0272893528da55c472e4/icons/128x128/com.mattjakeman.ExtensionManager.png" width="48" height="48" style="margin-bottom: 8px;" alt="Extension Manager">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Extension Manager</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Search, install, and configure GNOME shell extensions.</div>
-    <a href="appstream://com.mattjakeman.ExtensionManager" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/missioncenter/MissionCenter/859f0a40abb2053f905c69a6b77ac1ce/icons/128x128/io.missioncenter.MissionCenter.png" width="48" height="48" style="margin-bottom: 8px;" alt="Mission Center">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Mission Center</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Native GTK system monitor for hardware resource tracking.</div>
-    <a href="appstream://io.missioncenter.MissionCenter" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/github/flattool.Ignition/c49a951d14b6979b9ddc6662b026dfa7/icons/128x128/io.github.flattool.Ignition.png" width="48" height="48" style="margin-bottom: 8px;" alt="Ignition">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Ignition</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Setup and configure your Flatpak permissions and configurations.</div>
-    <a href="appstream://io.github.flattool.Ignition" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-</div>
-
-### AI & Machine Learning (Exposed from ai-tools.Brewfile)
-
-<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;">
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/ai/jan/Jan/77d1323d14299cb2da05004dc9ee69bf/icons/128x128/ai.jan.Jan.png" width="48" height="48" style="margin-bottom: 8px;" alt="Jan AI">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Jan AI</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Run open-source LLMs locally on your workstation with a gorgeous native UI.</div>
-    <a href="appstream://ai.jan.Jan" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-</div>
-
-### GNOME Circle & Desktop Enhancements (Exposed from full-desktop.Brewfile)
-
-<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; margin-bottom: 20px;">
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/be/alexandervanhee/gradia/ff2ae6a0dd47a7712e804704e5eeb323/icons/128x128/be.alexandervanhee.gradia.png" width="48" height="48" style="margin-bottom: 8px;" alt="Gradia">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Gradia</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Dynamic custom styling and CSS gradient compiler for GTK.</div>
-    <a href="appstream://be.alexandervanhee.gradia" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/app/drey/Damask/bcb487f7abaecf056fd4dea104831711/icons/128x128/app.drey.Damask.png" width="48" height="48" style="margin-bottom: 8px;" alt="Damask">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Damask</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Elegant automatic wallpaper scheduler and rotater.</div>
-    <a href="appstream://app.drey.Damask" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/app/drey/Elastic/7a314469673939e32e09f7937c6e5998/icons/128x128/app.drey.Elastic.png" width="48" height="48" style="margin-bottom: 8px;" alt="Elastic">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Elastic</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Design spring physics and curves for native GTK4 animations.</div>
-    <a href="appstream://app.drey.Elastic" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/app/fotema/Fotema/15af3e4e200c0fde7e8bb729bda4ceb8/icons/128x128/app.fotema.Fotema.png" width="48" height="48" style="margin-bottom: 8px;" alt="Fotema">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Fotema</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Modern, privacy-first photo gallery and viewer.</div>
-    <a href="appstream://app.fotema.Fotema" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/io/gitlab/adhami3310.Impression/8edf94dc739213c8ef592ca0cafd3f9e/icons/128x128/io.gitlab.adhami3310.Impression.png" width="48" height="48" style="margin-bottom: 8px;" alt="Impression">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Impression</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">Write OCI images and ISOs to USB drives with absolute simplicity.</div>
-    <a href="appstream://io.gitlab.adhami3310.Impression" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-  <div style="flex: 1 1 200px; max-width: 220px; border: 1px solid rgba(128, 128, 128, 0.15); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; background-color: rgba(128, 128, 128, 0.05); box-sizing: border-box;">
-    <img src="https://dl.flathub.org/media/it/mijorus/smile/7a368f57897c656f5a36e8bf54cfc4b9/icons/128x128/it.mijorus.smile.png" width="48" height="48" style="margin-bottom: 8px;" alt="Smile">
-    <div style="font-weight: bold; font-size: 1.0em; margin-bottom: 4px;">Smile</div>
-    <div style="font-size: 0.8em; line-height: 1.25em; margin-bottom: 12px; flex-grow: 1; opacity: 0.85;">The best native emoji picker for the GNOME desktop.</div>
-    <a href="appstream://it.mijorus.smile" style="text-decoration: none; background-color: #3584e4; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; display: inline-block; width: 85%;">Install</a>
-  </div>
-</div>
-
----
-
-## Command-Line Utilities (Homebrew)
-
-Bluefin integrates Homebrew directly on the host to provide lightning-fast shell environments. Click any of the CLI tools to explore their Homebrew Formula page, or run the command below to install them:
+The primary entrypoint is one command:
 
 ```bash
-brew install gh just uv neovim k9s lima
+ujust devmode
 ```
-
-### Essential CLI Utilities (Exposed from system-cli.Brewfile & cli.Brewfile)
-*   [gh](https://formulae.brew.sh/formula/gh) — GitHub's official command-line CLI.
-*   [just](https://formulae.brew.sh/formula/just) — Fast and modern project task runner.
-*   [uv](https://formulae.brew.sh/formula/uv) — Blazing-fast Python package and workspace manager.
-*   [neovim](https://formulae.brew.sh/formula/neovim) — Vim-fork focused on extensibility and usability.
-*   [k9s](https://formulae.brew.sh/formula/k9s) — Terminal-based UI for interacting with Kubernetes clusters.
-*   [lima](https://formulae.brew.sh/formula/lima) — Linux Virtual Machines with automatic file sharing and port forwarding.
-
-### Modern Shell Tools
-*   [atuin](https://formulae.brew.sh/formula/atuin) — Magical shell history database.
-*   [bat](https://formulae.brew.sh/formula/bat) — A cat clone with syntax highlighting and Git integration.
-*   [chezmoi](https://formulae.brew.sh/formula/chezmoi) — Securely manage dotfiles across multiple machines.
-*   [direnv](https://formulae.brew.sh/formula/direnv) — Shell extension to load/unload environment variables per directory.
-*   [eza](https://formulae.brew.sh/formula/eza) — A modern, feature-rich replacement for 'ls'.
-*   [fd](https://formulae.brew.sh/formula/fd) — Simple, fast, and user-friendly alternative to 'find'.
-*   [ripgrep](https://formulae.brew.sh/formula/ripgrep) — High-performance regex search utility.
-*   [yq](https://formulae.brew.sh/formula/yq) — Portable command-line YAML/XML/JSON processor.
-*   [zoxide](https://formulae.brew.sh/formula/zoxide) — Smarter directory navigation tracker.
-*   [mise](https://formulae.brew.sh/formula/mise) — Polyglot development tool, environment variable, and task runner.
-
-### Cloud Native & CNCF Ecosystem (Exposed from cncf.Brewfile)
-*   [kubectl](https://formulae.brew.sh/formula/kubernetes-cli) — Command-line tool for controlling Kubernetes clusters.
-*   [helm](https://formulae.brew.sh/formula/helm) — Kubernetes package manager.
-*   [kind](https://formulae.brew.sh/formula/kind) — Run local Kubernetes clusters using Docker container nodes.
-*   [minikube](https://formulae.brew.sh/formula/minikube) — Run a single-node local Kubernetes cluster.
-*   [argo](https://formulae.brew.sh/formula/argo) — Workflow engine for Kubernetes.
-*   [argocd](https://formulae.brew.sh/formula/argocd) — Declarative continuous delivery engine for Kubernetes.
-*   [virtctl](https://formulae.brew.sh/formula/virtctl) — CLI utility for managing KubeVirt virtual machines.
-*   [k8sgpt](https://formulae.brew.sh/formula/k8sgpt) — Give your Kubernetes cluster superpowers via AI diagnostics.
 
 ---
 
-## Product Lore & Design Principles
+## What `ujust devmode` turns on
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Running `ujust devmode` opens an interactive picker covering:
 
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+- **IDEs and editors** — VS Code, VSCodium, Antigravity, Zed, JetBrains Toolbox, Neovim, Helix, vim, micro
+- **Docker and Podman Desktop** — container engines and their GUI companion
+- **Virtualization** — virt-manager + QEMU, Lima, incus
+- **Developer group setup** — adds you to the required local groups and prompts for a reboot when needed
 
-Project Bluefin commits to creating an ergonomic developer environment where the system gets out of the way. All tools are sandboxed, isolated, reproducible, and blazing fast.
+Pick only what you want installed — everything else stays off your system. Re-run `ujust devmode` any time to add more tools later.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+---
 
-Project Bluefin's **Developer Experience (DX)** is crafted specifically to empower modern engineers with cloud-native primitives, reproducible terminal environments, and robust container workflows, making it the premier workstation operating system.
+## IDEs and editors
+
+### GUI IDEs and casks
+
+| Tool | What it's for | Install |
+|---|---|---|
+| VS Code | Full-featured GUI IDE with the standard Microsoft extension marketplace. | [Homebrew cask](https://formulae.brew.sh/cask/visual-studio-code-linux) |
+| VS Code Insiders | Nightly VS Code build for testing upcoming editor features. | [Homebrew cask](https://formulae.brew.sh/cask/visual-studio-code-linux@insiders) |
+| VSCodium | Telemetry-free build of VS Code from open source. | [Homebrew cask](https://formulae.brew.sh/cask/vscodium-linux) |
+| Antigravity | Google's AI-native IDE. | [Homebrew cask](https://formulae.brew.sh/cask/antigravity-linux) |
+| JetBrains Toolbox | Installer and updater for the full JetBrains IDE lineup (IntelliJ, PyCharm, GoLand, etc). | [Homebrew cask](https://formulae.brew.sh/cask/jetbrains-toolbox-linux) |
+| Zed | GPU-accelerated, high-performance native code editor. | `ujust devmode` (experimental tap) |
+
+### Terminal editors
+
+| Tool | What it's for | Install |
+|---|---|---|
+| Neovim | Extensible Vim-fork with a modern Lua plugin ecosystem. | [Homebrew formula](https://formulae.brew.sh/formula/neovim) |
+| Helix | Modal terminal editor with built-in LSP and tree-sitter support. | [Homebrew formula](https://formulae.brew.sh/formula/helix) |
+| micro | Simple, modern terminal editor with familiar keybindings. | [Homebrew formula](https://formulae.brew.sh/formula/micro) |
+| vim | Classic modal editor, available via `ujust devmode`. | `ujust devmode` |
+
+### VS Code extensions shipped by default
+
+| Extension | What it's for |
+|---|---|
+| `ms-vscode-remote.remote-containers` | Develop inside a devcontainer without installing tooling on the host. |
+| `ms-vscode-remote.remote-ssh` | Edit and run code on a remote machine over SSH. |
+| `ms-azuretools.vscode-containers` | Build, manage, and debug containers directly from the editor. |
+
+---
+
+## Containers and virtualization
+
+`ujust devmode` installs the container engine and virtualization stack you pick; the tools below fill out the surrounding workflow.
+
+| Tool | What it's for | Install |
+|---|---|---|
+| Docker | Container engine plus `docker-compose`, `lazydocker`, and `dive` for image inspection. | `ujust devmode` |
+| Podman Desktop | Graphical management tool for containers, pods, and volumes. | **[Install](appstream://io.podman_desktop.PodmanDesktop)** |
+| Virtual Machines (virt-manager + QEMU) | Full GUI for creating and managing local VMs. | `ujust devmode` |
+| Lima | Lightweight Linux VMs with automatic file sharing and port forwarding, KVM-backed. | `ujust devmode` |
+| incus | System container and VM manager (LXD successor). | `ujust devmode` |
+| devcontainer CLI | Build and open devcontainers from the command line, matching VS Code's Remote Containers. | Installed automatically by `ujust devmode` |
+
+---
+
+## CLI and CNCF tooling
+
+### Core shell and workstation tools
+
+| Tool | What it's for | Install |
+|---|---|---|
+| gh | GitHub's official command-line CLI. | [Homebrew formula](https://formulae.brew.sh/formula/gh) |
+| atuin | Magical, searchable shell history database. | [Homebrew formula](https://formulae.brew.sh/formula/atuin) |
+| bat | A `cat` clone with syntax highlighting and Git integration. | [Homebrew formula](https://formulae.brew.sh/formula/bat) |
+| bash-preexec | Bash hook framework used to power shell integrations. | [Homebrew formula](https://formulae.brew.sh/formula/bash-preexec) |
+| chezmoi | Securely manage dotfiles across multiple machines. | [Homebrew formula](https://formulae.brew.sh/formula/chezmoi) |
+| direnv | Load and unload environment variables per project directory. | [Homebrew formula](https://formulae.brew.sh/formula/direnv) |
+| dysk | Fast, colorful disk usage viewer. | [Homebrew formula](https://formulae.brew.sh/formula/dysk) |
+| eza | Modern, feature-rich replacement for `ls`. | [Homebrew formula](https://formulae.brew.sh/formula/eza) |
+| fd | Simple, fast, user-friendly alternative to `find`. | [Homebrew formula](https://formulae.brew.sh/formula/fd) |
+| podman-tui | Terminal UI for managing Podman containers, pods, and images. | [Homebrew formula](https://formulae.brew.sh/formula/podman-tui) |
+| ripgrep | High-performance recursive regex search. | [Homebrew formula](https://formulae.brew.sh/formula/ripgrep) |
+| tealdeer | Fast Rust implementation of `tldr` community-maintained cheat sheets. | [Homebrew formula](https://formulae.brew.sh/formula/tealdeer) |
+| trash-cli | Command-line interface to the freedesktop.org trash can, safer than `rm`. | [Homebrew formula](https://formulae.brew.sh/formula/trash-cli) |
+| yq | Portable command-line YAML/XML/JSON processor. | [Homebrew formula](https://formulae.brew.sh/formula/yq) |
+| zoxide | Smarter `cd` that learns your most-used directories. | [Homebrew formula](https://formulae.brew.sh/formula/zoxide) |
+| mise | Polyglot dev tool, environment variable, and task runner. | [Homebrew formula](https://formulae.brew.sh/formula/mise) |
+
+### Cloud-native and Kubernetes tooling
+
+Graduated CNCF projects:
+
+| Tool | What it's for | Install |
+|---|---|---|
+| kubectl | Command-line control of Kubernetes clusters. | [Homebrew formula](https://formulae.brew.sh/formula/kubernetes-cli) |
+| minikube | Run a single-node local Kubernetes cluster. | [Homebrew formula](https://formulae.brew.sh/formula/minikube) |
+| kind | Run local Kubernetes clusters using Docker/Podman container "nodes". | [Homebrew formula](https://formulae.brew.sh/formula/kind) |
+| helm | The Kubernetes package manager. | [Homebrew formula](https://formulae.brew.sh/formula/helm) |
+| argo | Workflow engine for Kubernetes. | [Homebrew formula](https://formulae.brew.sh/formula/argo) |
+| argocd | Declarative GitOps continuous delivery for Kubernetes. | [Homebrew formula](https://formulae.brew.sh/formula/argocd) |
+| cilium-cli | Manage and troubleshoot Cilium eBPF networking. | [Homebrew formula](https://formulae.brew.sh/formula/cilium-cli) |
+| coredns | Pluggable, extensible DNS server used as the Kubernetes cluster DNS. | [Homebrew formula](https://formulae.brew.sh/formula/coredns) |
+| crossplane | Control-plane framework for composing cloud infrastructure as Kubernetes APIs. | [Homebrew formula](https://formulae.brew.sh/formula/crossplane) |
+| cri-tools | `crictl` and friends for debugging CRI-compatible container runtimes. | [Homebrew formula](https://formulae.brew.sh/formula/cri-tools) |
+| envoy | High-performance edge and service proxy. | [Homebrew formula](https://formulae.brew.sh/formula/envoy) |
+| falco | Cloud-native runtime security and threat detection. | [Homebrew formula](https://formulae.brew.sh/formula/falco) |
+| flux | GitOps toolkit for continuous delivery on Kubernetes. | [Homebrew formula](https://formulae.brew.sh/formula/flux) |
+| harbor-cli | Manage the Harbor container registry from the command line. | [Homebrew formula](https://formulae.brew.sh/formula/harbor-cli) |
+| istioctl | Configure and diagnose the Istio service mesh. | [Homebrew formula](https://formulae.brew.sh/formula/istioctl) |
+| kn | Command-line client for Knative. | [Homebrew formula](https://formulae.brew.sh/formula/kn) |
+| linkerd | Ultralight service mesh for Kubernetes. | [Homebrew formula](https://formulae.brew.sh/formula/linkerd) |
+| opa | Open Policy Agent, general-purpose policy engine. | [Homebrew formula](https://formulae.brew.sh/formula/opa) |
+| prometheus | Metrics collection and alerting toolkit. | [Homebrew formula](https://formulae.brew.sh/formula/prometheus) |
+| vitess | Scalable MySQL-compatible clustering system. | [Homebrew formula](https://formulae.brew.sh/formula/vitess) |
+| cmctl | Command-line tool for the cert-manager TLS certificate controller. | [Homebrew formula](https://formulae.brew.sh/formula/cmctl) |
+| nerdctl | Docker-compatible CLI for containerd. | [Homebrew formula](https://formulae.brew.sh/formula/nerdctl) |
+| etcd | Distributed key-value store backing Kubernetes cluster state. | [Homebrew formula](https://formulae.brew.sh/formula/etcd) |
+| dapr-cli | Manage Dapr, the portable distributed-application runtime. | [Homebrew formula](https://formulae.brew.sh/formula/dapr/tap/dapr-cli) |
+
+Incubating and sandbox CNCF projects:
+
+| Tool | What it's for | Install |
+|---|---|---|
+| ah | Search and publish to Artifact Hub. | [Homebrew formula](https://formulae.brew.sh/formula/artifacthub/cmd/ah) |
+| pack | Build OCI images from source using Cloud Native Buildpacks. | [Homebrew formula](https://formulae.brew.sh/formula/buildpacks/tap/pack) |
+| c7n | Cloud Custodian, rules engine for cloud resource governance. | [Homebrew formula](https://formulae.brew.sh/formula/c7n) |
+| cortex | Horizontally scalable, multi-tenant Prometheus-compatible metrics. | [Homebrew formula](https://formulae.brew.sh/formula/cortex) |
+| karmadactl | Manage multi-cluster Kubernetes deployments with Karmada. | [Homebrew formula](https://formulae.brew.sh/formula/karmadactl) |
+| kubevela | Application delivery platform built on OAM. | [Homebrew formula](https://formulae.brew.sh/formula/kubevela) |
+| virtctl | Manage KubeVirt virtual machines running on Kubernetes. | [Homebrew formula](https://formulae.brew.sh/formula/virtctl) |
+| kubescape | Kubernetes security posture and compliance scanner. | [Homebrew formula](https://formulae.brew.sh/formula/kubescape) |
+| kyverno | Kubernetes-native policy engine. | [Homebrew formula](https://formulae.brew.sh/formula/kyverno) |
+| lima | Linux virtual machines with automatic file sharing and port forwarding. | [Homebrew formula](https://formulae.brew.sh/formula/lima) |
+| litmusctl | Manage chaos engineering experiments with LitmusChaos. | [Homebrew formula](https://formulae.brew.sh/formula/litmusctl) |
+| nats-server | Lightweight, high-performance messaging system. | [Homebrew formula](https://formulae.brew.sh/formula/nats-server) |
+| notation | Sign and verify OCI artifacts with the Notary Project. | [Homebrew formula](https://formulae.brew.sh/formula/notation) |
+| openfga | Fine-grained, relationship-based authorization engine. | [Homebrew formula](https://formulae.brew.sh/formula/openfga) |
+| opentelemetry-cpp | C++ implementation of the OpenTelemetry observability framework. | [Homebrew formula](https://formulae.brew.sh/formula/opentelemetry-cpp) |
+| operator-sdk | Scaffold and build Kubernetes Operators. | [Homebrew formula](https://formulae.brew.sh/formula/operator-sdk) |
+| thanos | Highly-available Prometheus setup with long-term storage. | [Homebrew formula](https://formulae.brew.sh/formula/thanos) |
+| grpc | High-performance, open-source universal RPC framework. | [Homebrew formula](https://formulae.brew.sh/formula/grpc) |
+| wash | Command-line tool for wasmCloud, the WebAssembly application platform. | [Homebrew formula](https://formulae.brew.sh/formula/wasmcloud/wasmcloud/wash) |
+| atlantis | Terraform pull-request automation. | [Homebrew formula](https://formulae.brew.sh/formula/atlantis) |
+| cdk8s | Define Kubernetes manifests using familiar programming languages. | [Homebrew formula](https://formulae.brew.sh/formula/cdk8s) |
+| kwt / kctrl / ytt / kapp / kbld / imgpkg / vendir | The Carvel suite for templating, packaging, and deploying to Kubernetes. | [Homebrew tap](https://formulae.brew.sh/formula/carvel-dev/carvel/kapp) |
+| kubectl-cnpg | `kubectl` plugin for the CloudNativePG PostgreSQL operator. | [Homebrew formula](https://formulae.brew.sh/formula/kubectl-cnpg) |
+| devspace | Fast iterative development for Kubernetes applications. | [Homebrew formula](https://formulae.brew.sh/formula/devspace) |
+| k8sgpt | AI-powered diagnostics for your Kubernetes cluster. | [Homebrew formula](https://formulae.brew.sh/formula/k8sgpt) |
+| kcl | Constraint-based configuration and policy language for cloud-native config. | [Homebrew formula](https://formulae.brew.sh/formula/kcl-lang/tap/kcl) |
+| kitops | Package and version AI/ML model artifacts as OCI images. | [Homebrew formula](https://formulae.brew.sh/formula/kitops-ml/kitops/kitops) |
+| kwctl | Run and manage Kubewarden policies locally. | [Homebrew formula](https://formulae.brew.sh/formula/kwctl) |
+| kumactl | Manage the Kuma service mesh. | [Homebrew formula](https://formulae.brew.sh/formula/kumactl) |
+| mesheryctl | Manage Meshery, the cloud-native management plane. | [Homebrew formula](https://formulae.brew.sh/formula/mesheryctl) |
+| microcks-cli | Mock and test APIs and event-driven services with Microcks. | [Homebrew formula](https://formulae.brew.sh/formula/microcks/tap/microcks-cli) |
+| porter | Package and distribute applications as cloud-native bundles. | [Homebrew formula](https://formulae.brew.sh/formula/porter) |
+| telepresence-oss | Run a local service as if it were inside a remote Kubernetes cluster. | [Homebrew formula](https://formulae.brew.sh/formula/telepresenceio/telepresence/telepresence-oss) |
+| tremor-runtime | Event-processing system for unstructured data. | [Homebrew formula](https://formulae.brew.sh/formula/tremor-runtime) |
+| wasmedge | Lightweight, high-performance WebAssembly runtime. | [Homebrew formula](https://formulae.brew.sh/formula/wasmedge) |
+| k0sctl | Bootstrap and manage k0s Kubernetes clusters. | [Homebrew formula](https://formulae.brew.sh/formula/k0sproject/tap/k0sctl) |
+| k3d | Run lightweight k3s Kubernetes clusters in Docker. | [Homebrew formula](https://formulae.brew.sh/formula/k3d) |
+| ko | Build and deploy Go containers without writing a Dockerfile. | [Homebrew formula](https://formulae.brew.sh/formula/ko) |
+| kpt | Package, customize, and apply Kubernetes configuration as data. | [Homebrew formula](https://formulae.brew.sh/formula/kptdev/kpt/kpt) |
+
+Graphical Kubernetes tools:
+
+| Tool | What it's for | Install |
+|---|---|---|
+| Headlamp | Extensible, easy-to-use dashboard for Kubernetes clusters. | **[Install](appstream://io.kinvolk.Headlamp)** |
+| OpenLens | Full-featured desktop IDE for Kubernetes workflows. | **[Install](appstream://dev.k8slens.OpenLens)** |
+
+---
+
+## Recommended workflows
+
+- **Local container development** — `ujust devmode` → Docker or Podman Desktop, then `devcontainer up` from your project directory.
+- **Remote development containers** — install the `ms-vscode-remote.remote-containers` and `ms-vscode-remote.remote-ssh` VS Code extensions (on by default) and open a folder over SSH or in a devcontainer.
+- **Kubernetes cluster work** — `kind` or `minikube` for local clusters, `kubectl` + `helm` for day-to-day operations, `k9s` or Headlamp/OpenLens when you want a visual view.
+- **Virtualization and local VM work** — `ujust devmode` → virt-manager + QEMU for full VMs, or Lima for lightweight KVM-backed Linux VMs.
+- **General shell productivity** — `mise` for per-project runtime versions, `atuin` for searchable shell history, `eza`/`bat`/`fd`/`ripgrep` as everyday replacements for `ls`/`cat`/`find`/`grep`.

@@ -190,6 +190,29 @@ Use the `ujust bazaar-preview` recipe which automates JXL→PNG conversion and w
 ujust bazaar-preview
 ```
 
+## Article Markdown authoring — avoid raw HTML card layouts
+
+Bazaar's article view uses a Markdown renderer that does **not** reliably render
+raw HTML `<div>`/flexbox card-wall layouts. `article-devtools.md` shipped with a
+large inline-styled HTML grid (flex containers, `<div style="...">` cards,
+button-styled `<a>` tags) that rendered broken/blank in Bazaar even though the
+YAML wiring was valid.
+
+**Use plain Markdown instead — proven patterns from working articles:**
+- Tables for app/tool listings: `| Tool | Description | Install |`
+- `**[Install](appstream://<appid>)**` for a Flatpak deep-link in a table cell
+  (see `article-ai.md` history, `article-games.md` history)
+- A single bare `<img src="..." alt="..." width="100%">` is fine (e.g.
+  `article-bluefin-notes.md` screenshot) — the regression is specifically
+  `<div>`-based layout containers and inline `style="..."` attributes, not any
+  HTML tag at all.
+- External links (`https://formulae.brew.sh/...`) for Homebrew-only CLI tools
+  that have no Flatpak/appstream ID.
+
+`tests/test_curated_config.py::test_article_markdown_avoids_raw_html_card_layouts`
+guards against this regression by scanning every `article-*.md` for `<div` and
+`style="` fragments.
+
 ## Validation
 
 ```bash
@@ -211,6 +234,7 @@ just test
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
+- Writing article Markdown as raw HTML `<div>` card grids — Bazaar's renderer does not reliably display these; use Markdown tables instead (see "Article Markdown authoring" above).
 
 ## Red Flags
 
