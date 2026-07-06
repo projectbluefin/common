@@ -97,6 +97,9 @@ background-color=(0.0, 0.0, 0.0, 0.8)
 [org.gnome.shell.extensions.blur-my-shell.dash-to-dock]
 blur=true
 
+[org.gnome.shell.extensions.blur-my-shell.popup]
+blur=false
+
 #-------------- REMAINING SCHEMAS IN THIS SETTING SECTION ARE LOCATED IN DCONF --------------#
 # Settings bellow are supported with gschema override, but other settings, which are relocatable schemas, are not. Edit dconfs if you need to modify relocatable schemas.
 
