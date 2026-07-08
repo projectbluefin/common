@@ -73,9 +73,23 @@ jobs:
           fetch-depth: 0
 
       - name: Install git-cliff
-        uses: taiki-e/install-action@b7f35b6932e62116be70eb0558ef91ac16990738 # git-cliff
-        with:
-          tool: git-cliff
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v git-cliff >/dev/null 2>&1; then
+            echo "git-cliff is already installed"
+            git-cliff --version
+            exit 0
+          fi
+
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          fi
+
+          source "$HOME/.cargo/env"
+          cargo install --locked git-cliff
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Generate release tag
         id: tag
