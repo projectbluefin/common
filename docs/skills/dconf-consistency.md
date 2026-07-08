@@ -115,3 +115,18 @@ This means any `gsettings get org.gnome.shell enabled-extensions` call in a test
 `enabled-extensions` for `org.gnome.shell` is set in `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` — this sets the schema DEFAULT. It is NOT in `distro.d/` and is not a locked key, so users can override it.
 
 The CI's `local.d/00-ci-testing` write overrides it in every test VM. Tests must use `get_default_value()` to validate this config, not `gsettings get`.
+
+## Relocatable Schemas and GNOME Extensions
+
+GSettings overrides (`.gschema.override` files) **do not support relocatable schemas** (schemas with omitted fixed paths, such as those used by many GNOME extensions like `blur-my-shell`). 
+
+If you try to write an override block for a relocatable schema in `.gschema.override`, it will fail to compile or be discarded at compile time.
+
+### How to configure relocatable schema defaults
+
+To configure system-wide defaults for relocatable schemas, place them in path-based **dconf distro.d keyfiles** under `system_files/bluefin/etc/dconf/db/distro.d/` (such as `05-bluefin-searchlight-extension`) using slash-separated paths:
+
+```ini
+[org/gnome/shell/extensions/blur-my-shell/popup]
+blur=false
+```
