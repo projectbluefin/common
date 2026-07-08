@@ -53,9 +53,23 @@ jobs:
           echo "All submodules are clean."
 
       - name: Install just
-        uses: taiki-e/install-action@316032d891fcc3713896120f597be9cc5c13ed18 # just
-        with:
-          tool: just
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v just >/dev/null 2>&1; then
+            echo "just is already installed"
+            just --version
+            exit 0
+          fi
+
+          if ! command -v cargo >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          fi
+
+          source "$HOME/.cargo/env"
+          cargo install --locked just
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Check Just syntax
         shell: bash
