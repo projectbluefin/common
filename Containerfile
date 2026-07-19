@@ -22,7 +22,7 @@ RUN install -d /out/shared/usr/share/bash-completion/completions /out/shared/usr
   just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/fish/vendor_completions.d/ujust.fish
 
 RUN curl -fsSLo tmp/game-devices-udev-1.0.tar.gz https://codeberg.org/fabiscafe/game-devices-udev/archive/1.0.tar.gz && \
-    echo "642315c110f427d0765abe66369f3080604c3fb7243c07d1aa77303b31f6dc6d  tmp/game-devices-udev-1.0.tar.gz" | sha256sum -c && \
+    echo "ac733ea6babb6623e1ac76eceac9b494255ae312d1e7c3fde011ac50ee99f6c5  tmp/game-devices-udev-1.0.tar.gz" | sha256sum -c && \
     tar xzvf tmp/game-devices-udev-1.0.tar.gz -C tmp/ && \
     for f in tmp/game-devices-udev/src/*.rules; do \
       install -Dpm0644 "$f" "out/shared/usr/lib/udev/rules.d/71-${f##*/}"; \
