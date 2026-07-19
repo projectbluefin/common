@@ -1,7 +1,7 @@
 ---
 name: pr-review
-version: "1.1"
-last_updated: 2026-07-19
+version: "1.0"
+last_updated: 2026-06-24
 tags: [review, testing, contributing]
 description: "Reviewer's guide for PRs in projectbluefin/common — PR type taxonomy, per-type review checklist, how to use the lab for verification, CI gate interpretation, and lab test patterns. Use when reviewing any incoming PR to common."
 metadata:
@@ -44,7 +44,6 @@ Apply to every PR regardless of type:
 - [ ] All `uses:` references to external GitHub Actions are SHA-pinned with a version comment — no `@main`, `@latest`, or `@v*` floating tags
 - [ ] If `system_files/shared/`: blast radius acknowledged — change affects bluefin, bluefin-lts, AND dakota
 - [ ] `system_files/` changes have lab verification or passing E2E CI before merge
-- [ ] For Bluefin PRs, a ghostlab PR verification run is part of the reviewer’s verification evidence before sign-off (docs-only/test-only exceptions). Use the PR’s own image or branch-based lab workflow; do not treat CI-only green as sufficient for boot, services, or desktop regressions
 
 ---
 
@@ -133,20 +132,6 @@ See [`lab-testing.md`](lab-testing.md) for the full runbook. Summary for PR revi
 - `system_files/shared/` → test on **bluefin**, **bluefin-lts**, and **dakota** images
 - `system_files/nvidia/` → test on **bluefin-dx** (or any nvidia-enabled image)
 - `system_files/bluefin/` → **bluefin** and **bluefin-lts** only (not dakota)
-
-### Bluefin PR review verification — ghostlab PR test
-
-When reviewing a Bluefin PR (or any PR that changes runtime behavior, services, GNOME desktop integration, or shipped artifacts), the reviewer should require a PR-specific ghostlab run before sign-off. The lab run is part of verification, not an optional extra.
-
-Use the PR’s own composed image or a branch-based lab workflow for the review. Minimum evidence from the run:
-
-- [ ] VM boots from the PR image
-- [ ] `systemctl --failed` is empty or only shows the known QEMU noise
-- [ ] Any changed unit/service is present and enabled as intended
-- [ ] Any changed GNOME or desktop integration is visible/functional in the VM
-- [ ] No new journal warnings/errors appear that would indicate a regression
-
-If the ghostlab run is unavailable or stale, record it explicitly in the review notes as a blocker and do not treat a green CI gate as full verification.
 
 ### What to verify
 
