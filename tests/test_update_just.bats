@@ -124,8 +124,16 @@ teardown() {
 }
 
 _run() {
+    local clean_path=""
+    # ponytail: filter out directories containing 'bctl' to avoid host interference
+    IFS=: read -ra paths <<< "$PATH"
+    for p in "${paths[@]}"; do
+        [[ -x "$p/bctl" ]] && continue
+        clean_path="${clean_path:+$clean_path:}$p"
+    done
+
     run env \
-        PATH="${MOCKDIR}:${PATH}" \
+        PATH="${MOCKDIR}:${clean_path}" \
         COMMAND_LOG="${COMMAND_LOG}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \

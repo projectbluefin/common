@@ -1,9 +1,9 @@
 ---
 name: bazaar
-version: "1.1"
-last_updated: 2026-07-01
+version: "2.1"
+last_updated: 2026-07-02
 tags: [bazaar, curated, flatpak, apps]
-description: "Use when editing Bazaar config or hooks in common. Covers curated schema migration, JXL→PNG banner conversion, Bluefin-owned files, and local preview workflow."
+description: "Use when editing Bazaar config or hooks in common. Covers new curated schema (post-0.8.3), JXL→PNG banner conversion, Bluefin-owned files, and sandboxed hot-reloading local preview workflow."
 metadata:
   type: procedure
   context7-sources:
@@ -39,103 +39,253 @@ metadata:
 | `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
 | `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
 
-## Curated schema and compatibility notes
+## Curated schema — current format (post-0.8.3 / PR #1655)
 
-Bazaar supports two distinct configuration schemas depending on the installed Flatpak version. Because stable releases may lag behind upstream GitHub commits, agents must verify the local version's expected format before editing.
+Bazaar upstream merged **PR #1655 "Rework Curated System"** on 2026-06-23. This is a **breaking schema change**. Bluefin `curated.yaml` has been migrated to the new format.
 
-### 1. Legacy Schema (Stable `v0.8.2` and below)
-The currently installed stable release (`v0.8.2`) expects the legacy schema structure:
-- Root-level **`css:`** block containing raw GTK CSS strings.
-- **`rows`** is a list where each row maps to a map containing **`sections`**:
-  ```yaml
-  css: |
-    .global-section { margin: 15px; }
-  rows:
-    - sections:
-        - expand-horizontally: true
-          classes:
-            - global-section
-          category:
-            title:
-              en: "Bluefin Recommends"
-            light-banner: file:///run/host/etc/bazaar/11-bluefin-day.png
-            appids:
-              - org.gnome.Calculator
-  ```
-- **Limitations in `v0.8.2`**:
-  - Direct row types like `banner`, `articles`, `featured-carousel`, or `section` do NOT exist.
-  - The `start-on-curated: true` option in `bazaar.yaml` does NOT exist and will fail main config validation.
-
-### 2. Modern Schema (Upstream `master` / Post-`v0.8.2` tags)
-Newer unreleased or upstream commits use a simplified schema where `rows` contains typed entries directly, and does not support the root-level `css:` block:
+**Current schema uses typed row entries:**
 ```yaml
 rows:
   - banner:
-      height: 250
+      height: 400
       image:
-        light-uri: https://getaurora.dev/aurora-text-logo.svg
+        light-uri: file:///run/host/etc/bazaar/11-bluefin-day.png
+        dark-uri: file:///run/host/etc/bazaar/11-bluefin-night.png
+        fit: cover
+        can-shrink: true
+        alt: "Bluefin desktop screenshot"
+      light-color: "#a5897b"
+      dark-color: "#0d0e19"
   - section:
-      title: "Welcome to Bazaar"
+      title: "Bluefin Recommends"
+      subtitle:
+        string: "Our Favorite Applications"
       appids:
         list:
           - org.gnome.Calculator
 ```
 
-When porting content between repos/variants, **always check the active schema shape** to avoid rendering failures or parser errors.
+**Key schema rules:**
+- Root `css:` block does NOT exist in the new schema — remove it entirely.
+- `rows` is a list of typed entries: `banner`, `section`, `articles`, `featured-carousel`.
+- Each entry has exactly one key (`banner:`, `section:`, etc.).
+- `section.subtitle` is a markdown object: `subtitle: string: "..."` (not a plain string).
+- `section.appids` is `appids: list: [...]` (not a bare list).
+- `banner` and `section` are separate rows — one banner per section, both as siblings in `rows`.
+- `section.overflow-count` enables a "Show More" button for sections with many apps.
+
+## Non-Flathub Icon Resolution (Homebrew & System .desktop Files)
+
+Non-Flathub applications included in curation pages (such as Homebrew apps or developer CLI tools like OpenLens or Tavern) must have high-fidelity app tiles just like Flathub flatpaks.
+
+Because Flathub appstream paths are not predictable on the CDN, we query the official Flathub v2 API first:
+`https://flathub.org/api/v2/appstream/{appid}`
+
+For non-Flathub applications:
+1. The nightly assembly action check-runs local/Homebrew paths for `.desktop` launcher files.
+2. It parses the launcher to find the specified `Icon=name`.
+3. It locates the referenced icon file (PNG or SVG) in standard Linux icon themes and Homebrew paths (`/home/linuxbrew/.linuxbrew/share/icons/`, `/usr/share/icons/`, etc.).
+4. It encodes the located asset as an inline, self-contained base64 Data URI directly into the final compiled markdown article:
+   `data:image/svg+xml;base64,...` or `data:image/png;base64,...`
+
+This prevents downstream broken image links and eliminates filesystem sandboxing issues.
 
 ## Banner image conversion (JXL → PNG)
 
-Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile`. The conversion uses `djxl` with the `-C sRGB` flag to force sRGB color space translation (prevents washed-out or dark images on standard GTK loaders that ignore embedded ICC profiles).
+Banner images in `bluefin-branding/system_files/etc/bazaar/` are stored as `.jxl`. They are converted to `.png` at build time in the `Containerfile` using `djxl` with `--color_space=sRGB`.
 
 **Containerfile pattern:**
 ```dockerfile
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
       name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" -C sRGB; \
+      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 ```
 
 **Critical rules:**
-- `curated.yaml` must reference `.png` paths, never `.jxl` — stable Bazaar v0.8.2 crashes on JXL due to a libdex regression on modern GNOME runtimes.
-- The `RUN` step **must** include `set -e` (or `|| exit 1` per iteration). Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
-- Do not change `-C sRGB` to `--color_space=sRGB` — only `-C` is supported by the version of `djxl` used in the build stage. Verify against the actual binary before changing.
+- `curated.yaml` must reference `.png` paths, never `.jxl` — Bazaar crashes on JXL due to a libdex fiber scheduling regression on modern GNOME runtimes (issue #497).
+- The correct djxl flag is `--color_space=sRGB` (long form). The short form `-C sRGB` is not supported by some build-stage alpine djxl binaries.
+- The `RUN` step **must** include `set -e`. Without it, a `djxl` failure silently exits 0 — the build passes, the PNG is missing, and the curated page breaks at runtime.
 
 ## bazaar.service requirements
 
-`bazaar.service` must be `Type=simple`. The `bazaar --no-window` process runs as a persistent background daemon. Setting `Type=oneshot` causes `systemctl` to hang indefinitely waiting for the service to exit.
+`bazaar.service` must be `Type=simple` with `Restart=on-failure`. The `bazaar --no-window` process runs as a persistent background daemon.
 
 ```ini
 [Service]
 Type=simple
-ExecStart=/usr/bin/flatpak run --no-instance io.github.kolunmi.Bazaar --no-window
+ExecStart=flatpak run --command=bazaar io.github.kolunmi.Bazaar --no-window
+StandardOutput=journal
+Restart=on-failure
+RestartSec=5
 ```
 
+`Type=oneshot` causes `systemctl` to hang indefinitely waiting for the service to exit.
 
+## Local preview workflow
 
-Instead of installing files to `/etc/bazaar` (which requires `sudo`), you can launch the Bazaar flatpak directly against files in your local workspace using command-line arguments. This is the preferred non-root preview workflow.
+### Userspace prototype (no root needed)
 
-1. **Kill any lingering background Bazaar processes first.** Since Bazaar runs as a search provider daemon, starting it with a new config requires killing existing background processes:
+**Never write to `/etc` for prototype work.** Use `--extra-content-config` directly — Bazaar hot-reloads on every save.
+
+1. **Install v0.9.0+ from CI** if not yet on Flathub stable:
    ```bash
-   # List active bazaar/bwrap processes and locate their PIDs
-   ps -ef | grep -E 'bazaar|Bazaar' | grep -v grep
+   # Find latest successful CI build artifact ID
+   RUN_ID=$(gh api 'repos/kolunmi/bazaar/actions/runs?per_page=1&branch=main&status=success' \
+     --jq '.workflow_runs[0].id')
+   ARTIFACT_ID=$(gh api "repos/kolunmi/bazaar/actions/runs/${RUN_ID}/artifacts" \
+     --jq '.artifacts[] | select(.name | test("x86_64")) | .id')
+   curl -sL -H "Authorization: token $(gh auth token)" \
+     "https://api.github.com/repos/kolunmi/bazaar/actions/artifacts/${ARTIFACT_ID}/zip" \
+     -o /tmp/bazaar-head.zip
+   unzip -o /tmp/bazaar-head.zip -d /tmp/bazaar-head/
+   flatpak install --bundle --user --assumeyes /tmp/bazaar-head/Bazaar.flatpak
+   ```
 
-   # Kill the exact PIDs (never use pkill/killall)
+2. **Kill any running Bazaar processes** (exact PIDs only, never pkill):
+   ```bash
+   ps -ef | grep -E 'bazaar|Bazaar' | grep -v grep
    kill <PID1> <PID2>
    ```
 
-2. **Launch with workspace overrides:**
-   To load the custom curated config directly from your workspace without copying it to `/etc`:
+3. **Block Built-in Fallbacks & Launch isolated Bazaar** — hot-reload is automatic on file save:
    ```bash
-   flatpak run --filesystem=host io.github.kolunmi.Bazaar \
-     --extra-curated-config=/absolute/path/to/system_files/bluefin/etc/bazaar/curated.yaml
+   # Block the development-mode example.yaml fallback copy by creating it as a directory:
+   rm -rf ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+   mkdir -p ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+
+   setsid flatpak run --nofilesystem=host --filesystem=home io.github.kolunmi.Bazaar \
+     --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml \
+     > /tmp/bazaar-proto.log 2>&1 &
+   disown
+   ```
+   v0.9.0 development builds of Bazaar copy and load the built-in development `example.yaml` page when no host `/etc` configs are accessible, resulting in layout duplication (example rows + your custom rows). Hiding the host filesystem with `--nofilesystem=host` and blocking `example.yaml` with a directory forces Bazaar to only load your custom `--extra-content-config` file.
+
+4. **Article markdown files** for `uri: file:///` paths in articles rows:
+   ```bash
+   mkdir -p /tmp/bazaar-proto
+   cat > /tmp/bazaar-proto/article.md << 'EOF'
+   # Article Title
+   Body in **markdown**. Links and *formatting* work.
+   EOF
    ```
 
-3. **Verify the logs:**
-   If there are validation or schema errors, Bazaar will output them directly to stdout/stderr:
-   - `property 'banner' doesn't exist on type BzCuratedRow` indicates that the old version of Bazaar is trying to parse the modern schema format.
-   - `property 'start-on-curated' doesn't exist on type BzMainConfig` indicates that the old version of Bazaar is trying to parse modern options in `bazaar.yaml`.
+### Menu Launcher and Shortcut Integration
 
+The `just bazaar-preview` command automatically overrides the personal GNOME Shell application launcher at `~/.local/share/applications/io.github.kolunmi.Bazaar.desktop`. It configures the launcher to use our isolated sandbox arguments (`--nofilesystem=host --filesystem=home`) and points it to the checkout's hot-reloaded `curated-dev.yaml`.
+
+This means **clicking on the Bazaar icon in the desktop, dock, or GNOME application menu instantly loads your repository configurations and updates on save!**
+
+To run it:
+```bash
+just bazaar-preview
+```
+
+### System install (requires root)
+
+Use the `ujust bazaar-preview` recipe which automates JXL→PNG conversion and writes to `/etc/bazaar`:
+
+```bash
+ujust bazaar-preview
+```
+
+## Article Markdown authoring — avoid raw HTML card layouts
+
+Bazaar's article view uses a Markdown renderer that does **not** reliably render
+raw HTML `<div>`/flexbox card-wall layouts. `article-devtools.md` shipped with a
+large inline-styled HTML grid (flex containers, `<div style="...">` cards,
+button-styled `<a>` tags) that rendered broken/blank in Bazaar even though the
+YAML wiring was valid.
+
+**Use plain Markdown instead — proven patterns from working articles:**
+- Tables for app/tool listings: `| Tool | Description | Install |`
+- `**[Install](appstream://<appid>)**` for a Flatpak deep-link in a table cell
+  (see `article-ai.md` history, `article-games.md` history)
+- A single bare `<img src="..." alt="..." width="100%">` is fine (e.g.
+  `article-bluefin-notes.md` screenshot) — the regression is specifically
+  `<div>`-based layout containers and inline `style="..."` attributes, not any
+  HTML tag at all.
+- External links (`https://formulae.brew.sh/...`) for Homebrew-only CLI tools
+  that have no Flatpak/appstream ID.
+
+`tests/test_curated_config.py::test_article_markdown_avoids_raw_html_card_layouts`
+guards against this regression by scanning every `article-*.md` for `<div` and
+`style="` fragments.
+
+### Native app-tile grids — the real way to show a "grid of apps"
+
+Bazaar's markdown renderer (`bge-markdown-render.c`, upstream `bazaar-org/bazaar`)
+treats a normal Markdown image (`![alt](https://...)`) as a full-width
+"screenshot" widget wrapped in a button that opens a screenshot gallery viewer —
+**not** a small inline icon. Using a regular image URL to fake a small app-tile
+grid renders each icon huge and clicking it opens a screenshot viewer, not an
+install action. Don't do this.
+
+Instead, `markdown_bind_inline_uri()` in `src/bz-article.c` special-cases any
+image `src` starting with `appstream://`: it calls
+`build_appstream_wrap_box()`, which renders a real flow-box grid of native
+`BzAppTile` widgets — the exact same tiles used on the Explore/Search pages,
+at the correct size, with the real icon, name, and install action Bazaar
+already knows how to render. Multiple appids can be combined into a single
+grid by comma-joining `appstream://` URIs inside one image:
+
+```markdown
+![Grid caption](appstream://com.visualstudio.code,appstream://com.vscodium.codium,appstream://dev.zed.Zed)
+```
+
+This is the correct pattern for any "app grid" / "install page" style section
+in a curated article — never hand-roll a table of hotlinked Flathub icon URLs.
+See `article-devtools.md` for a real example (IDEs, terminal editors, Podman
+Desktop/Virtual Machines, Headlamp/OpenLens grids).
+
+### Real "Click to Install" links only work for hooked appids
+
+An `appstream://<appid>` link only produces a genuine click-to-install action
+if a hook in `hooks.py`/`bazaar-hook` intercepts that exact appid. Bazaar only
+fires a hook when the user attempts a real Flatpak transaction — so the appid
+must correspond to an actual (even if unofficial/abandoned) app listing on
+Flathub, otherwise there's no Install button to click at all.
+
+Hooked appids today (redirect to `brew install` instead of the Flatpak):
+`com.visualstudio.code`, `com.vscodium.codium`, `dev.zed.Zed`,
+`org.gnu.emacs`, `com.jetbrains.CLion`, `com.jetbrains.DataGrip`,
+`com.jetbrains.GoLand`, `com.jetbrains.IntelliJ-IDEA-Community`,
+`com.jetbrains.PhpStorm`, `com.jetbrains.PyCharm-Community`,
+`com.jetbrains.PyCharm-Professional`, `com.jetbrains.Rider`,
+`com.jetbrains.RubyMine`, `com.jetbrains.RustRover`,
+`com.jetbrains.WebStorm`, `ai.opencode.opencode`,
+`ai.lmstudio.lm-studio`, `io.neovim.nvim`, `com.helix_editor.Helix`,
+`org.vim.Vim`, `io.github.zyedidia.micro`.
+
+`jetbrains-toolbox` remains as a fallback for unmatched `com.jetbrains.*`
+and `com.google.AndroidStudio`; directly mapped JetBrains appids must be
+excluded from that fallback to avoid hijacking cask-specific hooks.
+
+Pure CLI/daemon tools and tools with no Flathub listing can **never** get a
+real click-to-install link. Verify an appid is real before wiring a new hook:
+
+```bash
+curl -s "https://flathub.org/api/v2/search" -X POST \
+  -H "Content-Type: application/json" -d '{"query":"<tool name>"}'
+```
+
+Adding a new hook requires three matching edits: `hooks.py` (source of
+truth), `usr/libexec/bazaar-hook` (in-image copy — keep byte-identical except
+the shebang line), and a new `hooks:` entry + confirmation dialog in
+`bazaar.yaml`. Add matching state-machine tests to both `tests/test_hooks.py`
+and `tests/test_bazaar_hook.py`.
+
+**`just bazaar-preview` cannot test hooks end-to-end.** The preview
+deliberately launches with `--nofilesystem=host --filesystem=home` so the
+sandbox never sees `/run/host/etc/bazaar/` — this is what stops it from also
+loading (and being confused by) your real system's `/etc/bazaar/bazaar.yaml`.
+But that also means the hook wiring in `bazaar.yaml` is never loaded during
+preview, so clicking an app tile's Install button always falls through to the
+normal Flatpak install flow — this is expected, not a bug. Verify hook logic
+with `pytest tests/test_hooks.py tests/test_bazaar_hook.py` (state machine
+unit tests), and verify end-to-end behavior only via a real built image or
+the `projectbluefin/testsuite` AT-SPI lab.
 
 ## Validation
 
@@ -157,25 +307,31 @@ just test
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
+- Wiring a fake `appstream://<appid>` "Click to Install" link for an appid with no real Flathub listing — the button never appears in Bazaar because there's no transaction to intercept.
+- Adding a hook in `hooks.py` but forgetting to mirror it in `usr/libexec/bazaar-hook` and `bazaar.yaml` — the in-image copy is what actually runs on real Bluefin installs.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
-- Using `--color_space=sRGB` instead of `-C sRGB` breaks the conversion with "Unknown argument" error.
+- Writing article Markdown as raw HTML `<div>` card grids — Bazaar's renderer does not reliably display these; use Markdown tables instead (see "Article Markdown authoring" above).
+- Using a plain `![alt](https://...icon-url)` to fake a small app-tile grid — renders as a giant full-width "screenshot" widget that opens a gallery viewer on click. Use the native `![](appstream://id1,appstream://id2,...)` grid syntax instead (see "Native app-tile grids" above).
 
 ## Red Flags
 
-- `curated.yaml` contains `banner:`, `articles:`, `featured-carousel:`, or `start-on-curated:` keys — these crash stable Bazaar v0.8.2.
+- `curated.yaml` contains root `css:` key — this is the old schema; migrate to `rows` with `banner`/`section` types.
+- `curated.yaml` uses `rows[].sections[].category` structure — old schema; migrate to new typed rows.
 - Banner entries reference `.jxl` paths instead of `.png`.
 - `bazaar.service` has `Type=oneshot` — will hang `systemctl` indefinitely.
-- `Containerfile` JXL conversion loop is missing `set -e` — silent build failures silently produce no PNG.
-- A curated section has a `subtitle` but no `title` — stops the curated page from loading.
-- djxl flag changed from `-C sRGB` to `--color_space=sRGB` without verifying the installed binary supports the long form.
+- `Containerfile` JXL conversion loop is missing `set -e` — silent build failures produce no PNG.
+- `djxl` invocation uses `-C sRGB` — some build-stage alpine binaries do not support the short flag; use `--color_space=sRGB`.
+- `section.subtitle` is a bare string — must be `subtitle: string: "..."`.
+- `section.appids` is a bare list — must be `appids: list: [...]`.
 
 ## Verification
 
-- [ ] `curated.yaml` uses legacy schema only: `css`/`rows`/`sections`/`category` — no `banner`/`carousel`/`articles` keys
-- [ ] All `light-banner` and `dark-banner` entries end in `.png`
-- [ ] All curated `sections` have a `title` key under `category`
-- [ ] `bazaar.service` is `Type=simple`
+- [ ] `curated.yaml` uses new schema: `rows[]` with `banner`/`section` row types, no root `css`
+- [ ] All banner `uri`/`light-uri`/`dark-uri` entries end in `.png`
+- [ ] All `section` entries have `title` and `appids.list`
+- [ ] `bazaar.service` is `Type=simple` with `Restart=on-failure`
 - [ ] `Containerfile` JXL conversion `RUN` step begins with `set -e`
-- [ ] `djxl` invocation uses `-C sRGB`
+- [ ] `djxl` invocation uses `--color_space=sRGB` (not `-C sRGB`)
+- [ ] Non-Flathub app icons resolve statically during the assembly script step using local/Homebrew .desktop icon retrieval and base64 SVG/PNG encoding.
 - [ ] `python3 -m pytest tests/test_curated_config.py -v` passes
 - [ ] `just check && pre-commit run --all-files` passes

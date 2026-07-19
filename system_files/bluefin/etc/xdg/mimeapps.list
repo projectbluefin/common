@@ -2,3 +2,4 @@
 application/pdf=org.gnome.Papers.desktop
 application/vnd.flatpak.ref=io.github.kolunmi.Bazaar.desktop
 application/vnd.appimage=noop.desktop
+x-scheme-handler/appstream=io.github.kolunmi.Bazaar.desktop

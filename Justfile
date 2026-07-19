@@ -15,7 +15,8 @@ test:
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
     bats tests/test_ublue_fastfetch.bats
-    bats tests/test_ublue_motd.bats
+    bats tests/test_umotd_integration.bats
+    bats tests/test_bonedigger_report.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
     bats tests/test_dynamic_wallpaper.bats
@@ -24,23 +25,67 @@ test:
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_flatpak_sync.bats
 
-# Preview Bazaar config from this checkout on the local machine
+# Preview Bazaar config from this checkout on the local machine (passwordless, no sudo, hot-reload, auto-refresh)
 bazaar-preview:
     #!/usr/bin/env bash
     set -euo pipefail
-    sudo -v
-    flatpak info io.github.kolunmi.Bazaar >/dev/null
-    sudo install -d -m0755 /etc/bazaar
-    sudo install -m0644 system_files/bluefin/etc/bazaar/bazaar.yaml /etc/bazaar/bazaar.yaml
-    sudo install -m0644 system_files/bluefin/etc/bazaar/curated.yaml /etc/bazaar/curated.yaml
-    sudo install -m0644 system_files/bluefin/etc/bazaar/blocklist.yaml /etc/bazaar/blocklist.yaml
-    systemctl --user restart bazaar.service || systemctl --user start bazaar.service || true
-    if command -v setsid >/dev/null 2>&1; then
-        setsid -f flatpak run io.github.kolunmi.Bazaar >/dev/null 2>&1
-    else
-        nohup flatpak run io.github.kolunmi.Bazaar >/dev/null 2>&1 &
+
+    echo "Stopping any running Bazaar processes..."
+    # Find and kill any running bazaar/Bazaar daemons using PIDs (excluding our own just command)
+    RUNNING_PIDS=$(ps -ef | grep -E 'bazaar|Bazaar' | grep -v -E 'grep|just|bazaar-preview' | awk '{print $2}' || true)
+    if [[ -n "$RUNNING_PIDS" ]]; then
+        kill $RUNNING_PIDS || true
     fi
-    echo "Bazaar preview updated and launched in background."
+
+    echo "Clearing Bazaar's Flatpak app cache to force fresh configuration and article reloads..."
+    rm -rf ~/.var/app/io.github.kolunmi.Bazaar/cache/* || true
+
+    echo "Blocking Bazaar from appending the built-in development example page..."
+    rm -rf ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+    mkdir -p ~/.var/app/io.github.kolunmi.Bazaar/data/example.yaml || true
+
+    echo "Regenerating local curated-dev.yaml based on repository curated.yaml..."
+    sed 's|file:\/\/\/run/host/etc/bazaar/|file:\/\/\/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/|g' system_files/bluefin/etc/bazaar/curated.yaml > system_files/bluefin/etc/bazaar/curated-dev.yaml
+
+    echo "Creating GNOME Desktop menu override so launching Bazaar always loads local curated-dev.yaml..."
+    mkdir -p ~/.local/share/applications
+    SRC_DESKTOP=""
+    for p in "/var/home/jorge/.local/share/flatpak/exports/share/applications/io.github.kolunmi.Bazaar.desktop" \
+             "/var/lib/flatpak/exports/share/applications/io.github.kolunmi.Bazaar.desktop"; do
+        if [[ -f "$p" ]]; then
+            SRC_DESKTOP="$p"
+            break
+        fi
+    done
+
+    if [[ -n "$SRC_DESKTOP" ]]; then
+        cp "$SRC_DESKTOP" ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        # Insert extra flags into Exec= lines (avoid double insertions if run multiple times)
+        sed -i 's|Exec=/usr/bin/flatpak run|Exec=/usr/bin/flatpak run --nofilesystem=host --filesystem=home|g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        sed -i 's|io.github.kolunmi.Bazaar |io.github.kolunmi.Bazaar --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml |g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+
+        # Add MimeType handler for appstream:// protocol scheme links
+        if ! grep -q 'MimeType=' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop; then
+            echo "MimeType=x-scheme-handler/appstream;" >> ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        else
+            sed -i 's|MimeType=|MimeType=x-scheme-handler/appstream;|g' ~/.local/share/applications/io.github.kolunmi.Bazaar.desktop
+        fi
+
+        # Configure xdg-mime to make our local preview desktop file the default for appstream:// scheme handler
+        xdg-mime default io.github.kolunmi.Bazaar.desktop x-scheme-handler/appstream || true
+        update-desktop-database ~/.local/share/applications/ || true
+        echo "GNOME menu shortcut and appstream:// protocol association successfully configured with hot-reload!"
+    else
+        echo "Warning: Could not locate a source Bazaar desktop file to override. GNOME launcher shortcut will not be overridden."
+    fi
+
+    echo "Launching isolated Bazaar (master) pointing to your local curated-dev.yaml..."
+    if command -v setsid >/dev/null 2>&1; then
+        setsid -f flatpak run --nofilesystem=host --filesystem=home io.github.kolunmi.Bazaar//master --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml >/dev/null 2>&1
+    else
+        nohup flatpak run --nofilesystem=host --filesystem=home io.github.kolunmi.Bazaar//master --extra-content-config=/var/home/jorge/src/common/system_files/bluefin/etc/bazaar/curated-dev.yaml >/dev/null 2>&1 &
+    fi
+    echo "Bazaar preview successfully updated, cache cleared, and launched in background!"
 
 # Build the bluefin-common container locally
 build:

@@ -5,10 +5,11 @@ After=graphical-session.target
 StartLimitBurst=10
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
 ExecStart=flatpak run --command=bazaar io.github.kolunmi.Bazaar --no-window
 StandardOutput=journal
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=graphical-session.target
