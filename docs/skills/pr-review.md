@@ -1,9 +1,9 @@
 ---
 name: pr-review
-version: "1.0"
+version: "2.0"
 last_updated: 2026-06-24
 tags: [review, testing, contributing]
-description: "Reviewer's guide for PRs in projectbluefin/common — PR type taxonomy, per-type review checklist, how to use the lab for verification, CI gate interpretation, and lab test patterns. Use when reviewing any incoming PR to common."
+description: "Reviewer's guide for PRs in projectbluefin/common — PR type taxonomy, per-type review checklist, CI gate interpretation, OEM hook review pattern, test quality standards, and report template. Use when reviewing any incoming PR to common. Lab testing methodology now lives in lab-testing.md."
 metadata:
   type: procedure
 ---
@@ -12,7 +12,9 @@ metadata:
 
 `projectbluefin/common` is the shared OCI layer consumed by every downstream variant (bluefin, bluefin-lts, dakota). A broken `system_files/shared/` change cascades to all three simultaneously. Consistent, thorough review prevents those regressions from reaching users.
 
-This guide documents PR type taxonomy, per-type review checklists, lab testing patterns, CI gate interpretation, and test quality standards — built from live review sessions on PRs #760, #767, #768, #769, and #785.
+This guide documents PR type taxonomy, per-type review checklists, CI gate interpretation, OEM hook review, test quality standards, and the review report template — built from live review sessions on PRs #760, #767, #768, #769, and #785.
+
+> **Lab testing moved (2026-06-24):** The baseline-vs-delta methodology, worked examples (PR #768, #769, #767), quick-start lab YAMLs, and the composed-image testing pattern now live in [`lab-testing.md`](lab-testing.md). This file focuses on review procedure; it links to `lab-testing.md` where lab verification is needed.
 
 ---
 
@@ -31,6 +33,8 @@ Identify the PR type first. It determines blast radius, review depth, and whethe
 | `CI workflow` | `.github/workflows/**` | CI pipeline | No, but needs maintainer review |
 | `doc / skill update` | `docs/**`, `AGENTS.md` | None | No — doc-only exception, push direct to main |
 | `Containerfile` | `Containerfile` | ALL variants | Yes |
+
+For lab testing scope by changed path, quick-start YAMLs, and the baseline-vs-delta methodology, see [`lab-testing.md`](lab-testing.md).
 
 ---
 
@@ -75,6 +79,8 @@ Apply to every PR regardless of type:
 - [ ] Error handling — `set -euo pipefail` or explicit checks; silent failures in hooks cause hard-to-debug regressions
 - [ ] D-Bus / systemd calls in user hooks: `systemctl --user` needs `$DBUS_SESSION_BUS_ADDRESS` — confirm environment is available at hook execution time
 
+> **See also:** [`shell-scripts.md`](shell-scripts.md) for testability patterns (env-var override idiom, PATH-stub mocking, idempotent main guard, XDG isolation) and [`ci-tooling.md`](ci-tooling.md) § Shellcheck in validate.yml for CI config.
+
 ### dconf / GSettings
 
 - [ ] Override file AND lock file change together — see [`dconf-consistency.md`](dconf-consistency.md)
@@ -110,351 +116,7 @@ See the test quality checklist below. Quick checklist:
 - [ ] Sensitive paths (secrets, GHCR push, cosign) need maintainer eyes
 - [ ] Workflow name follows existing conventions in the repo
 
----
-
-## Lab testing guide
-
-See [`lab-testing.md`](lab-testing.md) for the full runbook. Summary for PR review:
-
-### When is lab testing required?
-
-| Change type | Lab required? |
-|---|---|
-| `system_files/shared/` — systemd units | Yes — all 3 variants |
-| `system_files/shared/` — scripts / hooks | Yes if behavior-changing |
-| `system_files/nvidia/` | Yes — **nvidia image variant only** (non-nvidia baseline only confirms service is absent; use bluefin-dx or equivalent to verify actual changes) |
-| `tests/` only | No — `just test` locally |
-| `docs/` only | No |
-| `Containerfile` | Yes — image must compose |
-
-### Scope by changed path
-
-- `system_files/shared/` → test on **bluefin**, **bluefin-lts**, and **dakota** images
-- `system_files/nvidia/` → test on **bluefin-dx** (or any nvidia-enabled image)
-- `system_files/bluefin/` → **bluefin** and **bluefin-lts** only (not dakota)
-
-### What to verify
-
-```bash
-# After booting the lab VM, check for failures:
-systemctl --failed
-journalctl -p warning -b
-
-# For a specific unit:
-systemctl cat <unit-name>.service
-systemctl status <unit-name>.service
-journalctl -u <unit-name>.service -b
-```
-
-> ⚠️ **Always check `systemctl is-enabled` in the baseline.** A clean boot and empty `systemctl --failed` does NOT mean the service is working — it may simply not be enabled. If a unit is disabled, it never runs and produces no journal output. This is silent: no errors, no warnings, just a no-op.
->
-> ```bash
-> systemctl is-enabled <unit-name>.service
-> # "disabled" means it will never run at boot regardless of WantedBy
-> ```
->
-> If the service is disabled in the baseline, the review must also confirm there is a preset file or explicit `WantedBy=` + want symlink that will enable it in the built image. A unit file shipping without an enable mechanism means the change does nothing for users until the preset is also present.
->
-> **Common scenario:** a preset file is added in the same or a prior PR but the current testing image was built before it merged — the service appears disabled in the lab even though the preset is correct in source. Always cross-check the preset file in the repo against the running image state.
-
-### Expected QEMU noise (ignore these)
-
-- `nvidia-persistenced` errors — NVIDIA driver not present in QEMU
-- `systemd-oomd` warnings — memory pressure in constrained VMs
-- VirtIO / KVM device messages
-
-### Baseline vs delta
-
-**Always establish a baseline before the PR merges.** Boot the current testing image, record the state of the units/files the PR touches, then re-verify after rebuild. This catches unintended regressions and confirms all new artifacts landed.
-
-**Step 1 — collect baseline** (pre-merge, on current testing image):
-
-```bash
-# For a systemd unit PR — capture current state of every touched unit/file
-systemctl cat uupd.timer 2>/dev/null || echo "MISSING"
-systemctl cat uupd.service 2>/dev/null || echo "MISSING"
-cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf 2>/dev/null || echo "MISSING"
-cat /usr/lib/udev/rules.d/99-uupd-on-ac.rules 2>/dev/null || echo "MISSING"
-systemctl cat uupd-on-ac.service 2>/dev/null || echo "MISSING"
-```
-
-**Step 2 — merge PR, wait for rebuild** (`bluefin:testing` rebuilds automatically on push to main)
-
-**Step 3 — verify delta** (post-merge, on new testing image):
-
-```bash
-# Confirm every expected artifact is present and has the right content
-systemctl cat uupd.timer          # check OnCalendar value
-systemctl cat uupd.service        # should still be static (no [Install])
-systemctl is-enabled uupd.timer   # should still be enabled
-cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf  # new drop-in
-cat /usr/lib/udev/rules.d/99-uupd-on-ac.rules               # new udev rule
-systemctl cat uupd-on-ac.service                             # new unit
-```
-
-#### Worked example — PR #768 (uupd AC-aware scheduling)
-
-**Baseline state** (bluefin:testing before PR, workflow `pr768-uupd-baseline-lxknq`):
-
-| Artifact | Baseline state |
-|---|---|
-| `uupd.timer` | **Exists** — daily at 04:00, `Persistent=true`, `RandomizedDelaySec=15m` |
-| `uupd.service` | Exists, static (no `[Install]`), timer-driven — correct |
-| `uupd.service.d/10-bluefin.conf` | **MISSING** — PR adds it |
-| `99-uupd-on-ac.rules` | **MISSING** — PR adds it |
-| `uupd-on-ac.service` | **MISSING** — PR adds it |
-| `uupd-manual.service` | Exists, untouched by PR |
-| `ConditionACPower=` on uupd.service | **Absent** — drop-in adds it |
-
-PR #768 **replaces** the existing daily timer with a 6h schedule — this is a deliberate behavior change, not an error. Knowing the baseline prevents false-alarming on "timer changed".
-
-**Post-merge verification checklist for PR #768:**
-
-```bash
-# 1. Timer fires every 6h
-systemctl cat uupd.timer | grep OnCalendar
-# expected: OnCalendar=*-*-* 00,06,12,18:00
-
-# 2. Drop-in adds ConditionACPower
-cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf | grep ConditionACPower
-# expected: ConditionACPower=true
-
-# 3. udev rule present
-ls -la /usr/lib/udev/rules.d/99-uupd-on-ac.rules
-
-# 4. AC-triggered unit present
-systemctl cat uupd-on-ac.service
-
-# 5. Timer still enabled, uupd.service still static
-systemctl is-enabled uupd.timer       # enabled
-systemctl cat uupd.service | grep '\[Install\]'  # should be absent (timer-driven)
-```
-
-#### Worked example — PR #769 (NVIDIA flatpak runtime sync)
-
-**Baseline state** (bluefin:testing non-nvidia, workflow `pr769-nvidia-check-thx78`):
-
-| Artifact | Baseline state |
-|---|---|
-| `ublue-nvidia-flatpak-runtime-sync.service` | **ABSENT** — nvidia overlay not applied to non-nvidia image |
-| `/sys/module/nvidia/version` | **NOT FOUND** — correct for QEMU |
-| nvidia units in `systemctl --failed` | None |
-
-**Verdict:** Green baseline. The service's `ConditionPathExists=/sys/module/nvidia/version` means PR changes (`TimeoutStartSec` 600→900, added `flatpak update`) are completely inert on non-nvidia images. Zero regression risk to non-nvidia users.
-
-> ⚠️ **NVIDIA post-merge testing requires an nvidia image variant.** The non-nvidia baseline only confirms the service is absent as expected. To verify the actual changes landed, use a bluefin-dx or other nvidia-enabled image — see the nvidia section below.
-
-**Post-merge verification checklist for PR #769** (must run on a **nvidia image build**, not baseline non-nvidia):
-
-```bash
-# 1. TimeoutStartSec bumped to 900
-systemctl cat ublue-nvidia-flatpak-runtime-sync.service | grep TimeoutStartSec
-# expected: TimeoutStartSec=900
-
-# 2. flatpak update step present in the sync script
-grep "flatpak update" /usr/libexec/ublue-nvidia-flatpak-runtime-sync
-# expected: at least one match
-
-# 3. Service not in failed state on first boot with nvidia
-systemctl --failed | grep nvidia
-# expected: no output
-```
-
-#### Worked example — PR #767 (flatpak appstream every-boot)
-
-**Baseline state** (bluefin:testing, 3 workflows, all Succeeded):
-
-| Artifact | Baseline state |
-|---|---|
-| `flatpak-appstream-firstboot.service` | Exists, unit file matches pre-PR content |
-| `systemctl is-enabled flatpak-appstream-firstboot.service` | **`disabled`** — no want symlink anywhere |
-| Journal for the service | `-- No entries --` — never ran at boot |
-| `ConditionPathExists=!/var/lib/flatpak/.appstream-refreshed` | Present (firstboot guard, PR removes it) |
-| `ExecStartPost=/bin/touch ...` | Present (flag file creator, PR removes it) |
-| `StartLimitBurst=3` location | In `[Service]` — misplaced (PR correctly moves to `[Unit]`) |
-| `/var/lib/flatpak/.appstream-refreshed` flag file | Absent (fresh VM — correct) |
-| Preset `02-flatpak-appstream-firstboot.preset` | In repo source, but **not yet active** in this image build |
-
-**Critical finding:** The service is **disabled** in the current testing image. The preset file exists in the repo but the image was built before it merged — so neither the old firstboot-only behavior nor the new every-boot behavior is active or verifiable yet. A clean lab boot here produces no journal output and no failures, but it is entirely a no-op — not a green signal.
-
-**Open question for PR author:** Is the preset landing in the same PR? If not, the every-boot behavior won't activate until a subsequent build includes the preset.
-
-**Post-merge verification checklist for PR #767** (requires a rebuilt image that includes the preset):
-
-```bash
-# 1. Service is now enabled
-systemctl is-enabled flatpak-appstream-firstboot.service
-# expected: enabled
-
-# 2. Firstboot guard removed — no ConditionPathExists line
-systemctl cat flatpak-appstream-firstboot.service | grep ConditionPathExists
-# expected: no output
-
-# 3. StartLimitBurst in [Unit] not [Service]
-systemctl cat flatpak-appstream-firstboot.service
-# expected: StartLimitBurst=3 appears after [Unit] header, not after [Service] header
-
-# 4. WantedBy target confirmed (verify graphical.target issue was addressed)
-systemctl cat flatpak-appstream-firstboot.service | grep WantedBy
-# expected: WantedBy=multi-user.target
-
-# 5. Service ran this boot
-journalctl -u flatpak-appstream-firstboot.service -b
-# expected: entries showing appstream refresh
-
-# 6. No flag file created (every-boot, not one-shot)
-ls /var/lib/flatpak/.appstream-refreshed 2>/dev/null && echo "EXISTS" || echo "absent (correct)"
-# expected: absent (correct)
-```
-
----
-
-## Quick-start lab test YAML
-
-Copy-paste these to submit targeted lab tests via the Argo MCP or `kubectl apply`. Always lint first with `argo-mcp-lint_workflow` before submitting.
-
-### systemd unit / shared script — all 3 variants
-
-Submit one per variant. Use `smoke` suite for a fast first pass; add `system` if you need full bootc contract verification.
-
-```yaml
-# bluefin:testing — smoke + system
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: pr-lab-bluefin-
-  namespace: argo
-spec:
-  workflowTemplateRef:
-    name: bluefin-qa-pipeline
-  arguments:
-    parameters:
-    - name: image
-      value: ghcr.io/projectbluefin/bluefin
-    - name: image-tag
-      value: testing
-    - name: suites
-      value: smoke,system
-    - name: namespace
-      value: bluefin-test
-```
-
-For lts: set `image: ghcr.io/projectbluefin/bluefin-lts` and `image-tag: lts-testing`.
-
-### NVIDIA overlay — non-nvidia baseline check
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: pr-lab-nvidia-baseline-
-  namespace: argo
-spec:
-  workflowTemplateRef:
-    name: bluefin-qa-pipeline
-  arguments:
-    parameters:
-    - name: image
-      value: ghcr.io/projectbluefin/bluefin
-    - name: image-tag
-      value: testing
-    - name: suites
-      value: smoke
-    - name: namespace
-      value: bluefin-test
-```
-
-> ⚠️ This only confirms the nvidia service is absent on non-nvidia images (correct). To verify the actual change, run on a bluefin-dx or nvidia-enabled image variant after merge.
-
-### Log collection pattern
-
-Poll and collect logs immediately — log pods are recycled after workflow completion:
-
-```bash
-# Poll until Succeeded/Failed
-argo_get_workflow name=<workflow-name> namespace=argo
-
-# Collect WHILE Running or immediately after Succeeded
-argo_logs_workflow name=<workflow-name> namespace=argo
-
-# Key commands to run inside the VM (via workflow steps or virsh guest-exec):
-systemctl --failed --no-pager
-journalctl -p warning -b --no-pager -n 200
-systemctl is-enabled <unit-name>.service
-systemctl cat <unit-name>.service
-```
-
-> ⚠️ Do NOT use `argo_wait_workflow` — it issues a blocking MCP call that times out before most workflows complete. Use `argo_get_workflow` to poll.
-
-### Stale image gotcha
-
-If the containerdisk was built before a recent PR merged, new files from that PR won't be present even though they're in the source. Always cross-check:
-
-```bash
-# Check when the current testing image was built
-skopeo inspect docker://ghcr.io/projectbluefin/bluefin:testing | jq '.Created'
-
-# Cross-check: when did the PR that added the file merge?
-gh pr view <N> --repo projectbluefin/common --json mergedAt
-```
-
-If the containerdisk predates the PR, the lab baseline is stale. Wait for a rebuild (nightly at 02:00 UTC) or note it clearly in the report.
-
-### Testing the PR's own changes — composed image pattern
-
-The `pr-e2e.yml` workflow automatically builds and pushes a composed PR image to GHCR
-at every commit. **This is a full bootable image** (`bluefin:testing` + PR's common
-layer applied on top) that can be booted directly in the lab:
-
-```
-ghcr.io/projectbluefin/common:e2e-pr-<N>-<sha>
-```
-
-**Find the tag from CI:**
-
-```bash
-# Get the latest passing compose run for a PR branch
-gh run list --repo projectbluefin/common \
-  --workflow pr-e2e.yml \
-  --event pull_request \
-  --json headBranch,conclusion,headSha,createdAt \
-  --limit 5
-
-# Then compute: sha_short = headSha[0:7]
-# tag = e2e-pr-<PR_NUMBER>-<sha_short>
-```
-
-**Submit a lab workflow against the PR-specific image** (same pattern as baseline,
-just swap the image tag):
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: pr-<N>-actual-
-  namespace: argo
-spec:
-  workflowTemplateRef:
-    name: bluefin-qa-pipeline
-  arguments:
-    parameters:
-    - name: image
-      value: ghcr.io/projectbluefin/common
-    - name: image-tag
-      value: e2e-pr-<N>-<sha>
-    - name: suites
-      value: smoke
-    - name: namespace
-      value: bluefin-test
-```
-
-The BIB disk-build step will rebuild the disk for this new image tag (~20 min).
-Once booted, the VM contains exactly what the PR would ship. Verify the new files
-are present and the system is clean (`systemctl --failed` empty, no new journal warnings).
-
-**Why this matters:** Testing against `bluefin:testing` baseline only tells you the
-current production image is clean. Testing against `e2e-pr-N-sha` tells you the
-PR's *own changes* land correctly and don't break boot. This closes the loop.
+> **See also:** [`ci-tooling.md`](ci-tooling.md) for SHA pinning policy and floating-tag guard. [`ci-pitfalls.md`](ci-pitfalls.md) for CI incident-log entries to watch for in review (branch-from-target, caller permissions starvation, workflow_run name matching).
 
 ---
 
@@ -672,6 +334,8 @@ assert_output --partial "systemctl enable"
 assert_output --partial "systemctl enable --now some.service"
 ```
 
+> **See also:** [`shell-scripts.md`](shell-scripts.md) for bats setup/teardown patterns, PATH-stub mocking, XDG_CONFIG_HOME isolation, and the idempotent main guard.
+
 ---
 
 ## PR review report template
@@ -733,7 +397,7 @@ Before approving any `system_files/` PR:
 - [ ] Per-type checklist completed for all changed paths
 - [ ] CI is green (or transient failures identified and re-triggered)
 - [ ] `ghost-lab` check is not stale-pending (requeue if needed)
-- [ ] Lab verification done or E2E CI pass accepted as equivalent
+- [ ] Lab verification done or E2E CI pass accepted as equivalent — see [`lab-testing.md`](lab-testing.md) for baseline-vs-delta methodology and quick-start YAMLs
 - [ ] Skill file update committed in the same PR if a new pattern was discovered
 - [ ] PR title is Conventional Commits
 - [ ] Attribution trailers present on AI-authored commits (convention, not a gate)

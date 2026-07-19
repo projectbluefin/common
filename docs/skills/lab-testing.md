@@ -272,6 +272,258 @@ The `collect-logs` step runs:
 **Anything else in `systemctl --failed`** = real bug in the image or common layer.
 File an issue in the owning repo (`common`, `bluefin`, `bluefin-lts`, or `dakota`).
 
+> ⚠️ **Always check `systemctl is-enabled` in the baseline.** A clean boot and empty `systemctl --failed` does NOT mean the service is working — it may simply not be enabled. If a unit is disabled, it never runs and produces no journal output. This is silent: no errors, no warnings, just a no-op.
+>
+> ```bash
+> systemctl is-enabled <unit-name>.service
+> # "disabled" means it will never run at boot regardless of WantedBy
+> ```
+>
+> If the service is disabled in the baseline, the review must also confirm there is a preset file or explicit `WantedBy=` + want symlink that will enable it in the built image. A unit file shipping without an enable mechanism means the change does nothing for users until the preset is also present.
+>
+> **Common scenario:** a preset file is added in the same or a prior PR but the current testing image was built before it merged — the service appears disabled in the lab even though the preset is correct in source. Always cross-check the preset file in the repo against the running image state.
+
+## Quick-start: submit smoke+system for a PR
+
+Copy-paste these to submit targeted lab tests. Always lint first with `argo-mcp-lint_workflow` before submitting.
+
+### systemd unit / shared script — all 3 variants
+
+Submit one per variant. Use `smoke` suite for a fast first pass; add `system` if you need full bootc contract verification.
+
+```yaml
+# bluefin:testing — smoke + system
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: pr-lab-bluefin-
+  namespace: argo
+spec:
+  workflowTemplateRef:
+    name: bluefin-qa-pipeline
+  arguments:
+    parameters:
+    - name: image
+      value: ghcr.io/projectbluefin/bluefin
+    - name: image-tag
+      value: testing
+    - name: suites
+      value: smoke,system
+    - name: namespace
+      value: bluefin-test
+```
+
+For lts: set `image: ghcr.io/projectbluefin/bluefin-lts` and `image-tag: lts-testing`.
+
+### NVIDIA overlay — non-nvidia baseline check
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: pr-lab-nvidia-baseline-
+  namespace: argo
+spec:
+  workflowTemplateRef:
+    name: bluefin-qa-pipeline
+  arguments:
+    parameters:
+    - name: image
+      value: ghcr.io/projectbluefin/bluefin
+    - name: image-tag
+      value: testing
+    - name: suites
+      value: smoke
+    - name: namespace
+      value: bluefin-test
+```
+
+> ⚠️ This only confirms the nvidia service is absent on non-nvidia images (correct). To verify the actual change, run on a bluefin-dx or nvidia-enabled image variant after merge.
+
+### Log collection pattern
+
+Poll and collect logs immediately — log pods are recycled after workflow completion:
+
+```bash
+# Poll until Succeeded/Failed
+argo_get_workflow name=<workflow-name> namespace=argo
+
+# Collect WHILE Running or immediately after Succeeded
+argo_logs_workflow name=<workflow-name> namespace=argo
+
+# Key commands to run inside the VM (via workflow steps or virsh guest-exec):
+systemctl --failed --no-pager
+journalctl -p warning -b --no-pager -n 200
+systemctl is-enabled <unit-name>.service
+systemctl cat <unit-name>.service
+```
+
+> ⚠️ Do NOT use `argo_wait_workflow` — it issues a blocking MCP call that times out before most workflows complete. Use `argo_get_workflow` to poll.
+
+### Stale image gotcha
+
+If the containerdisk was built before a recent PR merged, new files from that PR won't be present even though they're in the source. Always cross-check:
+
+```bash
+# Check when the current testing image was built
+skopeo inspect docker://ghcr.io/projectbluefin/bluefin:testing | jq '.Created'
+
+# Cross-check: when did the PR that added the file merge?
+gh pr view <N> --repo projectbluefin/common --json mergedAt
+```
+
+If the containerdisk predates the PR, the lab baseline is stale. Wait for a rebuild (nightly at 02:00 UTC) or note it clearly in the report.
+
+---
+
+## Baseline vs delta methodology for PR review
+
+> Moved from `pr-review.md` on 2026-06-24. The baseline-vs-delta methodology and worked examples live here because they require lab infrastructure context.
+
+**Always establish a baseline before the PR merges.** Boot the current testing image, record the state of the units/files the PR touches, then re-verify after rebuild. This catches unintended regressions and confirms all new artifacts landed.
+
+**Step 1 — collect baseline** (pre-merge, on current testing image):
+
+```bash
+# For a systemd unit PR — capture current state of every touched unit/file
+systemctl cat uupd.timer 2>/dev/null || echo "MISSING"
+systemctl cat uupd.service 2>/dev/null || echo "MISSING"
+cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf 2>/dev/null || echo "MISSING"
+cat /usr/lib/udev/rules.d/99-uupd-on-ac.rules 2>/dev/null || echo "MISSING"
+systemctl cat uupd-on-ac.service 2>/dev/null || echo "MISSING"
+```
+
+**Step 2 — merge PR, wait for rebuild** (`bluefin:testing` rebuilds automatically on push to main)
+
+**Step 3 — verify delta** (post-merge, on new testing image):
+
+```bash
+# Confirm every expected artifact is present and has the right content
+systemctl cat uupd.timer          # check OnCalendar value
+systemctl cat uupd.service        # should still be static (no [Install])
+systemctl is-enabled uupd.timer   # should still be enabled
+cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf  # new drop-in
+cat /usr/lib/udev/rules.d/99-uupd-on-ac.rules               # new udev rule
+systemctl cat uupd-on-ac.service                             # new unit
+```
+
+### Worked example — PR #768 (uupd AC-aware scheduling)
+
+**Baseline state** (bluefin:testing before PR, workflow `pr768-uupd-baseline-lxknq`):
+
+| Artifact | Baseline state |
+|---|---|
+| `uupd.timer` | **Exists** — daily at 04:00, `Persistent=true`, `RandomizedDelaySec=15m` |
+| `uupd.service` | Exists, static (no `[Install]`), timer-driven — correct |
+| `uupd.service.d/10-bluefin.conf` | **MISSING** — PR adds it |
+| `99-uupd-on-ac.rules` | **MISSING** — PR adds it |
+| `uupd-on-ac.service` | **MISSING** — PR adds it |
+| `uupd-manual.service` | Exists, untouched by PR |
+| `ConditionACPower=` on uupd.service | **Absent** — drop-in adds it |
+
+PR #768 **replaces** the existing daily timer with a 6h schedule — this is a deliberate behavior change, not an error. Knowing the baseline prevents false-alarming on "timer changed".
+
+**Post-merge verification checklist for PR #768:**
+
+```bash
+# 1. Timer fires every 6h
+systemctl cat uupd.timer | grep OnCalendar
+# expected: OnCalendar=*-*-* 00,06,12,18:00
+
+# 2. Drop-in adds ConditionACPower
+cat /usr/lib/systemd/system/uupd.service.d/10-bluefin.conf | grep ConditionACPower
+# expected: ConditionACPower=true
+
+# 3. udev rule present
+ls -la /usr/lib/udev/rules.d/99-uupd-on-ac.rules
+
+# 4. AC-triggered unit present
+systemctl cat uupd-on-ac.service
+
+# 5. Timer still enabled, uupd.service still static
+systemctl is-enabled uupd.timer       # enabled
+systemctl cat uupd.service | grep '\[Install\]'  # should be absent (timer-driven)
+```
+
+### Worked example — PR #769 (NVIDIA flatpak runtime sync)
+
+**Baseline state** (bluefin:testing non-nvidia, workflow `pr769-nvidia-check-thx78`):
+
+| Artifact | Baseline state |
+|---|---|
+| `ublue-nvidia-flatpak-runtime-sync.service` | **ABSENT** — nvidia overlay not applied to non-nvidia image |
+| `/sys/module/nvidia/version` | **NOT FOUND** — correct for QEMU |
+| nvidia units in `systemctl --failed` | None |
+
+**Verdict:** Green baseline. The service's `ConditionPathExists=/sys/module/nvidia/version` means PR changes (`TimeoutStartSec` 600→900, added `flatpak update`) are completely inert on non-nvidia images. Zero regression risk to non-nvidia users.
+
+> ⚠️ **NVIDIA post-merge testing requires an nvidia image variant.** The non-nvidia baseline only confirms the service is absent as expected. To verify the actual changes landed, use a bluefin-dx or other nvidia-enabled image — see the nvidia section below.
+
+**Post-merge verification checklist for PR #769** (must run on a **nvidia image build**, not baseline non-nvidia):
+
+```bash
+# 1. TimeoutStartSec bumped to 900
+systemctl cat ublue-nvidia-flatpak-runtime-sync.service | grep TimeoutStartSec
+# expected: TimeoutStartSec=900
+
+# 2. flatpak update step present in the sync script
+grep "flatpak update" /usr/libexec/ublue-nvidia-flatpak-runtime-sync
+# expected: at least one match
+
+# 3. Service not in failed state on first boot with nvidia
+systemctl --failed | grep nvidia
+# expected: no output
+```
+
+### Worked example — PR #767 (flatpak appstream every-boot)
+
+**Baseline state** (bluefin:testing, 3 workflows, all Succeeded):
+
+| Artifact | Baseline state |
+|---|---|
+| `flatpak-appstream-firstboot.service` | Exists, unit file matches pre-PR content |
+| `systemctl is-enabled flatpak-appstream-firstboot.service` | **`disabled`** — no want symlink anywhere |
+| Journal for the service | `-- No entries --` — never ran at boot |
+| `ConditionPathExists=!/var/lib/flatpak/.appstream-refreshed` | Present (firstboot guard, PR removes it) |
+| `ExecStartPost=/bin/touch ...` | Present (flag file creator, PR removes it) |
+| `StartLimitBurst=3` location | In `[Service]` — misplaced (PR correctly moves to `[Unit]`) |
+| `/var/lib/flatpak/.appstream-refreshed` flag file | Absent (fresh VM — correct) |
+| Preset `02-flatpak-appstream-firstboot.preset` | In repo source, but **not yet active** in this image build |
+
+**Critical finding:** The service is **disabled** in the current testing image. The preset file exists in the repo but the image was built before it merged — so neither the old firstboot-only behavior nor the new every-boot behavior is active or verifiable yet. A clean lab boot here produces no journal output and no failures, but it is entirely a no-op — not a green signal.
+
+**Open question for PR author:** Is the preset landing in the same PR? If not, the every-boot behavior won't activate until a subsequent build includes the preset.
+
+**Post-merge verification checklist for PR #767** (requires a rebuilt image that includes the preset):
+
+```bash
+# 1. Service is now enabled
+systemctl is-enabled flatpak-appstream-firstboot.service
+# expected: enabled
+
+# 2. Firstboot guard removed — no ConditionPathExists line
+systemctl cat flatpak-appstream-firstboot.service | grep ConditionPathExists
+# expected: no output
+
+# 3. StartLimitBurst in [Unit] not [Service]
+systemctl cat flatpak-appstream-firstboot.service
+# expected: StartLimitBurst=3 appears after [Unit] header, not after [Service] header
+
+# 4. WantedBy target confirmed (verify graphical.target issue was addressed)
+systemctl cat flatpak-appstream-firstboot.service | grep WantedBy
+# expected: WantedBy=multi-user.target
+
+# 5. Service ran this boot
+journalctl -u flatpak-appstream-firstboot.service -b
+# expected: entries showing appstream refresh
+
+# 6. No flag file created (every-boot, not one-shot)
+ls /var/lib/flatpak/.appstream-refreshed 2>/dev/null && echo "EXISTS" || echo "absent (correct)"
+# expected: absent (correct)
+```
+
+---
+
 ## Relationship to GitHub Actions E2E
 
 Lab tests and GitHub Actions E2E are complementary, not redundant:

@@ -37,7 +37,9 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [workflow-map.md](workflow-map.md) | What each `common` GitHub workflow is for — validation, E2E, release, and factory-policy boundaries |
 | [e2e-ci.md](e2e-ci.md) | Pre/post-merge and promotion-candidate E2E CI for common — composed PR gate, testing-stream smoke/common checks, masked brew setup, quarantined scenarios |
 | [lab-testing.md](lab-testing.md) | KubeVirt lab testing on ghost — how to boot bluefin, lts, and dakota, collect systemd journal logs, and verify common-layer changes before promotion |
-| [ci-tooling.md](ci-tooling.md) | Pre-commit floating-tag guard, SHA pinning, Renovate OCI digest tracking, Trivy archive scan pattern, multi-arch build matrix, release-state.yaml schema validation |
+| [ci-tooling.md](ci-tooling.md) | CI policy and config — pre-commit floating-tag guard, SHA pinning, skill-drift workflow, Renovate OCI digest tracking, Trivy scan pattern, multi-arch build matrix, shellcheck CI config, release-state.yaml schema validation |
+| [ci-pitfalls.md](ci-pitfalls.md) | CI incident log — branch-from-target, consumer PR format, caller permissions starvation, workflow_run name matching, merge_group sarif, Renovate automerge, buildah storage, ruleset check names, app token scoping |
+| [shell-scripts.md](shell-scripts.md) | Shell script authoring and testability — removing a script (4 touch-points), bats mocking, env-var override idiom, PATH-stub mocking, shellcheck pitfalls, XDG isolation, idempotent main guard |
 | [onboarding.md](onboarding.md) | Verified setup commands, correct pip/npm flags, and PR branch targets for all projectbluefin repos |
 | [submodule-boundary.md](submodule-boundary.md) | What is/isn't editable in this repo — `system_files/shared/` is directly tracked here (edit freely), `system_files/bluefin/` is Bluefin-specific |
 | [dconf-consistency.md](dconf-consistency.md) | GSettings override ↔ dconf lock file parity rules — must edit both files together for locked settings |
@@ -48,6 +50,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [containerfile.md](containerfile.md) | Containerfile build structure — multi-stage build, wallpaper source caveat, ujust completion generation, SHA verification pattern, `just overlay` local testing |
 | [skill-drift.md](skill-drift.md) | How the skill-drift CI check works — path mapping, what counts as a satisfying update, waiver process |
 | [human-gates.md](human-gates.md) | The 4 decision gates (Design/Security/Breakage/Merge) — when to stop, how to signal, verification evidence requirement |
+| [context7.md](context7.md) | Context7 mandatory first-lookup policy — the lookup pattern (`resolve-library-id` → `get-library-docs`), what counts as using a tool, known library IDs, recording sources in skill frontmatter |
 | [skill-improvement.md](skill-improvement.md) | The skill-improvement mandate — checklist, what counts as a learning, cross-repo routing |
 | [bonedigger.md](bonedigger.md) | bonedigger + kubestellar-bot — the full self-improvement loop, ujust report, priority escalation, template sync |
 | [hive.md](hive.md) | Hive system architecture — bonedigger/kubestellar-bot/hive triangle, label taxonomy, sync schedule, finding work |
@@ -55,7 +58,7 @@ Agent-specific instruction files (`.github/copilot-instructions.md`, `AGENTS.md`
 | [discord-chatops.md](discord-chatops.md) | Discord ChatOps — Botkube on ghost k3s, mcp-discord MCP server, #factory/#releases channel layout, release thread format, RBAC model, secrets policy, implementation task order |
 | [factory-onboarding.md](factory-onboarding.md) | How to onboard a repo into the factory model — two-output rule, banned anti-patterns (no changelog files), skill-drift CI wiring, AGENTS.md mandate |
 | [nvidia.md](nvidia.md) | NVIDIA GPU support — CDI architecture, per-repo nvidia stacks, NGC container ecosystem, driver/toolkit update procedures, known constraints |
-| [pr-review.md](pr-review.md) | PR reviewer's guide — PR type taxonomy, per-type review checklists, lab testing guide, CI gate interpretation, ghost-lab requeue, OEM hook review pattern, test quality checklist |
+| [pr-review.md](pr-review.md) | PR reviewer's guide — PR type taxonomy, per-type review checklists, CI gate interpretation, ghost-lab requeue, OEM hook review pattern, test quality checklist, report template (lab methodology in lab-testing.md) |
 | [bazaar.md](bazaar.md) | Bazaar operations in common — curated schema migration, file ownership, local preview loop (`just bazaar-preview`), and hook/config validation |
 
 ## Agent instruction files (not skills — loaded separately by tool)

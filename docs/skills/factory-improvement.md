@@ -230,7 +230,7 @@ All 7 automation phases deployed. The audit directory has been removed. Key outc
 
 ## Known CI Pitfalls (2026-06-11)
 
-Three patterns that have caused silent CI failures or `startup_failure` across factory repos. See [`docs/skills/ci-tooling.md`](ci-tooling.md) for full detail and code examples.
+Three patterns that have caused silent CI failures or `startup_failure` across factory repos. See [`docs/skills/ci-pitfalls.md`](ci-pitfalls.md) for full detail and code examples.
 
 | Pitfall | Symptom | Fix |
 |---|---|---|

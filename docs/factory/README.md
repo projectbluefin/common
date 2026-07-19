@@ -10,7 +10,7 @@ This directory is the org-level entry point for agents and maintainers working a
 
 Project Bluefin aims to be the most sophisticated CNCF showcase of cloud-native operating systems built with bootc. The factory is an **agentic CI/CD organism**: agents implement, humans set direction. Manual orchestration is treated as a reliability tax — every manual step that *can* be automated *will* be, every automated step must self-heal, and every remaining human gate is intentional and named in [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
-New workflows must self-heal: retry on transient failures, fast-fail on bad tokens, no silent skips. See [`docs/skills/ci-tooling.md`](../skills/ci-tooling.md) for known pitfalls.
+New workflows must self-heal: retry on transient failures, fast-fail on bad tokens, no silent skips. See [`docs/skills/ci-pitfalls.md`](../skills/ci-pitfalls.md) for known pitfalls and [`docs/skills/ci-tooling.md`](../skills/ci-tooling.md) for CI policy and config.
 
 ## Reference read order
 

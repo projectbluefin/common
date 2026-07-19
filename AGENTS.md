@@ -8,7 +8,7 @@
 >
 > Manual orchestration is a reliability tax. Project Bluefin is an agentic OS factory and a CNCF showcase of cloud-native operating systems built with bootc — every step that does not require human accountability is automated, and every automated step must self-heal. Agents implement; humans set direction.
 >
-> See the [org-wide AGENTS.md](https://github.com/projectbluefin/.github/blob/main/AGENTS.md) for the full operating model and [`docs/factory/automation-audit/`](docs/factory/automation-audit/README.md) for the live automation coverage.
+> See the [org-wide AGENTS.md](https://github.com/projectbluefin/.github/blob/main/AGENTS.md) for the full operating model.
 
 **bluefin-common** is the shared OCI layer consumed by all Bluefin image variants. Changes here propagate to `bluefin`, `bluefin-lts`, and `dakota`. Stay surgical.
 
@@ -45,10 +45,11 @@ You are an agent in this loop. Your work compounds. See [`docs/skills/hive.md`](
 > Training data is stale. bootc, cosign, skopeo, buildah, ostree, rpm-ostree, just, GitHub Actions — every tool has live, authoritative docs.
 > Pattern: `resolve-library-id` → `get-library-docs` → implement → cite the doc.
 > Flag-hunting and trial-and-error are banned. If the answer is in the docs, find it there.
+> Full policy, the lookup pattern, and known library IDs: [`docs/skills/context7.md`](docs/skills/context7.md).
 
 ```
 1. docs/SKILL.md              # find the skill for your task
-2. Context7: resolve the tool's library ID, read its docs, then act
+2. Context7: resolve the tool's library ID, read its docs, then act — see docs/skills/context7.md
 3. docs/factory/agentic-model.md  # cross-repo rules if working across repos
 4. just check && pre-commit run --all-files  # before every commit
 ```

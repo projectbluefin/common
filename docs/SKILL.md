@@ -31,6 +31,7 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 | Touch any image reference or registry path | `docs/skills/image-registry.md` |
 | Modify the Containerfile or add a new binary | `docs/skills/containerfile.md` |
 | **Build, CI, and release (this repo)** | |
+| Look up any external tool's docs before using it (Context7 policy) | `docs/skills/context7.md` |
 | Change `.github/workflows/` | `docs/skills/ci-tooling.md` + `docs/skills/workflow-map.md` |
 | Understand what each workflow does | `docs/skills/workflow-map.md` |
 | Work on E2E test changes | `docs/skills/e2e-ci.md` |
@@ -57,9 +58,9 @@ Agent entry point for `projectbluefin/common`. Load only the skill(s) that match
 
 All files in `docs/skills/` are community-maintained operational knowledge. They live in this repo so any contributor can update them with a direct push to `main` (doc-only exception applies).
 
-**When to update a skill:** any time a session surfaces a workaround, non-obvious pattern, or convention. See [`docs/skills/skill-improvement.md`](skills/skill-improvement.md) for the full mandate and checklist.
+**When to update a skill:** any time a session surfaces a workaround, non-obvious pattern, or convention. See [`skill-improvement.md`](skills/skill-improvement.md) for the full mandate and checklist.
 
-For the full catalog of all skill files with descriptions, see [`docs/skills/INDEX.md`](skills/INDEX.md).
+For the full catalog of all skill files with descriptions, see [`INDEX.md`](skills/INDEX.md).
 
 ## Scope rules
 
