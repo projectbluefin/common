@@ -48,13 +48,14 @@ Per the freedesktop.org MIME-Apps specification, default applications are resolv
 | `application/vnd.appimage` | `noop.desktop` | intentionally no-op |
 | `application/vnd.flatpak.ref` | `io.github.kolunmi.Bazaar.desktop` | Flatpak ref installer |
 | `image/*` (png, jpeg, gif, webp, svg+xml, bmp, tiff, avif, heic, jxl) | `org.gnome.Loupe.desktop` | shipped OOTB |
+| `video/*` (mp4, webm, x-matroska, quicktime, mpeg, ogg, 3gpp, mp2t, x-flv, x-m4v, x-msvideo, x-ms-wmv) | `org.gnome.Showtime.desktop` | shipped OOTB |
 
 ## Testsuite alignment
 
 `projectbluefin/testsuite/tests/smoke/features/xdg_open.feature` validates defaults via `xdg-mime query default`. Step implementations in `tests/smoke/features/steps/steps.py` whitelist acceptable desktop files:
 
 - Image viewers: `org.gnome.Loupe.desktop`, `eog.desktop`, `gthumb.desktop`, `shotwell.desktop`
-- Video players: `io.github.celluloid_player.Celluloid.desktop`, `totem.desktop`, `vlc.desktop`, `mpv.desktop`
+- Video players: `org.gnome.Showtime.desktop`, `io.github.celluloid_player.Celluloid.desktop`, `totem.desktop`, `vlc.desktop`, `mpv.desktop`
 
 A default entry only satisfies the test if its desktop ID is in the matching whitelist. `xdg-mime`/gio also skips defaults whose `.desktop` file is absent, so the Flatpak must be seeded in the test VM for the query to return the expected ID.
 
