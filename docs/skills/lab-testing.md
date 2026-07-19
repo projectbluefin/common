@@ -272,6 +272,20 @@ The `collect-logs` step runs:
 **Anything else in `systemctl --failed`** = real bug in the image or common layer.
 File an issue in the owning repo (`common`, `bluefin`, `bluefin-lts`, or `dakota`).
 
+## Ghostlab verification for Bluefin PR reviews
+
+For Bluefin PR reviews, the reviewer should treat a ghostlab PR test as part of the verification evidence before sign-off. This is especially important for PRs that change boot behavior, services, GNOME desktop integration, OEM hooks, or shipped system artifacts.
+
+Use the PR-specific composed image when possible. The goal is to verify the PR’s own changes, not just the current `:testing` baseline. The minimum evidence for a review sign-off is:
+
+- VM boots from the PR image
+- `systemctl --failed` is empty or only shows known QEMU noise
+- changed units/services are present and enabled as intended
+- changed desktop or GNOME behavior is visible/functional in the VM
+- no new journal warnings/errors appear that would indicate a regression
+
+If the PR-specific ghostlab run is blocked, stale, or unavailable, record that explicitly in the review notes and do not treat CI-only green as sufficient verification.
+
 ## Relationship to GitHub Actions E2E
 
 Lab tests and GitHub Actions E2E are complementary, not redundant:
