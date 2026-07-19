@@ -31,7 +31,7 @@ metadata:
 The Containerfile uses three named stages:
 
 ```
-FROM golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS motd-build
+FROM golang:alpine@sha256:9097beb5536220f7857bdcb65c1b4b340630dd7a70b85f03d5af29640b06693d AS motd-build
   └─ git clone projectbluefin/motd@v0.2.1
   └─ go build -ldflags="-s -w" -o /umotd
 
