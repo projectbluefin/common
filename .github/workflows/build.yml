@@ -99,7 +99,7 @@ jobs:
             "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
       - name: Promote image to root storage for push
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         shell: bash
         run: |
           set -eoux pipefail
@@ -121,7 +121,7 @@ jobs:
 
       - name: Push image
         id: push
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: projectbluefin/actions/bootc-build/push-image@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
@@ -129,14 +129,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write digest to file
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         shell: bash
         run: |
           mkdir -p /tmp/digests
           echo "${{ steps.push.outputs.digest }}" > "/tmp/digests/${{ matrix.arch_suffix }}.txt"
 
       - name: Upload digest
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: digest-${{ matrix.arch_suffix }}
@@ -147,7 +147,7 @@ jobs:
   manifest:
     name: Create and sign multi-arch manifest
     needs: [build_push]
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
     runs-on: ubuntu-24.04
     permissions:
       packages: write

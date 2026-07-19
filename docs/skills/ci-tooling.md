@@ -817,6 +817,17 @@ The ephemeral `gh-readonly-queue/...` refs are not resolvable by `upload-sarif`.
 
 *Observed: blocked every PR in the merge queue until fixed in common #660.*
 
+**Follow-up trap (common #826):** #660 skipped only the export/scan steps, but
+`Promote image to root storage`, `Push image`, `Write digest to file`,
+`Upload digest`, and the `manifest` job all ran on `!= 'pull_request'` — which
+includes `merge_group`. The promote step then read the never-exported
+`/tmp/scan-image.tar` and failed, silently ejecting every queue entry for two
+weeks. **Rule: the merge queue lane is build-only.** Any step that consumes an
+artifact from a step skipped in `merge_group`, or that pushes/signs/tags, must
+carry `github.event_name != 'pull_request' && github.event_name != 'merge_group'`.
+When adding a step to `build.yml`, trace which lanes (`pull_request`,
+`merge_group`, `push`) produce every file it reads.
+
 ---
 
 ## Renovate automerge — how it works in `common`
