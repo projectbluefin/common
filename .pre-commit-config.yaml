@@ -37,3 +37,21 @@ repos:
         language: pygrep
         entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
         exclude: '\.pre-commit-config\.yaml$'
+      - id: check-skill-frontmatter
+        name: Validate skill front-matter
+        language: system
+        entry: bash scripts/check-skill-frontmatter.sh
+        pass_filenames: false
+        always_run: true
+      - id: check-skill-index
+        name: Validate docs/SKILL.md skill index
+        language: system
+        entry: bash scripts/check-skill-index.sh
+        pass_filenames: false
+        always_run: true
+      - id: check-doc-links
+        name: Validate internal markdown links
+        language: system
+        entry: python3 scripts/check-doc-links.sh
+        pass_filenames: false
+        always_run: true

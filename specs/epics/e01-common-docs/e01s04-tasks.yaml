@@ -1,0 +1,39 @@
+---
+story_id: e01s04
+title: Add docs-hygiene pre-commit checks
+status: passing
+bcps: 3
+tasks:
+  - id: 1
+    description: Refine scripts/check-skill-frontmatter.sh
+    verify: >-
+      bash scripts/check-skill-frontmatter.sh >/dev/null 2>&1 && echo OK
+    risk: P1
+    status: passing
+  - id: 2
+    description: Create scripts/check-skill-index.sh to validate docs/SKILL.md against docs/skills/*.md
+    verify: >-
+      bash scripts/check-skill-index.sh >/dev/null 2>&1 && echo OK
+    risk: P2
+    status: passing
+  - id: 3
+    description: Create scripts/check-doc-links.sh to validate internal markdown links
+    verify: >-
+      python3 scripts/check-doc-links.sh >/dev/null 2>&1 && echo OK
+    risk: P2
+    status: passing
+  - id: 4
+    description: Wire the three scripts into .pre-commit-config.yaml as local hooks
+    verify: >-
+      grep -q 'check-skill-frontmatter' .pre-commit-config.yaml &&
+      grep -q 'check-skill-index' .pre-commit-config.yaml &&
+      grep -q 'check-doc-links' .pre-commit-config.yaml && echo OK
+    risk: P1
+    status: passing
+  - id: 5
+    description: Run just check and pre-commit run --all-files
+    verify: >-
+      just check >/dev/null 2>&1 &&
+      pre-commit run --all-files >/dev/null 2>&1 && echo OK
+    risk: P1
+    status: passing

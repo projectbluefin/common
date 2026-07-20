@@ -68,8 +68,8 @@ A short pstore snippet, kdump backtrace, or gist link is enough to connect a rep
 
 Hardware test reports enter the factory lifecycle queue and become promotion input once triaged.
 
-- Lifecycle: [`docs/skills/label-workflow.md`](./skills/label-workflow.md)
+- Lifecycle: [`docs/skills/label-workflow.md`](./label-workflow.md)
 - Lifecycle workflow: [`.github/workflows/lifecycle.yml`](../.github/workflows/lifecycle.yml)
-- Lifecycle background: [`docs/skills/governance.md`](./skills/governance.md)
+- Lifecycle background: [`docs/skills/governance.md`](./governance.md)
 
 Real hardware testing does not replace CI. It closes the visibility gap for bug classes that CI running in VMs cannot see.

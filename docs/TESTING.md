@@ -45,7 +45,7 @@ system boundaries.
 
 ## Bats patterns and testability idioms
 
-Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](docs/skills/shell-scripts.md).
+Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](skills/shell-scripts.md).
 
 ## Exemptions
 
