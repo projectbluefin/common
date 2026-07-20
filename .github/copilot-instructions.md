@@ -2,21 +2,15 @@
 
 ## 🚫 ABSOLUTE PROHIBITION — ublue-os org
 
-**NEVER create issues, PRs, comments, forks, webhook calls, automated reports, or any programmatic write action targeting any `ublue-os/*` repository.** Reads only. Violating this risks banning the projectbluefin org from GitHub.
-
-If a task requires `ublue-os` write access → **stop and tell the human to report it manually.**
-
----
+**NEVER write to any `ublue-os/*` repository.** Read-only `gh api` calls are
+allowed. If a task requires `ublue-os` write access, stop and tell the human.
 
 ## Operating contract
 
-**Read [`AGENTS.md`](../AGENTS.md) for the full operating contract** — issue lifecycle, PR rules, mandatory gates, repo layout, CODEOWNERS, build commands, scope discipline.
-
----
+Read [`AGENTS.md`](../AGENTS.md) for the full repo contract — build commands,
+PR rules, mandatory gates, and boundaries.
 
 ## Skill routing
 
-**Use [`docs/SKILL.md`](../docs/SKILL.md) as the task→skill router.** Find the skill doc that matches your task and load it before acting.
-
-All skill docs live in [`docs/skills/`](../docs/skills/).
-Factory context lives in [`docs/factory/`](../docs/factory/).
+Use [`docs/SKILL.md`](../docs/SKILL.md) to find the skill for your task, then
+load only that skill file from [`docs/skills/`](../docs/skills/).

@@ -1,0 +1,14 @@
+---
+session:
+  active_flow: execute-plan
+  active_epic: e01-common-docs
+  active_story: e01s01
+  project: projectbluefin/common
+git:
+  base_branch: main
+handoff:
+  next_skill: kickoff-branch
+  prev_skill: plan-work
+  note: >-
+    Audit complete; scope and epic created. First story: normalize agent entry
+    points (e01s01). Use kickoff-branch then execute tasks in order.

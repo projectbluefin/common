@@ -1,0 +1,31 @@
+---
+epic_id: e01
+slug: common-docs-overhaul
+title: Documentation overhaul and hygiene
+status: in-progress
+bcps: 15
+stories:
+  - id: e01s01
+    title: Normalize agent entry points
+    status: failing
+    bcps: 5
+  - id: e01s03
+    title: Normalize skill front-matter and add write-a-skill meta-skill
+    status: failing
+    bcps: 3
+    depends_on:
+      - e01s01
+  - id: e01s02
+    title: Consolidate testing, security, and contributor docs
+    status: failing
+    bcps: 4
+    depends_on:
+      - e01s01
+  - id: e01s04
+    title: Add docs-hygiene pre-commit checks
+    status: failing
+    bcps: 3
+    depends_on:
+      - e01s01
+      - e01s03
+      - e01s02

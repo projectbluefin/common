@@ -1,0 +1,12 @@
+---
+version: "2025.07.0"
+project: projectbluefin/common
+target_date: "2025-07-31"
+epics:
+  - id: e01
+    slug: common-docs-overhaul
+    title: Documentation overhaul and hygiene
+    wsjf: 8
+    bcps: 15
+    status: in-progress
+    depends_on: []

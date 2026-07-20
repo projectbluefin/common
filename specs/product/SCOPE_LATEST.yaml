@@ -1,0 +1,61 @@
+---
+feature_name: common-docs-overhaul
+core_value: >-
+  Make projectbluefin/common documentation the canonical, lazy-loaded agent
+  operating contract while removing duplication and adding lightweight hygiene
+  guards, so agents and humans find the right guidance without context bloat.
+summary: |
+  The repository's documentation has grown organically: `AGENTS.md` duplicates
+  cross-repo rules, `docs/SKILL.md` and `docs/skills/INDEX.md` split the skill
+  router, `docs/hardware-testing.md` and `docs/secrets-policy.md` live outside
+  the skill layer, and skill front-matter is inconsistent. This overhaul
+  consolidates entry points, normalizes the skill layer, moves misplaced docs
+  into `docs/skills/` and `docs/contributing/`, and introduces pre-commit-level
+  hygiene checks (front-matter, size budget, link freshness). The work is
+  intentionally bounded: it does not rewrite every skill body, rename
+  `AGENTS.md`, or migrate to per-skill directories.
+in_scope:
+  - Rewrite `AGENTS.md` into a short per-repo agent contract; keep filename uppercase.
+  - Merge `docs/skills/INDEX.md` into `docs/SKILL.md` as the single lazy-load router (<150 lines).
+  - Move `docs/hardware-testing.md` → `docs/skills/hardware-testing.md` with skill front-matter.
+  - Move `docs/secrets-policy.md` → `docs/skills/secrets-policy.md` and front-matter normalization.
+  - Move `.gemini/style-guide.md` content → `docs/contributing/style-guide.md`; replace `.gemini/style-guide.md` with a pointer.
+  - Trim `.github/copilot-instructions.md` to a thin pointer (`AGENTS.md` + `docs/SKILL.md`).
+  - Update `.github/pull_request_template.md` with skill/doc checkboxes.
+  - Normalize all `docs/skills/*.md` front-matter: required keys, description ≤256 chars, add missing front-matter to `discord-chatops.md`.
+  - Create `docs/skills/write-a-skill.md` meta-skill documenting authoring, front-matter, size-budget, linking, and verification rules.
+  - Move shell/BATS testing patterns from `docs/TESTING.md` into `docs/skills/shell-scripts.md`; keep `docs/TESTING.md` as a thin contract.
+  - Update all cross-references to deleted/moved paths (`INDEX.md`, `hardware-testing.md`, `secrets-policy.md`, `.gemini/style-guide.md`).
+  - Add lightweight docs-hygiene pre-commit hooks: front-matter schema, size budget (soft 200 / hard 500), `docs/SKILL.md` TOC freshness, markdown link check.
+  - Add verification sections or commands for project-internal facts referenced by changed docs.
+out_of_scope:
+  - Renaming `AGENTS.md` to lowercase `agents.md` — deferred until AAIF tooling expectation is proven; keep uppercase to avoid breaking loaders.
+  - Migrating flat `docs/skills/*.md` to per-skill directories — listed as future Phase E; not in this scope.
+  - Rewriting full bodies of existing skills beyond front-matter and link fixes.
+  - Changing image build logic, `Containerfile`, `system_files/`, or release workflows.
+  - Adding blocking GitHub Actions CI gates for process conventions; hygiene checks live in pre-commit only.
+  - Deprecating or changing the `skill-drift` concept; only update local references if a local workflow exists.
+constraints:
+  - Must follow `projectbluefin/common` `AGENTS.md`: doc-only changes in `docs/**` and `AGENTS.md` may push directly to `main`; `.github/` changes require a PR.
+  - One logical change per PR; no batching of unrelated refactors.
+  - Conventional Commits PR titles and commit messages.
+  - `just check` and `pre-commit run --all-files` must pass on every branch.
+  - No writes to `ublue-os/*` repositories.
+  - Existing oversized skills (`lab-testing.md` 906 lines) are grandfathered until per-skill directory migration; the new size gate applies to net-new/changed skills and warns on existing violators.
+success_criteria:
+  - All moved files are reachable from `docs/SKILL.md` and `AGENTS.md`.
+  - Internal markdown links are unbroken (`lychee docs/` or equivalent passes).
+  - `docs/SKILL.md` is under 150 lines and under 8 KB.
+  - Every `docs/skills/*.md` has valid front-matter with required keys and description ≤256 chars.
+  - `pre-commit run --all-files` passes on each branch.
+  - `just check` passes on each branch.
+  - `just test` passes if new shell scripts are added.
+  - Each PR uses a Conventional Commit title and includes AI attribution trailers.
+references:
+  - /tmp/common-docs-overhaul-plan.md
+  - specs/PLAN-AUDIT_LATEST.md
+  - docs/SKILL.md
+  - docs/skills/INDEX.md
+  - docs/skills/skill-improvement.md
+  - .github/copilot-instructions.md
+  - .github/pull_request_template.md

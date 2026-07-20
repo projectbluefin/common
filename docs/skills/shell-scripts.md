@@ -60,7 +60,7 @@ When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
 | `.github/workflows/unit-tests.yml` | The script path from the shellcheck `run:` block |
 | `.github/workflows/validate.yml` | The `shellcheck` step that invokes it (if script-specific) **and** any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
 | `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
-| `docs/skills/` | The script's skill file (if it has one) + its `INDEX.md` row + `SKILL.md` routing row + all cross-references |
+| `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and any related skill links + all cross-references |
 
 ### Dead apt step hazard
 

@@ -1,69 +1,65 @@
 # Common Skill Router
 
-Agent entry point for `projectbluefin/common`. Load only the skill(s) that match your task.
+Agent entry point for `projectbluefin/common`. Find the skill that matches
+your task, load only that skill, then act.
 
-> **Scope:** skills here cover work done *in this repo*. Repo-specific skills live in their home repo's `docs/skills/`.
-> - `projectbluefin/bluefin` → `bluefin/docs/skills/`
-> - `projectbluefin/dakota` → `dakota/docs/skills/`
-> - `projectbluefin/bluefin-lts` → `bluefin-lts/docs/skills/`
+## Read order
 
-## Task → Skill
+1. [`AGENTS.md`](../AGENTS.md) — repo contract, build commands, boundaries.
+2. This file — task→skill mapping.
+3. The skill file named in the table below.
+4. [`docs/factory/agentic-model.md`](factory/agentic-model.md) for cross-repo rules.
+
+## Skill index
 
 | I need to... | Load |
 |---|---|
-| **First time / onboarding** | |
-| Set up a new dev environment or clone a factory repo | `docs/skills/onboarding.md` |
-| Understand CODEOWNERS, triagers, or branch protection | `docs/skills/governance.md` |
-| **Session start** | |
-| Run hive priority review at session start | `docs/skills/hive-review.md` |
-| Understand cross-repo agent rules, branch targets, or sensitive paths | `docs/factory/agentic-model.md` |
-| Need to know when to stop and ask a human | `docs/skills/human-gates.md` |
-| **Issues and labels** | |
-| Understand the issue lifecycle or label taxonomy | `docs/skills/label-workflow.md` |
-| Check the PR queue or merge ruleset | `docs/skills/queue-dashboard.md` |
-| Review an incoming PR — checklists, lab tests, report | `docs/skills/pr-review.md` |
-| Understand the hive system / kubestellar-bot loop | `docs/skills/hive.md` |
-| Check on-call / hive state for the whole org | `docs/skills/hive.md` |
-| **Work in this repo — system_files/** | |
-| Change a GNOME setting or dconf key | `docs/skills/dconf-consistency.md` |
-| Work on Bazaar curated pages, config, or hooks | `docs/skills/bazaar.md` |
-| Understand what files are editable here vs submodule | `docs/skills/submodule-boundary.md` |
-| Touch any image reference or registry path | `docs/skills/image-registry.md` |
-| Modify the Containerfile or add a new binary | `docs/skills/containerfile.md` |
-| **Build, CI, and release (this repo)** | |
-| Look up any external tool's docs before using it (Context7 policy) | `docs/skills/context7.md` |
-| Change `.github/workflows/` | `docs/skills/ci-tooling.md` + `docs/skills/workflow-map.md` |
-| Understand what each workflow does | `docs/skills/workflow-map.md` |
-| Work on E2E test changes | `docs/skills/e2e-ci.md` |
-| Debug post-merge E2E CI, MOTD, or brew-setup masking | `docs/skills/e2e-ci.md` |
-| Understand the common release and promotion pipeline | `docs/skills/release-promotion.md` |
-| **QA** | |
-| Understand QA coverage, test matrix, or running tests | `docs/skills/qa.md` |
-| Submit a hardware test report | `docs/hardware-testing.md` |
-| **Factory health and improvement** | |
-| Understand factory topology, parity matrix, and org structure | `docs/factory/README.md` |
-| Improve the factory (gap audit, automation coverage) | `docs/skills/factory-improvement.md` |
-| Capture a factory gap or AI context blindspot as an issue | file GitHub issue with `kind/improvement` + `area/*` + optional `ai-context` — see `docs/skills/label-workflow.md` |
-| Work on the ACMM / factory maturity model | Current level: **3 (Instructed)** — see `docs/factory/README.md` |
-| Understand the bonedigger lifecycle bot | `docs/skills/bonedigger.md` |
-| Understand the skill-drift CI check | `docs/skills/skill-drift.md` |
-| Need to write a skill update / unsure what counts | `docs/skills/skill-improvement.md` |
-| **Discord and ChatOps** | |
-| Set up or manage the factory Discord server | `docs/skills/discord-chatops.md` |
-| Add a new repo to Discord failure notifications | `docs/skills/discord-chatops.md` |
-| Trigger a release from Discord | `docs/skills/discord-chatops.md` |
-| Use mcp-discord to manage channels/roles/webhooks | `docs/skills/discord-chatops.md` |
+| Set up a dev environment or clone a factory repo | [`onboarding.md`](skills/onboarding.md) |
+| Understand CODEOWNERS, triagers, or branch protection | [`governance.md`](skills/governance.md) |
+| Run hive priority review at session start | [`hive-review.md`](skills/hive-review.md) |
+| Understand cross-repo agent rules | [`factory/agentic-model.md`](factory/agentic-model.md) |
+| Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
+| Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
+| Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
+| Review an incoming PR | [`pr-review.md`](skills/pr-review.md) |
+| Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
+| Improve factory automation or audit gaps | [`factory-improvement.md`](skills/factory-improvement.md) |
+| Onboard a new repo into the factory | [`factory-onboarding.md`](skills/factory-onboarding.md) |
+| Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
+| Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |
+| Edit `system_files/shared/`, `bluefin/`, or `nvidia/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
+| Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
+| Modify the `Containerfile` or add a binary | [`containerfile.md`](skills/containerfile.md) |
+| Use Context7 to look up external tools | [`context7.md`](skills/context7.md) |
+| Change `.github/workflows/` | [`ci-tooling.md`](skills/ci-tooling.md) + [`workflow-map.md`](skills/workflow-map.md) |
+| Debug a CI failure | [`ci-pitfalls.md`](skills/ci-pitfalls.md) |
+| Work on E2E test changes | [`e2e-ci.md`](skills/e2e-ci.md) |
+| Understand release / promotion | [`release-promotion.md`](skills/release-promotion.md) |
+| Understand QA coverage or run tests | [`qa.md`](skills/qa.md) |
+| Submit a hardware test report | [`hardware-testing.md`](skills/hardware-testing.md) |
+| Write or test shell scripts | [`shell-scripts.md`](skills/shell-scripts.md) |
+| Work on brew / preinstall packages | [`brew-lifecycle.md`](skills/brew-lifecycle.md) |
+| Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
+| Work with bootc | [`bootc.md`](skills/bootc.md) |
+| Work with NVIDIA GPU support | [`nvidia.md`](skills/nvidia.md) |
+| Work with OEM first-boot hooks | [`oem-hardware-hooks.md`](skills/oem-hardware-hooks.md) |
+| Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
+| Understand skill-drift CI check | [`skill-drift.md`](skills/skill-drift.md) |
+| Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |
+| Author a new skill | [`write-a-skill.md`](skills/write-a-skill.md) |
+| Understand bonedigger lifecycle | [`bonedigger.md`](skills/bonedigger.md) |
+| Use Discord ChatOps / Botkube | [`discord-chatops.md`](skills/discord-chatops.md) |
+| Handle secrets / Botkube RBAC | [`secrets-policy.md`](skills/secrets-policy.md) |
+| Understand factory topology | [`factory/README.md`](factory/README.md) |
 
-## Improving skill docs
+## How to load a skill
 
-All files in `docs/skills/` are community-maintained operational knowledge. They live in this repo so any contributor can update them with a direct push to `main` (doc-only exception applies).
+Read the skill file's front-matter first. If `description` and `tags` match
+your task, read the body. If the topic spans multiple repos, the local skill
+links to `projectbluefin/actions` or `docs/factory/` — follow the link rather
+than duplicating facts.
 
-**When to update a skill:** any time a session surfaces a workaround, non-obvious pattern, or convention. See [`skill-improvement.md`](skills/skill-improvement.md) for the full mandate and checklist.
+## Writing skills
 
-For the full catalog of all skill files with descriptions, see [`INDEX.md`](skills/INDEX.md).
-
-## Scope rules
-
-- **Doc tasks**: modify only `docs/` and `AGENTS.md`. Do not create `.github/` workflow files unless the task is explicitly CI work.
-- **CI tasks**: touch only `.github/` and update `docs/skills/` if learnings arise.
-- **Changes here propagate to all downstream Bluefin variants.** Keep changes surgical.
+- [`skill-improvement.md`](skills/skill-improvement.md) — when and why to update skills.
+- [`write-a-skill.md`](skills/write-a-skill.md) — authoring, front-matter, size budget, and linking rules.

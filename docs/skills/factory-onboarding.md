@@ -52,7 +52,7 @@ Every repo needs a `docs/skills/` directory. This is the knowledge base. Agents 
 
 Minimum files:
 - `skill-improvement.md` — the two-output rule adapted for this repo
-- `INDEX.md` — what each skill file covers
+- `docs/SKILL.md` — task→skill router and index
 
 Reference: [`projectbluefin/common/docs/skills/`](https://github.com/projectbluefin/common/blob/main/docs/skills/)
 
@@ -108,7 +108,7 @@ Before marking work done:
 
 ## Done When
 
-- [ ] `docs/skills/` exists with `skill-improvement.md` and `INDEX.md`
+- [ ] `docs/skills/` exists with `skill-improvement.md` and `docs/SKILL.md` task router
 - [ ] `skill-drift.yml` wired and passing
 - [ ] `AGENTS.md` includes self-improvement mandate and banned list
 - [ ] No changelog files in the repo

@@ -1,15 +1,13 @@
-<!--
-## Thank you for contributing
+# bluefin-common PR
 
-Please [read the README](../README.md) and ensure your change goes to the correct directory.
+## What does this change?
 
-### Changes related to Bluefin
-If your change is gnome or bluefin change, make sure you put the change under the  system_files/bluefin/ folder.
+<!-- Required: one sentence -->
 
-## Global changes
-Global changes that are not GNOME-specific should go in the `system_files/shared/` folder. This is also used by [Aurora](https://github.com/ublue-os/aurora), so ensure no GNOME-related changes end up here.
+## Why?
 
--->
+<!-- Link the issue this closes: "Closes #NNN" -->
+Closes #
 
 ## PR pipeline
 
@@ -22,17 +20,19 @@ opened ──▶ review ──▶ approved ──▶ merged
 > Add `do-not-merge` at any time to block automation.
 > `/approve` or `lgtm` from a maintainer triggers merge queue.
 
-## What does this change?
-
-<!-- Required: one sentence -->
-
-## Why?
-
-<!-- Link the issue this closes: "Closes #NNN" -->
-Closes #
-
 ## Checklist
 
+- [ ] PR title follows Conventional Commits (`fix:`, `feat:`, `docs:`, `ci:`, `refactor:`, etc.)
 - [ ] `just check` passes
 - [ ] `pre-commit run --all-files` passes
-- [ ] PR title follows Conventional Commits (`fix:`, `feat:`, `chore:`, etc.)
+- [ ] Skill doc updated if the change affects agent-facing conventions or behavior (see `docs/skills/skill-improvement.md`)
+- [ ] `AGENTS.md` / `docs/SKILL.md` / `docs/skills/` links remain valid
+- [ ] CI is green after push: `gh run list --repo projectbluefin/common --limit 5`
+
+## AI attribution
+
+If this PR includes AI-authored commits, include both trailers:
+```
+Assisted-by: <Model> via GitHub Copilot
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```

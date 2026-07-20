@@ -61,7 +61,7 @@ Use this when the check fires and you need to know which skill to update:
 | `elements/**` (dakota) | matching `dakota-*.md` skill |
 | `.github/CODEOWNERS` | `governance.md` |
 
-Not sure? Check `docs/skills/INDEX.md`.
+Not sure? Check `docs/SKILL.md` for the task→skill router.
 
 ---
 

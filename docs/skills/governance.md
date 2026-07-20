@@ -117,7 +117,7 @@ git commit -m "docs: ..."
 git push origin main
 ```
 
-This includes skill updates, INDEX.md, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`.
+This includes skill updates, `docs/SKILL.md` changes, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`.
 
 ## Lifecycle automation
 

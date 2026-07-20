@@ -1,0 +1,46 @@
+---
+story_id: e01s01
+title: Normalize agent entry points
+status: failing
+bcps: 5
+tasks:
+  - id: 1
+    description: Rewrite AGENTS.md as concise per-repo agent contract
+    verify: >-
+      test -f AGENTS.md &&
+      wc -l AGENTS.md | awk '$1<=200{print "OK"; exit} {print "FAIL"; exit 1}'
+    risk: P1
+    status: failing
+  - id: 2
+    description: Merge docs/skills/INDEX.md into docs/SKILL.md and delete INDEX.md
+    verify: >-
+      test ! -f docs/skills/INDEX.md &&
+      wc -l docs/SKILL.md | awk '$1<=150{print "OK"; exit} {print "FAIL"; exit 1}'
+    risk: P1
+    status: failing
+  - id: 3
+    description: Trim .github/copilot-instructions.md to a thin pointer
+    verify: >-
+      wc -l .github/copilot-instructions.md |
+      awk '$1<=40{print "OK"; exit} {print "FAIL"; exit 1}'
+    risk: P2
+    status: failing
+  - id: 4
+    description: Update .github/pull_request_template.md with skill/doc checkboxes
+    verify: >-
+      grep -qE 'skill|AGENTS|docs/SKILL' .github/pull_request_template.md && echo OK
+    risk: P2
+    status: failing
+  - id: 5
+    description: Remove stale references to docs/skills/INDEX.md
+    verify: >-
+      grep -R 'docs/skills/INDEX.md' docs .github 2>/dev/null && echo FAIL || echo OK
+    risk: P2
+    status: failing
+  - id: 6
+    description: Run just check and pre-commit run --all-files
+    verify: >-
+      just check >/dev/null 2>&1 &&
+      pre-commit run --all-files >/dev/null 2>&1 && echo OK
+    risk: P1
+    status: failing
