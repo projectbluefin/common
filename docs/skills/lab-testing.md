@@ -795,7 +795,7 @@ metadata:
   namespace: argo
 spec:
   workflowTemplateRef:
-    name: build-containerdisk
+    name: build-bluefin-migration-containerdisk
   arguments:
     parameters:
     - name: image
@@ -858,6 +858,21 @@ argo_list_workflows namespace=argo status=["Failed"]
 
 This requires human intervention to clean ghost's containers storage. File an issue
 in `projectbluefin/testing-lab` with the error and the failing workflow names.
+
+### Container-only smoke lane failure modes
+
+The `bluefin-qa-pipeline` container-only path (no KubeVirt VM) fails fast when the
+runner environment or the cluster-local registry is not ready. Treat these as
+infrastructure blockers, not PR regressions.
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| `test-lane` exits 1 before any `BEHAVE RESULTS JSON`; logs reference display / GNOME session startup | Container runner cannot reach a usable GNOME session (lab infrastructure issue) | Wait for the lab infrastructure fix; do not retry the same SHA until the issue is resolved |
+| `assert-cd` reports `missing` for `bluefin-containerdisk:testing` and no tests execute | The expected containerdisk is absent from the cluster-local Zot registry (digest-watch sync lag or the upstream image was not pushed) | Check registry/digest-watch state and re-trigger the image publish; do not re-run `bluefin-qa-pipeline` until the containerdisk exists |
+
+If you see either pattern on multiple PRs simultaneously, it is a systemic lab
+failure — label the PR(s) for human attention and file or update a
+`projectbluefin/testing-lab` issue rather than blocking individual PRs.
 
 ### Auto-triggered vs. PR-specific pipeline
 
