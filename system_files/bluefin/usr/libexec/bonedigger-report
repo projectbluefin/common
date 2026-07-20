@@ -5,6 +5,83 @@ IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
 BONEDIGGER_BRAND="${BONEDIGGER_BRAND:-🫐 Bluefin Bug Report}"
 OTEL_CONFIG_SOURCE="/usr/share/ublue-os/otel/ujust-report-config.yaml"
 REPORT_ROOT="${XDG_RUNTIME_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}}/ujust-report"
+
+confirm_usage() {
+    printf 'Usage: ujust report --confirm <issue-number>\n' >&2
+}
+
+parse_confirm_args() {
+    CONFIRM_ISSUE=""
+
+    while (($# > 0)); do
+        case "$1" in
+            --confirm)
+                if (($# < 2)) || [[ ! "$2" =~ ^[1-9][0-9]*$ ]]; then
+                    confirm_usage
+                    return 1
+                fi
+                CONFIRM_ISSUE="$2"
+                shift 2
+                ;;
+            *)
+                confirm_usage
+                return 1
+                ;;
+        esac
+    done
+}
+
+confirm_report() {
+    local issue_number="$1"
+    local issue_repo="$2"
+    local failed_units
+    local booted_digest
+    local host_id
+    local body
+    local comment_url
+
+    failed_units="$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | \
+        awk '{print $1}' | head -10 || true)"
+    failed_units="${failed_units:-none}"
+    booted_digest="$(printf '%s' "$BOOTC_JSON" | \
+        jq -r '.status.booted.imageDigest // empty' 2>/dev/null || true)"
+    booted_digest="${booted_digest:-unknown}"
+
+    if [[ -r /etc/machine-id ]]; then
+        host_id="$(printf 'ujust-report:%s' "$(cat /etc/machine-id)" | sha256sum | cut -c1-8)"
+    else
+        host_id="unknown"
+    fi
+
+    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n* Image: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s\n* Anonymous device ID: %s (truncated sha256)' \
+        "$IMAGE_REF" "$IMAGE_TAG" "$booted_digest" "$(uname -r)" "$(uname -m)" \
+        "$failed_units" "$host_id")"
+
+    printf '\nWill post to: https://github.com/%s/issues/%s\n\n%s\n\n' \
+        "$issue_repo" "$issue_number" "$body"
+
+    if ! gh auth status --active &>/dev/null; then
+        printf 'gh is not authenticated. Run: gh auth login\n' >&2
+        return 1
+    fi
+
+    if [[ -t 0 && -t 1 ]]; then
+        gum confirm "Post this comment?" || return 0
+    fi
+
+    if ! gh issue comment "$issue_number" --repo "$issue_repo" --body "$body"; then
+        printf 'Failed to post the comment.\n' >&2
+        return 1
+    fi
+
+    comment_url="$(gh api "repos/${issue_repo}/issues/${issue_number}/comments" \
+        --jq '.[-1].html_url' 2>/dev/null || true)"
+    comment_url="${comment_url:-https://github.com/${issue_repo}/issues/${issue_number}}"
+    printf 'Comment posted: %s\n' "$comment_url"
+}
+
+parse_confirm_args "$@"
+
 mkdir -p "$REPORT_ROOT"
 REPORT_DIR="$(mktemp -d "${REPORT_ROOT}/report-XXXXXX")"
 LOCAL_REPORT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report"
@@ -60,29 +137,41 @@ IMAGE_FLAVOR="$(jq -r '."image-flavor" // "unknown"' "$IMAGE_INFO_FILE" 2>/dev/n
 
 # Derive issue URLs: bugs go to the image repo, feature requests always go to common.
 # Set BONEDIGGER_ISSUE_URL in the environment to override the auto-detected bug URL.
+case "$IMAGE_NAME" in
+    bluefin)
+        if [[ "$IMAGE_TAG" == lts* ]]; then
+            ISSUE_REPO="projectbluefin/bluefin-lts"
+            DEFAULT_ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml"
+        else
+            ISSUE_REPO="projectbluefin/bluefin"
+            DEFAULT_ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml"
+        fi
+        ;;
+    dakota)
+        ISSUE_REPO="projectbluefin/dakota"
+        DEFAULT_ISSUE_URL_BASE="https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml"
+        ;;
+    *)
+        ISSUE_REPO="projectbluefin/common"
+        DEFAULT_ISSUE_URL_BASE="https://github.com/projectbluefin/common/issues/new?template=bug-report.yml"
+        ;;
+esac
+
 if [[ -n "${BONEDIGGER_ISSUE_URL:-}" ]]; then
     ISSUE_URL_BASE="$BONEDIGGER_ISSUE_URL"
 else
-    case "$IMAGE_NAME" in
-        bluefin)
-            if [[ "$IMAGE_TAG" == lts* ]]; then
-                ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml"
-            else
-                ISSUE_URL_BASE="https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml"
-            fi
-            ;;
-        dakota)
-            ISSUE_URL_BASE="https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml"
-            ;;
-        *)
-            ISSUE_URL_BASE="https://github.com/projectbluefin/common/issues/new?template=bug-report.yml"
-            ;;
-    esac
+    ISSUE_URL_BASE="$DEFAULT_ISSUE_URL_BASE"
 fi
 FEATURE_URL="https://github.com/projectbluefin/common/issues/new?template=feature-request.yml"
 BOOTED_IMAGE="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.booted.image.image.image // empty' 2>/dev/null || true)"
 BOOTED_DIGEST="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.booted.imageDigest // empty' 2>/dev/null || true)"
 STAGED_IMAGE="$(printf '%s' "$BOOTC_JSON" | jq -r '.status.staged.image.image.image // empty' 2>/dev/null || true)"
+
+if [[ -n "$CONFIRM_ISSUE" ]]; then
+    confirm_report "$CONFIRM_ISSUE" "$ISSUE_REPO"
+    exit $?
+fi
+
 GNOME_VERSION="$(gnome-shell --version 2>/dev/null || echo unknown)"
 GNOME_EXTENSIONS="$(gnome-extensions list --enabled 2>/dev/null || true)"
 FLATPAK_LIST="$(flatpak list --columns=application,version 2>/dev/null || echo unavailable)"

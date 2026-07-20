@@ -9,7 +9,7 @@ export BONEDIGGER_BRAND := "🫐 Bluefin Bug Report"
 
 # Collect a privacy-respecting diagnostic report and offer to attach it to a new bug report.
 [group('System')]
-report:
+report *args:
     BONEDIGGER_VERSION="{{ BONEDIGGER_VERSION }}" \
     BONEDIGGER_BRAND="${BONEDIGGER_BRAND}" \
-    /usr/libexec/bonedigger-report
+    /usr/libexec/bonedigger-report {{ args }}
