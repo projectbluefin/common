@@ -18,6 +18,33 @@ This guide documents PR type taxonomy, per-type review checklists, CI gate inter
 
 ---
 
+## Agent-accelerated review lane
+
+Factory agents act as an additional quality layer alongside human reviewers. Because agents can submit and monitor many cluster smoke tests in parallel, they are authorized to accelerate the review of **low-risk, automated PRs** — specifically Renovate/chore dependency updates — in the RPM-based image repos (`common`, `bluefin`, `bluefin-lts`).
+
+### Workflow
+
+1. Identify PRs labelled `dependencies`, `chore/deps`, or with a `chore(deps):*` title (Renovate / mergeraptor / Dependabot).
+2. Submit a cluster smoke test via `bluefin-qa-pipeline` using the appropriate `:testing` image:
+   - `common` PR → `ghcr.io/projectbluefin/bluefin:testing`
+   - `bluefin-lts` PR → `ghcr.io/projectbluefin/bluefin-lts:testing`
+3. Poll to completion and collect logs.
+4. On **pass**: post a Vanguard Lab Strike Report and an approving review. Enable auto-merge so the change lands in the testing branch.
+5. On **fail**: post a Vanguard Lab Strike Report with diagnostics, apply `agent/blocked`, and leave the PR for human triage. Do **not** approve.
+
+### Scope limits
+
+- Applies only to dependency/chore PRs that do not touch `system_files/`, `Containerfile`, or CI workflow logic that affects artifact provenance.
+- Dakota (BST) is excluded when BST builds are known broken.
+- `actions` repo PRs are excluded unless the changed action is exercised by a consumer image build; most Actions dependency bumps should still go through normal maintainer review.
+- If a maintainer has already requested changes, the agent must not override that review.
+
+### Trust model
+
+The cluster smoke test is the ground truth. A passing smoke test on the relevant `:testing` image is sufficient to land a low-risk dependency bump into the testing branch. Human review is still required for `system_files/`, `Containerfile`, and non-Routine PRs.
+
+---
+
 ## PR type taxonomy
 
 Identify the PR type first. It determines blast radius, review depth, and whether lab testing is needed.
@@ -130,7 +157,7 @@ See the test quality checklist below. Quick checklist:
 | `test` | pytest + bats unit tests | Blocking — fix test failures |
 | `pre-commit` | SHA pinning, JSON/YAML/TOML hygiene, actionlint | Blocking — run `pre-commit run --all-files` locally |
 | `ghost-lab` | PR-specific lab test on KubeVirt cluster | Stale pending = needs requeue (see below) |
-| Renovate `dependencies` | Automated dependency update PR | Auto-merge on CI pass; no code review needed |
+| Renovate `dependencies` | Automated dependency update PR | Auto-merge on CI pass; agent may approve after passing ghost-lab smoke test (see Agent-accelerated review lane) |
 
 ### Transient failures
 
