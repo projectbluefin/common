@@ -21,6 +21,7 @@ test:
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_oem_brew.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_flatpak_sync.bats
 
