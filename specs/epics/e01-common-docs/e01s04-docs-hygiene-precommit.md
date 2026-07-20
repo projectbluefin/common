@@ -1,7 +1,7 @@
 # Story e01s04: Add docs-hygiene pre-commit checks
 
-**type:** ci  
-**risk:** P1  
+**type:** ci
+**risk:** P1
 **context:** docs / ci / hygiene
 
 Add lightweight, local hygiene gates so future doc changes cannot break the
