@@ -1,0 +1,53 @@
+---
+story_id: e01s02
+title: Consolidate testing, security, and contributor docs
+status: passing
+bcps: 4
+tasks:
+  - id: 1
+    description: Move docs/hardware-testing.md to docs/skills/hardware-testing.md and add skill front-matter
+    verify: >-
+      test -f docs/skills/hardware-testing.md &&
+      test ! -f docs/hardware-testing.md &&
+      bash scripts/check-skill-frontmatter.sh docs/skills/hardware-testing.md >/dev/null 2>&1 &&
+      echo OK
+    risk: P2
+    status: passing
+  - id: 2
+    description: Move docs/secrets-policy.md to docs/skills/secrets-policy.md and normalize front-matter
+    verify: >-
+      test -f docs/skills/secrets-policy.md &&
+      test ! -f docs/secrets-policy.md &&
+      bash scripts/check-skill-frontmatter.sh docs/skills/secrets-policy.md >/dev/null 2>&1 &&
+      echo OK
+    risk: P2
+    status: passing
+  - id: 3
+    description: Move .gemini/style-guide.md content to docs/contributing/style-guide.md and replace .gemini file with pointer
+    verify: >-
+      test -f docs/contributing/style-guide.md &&
+      test $(wc -l < .gemini/style-guide.md) -le 10 &&
+      echo OK
+    risk: P2
+    status: passing
+  - id: 4
+    description: Move shell/BATS patterns from docs/TESTING.md into docs/skills/shell-scripts.md and keep TESTING.md thin
+    verify: >-
+      test $(wc -l < docs/TESTING.md) -le 120 &&
+      grep -q "Bats patterns" docs/skills/shell-scripts.md &&
+      echo OK
+    risk: P2
+    status: passing
+  - id: 5
+    description: Update cross-references to moved paths
+    verify: >-
+      (grep -R 'docs/hardware-testing.md\|docs/secrets-policy.md' docs .github 2>/dev/null && echo FAIL) || echo OK
+    risk: P2
+    status: passing
+  - id: 6
+    description: Run just check and pre-commit run --all-files
+    verify: >-
+      just check >/dev/null 2>&1 &&
+      pre-commit run --all-files >/dev/null 2>&1 && echo OK
+    risk: P1
+    status: passing

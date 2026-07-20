@@ -2,13 +2,13 @@
 session:
   active_flow: execute-plan
   active_epic: e01-common-docs
-  active_story: e01s03
+  active_story: e01s02
   project: projectbluefin/common
 git:
   base_branch: main
 handoff:
   next_skill: execute-plan
-  prev_skill: kickoff-branch
+  prev_skill: execute-plan
   note: >-
-    e01s01 complete and committed. Now normalizing skill front-matter and
-    adding docs/skills/write-a-skill.md.
+    e01s01 and e01s03 complete. Now consolidating testing, security, and
+    contributor docs into the skill/contributing layers.

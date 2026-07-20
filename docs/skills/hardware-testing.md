@@ -1,3 +1,16 @@
+---
+name: hardware-testing
+version: "1.0"
+last_updated: "2026-07-20"
+tags: [hardware, testing, promotion]
+description: >-
+  Hardware test report format and promotion policy. Use when filing a hardware
+  test report, triaging hardware blockers, or deciding whether a candidate is
+  safe to promote.
+metadata:
+  type: runbook
+---
+
 # Hardware testing in the factory loop
 
 VM gates are necessary, but they cannot validate several bug classes that only show up on physical devices. The factory loop now treats community hardware reports as promotion input, not anecdote.

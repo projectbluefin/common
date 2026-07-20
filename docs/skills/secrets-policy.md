@@ -1,6 +1,14 @@
 ---
 name: secrets-policy
-description: "Canonical approved secrets inventory for the Bluefin factory. Additions require a security review issue. PATs are banned."
+version: "1.0"
+last_updated: "2026-07-20"
+tags: [secrets, security, ci]
+description: >-
+  Approved secrets inventory for the Bluefin factory. Use when adding a secret,
+  reviewing workflow auth, or verifying whether PATs or a new credential are
+  allowed.
+metadata:
+  type: policy
 ---
 
 # Secrets Policy — Project Bluefin Factory

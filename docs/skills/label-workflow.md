@@ -400,7 +400,7 @@ Applied to issues or PRs to request a specific agent workflow. The agent removes
 ### Hardware test labels
 
 Used on issues in `projectbluefin/common` filed via the **Hardware test report** template.
-See [`docs/hardware-testing.md`](../hardware-testing.md) for the full process.
+See [`docs/skills/hardware-testing.md`](./hardware-testing.md) for the full process.
 
 | Label | Who sets it | Meaning |
 |---|---|---|
