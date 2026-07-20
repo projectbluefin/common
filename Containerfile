@@ -1,9 +1,16 @@
-FROM docker.io/library/golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS motd-build
+FROM docker.io/library/golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS umotd-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/motd /src && \
-    git -C /src checkout 405e86c532aed42931b2d398e2761c24b70e978c
+    git -C /src checkout 71e67db8d1c82ac63b8369e2f0632dcbc0ecff56
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
+
+FROM docker.io/library/golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS uwelcome-build
+RUN apk add git && \
+    git clone https://github.com/themimolet/uwelcome /src && \
+    git -C /src checkout 4f4b8189ce5f12f26d7ab6a51fb590a095ce9bdc
+WORKDIR /src
+RUN go build -ldflags="-s -w" -o /uwelcome .
 
 FROM docker.io/library/alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
 
@@ -13,32 +20,33 @@ RUN apk add just curl libjxl-tools
 
 # artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
-  mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
-  sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
+    mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
+    sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
 
 RUN install -d /out/shared/usr/share/bash-completion/completions /out/shared/usr/share/zsh/site-functions /out/shared/usr/share/fish/vendor_completions.d/ && \
-  just --completions bash | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/bash-completion/completions/ujust && \
-  just --completions zsh | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/zsh/site-functions/_ujust && \
-  just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/fish/vendor_completions.d/ujust.fish
+    just --completions bash | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/bash-completion/completions/ujust && \
+    just --completions zsh | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/zsh/site-functions/_ujust && \
+    just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/fish/vendor_completions.d/ujust.fish
 
 RUN curl -fsSLo tmp/game-devices-udev-1.0.tar.gz https://codeberg.org/fabiscafe/game-devices-udev/archive/1.0.tar.gz && \
     echo "ac733ea6babb6623e1ac76eceac9b494255ae312d1e7c3fde011ac50ee99f6c5  tmp/game-devices-udev-1.0.tar.gz" | sha256sum -c && \
     tar xzvf tmp/game-devices-udev-1.0.tar.gz -C tmp/ && \
     for f in tmp/game-devices-udev/src/*.rules; do \
-      install -Dpm0644 "$f" "out/shared/usr/lib/udev/rules.d/71-${f##*/}"; \
+    install -Dpm0644 "$f" "out/shared/usr/lib/udev/rules.d/71-${f##*/}"; \
     done && \
-  curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
+    curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
 # Convert Bazaar JXL banners to PNG to prevent stable Bazaar v0.8.2 from crashing
 COPY bluefin-branding/system_files/etc/bazaar /tmp/bazaar-banners
 RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
     for f in /tmp/bazaar-banners/*.jxl; do \
-      name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
+    name=$(basename "$f" .jxl); \
+    djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 
-COPY --from=motd-build /umotd /out/shared/usr/bin/umotd
+COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
+COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
