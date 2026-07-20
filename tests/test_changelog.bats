@@ -85,7 +85,9 @@ fi
 EOF
     chmod +x "${MOCKDIR}/grep"
 
-    export PATH="${MOCKDIR}:${PATH}"
+    # Keep the fallback recipe under test; a developer's host bctl must not
+    # short-circuit repository selection before the mocked curl calls.
+    export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\n' | grep -v '/.local/bin' | paste -sd: -)"
 
     SCRIPT_FILE="${WORKDIR}/changelog.sh"
     _extract_script "${SCRIPT_FILE}"
@@ -190,4 +192,17 @@ teardown() {
     MOCK_NAME="dakota" MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
     grep -q "projectbluefin/dakota" "${CURL_CALLS}"
+}
+
+@test "changelog: bluefin-lts image name selects bluefin-lts repo with stable tag" {
+    MOCK_NAME="bluefin-lts" MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
+    ! grep -q "projectbluefin/bluefin[^-]" "${CURL_CALLS}"
+}
+
+@test "changelog: bluefin-lts-nvidia image name selects bluefin-lts repo" {
+    MOCK_NAME="bluefin-lts-nvidia" MOCK_TAG="testing" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
 }

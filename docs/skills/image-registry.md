@@ -109,6 +109,21 @@ To make Dakota show up on the public active users count badges and charts:
 
 Because of the **Absolute Prohibition** against write operations on `ublue-os/*` repositories, these updates cannot be automated or programmatically committed by agents, and must be submitted manually as a PR by a human maintainer.
 
+## Runtime changelog repository selection
+
+The `ujust changelogs` fallback chooses the upstream release repository from
+`image-info.json`: `dakota` images use `projectbluefin/dakota`, image names
+starting with `bluefin-lts` use `projectbluefin/bluefin-lts`, and other Bluefin
+image names use `projectbluefin/bluefin`. Do not infer the LTS repository from
+the tag alone: LTS images may use `stable`, `testing`, or `lts` aliases.
+
+Verify the runtime metadata and recipe together:
+
+```bash
+jq -r '."image-name", ."image-tag"' /usr/share/ublue-os/image-info.json
+rg -n 'IMAGE_NAME|bluefin-lts|REPO=' system_files/bluefin/usr/share/ublue-os/just/changelog.just
+```
+
 ## Verification
 
 **Before editing this file or writing any image name or tag anywhere in the factory,
