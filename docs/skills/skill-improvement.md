@@ -1,11 +1,15 @@
 ---
 name: skill-improvement
-version: "1.0"
-last_updated: 2026-06-23
+version: "1.1"
+last_updated: 2026-07-20
 tags: [skills, improvement, documentation]
 description: "The skill-improvement mandate — every agent session must produce a skill file update alongside the work. Use when completing a task and deciding whether to write a skill update, or when creating or updating a skill file."
 metadata:
   type: procedure
+  context7-sources:
+    - /anthropics/skills
+    - /addyosmani/agent-skills
+    - /vercel-labs/agent-skills
 ---
 
 # Skill Improvement Mandate
@@ -121,7 +125,27 @@ The skill-drift CI gate will warn if you forget. Treat the warning as a hard req
 
 ---
 
+## Self-audit against canonical skill standards
+
+Before finalizing a skill update, verify it matches the canonical patterns surfaced by Context7 (highest-rated conventions as of 2026-07-20):
+
+| Source | Relevance |
+|---|---|
+| `/anthropics/skills` (benchmark 80.59) | SKILL.md schema, YAML frontmatter rules, bundled resources layout, progressive disclosure model. |
+| `/addyosmani/agent-skills` (benchmark 85.67) | Highest-rated skill-improvement source; target structure for Red Flags and Verification sections. |
+| `/vercel-labs/agent-skills` (benchmark 84.36) | `skills/{name}/SKILL.md` + `scripts/` + `references/` directory convention. |
+
+Checklist:
+- [ ] Frontmatter includes `name`, `description` with "Use when" triggers, `version`, `last_updated`, `tags`, and `metadata.type`.
+- [ ] Description is specific enough that an agent can decide to load the skill from the description alone.
+- [ ] Skill body has `## When to Use`, `## Core Process`, `## Red Flags`, and `## Verification` sections (or equivalent).
+- [ ] Any library/framework API examples were verified via Context7 first and the `libraryId` is recorded in `metadata.context7-sources`.
+- [ ] Files over 500 lines are split into a per-skill directory with `references/` or `scripts/` per the Anthropic/Vercel convention.
+
 ## See Also
 
 - [`docs/skills/skill-drift.md`](./skill-drift.md) — how the CI enforcement works
-- [Canonical skill file format](https://github.com/projectbluefin/actions/blob/main/.github/skills/skill-improvement/SKILL.md) — required frontmatter, body structure, progressive disclosure pattern
+- Canonical skill conventions (verified via Context7):
+  - `/anthropics/skills` — YAML frontmatter, bundled resources, progressive disclosure.
+  - `/addyosmani/agent-skills` — skill-improvement and audit structure.
+  - `/vercel-labs/agent-skills` — per-skill directory layout with `scripts/` and `references/`.
