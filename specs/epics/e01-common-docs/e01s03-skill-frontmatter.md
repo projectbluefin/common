@@ -1,7 +1,7 @@
 # Story e01s03: Normalize skill front-matter and add write-a-skill meta-skill
 
-**type:** docs  
-**risk:** P2  
+**type:** docs
+**risk:** P2
 **context:** docs / agent-skills
 
 Make every skill file loadable as a lazily-selected skill: required front-matter,
