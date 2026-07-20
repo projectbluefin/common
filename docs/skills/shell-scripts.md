@@ -205,6 +205,21 @@ setup() {
 ```
 Used for `gum`, `systemd-cryptenroll`, `bootc`, `rpm-ostree`. Check `"${WORKDIR}/calls.log"` in assertions.
 
+### Isolate fallback paths from host-installed commands
+
+When testing a script's fallback implementation, a developer-machine command
+can short-circuit the code under test before mocks run. For example, a host
+`bctl` can bypass the `ujust changelogs` repository-selection logic. Filter
+known host-only paths from `PATH` after prepending the test stubs:
+
+```bash
+export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\\n' \\
+    | grep -v '/.local/bin' | paste -sd: -)"
+```
+
+This keeps the test deterministic while retaining system tools needed by the
+script. Do not weaken assertions to accommodate the host command.
+
 ### Shellcheck pitfalls
 
 <!-- TODO(context7): verify all shellcheck SC codes and directive syntax against shellcheck docs -->
