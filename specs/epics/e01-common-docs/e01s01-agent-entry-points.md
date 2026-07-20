@@ -1,7 +1,7 @@
 # Story e01s01: Normalize agent entry points
 
-**type:** refactor  
-**risk:** P1  
+**type:** refactor
+**risk:** P1
 **context:** docs / repo-contract
 
 Consolidate the agent entry-point layer so every agent loads the same short
