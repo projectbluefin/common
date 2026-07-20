@@ -402,6 +402,22 @@ When adding a new binary pinned to a specific version in a script or just file, 
 
 ---
 
+## Docs hygiene pre-commit checks
+
+The repo-level `.pre-commit-config.yaml` includes local hooks that protect the
+agent docs structure:
+
+| Hook | Script | What it checks |
+|---|---|---|
+| `Validate skill front-matter` | `scripts/check-skill-frontmatter.sh` | Every `docs/skills/*.md` has required front-matter keys (`name`, `version`, `last_updated`, `tags`, `description`, `metadata.type`) and description ≤256 chars. |
+| `Validate docs/SKILL.md skill index` | `scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
+| `Validate internal markdown links` | `scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
+
+These are **hygiene gates**, not blocking CI workflow gates, consistent with the
+factory rule that process conventions are agent-enforced. The front-matter size
+budget is soft at 200 lines and hard at 500 lines; existing oversized skills
+are grandfathered until the per-skill directory migration.
+
 ## Common Rationalizations
 
 | Rationalization | Reality |

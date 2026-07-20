@@ -1,14 +1,14 @@
 ---
 session:
-  active_flow: execute-plan
+  active_flow: verify-work
   active_epic: e01-common-docs
-  active_story: e01s02
+  active_story: e01s04
   project: projectbluefin/common
 git:
   base_branch: main
 handoff:
-  next_skill: execute-plan
+  next_skill: verify-work
   prev_skill: execute-plan
   note: >-
-    e01s01 and e01s03 complete. Now consolidating testing, security, and
-    contributor docs into the skill/contributing layers.
+    All four stories (e01s01-e01s04) are implemented and committed on their
+    respective branches. Next: verify-work across branches and prepare PRs.

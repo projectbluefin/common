@@ -37,6 +37,7 @@ your task, load only that skill, then act.
 | Understand release / promotion | [`release-promotion.md`](skills/release-promotion.md) |
 | Understand QA coverage or run tests | [`qa.md`](skills/qa.md) |
 | Submit a hardware test report | [`hardware-testing.md`](skills/hardware-testing.md) |
+| Lab-test a common PR on ghost | [`lab-testing.md`](skills/lab-testing.md) |
 | Write or test shell scripts | [`shell-scripts.md`](skills/shell-scripts.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle.md`](skills/brew-lifecycle.md) |
 | Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
