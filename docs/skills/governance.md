@@ -1,7 +1,7 @@
 ---
 name: governance
 version: "1.0"
-last_updated: "2026-06-23"
+last_updated: "2026-07-20"
 tags: [governance, issues, lifecycle]
 description: >-
   Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and
@@ -100,8 +100,9 @@ included in that sync set.
 
 ## Branch protection
 
-`require_code_owner_reviews: true` is active on all four repos. A CODEOWNERS match is
-required for a PR to merge — triagers count for `docs/**` and `*.md` paths.
+The factory repositories use protected branches or rulesets; their approval
+policies are not identical. A CODEOWNERS match is required where the table says
+code-owner review is active.
 
 | Repo | Mechanism | Required approvals |
 |---|---|---|
@@ -110,6 +111,13 @@ required for a PR to merge — triagers count for `docs/**` and `*.md` paths.
 | `bluefin-lts` | Branch protection on `main` | 1 |
 | `dakota` | Branch protection on `main` | 1 |
 | `knuckle` | Ruleset `main — merge queue` | 1 (merge queue) |
+| `lab` | Ruleset `main — merge queue` | 0; `lint` is required |
+
+For any repository using a GitHub merge queue, every required check workflow must
+also subscribe to the `merge_group` event with `types: [checks_requested]`.
+Without that trigger, queued PRs remain in `AWAITING_CHECKS` because ordinary
+`pull_request` workflows do not run on merge-group refs. See the lab runbook at
+[`projectbluefin/lab/docs/ops/merge-queue.md`](https://github.com/projectbluefin/lab/blob/main/docs/ops/merge-queue.md).
 
 ## Documentation changes — push directly to main
 
