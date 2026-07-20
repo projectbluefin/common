@@ -1,6 +1,6 @@
 ---
 session:
-  active_flow: execute-plan
+  active_flow: verify-work
   active_epic: e01-common-docs
   active_story: e01s04
   project: projectbluefin/common
@@ -10,5 +10,5 @@ handoff:
   next_skill: verify-work
   prev_skill: execute-plan
   note: >-
-    e01s01, e01s02, and e01s03 complete. Now wiring docs-hygiene checks into
-    pre-commit and a local link checker.
+    All four stories (e01s01-e01s04) are implemented and committed on their
+    respective branches. Next: verify-work across branches and prepare PRs.

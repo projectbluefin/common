@@ -7,23 +7,23 @@ bcps: 15
 stories:
   - id: e01s01
     title: Normalize agent entry points
-    status: failing
+    status: passing
     bcps: 5
   - id: e01s03
     title: Normalize skill front-matter and add write-a-skill meta-skill
-    status: failing
+    status: passing
     bcps: 3
     depends_on:
       - e01s01
   - id: e01s02
     title: Consolidate testing, security, and contributor docs
-    status: failing
+    status: passing
     bcps: 4
     depends_on:
       - e01s01
   - id: e01s04
     title: Add docs-hygiene pre-commit checks
-    status: failing
+    status: passing
     bcps: 3
     depends_on:
       - e01s01
