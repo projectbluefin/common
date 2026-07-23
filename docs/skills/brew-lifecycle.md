@@ -11,7 +11,7 @@ metadata:
   type: procedure
   context7-sources:
     - /bootc-dev/bootc
-    - /bootc-dev/bootc
+    - /homebrew/brew
 ---
 
 # brew-lifecycle — Homebrew Package Lifecycle for Bluefin
@@ -393,6 +393,7 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 
 - [ ] Package obeys the "can move to brew" rule: self-contained CLI, no system-level deps
 - [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
+- [ ] If adding/removing a cask: lifecycle covered by the cask bats tests; removal uses `brew uninstall --cask` (verified against /homebrew/brew docs)
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
 - [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login
