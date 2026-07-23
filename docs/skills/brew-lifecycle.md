@@ -183,6 +183,18 @@ lines: installed by `brew bundle`, tracked in the state file under
 `casks`, and uninstalled with `brew uninstall --cask` when the line is
 removed. Verify with `bats tests/test_brew_preinstall.bats`.
 
+**Shipped example — ChairLift** (`preinstall.d/chairlift.Brewfile`):
+```ruby
+tap "frostyard/tap", trusted: true
+cask "chairlift"
+```
+ChairLift is a GTK4 system-management GUI (Homebrew, Flatpak, bootc).
+Its Bluefin maintainer config ships at
+`system_files/shared/usr/share/chairlift/config.yml` (admin override:
+`/etc/chairlift/config.yml`); bootc staging and updex stay disabled
+until frostyard/chairlift#54 resolves the polkit integration. Guarded
+by `tests/test_chairlift_config.py`.
+
 ### Add a variant-specific Brewfile
 
 Downstream repos can ship their own Brewfiles by dropping `*.Brewfile` files
