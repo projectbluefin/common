@@ -119,6 +119,7 @@ After a PR merges: `git worktree remove <path> --force && git branch -D <branch>
 - GHA-only changes (workflow files, docs, markdown) **must not** trigger image builds.
 - `:testing` tag publishes on every BST/Containerfile-changing push to `testing`.
 - `:stable` / `:latest` tag publishes when `main` receives a promotion commit.
+- If a repository uses a merge queue, every ruleset-required check workflow must include `merge_group: {types: [checks_requested]}` as well as its normal `pull_request` trigger; otherwise queued PRs wait forever for a check that never starts.
 
 ### CI pipeline shape
 
