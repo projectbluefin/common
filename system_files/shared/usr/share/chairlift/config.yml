@@ -1,0 +1,70 @@
+# ChairLift configuration for Bluefin (maintainer defaults).
+# Admin overrides go in /etc/chairlift/config.yml, which takes priority.
+# Reference: https://github.com/frostyard/chairlift/blob/main/CONFIG.md
+
+system_page:
+  system_info_group:
+    enabled: true
+  bootc_status_group:
+    enabled: true
+  health_group:
+    enabled: true
+    app_id: io.missioncenter.MissionCenter
+
+updates_page:
+  # Staged bootc updates need polkit glue Bluefin does not ship yet.
+  # Tracked upstream: https://github.com/frostyard/chairlift/issues/54
+  bootc_updates_group:
+    enabled: false
+  flatpak_updates_group:
+    enabled: true
+  brew_updates_group:
+    enabled: true
+  brew_trust_group:
+    enabled: true
+  # Update policy on Bluefin belongs to uupd (silent background staging,
+  # 6-hour timer + AC connect; user reboots on their own schedule). Keep
+  # any in-app update scheduling knobs hidden so nothing competes with it
+  # or prompts the user.
+  updates_settings_group:
+    enabled: false
+
+applications_page:
+  applications_installed_group:
+    enabled: true
+    app_id: io.github.kolunmi.Bazaar
+  flatpak_user_group:
+    enabled: true
+  flatpak_system_group:
+    enabled: true
+  brew_group:
+    enabled: true
+  brew_search_group:
+    enabled: true
+  brew_bundles_group:
+    enabled: true
+    bundles_paths:
+      - /usr/share/ublue-os/homebrew
+
+maintenance_page:
+  maintenance_cleanup_group:
+    enabled: false
+  maintenance_brew_group:
+    enabled: true
+  maintenance_flatpak_group:
+    enabled: true
+  maintenance_optimization_group:
+    enabled: true
+
+features_page:
+  # updex is not present on Bluefin; the pkexec helper also needs polkit
+  # files a user-scope install cannot provide (frostyard/chairlift#54).
+  features_group:
+    enabled: false
+
+help_page:
+  help_resources_group:
+    enabled: true
+    website: https://docs.projectbluefin.io/
+    issues: https://issues.projectbluefin.io/
+    chat: https://ask.projectbluefin.io/
