@@ -323,6 +323,66 @@ BREWMOCK
     [ "$(jq '.casks | length' "${state_file}")" -eq 0 ]
 }
 
+@test "brew-preinstall: one failing Brewfile does not block the others" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/a-fail.Brewfile"
+    echo 'brew "fd"'      > "${WORKDIR}/preinstall.d/b-ok.Brewfile"
+
+    # Mock: bundling the a-fail Brewfile fails, everything else succeeds
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   [[ "\$*" == *"a-fail"* ]] && exit 1 ;;
+    list)     exit 0 ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+
+    # The healthy Brewfile was still bundled
+    grep -q "b-ok.Brewfile" "${WORKDIR}/brew.log"
+    # The run fails so systemd retries and the state file is not written,
+    # keeping removals and the fast-exit hash off the table
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"will retry"* ]]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+    ! grep -q "uninstall" "${WORKDIR}/brew.log" 2>/dev/null
+}
+
+@test "brew-preinstall: bundle failure skips removals entirely" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    # Old state managed fd, which is now dropped — but bundling fails, so
+    # the removal phase must not run on this pass
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["fd","ripgrep"]}' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   exit 1 ;;
+    list)     exit 0 ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    ! grep -q "uninstall" "${WORKDIR}/brew.log" 2>/dev/null
+    # State keeps the old hash so the next login retries the whole run
+    stored_hash="$(jq -r '.hash' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
+    [ "${stored_hash}" = "oldhash" ]
+}
+
 @test "brew-preinstall: re-runs after Brewfile changes (hash mismatch)" {
     echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
 

@@ -118,6 +118,9 @@ no migration is needed.
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
 3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
+   One failing Brewfile (e.g. an unreachable external tap) does not block
+   the others, but any failure exits 1 **before** the removal and
+   state-write phases, so systemd retries the whole run on next login.
 4. Diff previous `packages`/`casks` (from state JSON) against the current
    `brew "..."`/`cask "..."` lines (from Brewfiles). Uninstall entries that
    were in the old set but not the new one — **only if `brew list` confirms

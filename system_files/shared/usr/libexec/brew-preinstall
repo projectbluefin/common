@@ -48,22 +48,34 @@ eval "$("${BREW_BIN}" shellenv)"
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
-# Install all packages declared in Brewfiles (brew bundle is idempotent)
+# Install all packages declared in Brewfiles (brew bundle is idempotent).
+# One failing Brewfile (e.g. an unreachable external tap) must not block
+# the others, but any failure aborts before the removal/state-write phase
+# so the run is retried on next login.
+bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
-    brew bundle --file="${brewfile}"
+    if ! brew bundle --file="${brewfile}"; then
+        echo "brew-preinstall: error: bundling ${brewfile} failed"
+        bundle_failed=1
+    fi
 done
+
+if [[ "${bundle_failed}" -ne 0 ]]; then
+    echo "brew-preinstall: one or more Brewfiles failed; state unchanged, will retry"
+    exit 1
+fi
 
 # Uninstall packages and casks removed from our managed set (OS diet).
 # Parse the names we manage now vs what we managed before, then remove
 # the delta — but only if brew still has them installed.
 # This never touches packages the user added outside our managed set.
-# grep exits 1 when a Brewfile set declares no brew/cask lines — that is a
-# valid state under pipefail, so both extractions tolerate empty matches.
-current_packages=$(grep -h '^brew "' "${brewfiles[@]}" \
-    | sed 's/brew "\([^"]*\)".*/\1/' | sort -u || true)
-current_casks=$(grep -h '^cask "' "${brewfiles[@]}" \
-    | sed 's/cask "\([^"]*\)".*/\1/' | sort -u || true)
+# sed -n exits 0 when nothing matches (a valid state) but still fails on
+# real I/O errors — unlike grep, which exits 1 for both no-match and
+# would need `|| true`, masking errors and risking an empty current set
+# that the diff below would then treat as "uninstall everything managed".
+current_packages=$(sed -n 's/^brew "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
+current_casks=$(sed -n 's/^cask "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
 previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 previous_casks=$(jq -r '.casks[]? // empty' "${STATE_FILE}" 2>/dev/null \
