@@ -76,10 +76,24 @@ fi
 # that the diff below would then treat as "uninstall everything managed".
 current_packages=$(sed -n 's/^brew "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
 current_casks=$(sed -n 's/^cask "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
+
+# A corrupt state file must never drive removals. The jq reads below yield
+# empty previous sets for it (fail-safe: nothing gets uninstalled), and the
+# state write at the end self-heals the file — but say so instead of hiding it.
+if [[ -f "${STATE_FILE}" ]] && ! jq -e . "${STATE_FILE}" >/dev/null 2>&1; then
+    echo "brew-preinstall: warning: state file is corrupt; skipping removals this run and rebuilding state"
+fi
+
 previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 previous_casks=$(jq -r '.casks[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
+
+# A failed uninstall must not be absorbed: if the new state were written
+# anyway, the hash fast-exit would keep the dropped package installed
+# forever. Track failures and bail before the state write so systemd
+# retries the whole run (Restart=on-failure) with the old state intact.
+uninstall_failed=0
 
 if [[ -n "${previous_packages}" ]]; then
     removed=$(comm -23 \
@@ -89,7 +103,7 @@ if [[ -n "${previous_packages}" ]]; then
         if brew list --formula "${pkg}" &>/dev/null; then
             echo "brew-preinstall: removing ${pkg} (dropped from managed set)"
             brew uninstall "${pkg}" --ignore-dependencies 2>/dev/null \
-                || echo "brew-preinstall: warning: could not remove ${pkg}, skipping"
+                || { echo "brew-preinstall: error: could not remove ${pkg}"; uninstall_failed=1; }
         fi
     done
 fi
@@ -102,9 +116,14 @@ if [[ -n "${previous_casks}" ]]; then
         if brew list --cask "${cask}" &>/dev/null; then
             echo "brew-preinstall: removing cask ${cask} (dropped from managed set)"
             brew uninstall --cask "${cask}" 2>/dev/null \
-                || echo "brew-preinstall: warning: could not remove cask ${cask}, skipping"
+                || { echo "brew-preinstall: error: could not remove cask ${cask}"; uninstall_failed=1; }
         fi
     done
+fi
+
+if [[ "${uninstall_failed}" -ne 0 ]]; then
+    echo "brew-preinstall: one or more removals failed; state unchanged, will retry"
+    exit 1
 fi
 
 # Persist new state: hash + full managed package and cask lists for next diff.

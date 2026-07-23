@@ -383,6 +383,52 @@ BREWMOCK
     [ "${stored_hash}" = "oldhash" ]
 }
 
+@test "brew-preinstall: corrupt state file warns, skips removals, rebuilds state" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    echo 'not json at all {{' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"state file is corrupt"* ]]
+    ! grep -q "uninstall" "${WORKDIR}/brew.log" 2>/dev/null
+    # State is rebuilt as valid JSON
+    jq -e . "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" >/dev/null
+}
+
+@test "brew-preinstall: failed uninstall keeps old state so removal is retried" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    # Old state managed fd, now dropped — and uninstalling it fails
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["fd","ripgrep"]}' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   ;;
+    list)     exit 0 ;;
+    uninstall) exit 1 ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"removals failed"* ]]
+    # Old state survives: hash unchanged means next login retries the run
+    stored_hash="$(jq -r '.hash' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
+    [ "${stored_hash}" = "oldhash" ]
+    pkgs="$(jq -r '.packages[]' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
+    [[ "${pkgs}" == *"fd"* ]]
+}
+
 @test "brew-preinstall: re-runs after Brewfile changes (hash mismatch)" {
     echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
 
