@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-07-22"
 tags: [brew, homebrew, packages]
 description: >-
   Manage OS-managed Homebrew packages. Use when adding/removing default brew
@@ -107,18 +107,22 @@ brew is installed at `/var/home/linuxbrew/.linuxbrew/bin/brew`.
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`
 ```json
-{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...] }
+{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...], "casks": ["cask1", ...] }
 ```
+
+Older state files without a `casks` key are read as an empty cask list;
+no migration is needed.
 
 ### On every login
 
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
 3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
-4. Diff `previous_packages` (from state JSON) against `current_packages`
-   (from Brewfiles). Uninstall packages that were in the old set but not
-   the new one — **only if `brew list` confirms they are installed**.
-5. Write new hash + package list to state file atomically (tmp + mv).
+4. Diff previous `packages`/`casks` (from state JSON) against the current
+   `brew "..."`/`cask "..."` lines (from Brewfiles). Uninstall entries that
+   were in the old set but not the new one — **only if `brew list` confirms
+   they are installed**. Casks are removed with `brew uninstall --cask`.
+5. Write new hash + package and cask lists to state file atomically (tmp + mv).
 
 **The service is content-addressed, not version-numbered.** Never bump a
 counter to propagate a Brewfile change — just edit the file. The hash change
@@ -168,6 +172,13 @@ brew "bluefinctl"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [Homebrew 6.0 tap trust](#homebrew-60-tap-trust-required-as-of-2026-06-11).
+
+### Add a cask (GUI app)
+
+`cask "<name>"` lines get the same managed lifecycle as `brew "<name>"`
+lines: installed by `brew bundle`, tracked in the state file under
+`casks`, and uninstalled with `brew uninstall --cask` when the line is
+removed. Verify with `bats tests/test_brew_preinstall.bats`.
 
 ### Add a variant-specific Brewfile
 
