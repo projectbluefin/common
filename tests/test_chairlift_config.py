@@ -76,6 +76,14 @@ def test_polkit_dependent_groups_stay_disabled():
     assert data["features_page"]["features_group"]["enabled"] is False
 
 
+def test_update_policy_stays_with_uupd():
+    """Bluefin updates are silent and background-staged by uupd; the user
+    reboots on their own schedule. ChairLift must not surface update
+    scheduling knobs that compete with uupd or prompt the user."""
+    data = _load_config()
+    assert data["updates_page"]["updates_settings_group"]["enabled"] is False
+
+
 def test_bundles_paths_point_at_bluefin_brewfiles():
     group = _load_config()["applications_page"]["brew_bundles_group"]
     assert group["bundles_paths"] == ["/usr/share/ublue-os/homebrew"]

@@ -22,8 +22,12 @@ updates_page:
     enabled: true
   brew_trust_group:
     enabled: true
+  # Update policy on Bluefin belongs to uupd (silent background staging,
+  # 6-hour timer + AC connect; user reboots on their own schedule). Keep
+  # any in-app update scheduling knobs hidden so nothing competes with it
+  # or prompts the user.
   updates_settings_group:
-    enabled: true
+    enabled: false
 
 applications_page:
   applications_installed_group:
