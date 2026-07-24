@@ -1,11 +1,12 @@
 {
+  "color": "auto",
   "commands": [
     {
       "cmd": "ujust --choose",
       "desc": "cmd_list"
     },
     {
-      "cmd": "umotd toggle",
+      "cmd": "uwelcome toggle",
       "desc": "motd_toggle"
     },
     {
@@ -17,6 +18,9 @@
       "desc": "cli_pkg"
     }
   ],
+  "greeting": {
+    "prefix": "󱍢 "
+  },
   "links": [
     {
       "name": "issues",
@@ -31,7 +35,9 @@
       "url": "https://docs.projectbluefin.io/"
     }
   ],
-  "prefix": "󱍢 ",
-  "tips-presets": ["bluefin", "gnome", "ublue", "ublue-dev"],
-  "use-accent-color": true
+  "motd": {
+    "commands": [
+      "umotd"
+    ]
+  }
 }

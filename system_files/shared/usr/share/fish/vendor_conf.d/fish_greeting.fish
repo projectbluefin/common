@@ -1,3 +1,4 @@
 function fish_greeting
-    umotd
+    rm -rf ~/.config/no-show-user-motd || true
+    uwelcome
 end

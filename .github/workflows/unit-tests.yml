@@ -97,8 +97,8 @@ jobs:
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
 
-      - name: Run bats (umotd integration)
-        run: bats tests/test_umotd_integration.bats
+      - name: Run bats (motd integration)
+        run: bats tests/test_motd_integration.bats
 
       - name: Run bats (ublue-image-info.sh)
         run: bats tests/test_ublue_image_info.bats
