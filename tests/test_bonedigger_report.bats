@@ -3,6 +3,8 @@
 setup() {
     export BONEDIGGER_SCRIPT="$BATS_TEST_DIRNAME/../system_files/bluefin/usr/libexec/bonedigger-report"
 
+    WORKDIR="$(mktemp -d)"
+
     TEST_HELPER="$(mktemp)"
     cat << 'INNER_EOF' > "$TEST_HELPER"
 #!/usr/bin/bash
@@ -17,7 +19,8 @@ INNER_EOF
 }
 
 teardown() {
-    rm -f "$TEST_HELPER"
+    rm -f "$TEST_HELPER" "${CONFIRM_HELPER:-}"
+    rm -rf "$WORKDIR"
 }
 
 @test "scrub_kernel_log redacts MAC addresses" {
@@ -71,33 +74,81 @@ IMAGE_NAME="$1"
 IMAGE_TAG="$2"
 BONEDIGGER_ISSUE_URL="$3"
 
-eval "$(sed -n '/^# Derive issue URLs/,/^fi/p' "$BONEDIGGER_SCRIPT")"
+eval "$(sed -n '/^case "\$IMAGE_NAME"/,/^FEATURE_URL/p' "$BONEDIGGER_SCRIPT")"
 
-echo "$ISSUE_URL_BASE"
+echo "$ISSUE_URL_BASE|$ISSUE_REPO"
 INNER_EOF
     chmod +x "$TEST_URL_ROUTER"
 
     # Bluefin generic
     result="$("$TEST_URL_ROUTER" "bluefin" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml" ]
+    [ "$result" = "https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml|projectbluefin/bluefin" ]
 
     # Bluefin LTS
     result="$("$TEST_URL_ROUTER" "bluefin" "lts-39" "")"
-    [ "$result" = "https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml" ]
+    [ "$result" = "https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml|projectbluefin/bluefin-lts" ]
 
     # Dakota
     result="$("$TEST_URL_ROUTER" "dakota" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml" ]
+    [ "$result" = "https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml|projectbluefin/dakota" ]
 
     # Common fallback
     result="$("$TEST_URL_ROUTER" "something-else" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/common/issues/new?template=bug-report.yml" ]
+    [ "$result" = "https://github.com/projectbluefin/common/issues/new?template=bug-report.yml|projectbluefin/common" ]
 
     # Override
     result="$("$TEST_URL_ROUTER" "bluefin" "latest" "https://example.com/custom")"
-    [ "$result" = "https://example.com/custom" ]
+    [ "$result" = "https://example.com/custom|projectbluefin/bluefin" ]
 
     rm -f "$TEST_URL_ROUTER"
+}
+
+@test "confirm posts a lightweight fingerprint to the routed repository" {
+    mkdir -p "$WORKDIR/bin"
+    cat << 'INNER_EOF' > "$WORKDIR/bin/systemctl"
+#!/usr/bin/bash
+printf 'failed-example.service loaded failed failed\n'
+INNER_EOF
+    cat << 'INNER_EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "$CALLS_FILE"
+if [[ "$1" == api ]]; then
+    printf 'https://github.com/projectbluefin/bluefin-lts/issues/42#issuecomment-123\n'
+fi
+INNER_EOF
+    chmod +x "$WORKDIR/bin/systemctl" "$WORKDIR/bin/gh"
+    export CALLS_FILE="$WORKDIR/gh-calls"
+    export PATH="$WORKDIR/bin:$PATH"
+
+    CONFIRM_HELPER="$(mktemp)"
+    cat << 'INNER_EOF' > "$CONFIRM_HELPER"
+#!/usr/bin/bash
+set -euo pipefail
+eval "$(sed -n '/^confirm_report() {/,/^}$/p' "$BONEDIGGER_SCRIPT")"
+BOOTC_JSON='{"status":{"booted":{"imageDigest":"sha256:abc123"}}}'
+IMAGE_REF='ghcr.io/projectbluefin/bluefin'
+IMAGE_TAG='latest'
+confirm_report 42 projectbluefin/bluefin-lts
+INNER_EOF
+    chmod +x "$CONFIRM_HELPER"
+
+    run "$CONFIRM_HELPER"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'**System fingerprint** (via `ujust report --confirm`)'* ]]
+    [[ "$output" == *'Image: ghcr.io/projectbluefin/bluefin'* ]]
+    [[ "$output" == *'Digest: sha256:abc123'* ]]
+    grep -qF 'issue comment 42 --repo projectbluefin/bluefin-lts --body' "$CALLS_FILE"
+    grep -qF 'https://github.com/projectbluefin/bluefin-lts/issues/42#issuecomment-123' <<< "$output"
+}
+
+@test "confirm rejects non-positive issue numbers" {
+    run env HOME="$WORKDIR/home" bash "$BONEDIGGER_SCRIPT" --confirm 0
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Usage: ujust report --confirm <issue-number>'* ]]
+
+    run env HOME="$WORKDIR/home" bash "$BONEDIGGER_SCRIPT" --confirm nope
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Usage: ujust report --confirm <issue-number>'* ]]
 }
 
 @test "home paths with spaces are redacted" {

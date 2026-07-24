@@ -47,6 +47,22 @@ bonedigger has two functions:
 real shell implementation in `/usr/libexec/bonedigger-report`. Keep the
 `BONEDIGGER_VERSION` line in the Justfile because Renovate watches that path.
 
+### Confirm an existing issue
+
+Use `ujust report --confirm <issue-number>` when the current system is affected
+by an existing issue. This mode collects and previews a lightweight system
+fingerprint (image, version/digest, kernel, architecture, failed units, and the
+same anonymous device ID used by the full report), then posts it as a comment
+with `gh issue comment`. It does not collect OTel data or create a gist. The
+issue repository is derived from the booted `IMAGE_NAME` using the same routing
+as normal bug reports: Bluefin LTS goes to `projectbluefin/bluefin-lts`, regular
+Bluefin to `projectbluefin/bluefin`, Dakota to `projectbluefin/dakota`, and
+unknown variants to `projectbluefin/common`.
+
+Issue numbers must be positive integers. In a terminal, the exact comment is
+shown and requires confirmation before posting; non-interactive use posts after
+printing the preview. A signed-in GitHub CLI is required (`gh auth login`).
+
 ## bonedigger — what it does NOT do
 
 The **full** issue lifecycle (slash commands, pipeline widget, label transitions, stale sweep, auto-merge on lgtm) lives in `projectbluefin/actions/.github/workflows/lifecycle.yml`. It was first deployed to `common` (2026-06-05) then moved to `actions` ([common#570](https://github.com/projectbluefin/common/issues/570), closed 2026-06-10) to serve all factory repos as a single reusable.
