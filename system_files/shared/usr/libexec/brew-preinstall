@@ -6,7 +6,10 @@
 # packages removed from Brewfiles are uninstalled — without touching user-added packages.
 #
 # State: ~/.local/share/ublue-os/brew-preinstall-state.json
-#   { "hash": "<sha256 of all Brewfiles>", "packages": ["pkg1", "pkg2", ...] }
+#   { "hash": "<sha256 of all Brewfiles>",
+#     "packages": ["pkg1", "pkg2", ...],
+#     "casks": ["cask1", ...] }
+# Older state files without a "casks" key are read as an empty cask list.
 set -euo pipefail
 
 PREINSTALL_DIR="/usr/share/ublue-os/homebrew/preinstall.d"
@@ -45,20 +48,52 @@ eval "$("${BREW_BIN}" shellenv)"
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
-# Install all packages declared in Brewfiles (brew bundle is idempotent)
+# Install all packages declared in Brewfiles (brew bundle is idempotent).
+# One failing Brewfile (e.g. an unreachable external tap) must not block
+# the others, but any failure aborts before the removal/state-write phase
+# so the run is retried on next login.
+bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
-    brew bundle --file="${brewfile}"
+    if ! brew bundle --file="${brewfile}"; then
+        echo "brew-preinstall: error: bundling ${brewfile} failed"
+        bundle_failed=1
+    fi
 done
 
-# Uninstall packages removed from our managed set (OS diet).
-# Parse the package names we manage now vs what we managed before,
-# then remove the delta — but only if brew still has them installed.
+if [[ "${bundle_failed}" -ne 0 ]]; then
+    echo "brew-preinstall: one or more Brewfiles failed; state unchanged, will retry"
+    exit 1
+fi
+
+# Uninstall packages and casks removed from our managed set (OS diet).
+# Parse the names we manage now vs what we managed before, then remove
+# the delta — but only if brew still has them installed.
 # This never touches packages the user added outside our managed set.
-current_packages=$(grep -h '^brew "' "${brewfiles[@]}" \
-    | sed 's/brew "\([^"]*\)".*/\1/' | sort -u)
-previous_packages=$(jq -r '.packages[] // empty' "${STATE_FILE}" 2>/dev/null \
+# sed -n exits 0 when nothing matches (a valid state) but still fails on
+# real I/O errors — unlike grep, which exits 1 for both no-match and
+# would need `|| true`, masking errors and risking an empty current set
+# that the diff below would then treat as "uninstall everything managed".
+current_packages=$(sed -n 's/^brew "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
+current_casks=$(sed -n 's/^cask "\([^"]*\)".*/\1/p' "${brewfiles[@]}" | sort -u)
+
+# A corrupt state file must never drive removals. The jq reads below yield
+# empty previous sets for it (fail-safe: nothing gets uninstalled), and the
+# state write at the end self-heals the file — but say so instead of hiding it.
+if [[ -f "${STATE_FILE}" ]] && ! jq -e . "${STATE_FILE}" >/dev/null 2>&1; then
+    echo "brew-preinstall: warning: state file is corrupt; skipping removals this run and rebuilding state"
+fi
+
+previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
+previous_casks=$(jq -r '.casks[]? // empty' "${STATE_FILE}" 2>/dev/null \
+    | sort -u || true)
+
+# A failed uninstall must not be absorbed: if the new state were written
+# anyway, the hash fast-exit would keep the dropped package installed
+# forever. Track failures and bail before the state write so systemd
+# retries the whole run (Restart=on-failure) with the old state intact.
+uninstall_failed=0
 
 if [[ -n "${previous_packages}" ]]; then
     removed=$(comm -23 \
@@ -68,19 +103,39 @@ if [[ -n "${previous_packages}" ]]; then
         if brew list --formula "${pkg}" &>/dev/null; then
             echo "brew-preinstall: removing ${pkg} (dropped from managed set)"
             brew uninstall "${pkg}" --ignore-dependencies 2>/dev/null \
-                || echo "brew-preinstall: warning: could not remove ${pkg}, skipping"
+                || { echo "brew-preinstall: error: could not remove ${pkg}"; uninstall_failed=1; }
         fi
     done
 fi
 
-# Persist new state: hash + full managed package list for next diff.
+if [[ -n "${previous_casks}" ]]; then
+    removed_casks=$(comm -23 \
+        <(echo "${previous_casks}") \
+        <(echo "${current_casks}") || true)
+    for cask in ${removed_casks}; do
+        if brew list --cask "${cask}" &>/dev/null; then
+            echo "brew-preinstall: removing cask ${cask} (dropped from managed set)"
+            brew uninstall --cask "${cask}" 2>/dev/null \
+                || { echo "brew-preinstall: error: could not remove cask ${cask}"; uninstall_failed=1; }
+        fi
+    done
+fi
+
+if [[ "${uninstall_failed}" -ne 0 ]]; then
+    echo "brew-preinstall: one or more removals failed; state unchanged, will retry"
+    exit 1
+fi
+
+# Persist new state: hash + full managed package and cask lists for next diff.
 # Write atomically via temp file + rename to avoid corrupt state on SIGKILL.
 mkdir -p "$(dirname "${STATE_FILE}")"
-packages_json=$(echo "${current_packages}" | jq -R . | jq -s .)
+packages_json=$(echo "${current_packages}" | jq -R . | jq -s 'map(select(length > 0))')
+casks_json=$(echo "${current_casks}" | jq -R . | jq -s 'map(select(length > 0))')
 jq -n \
     --arg hash "${current_hash}" \
     --argjson packages "${packages_json}" \
-    '{"hash": $hash, "packages": $packages}' > "${STATE_FILE}.tmp"
+    --argjson casks "${casks_json}" \
+    '{"hash": $hash, "packages": $packages, "casks": $casks}' > "${STATE_FILE}.tmp"
 mv -f "${STATE_FILE}.tmp" "${STATE_FILE}"
 
 echo "brew-preinstall: complete"
