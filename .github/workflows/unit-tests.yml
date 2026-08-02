@@ -33,7 +33,7 @@ jobs:
       - name: Install test deps
         run: |
           sudo apt-get install -y bats
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pyyaml
 
       - name: Run shellcheck — extensionless scripts
         run: |
@@ -53,6 +53,9 @@ jobs:
 
       - name: Run pytest (hooks.py)
         run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+
+      - name: Run pytest (ChairLift maintainer config)
+        run: python3 -m pytest tests/test_chairlift_config.py -v
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

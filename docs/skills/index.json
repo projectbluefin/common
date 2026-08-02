@@ -67,8 +67,8 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-07-22",
       "doc_type": "procedure"
     },
     {

@@ -1,0 +1,43 @@
+name: Validate ChairLift Config
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - "system_files/shared/usr/share/chairlift/**"
+      - "tests/check-chairlift-config"
+      - ".github/workflows/validate-chairlift-config.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "system_files/shared/usr/share/chairlift/**"
+      - "tests/check-chairlift-config"
+  # Upstream can change its schema without us touching anything, and an
+  # unknown key disables the whole app. Catch that drift on a schedule
+  # instead of on the next unrelated PR.
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install deps
+        run: pip install pyyaml
+
+      - name: Validate ChairLift config against upstream schema
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tests/check-chairlift-config

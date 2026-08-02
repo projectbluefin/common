@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# bootc-update-stage — privileged helper invoked via ChairLift's fixed
+# org.frostyard.ChairLift.bootc.stage polkit action (pkexec exec.path is
+# pinned to this exact path; see
+# system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy).
+#
+# Downloads and stages the next bootc system image update. It intentionally
+# does NOT pass --apply: the update is only staged and applies on the next
+# reboot, on the user's own schedule. uupd remains the owner of Bluefin's
+# background update policy; this script only backs ChairLift's manual
+# "check for updates now" action.
+#
+# Contract: no arguments are read or required. Any arguments pkexec may
+# forward are ignored so this cannot be used to run arbitrary bootc
+# subcommands through a privileged invocation.
+set -euo pipefail
+
+# --download-only stages the update without applying it or rebooting;
+# --apply/--from-downloaded remain the user's own action (or uupd's), not
+# this helper's.
+#
+# Progress output is deliberately NOT suppressed: ChairLift's StageUpdate
+# merges this process's stdout and stderr and streams each line into its
+# progress view, so `--quiet` would leave the user staring at an empty
+# dialog for the length of an image pull.
+exec /usr/bin/bootc upgrade --download-only

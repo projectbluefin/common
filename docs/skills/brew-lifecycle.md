@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-07-22"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle.md
@@ -19,7 +19,8 @@ metadata:
   type: procedure
   context7-sources:
     - /bootc-dev/bootc
-    - /bootc-dev/bootc
+    - /homebrew/brew
+    - /websites/cli_github_manual
 ---
 
 # brew-lifecycle — Homebrew Package Lifecycle for Bluefin
@@ -115,18 +116,25 @@ brew is installed at `/var/home/linuxbrew/.linuxbrew/bin/brew`.
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`
 ```json
-{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...] }
+{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...], "casks": ["cask1", ...] }
 ```
+
+Older state files without a `casks` key are read as an empty cask list;
+no migration is needed.
 
 ### On every login
 
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
 3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
-4. Diff `previous_packages` (from state JSON) against `current_packages`
-   (from Brewfiles). Uninstall packages that were in the old set but not
-   the new one — **only if `brew list` confirms they are installed**.
-5. Write new hash + package list to state file atomically (tmp + mv).
+   One failing Brewfile (e.g. an unreachable external tap) does not block
+   the others, but any failure exits 1 **before** the removal and
+   state-write phases, so systemd retries the whole run on next login.
+4. Diff previous `packages`/`casks` (from state JSON) against the current
+   `brew "..."`/`cask "..."` lines (from Brewfiles). Uninstall entries that
+   were in the old set but not the new one — **only if `brew list` confirms
+   they are installed**. Casks are removed with `brew uninstall --cask`.
+5. Write new hash + package and cask lists to state file atomically (tmp + mv).
 
 **The service is content-addressed, not version-numbered.** Never bump a
 counter to propagate a Brewfile change — just edit the file. The hash change
@@ -176,6 +184,88 @@ brew "bluefinctl"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [Homebrew 6.0 tap trust](#homebrew-60-tap-trust-required-as-of-2026-06-11).
+
+### Add a cask (GUI app)
+
+`cask "<name>"` lines get the same managed lifecycle as `brew "<name>"`
+lines: installed by `brew bundle`, tracked in the state file under
+`casks`, and uninstalled with `brew uninstall --cask` when the line is
+removed. Verify with `bats tests/test_brew_preinstall.bats`.
+
+**Shipped example — ChairLift** (`preinstall.d/chairlift.Brewfile`):
+```ruby
+tap "frostyard/tap", trusted: true
+cask "chairlift"
+```
+ChairLift is a GTK4 system-management GUI (Homebrew, Flatpak, bootc).
+Its Bluefin maintainer config ships at
+`system_files/shared/usr/share/chairlift/config.yml` (admin override:
+`/etc/chairlift/config.yml`). frostyard/chairlift#54 resolved via the
+system-integration split (frostyard/chairlift#102): Bluefin now ships the
+fixed `/usr/libexec/bootc-update-stage` helper and the bootc PolicyKit
+policy under `system_files/shared/usr/share/polkit-1/actions/`, so
+`bootc_updates_group` is enabled (staging only —
+`bootc upgrade --download-only`; applying stays with the user's own
+reboot or uupd's background policy). `features_group` (updex) stays
+disabled — no updex helper ships on Bluefin yet, independent of the
+polkit fix. Guarded by `tests/test_chairlift_config.py` (wired into
+`just test` and `unit-tests.yml`) and
+`tests/check-chairlift-config` (upstream schema drift).
+
+#### ChairLift config keys fail closed — never invent one
+
+**An unknown page, group, or field key in `config.yml` disables the entire
+application.** This is not a silent no-op. Upstream
+`internal/config/validate.go` classifies any name it does not recognise as
+`KindSchema`; `internal/config/config.go::Load()` answers that with
+`disabledConfig()`, which forces `enabled: false` on *every group on every
+page* and raises a persistent "Configuration error … All feature groups are
+disabled" toast.
+
+Because Bluefin preinstalls ChairLift silently at next login, a single typo
+ships an empty, broken app to every user of `bluefin`, `bluefin-lts`, and
+`dakota` at once. This exact bug reached review once: an invented
+`updates_page.updates_settings_group` was added to express "uupd owns update
+scheduling". That group has never existed upstream — `updates_page` is
+exactly `bootc_updates_group`, `flatpak_updates_group`, `brew_updates_group`,
+`brew_trust_group`.
+
+Rules:
+
+- **Express policy in a YAML comment, not in a made-up key.** If there is no
+  group for the behaviour you want to suppress, the behaviour does not exist.
+- **Derive key names from upstream source**, `internal/config/config.go::defaultConfig()`,
+  not from memory, not from our own docs, and not from our own tests.
+- **A hand-written allowlist in our own test file proves nothing.** The
+  original bug passed CI because the test's `KNOWN_GROUPS` set was edited in
+  the same PR to include the invented group. `tests/check-chairlift-config`
+  exists because of this: it fetches upstream's `config.yml` (a complete
+  enumeration, kept in lockstep with `defaultConfig()`) and fails on any key we
+  use that upstream does not define. It runs on PRs touching the config and
+  weekly, since upstream can drift without us touching anything.
+
+#### Stage helper must not suppress output
+
+`/usr/libexec/bootc-update-stage` deliberately omits `--quiet`.
+`bootc.StageUpdate` merges the helper's stdout and stderr and streams each
+line into ChairLift's progress view, so `--quiet` leaves the user watching an
+empty dialog for the length of an image pull.
+
+#### Cask pinning caveat
+
+The upstream tap cask currently targets the rolling `dev` tag with
+`sha256 :no_check`, so the preinstalled payload is mutable and unverified even
+though tagged releases with per-arch checksums exist. Accepted deliberately for
+the initial rollout; bumping the tap to a pinned version is tracked separately.
+
+#### polkit file overlap
+
+Our `org.frostyard.ChairLift.bootc.policy` is a byte-identical copy of
+upstream's. Upstream's `chairlift-system-integration` package ships the same
+file, so layering that RPM on a Bluefin image would collide. Upstream
+intentionally does *not* ship the stage script — "Distros enabling bootc
+staging must separately provide `/usr/libexec/bootc-update-stage`" — which is
+why Bluefin ships its own.
 
 ### Add a variant-specific Brewfile
 
@@ -388,10 +478,51 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 
 - [ ] Package obeys the "can move to brew" rule: self-contained CLI, no system-level deps
 - [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
+- [ ] If adding/removing a cask: lifecycle covered by the cask bats tests; removal uses `brew uninstall --cask` (verified against /homebrew/brew docs)
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
 - [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login
 - [ ] Merging order followed if the change spans repos: common → bluefin → bluefin-lts → dakota
+
+### Re-deriving the ChairLift facts in this document
+
+Every project-internal claim above about ChairLift can be re-derived. Run these
+rather than trusting the prose — the bug that motivated this section survived a
+green test suite precisely because nobody re-derived anything.
+
+```bash
+# What we ship, and where
+ls system_files/shared/usr/share/chairlift/config.yml \
+   system_files/shared/usr/libexec/bootc-update-stage \
+   system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy \
+   system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile
+
+# The privileged command, in full (must be exactly: bootc upgrade --download-only)
+grep '^exec ' system_files/shared/usr/libexec/bootc-update-stage
+
+# The polkit action pins that exact path and requires auth
+grep -E 'exec.path|allow_' system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy
+
+# No passwordless rule anywhere re-grants the staging action
+grep -rn 'ChairLift\|bootc-update-stage' system_files/*/usr/share/polkit-1/rules.d/ || echo "none (expected)"
+
+# Our config uses only keys upstream defines (network; the CI job runs this)
+python3 tests/check-chairlift-config
+
+# Upstream's canonical groups and field names, straight from source
+gh api repos/frostyard/chairlift/contents/internal/config/config.go --jq .content \
+  | base64 -d | sed -n '/func defaultConfig/,/^}/p'
+gh api repos/frostyard/chairlift/contents/internal/config/config.go --jq .content \
+  | base64 -d | sed -n '/type GroupConfig struct/,/^}/p'
+
+# Unknown keys really are fatal, not ignored
+gh api repos/frostyard/chairlift/contents/internal/config/validate.go --jq .content \
+  | base64 -d | grep -n 'KindSchema'
+
+# The tests actually run in CI and locally
+grep -n 'test_chairlift_config' Justfile .github/workflows/unit-tests.yml
+python3 -m pytest tests/test_chairlift_config.py -v
+```
 
 ## Brewfile scope: shared/ vs bluefin/ for all-variant packages
 

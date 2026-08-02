@@ -16,6 +16,8 @@ description: >-
   debugging CI, or understanding pipeline stages.
 metadata:
   type: reference
+  context7-sources:
+    - /websites/cli_github_manual
 ---
 
 # Common workflow map
@@ -30,6 +32,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 |---|---|---|
 | `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
 | `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
+| `validate-chairlift-config.yaml` | Checks `/usr/share/chairlift/config.yml` against upstream ChairLift's live schema; also runs weekly | Changing the ChairLift maintainer config, or when upstream ChairLift changes its config schema |
 | `unit-tests.yml` | Runs `pytest` + `bats` on `system_files/**`, `tests/**`, and the `Justfile`. Triggers on PR, push to `main`, and `merge_group`. | Adding or changing unit tests, or changing the paths they cover |
 | `build.yml` | Builds and publishes the `common` OCI layer on merge. Runs parallel per-arch jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`). Build uses rootless `buildah-build`; after build, `sudo skopeo copy` promotes the image into root storage so `push-image` (which uses `sudo podman push`) can find it. Then a `manifest` job assembles the multi-arch manifest, logs into GHCR, signs with keyless OIDC, generates SBOM, and attests SLSA L2. Downstream propagation is handled by Renovate (bluefin/bluefin-lts, ~3h) and dakota's daily cron — there is no direct dispatch from this workflow. | Changing how the shared layer is built or pushed |
 | `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer (composes + runs common suite via `run-testsuite.yml`) | Changing how PR-time downstream composition is tested |
@@ -52,6 +55,13 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 ### Validation and policy
 
 `validate.yml` and `validate-brewfiles.yaml` are about catching repo-local mistakes **before merge**.
+
+`validate-chairlift-config.yaml` is different in kind: it validates against an
+**external** source of truth that can change without any commit here, which is
+why it also runs on a schedule. Reach for that shape whenever correctness
+depends on a third party's schema rather than on this repo's own contents — a
+hand-maintained allowlist inside our own tests cannot catch that drift, because
+it moves with the change instead of resisting it.
 
 ### Shared-layer build and release
 
@@ -114,3 +124,29 @@ When editing workflows here, preserve the repo boundary:
 - `common` validates the **shared layer**
 - downstream image repos validate their **image-specific** behavior
 - reusable CI logic should live in `projectbluefin/actions`, not be duplicated inline unless the logic is truly `common`-specific
+
+## Verification
+
+Re-derive this table rather than trusting it — workflows change without this
+file being touched.
+
+```bash
+# The actual set of workflows, and their names as they appear in checks
+ls .github/workflows/
+grep -H '^name:' .github/workflows/*.yml .github/workflows/*.yaml
+
+# What triggers a given workflow (events, path filters, schedules)
+sed -n '/^on:/,/^jobs:/p' .github/workflows/validate-chairlift-config.yaml
+
+# Every scheduled workflow in the repo
+grep -l 'schedule:' .github/workflows/* | xargs -r grep -H -A2 'cron:'
+
+# What a workflow actually runs, as opposed to what it is described as doing
+grep -n 'run:\|uses:' .github/workflows/validate-chairlift-config.yaml
+
+# Which checks are required to merge, per the live ruleset
+gh api repos/projectbluefin/common/rulesets --jq '.[].name'
+
+# Recent results for a workflow
+gh run list --repo projectbluefin/common --workflow "Validate ChairLift Config" --limit 5
+```
