@@ -89,6 +89,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
+| `tests/test_brew_tap_trust.bats` | `apps.just`, `system.just`, `bazaar-hook` — `brew tap` + `brew trust` are separate commands; `brew tap --trust` is invalid (#814) |
 
 ## Quality Epic
 
