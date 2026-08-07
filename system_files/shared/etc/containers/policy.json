@@ -41,6 +41,20 @@
                     }
                 }
             ],
+            "ghcr.io/projectbluefin": [
+                {
+                    "type": "sigstoreSigned",
+                    "fulcio": {
+                        "caPath": "/usr/lib/pki/containers/fulcio_v1.crt.pem",
+                        "oidcIssuer": "https://token.actions.githubusercontent.com",
+                        "subjectRegExp": "^https://github\\.com/projectbluefin/(bluefin|bluefin-lts|dakota|common|aurora|actions)/\\.github/workflows/"
+                    },
+                    "rekorPublicKeyPath": "/usr/lib/pki/containers/rekor.pub",
+                    "signedIdentity": {
+                        "type": "matchRepository"
+                    }
+                }
+            ],
             "": [
                 {
                     "type": "insecureAcceptAnything"
