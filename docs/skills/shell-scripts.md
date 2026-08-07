@@ -1,7 +1,7 @@
 ---
 name: shell-scripts
 version: "1.0"
-last_updated: "2026-08-01"
+last_updated: "2026-08-06"
 id: shell-scripts
 one_line_purpose: Write and test shell scripts under system_files/.
 entry_point: docs/skills/shell-scripts.md
@@ -437,6 +437,41 @@ grep -q "^name:!\*::" file
 # ALSO CORRECT — -F disables regex entirely
 grep -qF "name:!*::" file
 ```
+
+### Bash DEBUG traps are invisible inside functions
+
+Without `set -o functrace`, bash does **not** inherit the `DEBUG` trap into
+shell functions. Two consequences bite when testing or writing prompt hooks:
+
+```bash
+f() { echo "[$(trap -p DEBUG)]"; }   # always prints [] — even when a trap is set
+g() { trap - DEBUG; }                # does NOT clear the caller's DEBUG trap
+h() { trap 'cmd' DEBUG; }            # DOES set the caller's DEBUG trap
+```
+
+So `trap -p DEBUG` is useless as a detector from inside a function, while
+`trap ... DEBUG` from inside a function is a reliable way to (re-)install one.
+
+For bats: `PROMPT_COMMAND` entries execute at **top level** in a real shell.
+Simulate a prompt cycle with a top-level loop, never a helper function —
+wrapping the cycle in a function hides `trap - DEBUG` clobbers entirely and
+makes the test pass vacuously.
+
+```bash
+CYCLE='for __e in "${PROMPT_COMMAND[@]}"; do eval "$__e"; done'
+```
+
+See `tests/test_bling_preexec_rearm.bats` and
+[#869](https://github.com/projectbluefin/common/issues/869).
+
+### POSIX-`sh` files cannot hold bash array code
+
+`system_files/**/*.sh` is shellchecked with the dialect from its shebang.
+`bling.sh` is `#!/usr/bin/env sh`, so bash arrays, `BASH_SOURCE`, and `+=(...)`
+trip SC3028/SC3030/SC3054 and fail CI. Put bash-only logic in a sibling
+`#!/usr/bin/env bash` file and source it from inside the existing
+`[ "${BLING_SHELL}" = "bash" ]` guard, with a `BLING_DIR` override so bats can
+point at the repo tree instead of `/usr/share/ublue-os/bling`.
 
 ## Red Flags
 
