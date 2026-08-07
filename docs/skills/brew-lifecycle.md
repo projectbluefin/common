@@ -201,12 +201,16 @@ unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
 and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
 Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
 
-**In just recipes** that call `brew tap` before cask installs:
+**In just recipes** that call `brew tap` before cask installs, trust is a
+**separate command** — `--trust` is not a valid `brew tap` flag and Homebrew
+6.0 exits non-zero on it:
 ```diff
-- brew tap ublue-os/tap 2>/dev/null || true
-+ brew tap --trust ublue-os/tap
+- brew tap --trust ublue-os/tap
++ brew tap ublue-os/tap 2>/dev/null || true
++ brew trust ublue-os/tap 2>/dev/null || true
 ```
-The `|| true` silencer must be removed — tap failures should surface.
+`brew tap` is idempotent and errors when the tap already exists, so keep the
+`2>/dev/null || true` guard — especially inside `set -euo pipefail` recipes.
 
 **In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
 ```ruby
@@ -215,17 +219,20 @@ tap "ublue-os/experimental-tap", trusted: true
 ```
 
 **Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
-mechanism. The correct 6.0 approach is `--trust` at tap-time and
-`trusted: true` in Brewfiles.
+mechanism. The correct 6.0 approach is `brew trust <tap>` after `brew tap`,
+and `trusted: true` in Brewfiles. See https://docs.brew.sh/Tap-Trust.
 
-### Known trust issues in the codebase (as of 2026-06)
+### Tap trust call sites
 
-| File | Current code | Status |
-|---|---|---|
-| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
-| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
-| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+| File | Expected code |
+|---|---|
+| `system.just` dx recipe | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `system.just` dx recipe | `brew tap ublue-os/experimental-tap` + `brew trust ublue-os/experimental-tap` |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `apps.just` install-asus | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `bazaar-hook` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+
+Regression coverage lives in `tests/test_brew_tap_trust.bats`.
 
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
 
@@ -386,7 +393,8 @@ commands in `/usr/bin`, static Brewfiles in `/usr/share`.
 
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
-- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding a tap without `trusted: true` in a Brewfile, or without a `brew trust` call after `brew tap` in a recipe (Homebrew 6.0 blocks untrusted taps silently)
+- Passing `--trust` to `brew tap` — it is not a valid flag and Homebrew 6.0 exits non-zero; use `brew trust <tap>` as a separate command
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
 - Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
 - Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`

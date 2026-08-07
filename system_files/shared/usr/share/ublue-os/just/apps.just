@@ -9,7 +9,8 @@ jetbrains-toolbox:
 [group('Apps')]
 install-jetbrains-toolbox:
     #!/usr/bin/env bash
-    brew tap --trust ublue-os/tap
+    brew tap ublue-os/tap 2>/dev/null || true
+    brew trust ublue-os/tap 2>/dev/null || true
     brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 
 # Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
@@ -60,7 +61,8 @@ install-asus:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Installing ASUS laptop tools..."
-    brew tap --trust ublue-os/tap
+    brew tap ublue-os/tap 2>/dev/null || true
+    brew trust ublue-os/tap 2>/dev/null || true
     brew install --cask ublue-os/tap/asusctl-linux
     brew install --cask ublue-os/tap/rog-control-center-linux
     echo ""
