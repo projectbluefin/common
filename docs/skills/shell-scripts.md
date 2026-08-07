@@ -153,6 +153,30 @@ Apply to any script reading system files via stdin redirect.
 
 ---
 
+### image-info.json is build-time state — use `ublue-image-resolve` for live identity
+
+`/usr/share/ublue-os/image-info.json` is baked when the image is built, so it
+describes what the filesystem was *built* as, not what is booted. After a rebase
+it lies (see [#820](https://github.com/projectbluefin/common/issues/820)).
+
+Ask `/usr/libexec/ublue-image-resolve` instead. It reads
+`.status.booted.image.image.image` from `bootc status --json` and falls back to
+the baked file when bootc is absent, non-zero, or reports no booted image.
+
+```bash
+IMAGE_RESOLVE="${IMAGE_RESOLVE:-/usr/libexec/ublue-image-resolve}"
+IMAGE_TAG="$("${IMAGE_RESOLVE}" image-tag)"   # stable
+IMAGE_NAME="$("${IMAGE_RESOLVE}" image-name)" # bluefin-lts
+IMAGE_PATH="$("${IMAGE_RESOLVE}" image-path)" # ghcr.io/projectbluefin/bluefin-lts
+```
+
+Never split a ref on the first `:` — registry ports (`registry:5000/foo:tag`)
+and digests (`repo:tag@sha256:...`) both break that. The resolver handles both.
+
+In bats, mock `bootc` onto PATH and point `IMAGE_RESOLVE` at the real script.
+
+---
+
 ### Assert env-var export against the subshell consumer, not exec
 
 `exec` inherits all shell variables whether exported or not — asserting `DEFAULT_THEME`

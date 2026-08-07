@@ -62,7 +62,7 @@ Scripts exempt from behavioral testing (shellcheck-only):
 | `usr/share/ublue-os/bling/env.sh` | Sourced helper — sets env vars only |
 | `usr/share/ublue-os/user-setup.hooks.d/20-dynamic-wallpaper.sh` | One-shot hook — logic tested indirectly via setup integration tests |
 | `usr/bin/ublue-motd` | Display-only wrapper — cosmetic tput/glow call, no decision logic |
-| `usr/bin/ublue-image-info.sh` | Read-only reporting wrapper — jq + rpm-ostree status, no branching that affects system state |
+| `usr/bin/ublue-image-info.sh` | Read-only reporting wrapper — delegates resolution to `ublue-image-resolve` (tested separately) plus rpm-ostree status |
 
 **Adding an exemption:** add a row to this table with a one-sentence justification.
 Do not add exemptions for scripts with branching logic.
@@ -90,6 +90,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
 | `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
+| `tests/test_ublue_image_resolve.bats` | `ublue-image-resolve` — bootc-status-first tag/name/ref resolution, digest and ported-registry refs, image-info.json fallback |
 
 ## Quality Epic
 

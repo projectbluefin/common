@@ -103,6 +103,9 @@ jobs:
       - name: Run bats (ublue-image-info.sh)
         run: bats tests/test_ublue_image_info.bats
 
+      - name: Run bats (ublue-image-resolve)
+        run: bats tests/test_ublue_image_resolve.bats
+
       - name: Run bats (profile.d — caffeinate.sh + uutils.sh)
         run: bats tests/test_profile_d.bats
 

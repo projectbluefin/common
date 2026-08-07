@@ -86,8 +86,24 @@ EOF
     chmod +x "${MOCKDIR}/grep"
 
     # Keep the fallback recipe under test; a developer's host bctl must not
-    # short-circuit repository selection before the mocked curl calls.
-    export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\n' | grep -v '/.local/bin' | paste -sd: -)"
+    # short-circuit repository selection before the mocked curl calls. Drop
+    # every PATH entry that actually provides bctl, not just ~/.local/bin.
+    export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\n' | while read -r d; do
+        [ -x "${d}/bctl" ] || printf '%s\n' "${d}"
+    done | paste -sd: -)"
+
+    # Mock the live-image resolver (see ublue-image-resolve). changelog.just
+    # asks it for the booted tag/name instead of reading image-info.json.
+    cat > "${MOCKDIR}/ublue-image-resolve" << 'RESOLVE_MOCK'
+#!/bin/bash
+case "$1" in
+    image-tag)  echo "${MOCK_TAG:-latest}" ;;
+    image-name) echo "${MOCK_NAME:-bluefin}" ;;
+    *)          exit 2 ;;
+esac
+RESOLVE_MOCK
+    chmod +x "${MOCKDIR}/ublue-image-resolve"
+    export IMAGE_RESOLVE="${MOCKDIR}/ublue-image-resolve"
 
     SCRIPT_FILE="${WORKDIR}/changelog.sh"
     _extract_script "${SCRIPT_FILE}"

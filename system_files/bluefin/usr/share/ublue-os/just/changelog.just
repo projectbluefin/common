@@ -7,12 +7,13 @@ changelogs:
         exec bctl changelogs
     fi
 
-    # Get Image Tag
-    IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
-    TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
+    # Get Image Tag from the live system (bootc status), not the build-time
+    # image-info.json, which goes stale after a rebase.
+    IMAGE_RESOLVE="${IMAGE_RESOLVE:-/usr/libexec/ublue-image-resolve}"
+    TAG="$("${IMAGE_RESOLVE}" image-tag || true)"
 
     # Select the correct upstream repo based on image stream
-    IMAGE_NAME="$(jq -r '.["image-name"] // empty' < "${IMAGE_INFO_FILE}")"
+    IMAGE_NAME="$("${IMAGE_RESOLVE}" image-name || true)"
     if [[ "$IMAGE_NAME" == "dakota" ]]; then
         REPO="projectbluefin/dakota"
     elif [[ "$IMAGE_NAME" =~ ^bluefin-lts ]] || [[ "$TAG" =~ ^lts ]]; then

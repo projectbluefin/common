@@ -1,0 +1,128 @@
+#!/usr/bin/bash
+# Resolve the identity of the image the system is actually running.
+#
+# `/usr/share/ublue-os/image-info.json` is baked at build time and describes the
+# image the filesystem was *built* as. After a rebase it no longer matches what
+# is booted, so `bootc status` is the source of truth here and the baked file is
+# only a fallback for non-bootc hosts, containers, and early boot.
+#
+# Usage: ublue-image-resolve <image-name|image-tag|image-path>
+# Prints the resolved value on stdout, or nothing (exit 1) if unresolvable.
+
+set -uo pipefail
+
+IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# Read a field from the build-time image-info.json.
+read_baked_field() {
+	local key="$1" value
+
+	have jq || return 1
+	[[ -r "${IMAGE_INFO_FILE}" ]] || return 1
+
+	value="$(jq -r --arg k "${key}" '.[$k] // empty' <"${IMAGE_INFO_FILE}" 2>/dev/null)" || return 1
+	[[ -n "${value}" && "${value}" != "null" ]] || return 1
+
+	printf '%s' "${value}"
+}
+
+# Full ref of the booted image according to bootc, e.g.
+# ghcr.io/projectbluefin/bluefin-lts:stable
+# Schema: .status.booted.image.image.image (bootc HostStatus -> BootEntry ->
+# ImageStatus -> ImageReference).
+read_live_ref() {
+	local json ref
+
+	have bootc || return 1
+	have jq || return 1
+
+	json="$(bootc status --json 2>/dev/null)" || return 1
+	[[ -n "${json}" ]] || return 1
+
+	ref="$(jq -r '.status.booted.image.image.image // empty' <<<"${json}" 2>/dev/null)" || return 1
+	[[ -n "${ref}" && "${ref}" != "null" ]] || return 1
+
+	printf '%s' "${ref}"
+}
+
+# Last path component of a ref, with any @digest suffix removed. Splitting on
+# the final "/" keeps registry ports (registry:5000/foo/bar:tag) intact.
+ref_basename() {
+	local ref="${1%@*}"
+	printf '%s' "${ref##*/}"
+}
+
+ref_tag() {
+	local base
+	base="$(ref_basename "$1")"
+	[[ "${base}" == *:* ]] || return 1
+	printf '%s' "${base##*:}"
+}
+
+ref_name() {
+	local base
+	base="$(ref_basename "$1")"
+	printf '%s' "${base%%:*}"
+}
+
+# Registry path of a ref with any @digest and :tag removed, e.g.
+# ghcr.io/projectbluefin/bluefin-lts. Only the final path component is
+# considered, so a registry port survives.
+ref_path() {
+	local ref="${1%@*}" base
+	base="${ref##*/}"
+	if [[ "${base}" == *:* ]]; then
+		printf '%s' "${ref%:*}"
+	else
+		printf '%s' "${ref}"
+	fi
+}
+
+# The baked image-ref carries an ostree transport prefix
+# (ostree-image-signed:docker://...). bootc refs never do, so this is only ever
+# applied to the fallback value.
+strip_transport() {
+	local ref="$1"
+	ref="${ref##*://}"
+	[[ "${ref}" =~ ^[a-z][a-z0-9-]*:[^0-9] ]] && ref="${ref#*:}"
+	printf '%s' "${ref}"
+}
+
+main() {
+	local field="${1:-}" ref="" value=""
+
+	case "${field}" in
+	image-name | image-tag | image-path) ;;
+	*)
+		printf 'usage: %s <image-name|image-tag|image-path>\n' "${0##*/}" >&2
+		return 2
+		;;
+	esac
+
+	ref="$(read_live_ref)" || ref=""
+
+	if [[ -n "${ref}" ]]; then
+		case "${field}" in
+		image-path) value="$(ref_path "${ref}")" || value="" ;;
+		image-name) value="$(ref_name "${ref}")" || value="" ;;
+		image-tag) value="$(ref_tag "${ref}")" || value="" ;;
+		esac
+	fi
+
+	# Digest-pinned refs carry no tag, and non-bootc hosts carry no ref at all.
+	if [[ -z "${value}" ]]; then
+		if [[ "${field}" == "image-path" ]]; then
+			ref="$(read_baked_field image-ref)" || ref=""
+			[[ -z "${ref}" ]] || value="$(ref_path "$(strip_transport "${ref}")")"
+		else
+			value="$(read_baked_field "${field}")" || value=""
+		fi
+	fi
+	[[ -n "${value}" ]] || return 1
+
+	printf '%s' "${value}"
+}
+
+main "$@"
