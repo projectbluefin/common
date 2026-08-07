@@ -26,6 +26,7 @@ test:
     bats tests/test_oem_brew.bats
     bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
+    bats tests/test_theming_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
 
 # Preview Bazaar config from this checkout on the local machine
