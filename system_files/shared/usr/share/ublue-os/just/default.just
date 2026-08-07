@@ -30,12 +30,12 @@ clean-system:
     #!/usr/bin/bash
     if gum confirm "Prune all Podman images and volumes?"; then
         echo "Images that would be pruned:"
-        podman image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
+        /usr/bin/podman image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
         echo "Volumes that would be pruned:"
-        podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+        /usr/bin/podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Podman images and volumes?"; then
-            podman image prune -af
-            podman volume prune -f
+            /usr/bin/podman image prune -af
+            /usr/bin/podman volume prune -f
         fi
     fi
 
