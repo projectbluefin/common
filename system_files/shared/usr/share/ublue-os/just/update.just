@@ -23,6 +23,7 @@ update:
     if command -v bctl &>/dev/null; then
         exec bctl update
     fi
+    echo "Starting OS image update (this may take a while as layers download)..."
     sudo bootc upgrade
     # Updates system Flatpaks
     if flatpak remotes | grep -q system; then

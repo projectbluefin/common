@@ -159,6 +159,7 @@ _run() {
 @test "update: runs bootc upgrade when no layered packages are present" {
     _run "${UPDATE_SCRIPT}"
     [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Starting OS image update"* ]]
     grep -qF "sudo bootc upgrade" "${COMMAND_LOG}"
     ! grep -qF "rpm-ostree upgrade" "${COMMAND_LOG}"
 }
