@@ -9,6 +9,7 @@ test:
     bats tests/test_privileged_setup.bats
     bats tests/test_bling.bats
     bats tests/test_bling_sh.bats
+    bats tests/test_bling_preexec_rearm.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
     bats tests/test_bling_fastfetch.bats

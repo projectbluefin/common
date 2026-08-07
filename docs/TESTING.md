@@ -84,6 +84,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup` — hook runner logic |
 | `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
 | `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
+| `tests/test_bling_preexec_rearm.bats` | `bling/bash-preexec-rearm.sh` — DEBUG trap re-arm with array/scalar `PROMPT_COMMAND`, idempotency, degradation when bash-preexec is absent |
 | `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |
 | `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |

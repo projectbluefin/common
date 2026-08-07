@@ -67,3 +67,13 @@ if command -v mise >/dev/null 2>&1; then
     fi
   fi
 fi
+
+# Keep bash-preexec's DEBUG trap alive. Must stay last so the re-arm hook is the
+# final PROMPT_COMMAND entry, after every hook above has queued its own.
+# See: https://github.com/projectbluefin/common/issues/869
+if [ "${BLING_SHELL}" = "bash" ]; then
+    BLING_REARM="${BLING_DIR:-/usr/share/ublue-os/bling}/bash-preexec-rearm.sh"
+    # shellcheck source=/dev/null
+    [ -f "${BLING_REARM}" ] && . "${BLING_REARM}"
+    unset BLING_REARM
+fi
