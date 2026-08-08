@@ -15,7 +15,8 @@ _extract_script() {
         in_recipe && /^    #!\/usr\/bin\/bash/ { found=1; next }
         found && /^[^[:space:]]/ { exit }
         found { sub(/^    /, ""); print }
-    ' "${UPDATE_JUST}" > "${out_file}"
+    ' "${UPDATE_JUST}" \
+        | sed 's/{{ ACTION }}/${ACTION:-prompt}/g' > "${out_file}"
 }
 
 _write_mock() {
@@ -134,6 +135,7 @@ _run() {
         MOCK_GUM_CHOICE="${MOCK_GUM_CHOICE:-}" \
         MOCK_HAS_LAYERED_PACKAGES="${MOCK_HAS_LAYERED_PACKAGES:-0}" \
         MOCK_BREW_BIN="${MOCK_BREW_BIN:-${WORKDIR}/missing-brew}" \
+        ACTION="${ACTION:-prompt}" \
         bash "$@"
 }
 
@@ -214,4 +216,33 @@ _run() {
     [ "${status}" -eq 0 ]
     ! grep -qF "systemctl enable" "${COMMAND_LOG}"
     ! grep -qF "systemctl disable" "${COMMAND_LOG}"
+}
+
+@test "toggle-updates: ACTION=enable enables uupd.timer without prompting" {
+    MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
+    [[ "${output}" == *"Updates have been enabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
+}
+
+@test "toggle-updates: ACTION=disable disables rpm-ostreed timer without prompting" {
+    ACTION=disable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    [[ "${output}" == *"Updates have been disabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
+}
+
+@test "toggle-updates: ACTION=cancel exits without touching the timer" {
+    ACTION=cancel _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -qF "systemctl enable" "${COMMAND_LOG}"
+    ! grep -qF "systemctl disable" "${COMMAND_LOG}"
+}
+
+@test "toggle-updates: ACTION is case-insensitive (ENABLE enables uupd.timer)" {
+    MOCK_HAS_UUPD_TIMER=1 ACTION=ENABLE _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
 }

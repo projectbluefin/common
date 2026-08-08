@@ -41,22 +41,41 @@ update:
 alias auto-update := toggle-updates
 
 # Turn automatic updates on or off
+# Pass `enable`, `disable`, or `cancel` (case-insensitive) as ACTION or a
+# positional argument (e.g. `ujust toggle-updates enable`) to run non-
+# interactively without the bctl panel or gum prompt; the default
+
+# ACTION="prompt" keeps the interactive prompt.
 toggle-updates ACTION="prompt":
     #!/usr/bin/bash
-    # Open the bluefinctl Updates panel when available
-    if command -v bctl &>/dev/null; then
-        exec bctl --screen updates
-    fi
-    CURRENT_STATE="disabled"
-    if systemctl is-enabled -q rpm-ostreed-automatic.timer; then
-        CURRENT_STATE="enabled"
-    elif systemctl is-enabled -q uupd.timer; then
-        CURRENT_STATE="enabled"
-    fi
+    ACTION_VALUE="{{ ACTION }}"
+    case "${ACTION_VALUE,,}" in
+        enable)
+            SELECTED_OPTION="Enable"
+            ;;
+        disable)
+            SELECTED_OPTION="Disable"
+            ;;
+        cancel)
+            exit 0
+            ;;
+        *)
+            # Open the bluefinctl Updates panel when available
+            if command -v bctl &>/dev/null; then
+                exec bctl --screen updates
+            fi
+            CURRENT_STATE="disabled"
+            if systemctl is-enabled -q rpm-ostreed-automatic.timer; then
+                CURRENT_STATE="enabled"
+            elif systemctl is-enabled -q uupd.timer; then
+                CURRENT_STATE="enabled"
+            fi
 
-    echo "Automatic updates are currently ${CURRENT_STATE}"
-    SELECTED_OPTION="$(gum choose --header="Toggle automatic updates?" "Enable" "Disable" "Cancel")"
-    [[ "${SELECTED_OPTION}" == "Cancel" || "${SELECTED_OPTION}" == "" ]] && exit 0
+            echo "Automatic updates are currently ${CURRENT_STATE}"
+            SELECTED_OPTION="$(gum choose --header="Toggle automatic updates?" "Enable" "Disable" "Cancel")"
+            [[ "${SELECTED_OPTION}" == "Cancel" || "${SELECTED_OPTION}" == "" ]] && exit 0
+            ;;
+    esac
 
     if systemctl cat -- uupd.timer &> /dev/null; then
         TIMER="uupd.timer"
