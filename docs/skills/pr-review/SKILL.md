@@ -1,7 +1,7 @@
 ---
 name: pr-review
-version: "3.5"
-last_updated: "2026-08-08"
+version: "3.6"
+last_updated: "2026-09-06"
 id: pr-review
 one_line_purpose: Run human-decides, agent-lands backlog review one card at a time.
 entry_point: docs/skills/pr-review/SKILL.md
@@ -80,6 +80,7 @@ gh pr list --limit 60 \
 Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5 *after* filtering. For a bot sweep, invert to `select(.author.is_bot)`. Present each PR as a one-screen card. Field definitions and the `mergeStateStatus` table: [references/card-fields.md](references/card-fields.md).
 
 - **Competing-pair detection (mandatory):** pairwise-intersect file paths and `closingIssuesReferences` across the batch. Print `⚠️ COMPETING PAIR` on any overlap — human must resolve before both can be voted `merge`.
+- **Duplicate-cluster resolution:** a pair sharing a *closing issue*, or two Renovate PRs normalizing to the *same dependency*, is one piece of work twice — resolve as a unit, arming the survivor before closing the rest. Full procedure: [references/duplicate-cluster.md](references/duplicate-cluster.md).
 - **CI card classification:** classify every red before it costs a human slot. Full procedure: [references/red-check-triage.md](references/red-check-triage.md).
 - **Dismissed-approval check (mandatory):** diff current head against the approved commit SHA. Full procedure: [references/dismissed-approval.md](references/dismissed-approval.md).
 
