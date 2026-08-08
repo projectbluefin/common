@@ -1,7 +1,7 @@
 ---
 name: pr-review
-version: "3.4"
-last_updated: "2026-08-07"
+version: "3.5"
+last_updated: "2026-08-08"
 id: pr-review
 one_line_purpose: Run human-decides, agent-lands backlog review one card at a time.
 entry_point: docs/skills/pr-review/SKILL.md
@@ -130,6 +130,13 @@ On any overlap, print `⚠️ COMPETING PAIR` between both cards. The human must
 resolve the pair (defer one, or explicitly acknowledge) before both can be
 voted `merge`.
 
+#### Duplicate-cluster resolution
+
+A competing pair sharing a *closing issue* — or two Renovate PRs normalizing to the *same dependency* — is one piece of work twice, not an ordering hazard. Resolve the cluster as a unit, halting on the first failure:
+**(1)** the human names the survivor from presented diff evidence (`gh pr diff` works for fork heads); **(2)** arm the survivor first: `gh pr merge <S> --squash --auto --match-head-commit <sha>` with the SHA read live, so a push before landing is a server-side refusal;
+**(3)** comment on each superseded PR naming survivor and evidence (`--body-file`, never `--body` with prose through a shell); **(4)** close it — never `--reason "not planned"`, never a label swap;
+**(5)** re-check linked issues per rule 3 below — a still-open issue with no remaining open PR is a finding to report, not something to silently fix.
+
 #### CI card classification
 
 Classify every red before it costs the human a slot. Full triage procedure,
@@ -163,7 +170,6 @@ git diff <approved_sha>...<current_head>
 
 Full procedure and the table of regressions CI cannot see:
 [references/dismissed-approval.md](references/dismissed-approval.md).
-
 
 ### 2 — Verdict
 

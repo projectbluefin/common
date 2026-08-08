@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06",
+  "generated_at": "2026-08-08",
   "schema_version": "1.0",
   "skills": [
     {
@@ -362,8 +362,8 @@
         "security"
       ],
       "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -503,8 +503,8 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.4",
-      "last_updated": "2026-08-07",
+      "version": "3.5",
+      "last_updated": "2026-08-08",
       "doc_type": "procedure"
     },
     {
