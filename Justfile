@@ -27,6 +27,7 @@ test:
     bats tests/test_hardware_hooks.bats
     bats tests/test_theming_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
+    bats tests/test_brew_tap_trust.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:

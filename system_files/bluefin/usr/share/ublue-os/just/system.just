@@ -146,10 +146,12 @@ toggle-devmode:
 
     # Taps are silent/fast — run before the progress bar
     if _dx_wants -E "VS Code|VSCodium|Antigravity|JetBrains"; then
-        brew tap --trust ublue-os/tap
+        brew tap ublue-os/tap 2>/dev/null || true
+        brew trust ublue-os/tap 2>/dev/null || true
     fi
     if _dx_wants "Zed"; then
-        brew tap --trust ublue-os/experimental-tap
+        brew tap ublue-os/experimental-tap 2>/dev/null || true
+        brew trust ublue-os/experimental-tap 2>/dev/null || true
     fi
 
     # Build install queue for the progress bar
