@@ -5,7 +5,7 @@ last_updated: "2026-08-08"
 id: gpu-toolkit-interface
 one_line_purpose: Define the shared GPU vendor toolkit interface that all GPU support implementations must satisfy.
 entry_point: docs/skills/gpu-toolkit-interface.md
-category: architecture
+category: meta
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
@@ -13,9 +13,9 @@ dependencies: [nvidia]
 tags: [gpu, nvidia, amd, interface, architecture, cdi]
 description: >-
   Vendor-agnostic GPU toolkit interface. Defines the six capabilities any
-  GPU vendor integration must implement before being added to the image.
-  NVIDIA currently implements the reference. AMD (common#277) must implement
-  this interface before vendor-specific AMD code is merged.
+  GPU vendor integration must implement. NVIDIA is the reference
+  implementation; AMD (common#277) must satisfy this interface before
+  vendor-specific AMD code merges.
 metadata:
   type: reference
 ---
@@ -55,7 +55,9 @@ Every GPU vendor toolkit integration in `common` / `bluefin` / `dakota` must pro
 | No mutation at runtime | kargs must be baked at image build time, not mutated by scripts at runtime |
 | No duplicates across layers | A karg defined in `common` must not be redefined in `bluefin` or `bluefin-lts` |
 
-**NVIDIA implementation**: `kargs.d/00-nvidia.toml` in the nvidia build overlay
+**NVIDIA implementation**: `kargs.d/00-nvidia.toml` in the downstream NVIDIA layers of
+`bluefin-lts` and `dakota`. `common` itself carries no NVIDIA kargs; those repos are the
+reference implementations for this capability.
 
 **AMD gap**: ROCm does not require special kargs for standard consumer cards, but the pattern must be defined even if empty.
 
@@ -68,9 +70,10 @@ Every GPU vendor toolkit integration in `common` / `bluefin` / `dakota` must pro
 | Path watcher | A path unit triggers regen when the driver or toolkit binary changes |
 | Preset | An 80-series preset enables the service and path units at first-boot |
 
-**NVIDIA implementation**:
+**NVIDIA implementation** (downstream — these files live in the NVIDIA layers of
+`bluefin-lts` and `dakota`, not in `common`):
 - `nvidia-cdi-refresh.service` + `nvidia-cdi-refresh.path`
-- `80-nvidia-container-toolkit.preset` in `system_files/nvidia/`
+- `80-nvidia-container-toolkit.preset`
 - Spec written to `/var/run/cdi/nvidia.yaml`
 
 **AMD gap**: `amd-container-toolkit` (ROCm CTK) uses a similar CDI flow via `amdgpu-ctk cdi generate`. An `amd-cdi-refresh.service` + path unit + 80-series preset must be defined before AMD merges.
@@ -135,17 +138,22 @@ This is a known gap for all vendors. It is NOT a gating requirement for AMD merg
 system_files/
   shared/              # Vendor-neutral files (applies to all variants)
   bluefin/             # Bluefin-specific (non-GPU)
-  nvidia/              # NVIDIA vendor layer (reference implementation)
+  nvidia/              # NVIDIA vendor layer in common (flatpak runtime sync only)
     usr/
-      lib/systemd/system/         # CDI refresh service + path + flatpak sync service
-      lib/systemd/system-preset/  # 80-nvidia-container-toolkit.preset
+      lib/systemd/system/         # ublue-nvidia-flatpak-runtime-sync.service
       libexec/                    # ublue-nvidia-flatpak-runtime-sync
   amd/                 # AMD vendor layer — CREATE THIS DIRECTORY when implementing
     usr/
-      lib/systemd/system/         # amd-cdi-refresh.service + path + flatpak sync
+      lib/systemd/system/         # amd flatpak sync service (if needed)
       lib/systemd/system-preset/  # 80-amd-container-toolkit.preset
       libexec/                    # amd-flatpak-runtime-sync (if needed)
 ```
+
+Note: the full NVIDIA reference implementation spans repos. `common`'s
+`system_files/nvidia/` carries only the Flatpak runtime sync; the CDI refresh
+units, `80-nvidia-container-toolkit.preset`, and NVIDIA kargs live in the
+downstream NVIDIA layers of `bluefin-lts` and `dakota`. AMD should follow the
+same split: vendor-neutral pieces in `common`, boot/CDI wiring downstream.
 
 ---
 
@@ -153,8 +161,8 @@ system_files/
 
 Use this checklist when reviewing any AMD GPU toolkit PR:
 
-- [ ] `kargs.d/` entry (or explicit documentation that no kargs are needed)
-- [ ] `amd-cdi-refresh.service` and `amd-cdi-refresh.path` present in `system_files/amd/`
+- [ ] `kargs.d/` entry in the vendor's downstream layer (or explicit documentation that no kargs are needed)
+- [ ] `amd-cdi-refresh.service` and `amd-cdi-refresh.path` present in the downstream AMD layer
 - [ ] `80-amd-container-toolkit.preset` enables the CDI units
 - [ ] Base toolkit package only (no legacy OCI hook files)
 - [ ] Rootless CDI config applied if required by the AMD runtime
