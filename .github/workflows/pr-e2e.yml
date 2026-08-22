@@ -23,6 +23,8 @@ env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   IMAGE_NAME: common
 
+permissions: {}
+
 jobs:
   compose:
     name: Compose PR test image
