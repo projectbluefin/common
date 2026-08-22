@@ -61,6 +61,38 @@ teardown() {
     [ "$output" = "projectbluefin/common" ]
 }
 
+@test "image info prefers booted image reference over stale build metadata" {
+    printf '%s\n' '{"image-name":"bluefin","image-tag":"latest","image-ref":"ghcr.io/projectbluefin/bluefin:latest","image-flavor":"main"}' \
+        > "$WORKDIR/stale-image-info.json"
+
+    run bash -c '
+        source "$1"
+        BOOTC_JSON='{"status":{"booted":{"image":{"image":{"image":"ghcr.io/projectbluefin/dakota:stable"}}}}}'
+        IMAGE_INFO_FILE="$2"
+        read_image_info
+        printf "%s|%s|%s" "$IMAGE_NAME" "$IMAGE_TAG" "$IMAGE_REF"
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/stale-image-info.json"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "dakota|stable|ghcr.io/projectbluefin/dakota:stable" ]
+}
+
+@test "image info falls back when no booted image is reported" {
+    printf '%s\n' '{"image-name":"bluefin","image-tag":"latest","image-ref":"ghcr.io/projectbluefin/bluefin:latest","image-flavor":"main"}' \
+        > "$WORKDIR/stale-image-info.json"
+
+    run bash -c '
+        source "$1"
+        BOOTC_JSON='{"status":{"booted":null}}'
+        IMAGE_INFO_FILE="$2"
+        read_image_info
+        printf "%s|%s" "$IMAGE_NAME" "$IMAGE_TAG"
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/stale-image-info.json"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "bluefin|latest" ]
+}
+
 @test "queue choices map to at most one supported queue label" {
     run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
         "$BONEDIGGER_SCRIPT" "Submit to the clanker queue for machine analysis"
