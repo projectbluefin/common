@@ -54,6 +54,35 @@ cncf:
     brew bundle --file=/usr/share/ublue-os/homebrew/cncf.Brewfile
     [[ -t 0 ]] && ujust --choose || true
 
+# Install and configure the local-first Bluespeed tooling.
+[group('AI')]
+bluespeed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    brew bundle --file=/usr/share/ublue-os/homebrew/ai-tools.Brewfile
+
+    GOOSE_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/goose/config.yaml"
+    if [[ -e "${GOOSE_CONFIG}" ]]; then
+        echo "Goose config already exists: ${GOOSE_CONFIG}"
+        echo "AI tools installed; existing configuration was left unchanged."
+        exit 0
+    fi
+
+    mkdir -p "$(dirname "${GOOSE_CONFIG}")"
+    cat >"${GOOSE_CONFIG}" <<'EOF'
+extensions:
+  linux-mcp-server:
+    bundled: false
+    cmd: linux-mcp-server
+    enabled: true
+    name: Linux MCP Server
+    timeout: 300
+    type: stdio
+EOF
+    chmod 600 "${GOOSE_CONFIG}"
+    echo "Bluespeed ready. Configure Goose provider credentials in ${GOOSE_CONFIG}."
+
 # Install ASUS laptop tools (asusctl daemon + ROG Control Center) | https://gitlab.com/asus-linux/asusctl
 [group('Apps')]
 install-asus:
