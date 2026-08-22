@@ -57,3 +57,21 @@ hooks:
             # styling
             style: suggested
     shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: zed
+    when: before-transaction
+    dialogs:
+      - id: zed-warning
+        title: >-
+          Zed is managed through Homebrew on Bluefin
+        body: >-
+          Install Zed from the Universal Blue Homebrew tap for the supported
+          Bluefin integration.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: download
+            string: "Download from Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py

@@ -26,11 +26,11 @@ def spawn_and_detach(args):
 def spawn_ujust(id):
     spawn_and_detach(['flatpak-spawn', '--host', 'xdg-terminal-exec', '-x', f'ujust {id}'])
 
-def spawn_brew(app):
+def spawn_brew(app, tap='ublue-os/tap'):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} install --cask {app}'
+        'bash', '-c', f'{brew} tap --trust {tap} && {brew} install --cask {app}'
     ])
 
 def handle_jetbrains():
@@ -105,6 +105,41 @@ def handle_code():
         case 'teardown':
             return 'deny'
 
+def handle_zed():
+
+    def appid_is_zed(appid):
+        return appid == 'dev.zed.Zed'
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and appid_is_zed(transaction_appid):
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'download':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                spawn_brew('ublue-os/experimental-tap/zed-linux',
+                           'ublue-os/experimental-tap')
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
 # ---
 
 response = 'pass'
@@ -113,6 +148,8 @@ match hook_id:
         response = handle_jetbrains()
     case 'code':
         response = handle_code()
+    case 'zed':
+        response = handle_zed()
 
 print(response)
 sys.exit(0)
