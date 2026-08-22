@@ -326,6 +326,35 @@ bluefin-apps:
     echo "Installing default system flatpaks..."
     @ujust install-system-flatpaks
 
+# Install AMD Container Toolkit for GPU-enabled containers
+[group('System')]
+install-amd-container-toolkit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if ! command -v rpm-ostree >/dev/null 2>&1; then
+        echo "rpm-ostree is required to install AMD Container Toolkit." >&2
+        exit 1
+    fi
+
+    if ! grep -q '^amdgpu ' /proc/modules; then
+        echo "Loading amdgpu kernel module before installing AMD Container Toolkit..."
+        sudo modprobe amdgpu
+    fi
+
+    sudo install -d -m0755 /etc/yum.repos.d
+    printf '%s\n' \
+        '[amd-container-toolkit]' \
+        'name=AMD Container Toolkit' \
+        'baseurl=https://repo.radeon.com/amd-container-toolkit/rpm/' \
+        'enabled=1' \
+        'gpgcheck=1' \
+        'gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key' \
+        | sudo tee /etc/yum.repos.d/amd-container-toolkit.repo >/dev/null
+
+    sudo rpm-ostree install --idempotent amd-container-toolkit
+    echo "AMD Container Toolkit layered. Reboot, then run: sudo amd-ctk cdi generate --output=/etc/cdi/amd.json"
+
 # Preview Bazaar curated config from a local common checkout
 # Usage: ujust bazaar-preview /path/to/common
 [group('System')]
