@@ -35,6 +35,7 @@ test:
     bats tests/test_nvidia_flatpak_sync.bats
     bats tests/test_system_just.bats
     bats tests/test_brew_tap_trust.bats
+    bats tests/test_apps_just.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
