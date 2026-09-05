@@ -81,7 +81,7 @@ Do not add exemptions for scripts with branching logic.
 |------|---------------|
 | `tests/test_hooks.py` | `system_files/bluefin/etc/bazaar/hooks.py` — Bazaar transaction hooks |
 | `tests/test_libsetup.bats` | `libsetup.sh` — `version-script()` function |
-| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup` — hook runner logic |
+| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup`, `hookrunner.sh` — shared hook dispatcher + thin-wrapper guard |
 | `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
 | `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
 | `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |

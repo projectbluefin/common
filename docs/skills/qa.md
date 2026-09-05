@@ -131,3 +131,25 @@ version-script my-service user 1 || exit 0
 **State file:** `~/.local/share/ublue/setup_versioning.json` (user-scoped, not global).
 
 **Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
+
+## hookrunner.sh — setup hook dispatch
+
+`system_files/shared/usr/lib/ublue/setup-services/hookrunner.sh` is the single source of truth for how the three setup services discover and run their hooks. `ublue-system-setup`, `ublue-user-setup` and `ublue-privileged-setup` are thin wrappers over it — each supplies only its `/etc/ublue-os/setup.json` key and its default directory:
+
+```bash
+HOOKRUNNER="${HOOKRUNNER:-/usr/lib/ublue/setup-services/hookrunner.sh}"
+source "${HOOKRUNNER}"
+run_setup_hooks "user-hooks-directory" "/usr/share/ublue-os/user-setup.hooks.d"
+```
+
+| Wrapper | Config key | Default directory |
+| --- | --- | --- |
+| `ublue-system-setup` | `system-hooks-directory` | `/usr/share/ublue-os/system-setup.hooks.d` |
+| `ublue-user-setup` | `user-hooks-directory` | `/usr/share/ublue-os/user-setup.hooks.d` |
+| `ublue-privileged-setup` | `privileged-hooks-directory` | `/usr/share/ublue-os/privileged-setup.hooks.d` |
+
+`$HOOKRUNNER` is overridable so the wrappers can be exercised from a source checkout, matching the `$LIBSETUP` convention used by the OEM hardware hooks.
+
+**Do not** reintroduce a private `get_config` or `for script in ...` loop in a wrapper — `tests/test_setup_scripts.bats` fails the build if you do. The three scripts were byte-identical copies before, which is how one dispatch-loop defect shipped three times over.
+
+**Test coverage:** `tests/test_setup_scripts.bats` and `tests/test_privileged_setup.bats`. Run `just test` to verify.
