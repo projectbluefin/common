@@ -117,27 +117,10 @@ read_boot_status() {
 }
 
 route_issue_repo() {
-    case "$IMAGE_NAME" in
-        bluefin-lts*)
-            BUG_REPO="projectbluefin/bluefin-lts"
-            ;;
-        bluefin)
-            if [[ "$IMAGE_TAG" == lts* ]]; then
-                BUG_REPO="projectbluefin/bluefin-lts"
-            else
-                BUG_REPO="projectbluefin/bluefin"
-            fi
-            ;;
-        bluefin*)
-            BUG_REPO="projectbluefin/bluefin"
-            ;;
-        dakota*)
-            BUG_REPO="projectbluefin/dakota"
-            ;;
-        *)
-            BUG_REPO="projectbluefin/common"
-            ;;
-    esac
+    # Routing grammar lives in one place only — see
+    # system_files/shared/usr/libexec/ublue-image-repo.
+    BUG_REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/common" "$IMAGE_NAME" "$IMAGE_TAG")"
 }
 
 scrub_kernel_log() {

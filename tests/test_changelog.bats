@@ -25,6 +25,9 @@ setup() {
     MOCKDIR="${WORKDIR}/bin"
     mkdir -p "${MOCKDIR}"
 
+    # Canonical repo-routing resolver used by the recipe under test.
+    export UBLUE_IMAGE_REPO_BIN="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/ublue-image-repo"
+
     # Capture file — curl writes each URL it receives here
     CURL_CALLS="${WORKDIR}/curl_calls"
     touch "${CURL_CALLS}"

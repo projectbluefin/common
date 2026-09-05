@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+# ublue-image-repo — canonical image-name/tag -> upstream GitHub repo resolver.
+#
+# Single source of truth for "which repository owns this booted image".
+# Every consumer (bonedigger-report, ujust changelogs, ...) must route through
+# here so the grammar cannot drift per call site.
+#
+# Usage:
+#   ublue-image-repo [--default REPO] [IMAGE_NAME] [IMAGE_TAG]
+#
+# IMAGE_NAME/IMAGE_TAG may also be supplied via the environment variables of
+# the same name. --default sets the repo returned when nothing matches
+# (callers differ: issue reporting falls back to common, changelogs to
+# bluefin), and defaults to projectbluefin/common.
+
+set -euo pipefail
+
+UBLUE_IMAGE_REPO_DEFAULT="projectbluefin/common"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --default)
+            UBLUE_IMAGE_REPO_DEFAULT="${2:-$UBLUE_IMAGE_REPO_DEFAULT}"
+            shift 2
+            ;;
+        --default=*)
+            UBLUE_IMAGE_REPO_DEFAULT="${1#--default=}"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+IMAGE_NAME="${1-${IMAGE_NAME-}}"
+IMAGE_TAG="${2-${IMAGE_TAG-}}"
+
+case "$IMAGE_NAME" in
+    bluefin-lts*)
+        printf '%s\n' "projectbluefin/bluefin-lts"
+        ;;
+    bluefin)
+        # The plain bluefin image publishes the LTS stream under lts* tags.
+        if [[ "$IMAGE_TAG" == lts* ]]; then
+            printf '%s\n' "projectbluefin/bluefin-lts"
+        else
+            printf '%s\n' "projectbluefin/bluefin"
+        fi
+        ;;
+    bluefin*)
+        printf '%s\n' "projectbluefin/bluefin"
+        ;;
+    dakota*)
+        printf '%s\n' "projectbluefin/dakota"
+        ;;
+    *)
+        # No name (or an unrecognised fork): an lts* tag still identifies the
+        # LTS stream, otherwise defer to the caller-supplied default.
+        if [[ "$IMAGE_TAG" == lts* ]]; then
+            printf '%s\n' "projectbluefin/bluefin-lts"
+        else
+            printf '%s\n' "$UBLUE_IMAGE_REPO_DEFAULT"
+        fi
+        ;;
+esac

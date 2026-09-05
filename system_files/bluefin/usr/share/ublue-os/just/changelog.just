@@ -11,15 +11,11 @@ changelogs:
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
 
-    # Select the correct upstream repo based on image stream
+    # Select the correct upstream repo based on image stream. The name/tag ->
+    # repo grammar is owned by /usr/libexec/ublue-image-repo; do not restate it.
     IMAGE_NAME="$(jq -r '.["image-name"] // empty' < "${IMAGE_INFO_FILE}")"
-    if [[ "$IMAGE_NAME" == "dakota" ]]; then
-        REPO="projectbluefin/dakota"
-    elif [[ "$IMAGE_NAME" =~ ^bluefin-lts ]] || [[ "$TAG" =~ ^lts ]]; then
-        REPO="projectbluefin/bluefin-lts"
-    else
-        REPO="projectbluefin/bluefin"
-    fi
+    REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/bluefin" "$IMAGE_NAME" "$TAG")"
 
     # If stable, gts, or lts, fetch from GitHub Releases
     if [[ "$TAG" =~ gts$|stable$|^lts ]]; then
