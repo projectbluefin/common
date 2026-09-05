@@ -50,6 +50,17 @@ devmode:
     fi
     ujust toggle-devmode
 
+# Install the opt-in local Bluespeed assistant stack.
+[group('System')]
+bluespeed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v brew &>/dev/null; then
+        echo "bluespeed: Homebrew is required" >&2
+        exit 127
+    fi
+    brew bundle --file=/usr/share/ublue-os/homebrew/ai-tools.Brewfile
+
 # Set up the Developer Experience
 [group('System')]
 toggle-devmode:

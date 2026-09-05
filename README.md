@@ -100,6 +100,7 @@ The `/usr/share/ublue-os/homebrew/` directory contains curated application bundl
 - **`artwork.Brewfile`** - Design and artwork applications
 
 Users can install these bundles using the `ujust bbrew` command, which will prompt them to select a Brewfile.
+The local Bluespeed stack can be installed directly with `ujust bluespeed`.
 
 ## CI / Testing
 
