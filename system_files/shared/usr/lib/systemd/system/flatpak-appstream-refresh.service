@@ -4,7 +4,7 @@ Documentation=https://docs.projectbluefin.io
 After=network-online.target flatpak-system-helper.service
 Wants=network-online.target
 ConditionPathExists=/usr/bin/flatpak
-ExecCondition=bash -c 'v=$(busctl get-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Metered 2>/dev/null | cut -d" " -f2); [ "$v" != "1" ] && [ "$v" != "2" ]'
+ExecCondition=bash -c 'v=$(busctl get-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Metered 2>/dev/null | cut -d" " -f2); case "$v" in 1|3) exit 1;; esac'
 StartLimitIntervalSec=600
 StartLimitBurst=3
 
