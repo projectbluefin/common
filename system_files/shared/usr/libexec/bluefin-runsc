@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+RUNSC_VERSION="release-20260817.0"
+RUNSC_ROOT="/usr/local/libexec/bluefin-runsc"
+RUNSC_LINK="/usr/local/bin/runsc"
+RUNSC_MARKER="${RUNSC_ROOT}/.bluefin-owned"
+RUNSC_MARKER_CONTENT="bluefin-runsc ownership marker v1"
+RUNSC_WORK_DIR=""
+RUNSC_STAGE=""
+RUNSC_LINK_DIR=""
+RUNSC_INSTALL_STAGE=""
+RUNSC_RELEASE_DIR=""
+RUNSC_RELEASE_PUBLISHED=0
+RUNSC_ROOT_CREATED=0
+
+die() {
+    echo "bluefin-runsc: $*" >&2
+    return 1
+}
+
+usage() {
+    echo "Usage: bluefin-runsc {install|update|remove}" >&2
+    return 2
+}
+
+cleanup() {
+    if [[ -n "${RUNSC_LINK_DIR}" && -d "${RUNSC_LINK_DIR}" ]]; then
+        rm -rf -- "${RUNSC_LINK_DIR}"
+    fi
+    if [[ -n "${RUNSC_STAGE}" && -d "${RUNSC_STAGE}" ]]; then
+        rm -rf -- "${RUNSC_STAGE}"
+    fi
+    if [[ -n "${RUNSC_INSTALL_STAGE}" && -d "${RUNSC_INSTALL_STAGE}" ]]; then
+        rm -rf -- "${RUNSC_INSTALL_STAGE}"
+    fi
+    if [[ "${RUNSC_RELEASE_PUBLISHED}" -eq 0 && -n "${RUNSC_RELEASE_DIR}" \
+        && -d "${RUNSC_RELEASE_DIR}" && ! -L "${RUNSC_RELEASE_DIR}" ]]; then
+        rm -rf -- "${RUNSC_RELEASE_DIR}"
+    fi
+    if [[ "${RUNSC_ROOT_CREATED}" -eq 1 && ! -e "${RUNSC_MARKER}" \
+        && ! -L "${RUNSC_MARKER}" && -d "${RUNSC_ROOT}" && ! -L "${RUNSC_ROOT}" ]]; then
+        rm -rf -- "${RUNSC_ROOT}"
+    fi
+    if [[ -n "${RUNSC_WORK_DIR}" && -d "${RUNSC_WORK_DIR}" ]]; then
+        rm -rf -- "${RUNSC_WORK_DIR}"
+    fi
+}
+
+ownership_marker_valid() {
+    [[ -f "${RUNSC_MARKER}" && ! -L "${RUNSC_MARKER}" ]] || return 1
+    printf '%s\n' "${RUNSC_MARKER_CONTENT}" | cmp -s - "${RUNSC_MARKER}"
+}
+
+ensure_owned_root() {
+    if [[ -L "${RUNSC_ROOT}" ]]; then
+        die "refusing symlinked runsc root ${RUNSC_ROOT}"
+    elif [[ -e "${RUNSC_ROOT}" ]]; then
+        [[ -d "${RUNSC_ROOT}" ]] || die "refusing non-directory runsc root ${RUNSC_ROOT}"
+        ownership_marker_valid || die "refusing unowned runsc root ${RUNSC_ROOT}"
+    else
+        install -d -m 0755 "${RUNSC_ROOT}"
+        RUNSC_ROOT_CREATED=1
+    fi
+
+    if [[ -L "${RUNSC_ROOT}/releases" ]]; then
+        die "refusing symlinked runsc release directory ${RUNSC_ROOT}/releases"
+    elif [[ -e "${RUNSC_ROOT}/releases" ]]; then
+        [[ -d "${RUNSC_ROOT}/releases" ]] || die "refusing non-directory runsc release path"
+    else
+        install -d -m 0755 "${RUNSC_ROOT}/releases"
+    fi
+}
+
+link_points_to_owned_release() {
+    local raw_target resolved release_dir
+
+    [[ -L "${RUNSC_LINK}" ]] || return 1
+    raw_target="$(readlink -- "${RUNSC_LINK}")" || return 1
+    case "${raw_target}" in
+        "${RUNSC_ROOT}"/releases/*/runsc) ;;
+        *) return 1 ;;
+    esac
+
+    release_dir="${raw_target%/runsc}"
+    [[ "$(dirname "${release_dir}")" == "${RUNSC_ROOT}/releases" ]] || return 1
+    if [[ -e "${release_dir}" || -L "${release_dir}" ]]; then
+        [[ -d "${release_dir}" && ! -L "${release_dir}" ]] || return 1
+    fi
+    resolved="$(readlink -f -- "${RUNSC_LINK}")" || return 1
+    [[ "${resolved}" == "${release_dir}/runsc" ]]
+}
+
+active_release() {
+    local link_target release_name release_dir expected_prefix
+
+    link_points_to_owned_release || return 1
+    link_target="$(readlink -f -- "${RUNSC_LINK}")" || return 1
+    expected_prefix="${RUNSC_VERSION}-${EXPECTED_SHA256:0:12}-"
+    case "${link_target}" in
+        "${RUNSC_ROOT}"/releases/*/runsc) ;;
+        *) return 1 ;;
+    esac
+
+    release_dir="$(dirname "${link_target}")"
+    release_name="$(basename "${release_dir}")"
+    [[ "${release_name}" == "${expected_prefix}"* ]] || return 1
+    [[ -x "${link_target}" && -d "${release_dir}/gvisor-bin" ]]
+}
+
+remove_installation() {
+    if [[ -L "${RUNSC_ROOT}" ]]; then
+        die "refusing symlinked runsc root ${RUNSC_ROOT}"
+    fi
+    if [[ ! -e "${RUNSC_ROOT}" ]]; then
+        [[ ! -e "${RUNSC_LINK}" && ! -L "${RUNSC_LINK}" ]] || \
+            die "refusing to remove an unowned runsc installation"
+        echo "Bluefin runsc installation removed."
+        return 0
+    fi
+    [[ -d "${RUNSC_ROOT}" ]] || die "refusing non-directory runsc root ${RUNSC_ROOT}"
+    ownership_marker_valid || die "refusing to remove unowned runsc root ${RUNSC_ROOT}"
+    [[ ! -L "${RUNSC_ROOT}/releases" ]] || \
+        die "refusing symlinked runsc release directory ${RUNSC_ROOT}/releases"
+    if [[ -e "${RUNSC_ROOT}/releases" ]]; then
+        [[ -d "${RUNSC_ROOT}/releases" ]] || die "refusing non-directory runsc release path"
+    fi
+
+    if [[ -e "${RUNSC_LINK}" || -L "${RUNSC_LINK}" ]]; then
+        [[ -L "${RUNSC_LINK}" ]] || die "refusing to remove non-symlink ${RUNSC_LINK}"
+        link_points_to_owned_release || die "refusing foreign runsc link ${RUNSC_LINK}"
+    fi
+
+    rm -rf -- "${RUNSC_ROOT}"
+
+    if [[ -L "${RUNSC_LINK}" ]]; then
+        rm -f -- "${RUNSC_LINK}"
+    fi
+
+    echo "Bluefin runsc installation removed."
+}
+
+provision() {
+    local machine_arch asset_arch expected_sha256 archive_url
+    local archive members member release_dir release_name
+    local link_target
+
+    machine_arch="$(uname -m)"
+    case "${machine_arch}" in
+        x86_64)
+            asset_arch="x86_64"
+            expected_sha256="ae345a8c1466586b3a163fb534301913da663a97b8ed446bc711b2e1963a32c5"
+            ;;
+        aarch64|arm64)
+            asset_arch="aarch64"
+            expected_sha256="a3c2443e9564dbf500893e66fd2463be3b79fe42f66825971c44dc1624d454b2"
+            ;;
+        *)
+            die "unsupported host architecture: ${machine_arch}"
+            ;;
+    esac
+    EXPECTED_SHA256="${expected_sha256}"
+    export EXPECTED_SHA256
+
+    trap cleanup EXIT
+    ensure_owned_root
+
+    if active_release; then
+        echo "Bluefin runsc ${RUNSC_VERSION} is already installed."
+        return 0
+    fi
+
+    archive_url="https://github.com/google/gvisor/releases/download/${RUNSC_VERSION}/gvisor-${asset_arch}.tar.bz2"
+    RUNSC_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bluefin-runsc.XXXXXXXX")"
+    RUNSC_STAGE=""
+    RUNSC_LINK_DIR=""
+    RUNSC_INSTALL_STAGE=""
+    RUNSC_RELEASE_DIR=""
+    RUNSC_RELEASE_PUBLISHED=0
+
+    archive="${RUNSC_WORK_DIR}/gvisor.tar.bz2"
+    curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+        --retry 3 --max-time 300 --output "${archive}" "${archive_url}"
+    printf '%s  %s\n' "${EXPECTED_SHA256}" "${archive}" | sha256sum --check --status -
+
+    members="$(tar -tjf "${archive}")"
+    grep -Eq '^runsc$' <<< "${members}" || die "verified archive has no runsc payload"
+    grep -Eq '^gvisor-bin/?$' <<< "${members}" || die "verified archive has no gvisor-bin payload"
+    while IFS= read -r member; do
+        case "${member}" in
+            runsc|gvisor-bin|gvisor-bin/*|containerd-shim-runsc-v1) ;;
+            *) die "verified archive contains unexpected member: ${member}" ;;
+        esac
+    done <<< "${members}"
+
+    RUNSC_STAGE="${RUNSC_WORK_DIR}/payload"
+    mkdir -p "${RUNSC_STAGE}"
+    tar -xjf "${archive}" --no-same-owner --no-same-permissions \
+        --directory "${RUNSC_STAGE}" runsc gvisor-bin
+    [[ -f "${RUNSC_STAGE}/runsc" && -d "${RUNSC_STAGE}/gvisor-bin" ]] || die "archive extraction omitted the runsc payload"
+    chmod a+rx "${RUNSC_STAGE}/runsc"
+    chmod -R a+rX "${RUNSC_STAGE}/gvisor-bin"
+
+    release_name="${RUNSC_VERSION}-${EXPECTED_SHA256:0:12}-$(basename "${RUNSC_WORK_DIR}")"
+    release_dir="${RUNSC_ROOT}/releases/${release_name}"
+    if [[ -e "${release_dir}" || -L "${release_dir}" ]]; then
+        [[ ! -L "${release_dir}" ]] || die "refusing symlinked runsc release path ${release_dir}"
+        die "refusing existing runsc release path ${release_dir}"
+    fi
+    RUNSC_INSTALL_STAGE="$(mktemp -d "${RUNSC_ROOT}/.staging.XXXXXXXX")"
+    cp -a "${RUNSC_STAGE}/." "${RUNSC_INSTALL_STAGE}/"
+    chmod a+rx "${RUNSC_INSTALL_STAGE}/runsc"
+    chmod -R a+rX "${RUNSC_INSTALL_STAGE}/gvisor-bin"
+    mv -T -- "${RUNSC_INSTALL_STAGE}" "${release_dir}"
+    RUNSC_RELEASE_DIR="${release_dir}"
+
+    if ! ownership_marker_valid; then
+        printf '%s\n' "${RUNSC_MARKER_CONTENT}" > "${RUNSC_WORK_DIR}/ownership-marker"
+        mv -T -- "${RUNSC_WORK_DIR}/ownership-marker" "${RUNSC_MARKER}"
+    fi
+
+    link_target="${release_dir}/runsc"
+    [[ "$(dirname "${link_target}")" == "${RUNSC_ROOT}/releases/${release_name}" ]] || \
+        die "computed release escaped the owned root"
+    install -d -m 0755 "$(dirname "${RUNSC_LINK}")"
+    if [[ -e "${RUNSC_LINK}" || -L "${RUNSC_LINK}" ]]; then
+        [[ -L "${RUNSC_LINK}" ]] || die "refusing to replace non-symlink ${RUNSC_LINK}"
+        link_points_to_owned_release || die "refusing to replace foreign runsc link ${RUNSC_LINK}"
+    fi
+    RUNSC_LINK_DIR="$(mktemp -d "$(dirname "${RUNSC_LINK}")/.bluefin-runsc.XXXXXXXX")"
+    ln -s -- "${link_target}" "${RUNSC_LINK_DIR}/runsc"
+    mv -Tf -- "${RUNSC_LINK_DIR}/runsc" "${RUNSC_LINK}"
+    RUNSC_RELEASE_PUBLISHED=1
+    echo "Installed Bluefin runsc ${RUNSC_VERSION} for ${machine_arch}."
+}
+
+main() {
+    local action="${1:-}"
+    case "${action}" in
+        install|update)
+            provision
+            ;;
+        remove)
+            remove_installation
+            ;;
+        *)
+            usage
+            ;;
+    esac
+}
+
+main "$@"

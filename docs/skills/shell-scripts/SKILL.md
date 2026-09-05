@@ -86,6 +86,38 @@ Quick reference — full patterns with WRONG/CORRECT examples in
 Standard file layout, mocking, and pitfalls in
 [references/bats-patterns.md](references/bats-patterns.md).
 
+## Bluefin-family host runsc provisioning
+
+Common's shared overlay owns the reusable host-side gVisor runtime provisioner
+for Bluefin-family images. The provisioner does not change Podman's default
+runtime; consumers explicitly select `runsc` when they need the outer
+isolation boundary.
+
+The pinned upstream release is `release-20260817.0`. The helper selects the
+exact architecture asset and digest before it inspects or extracts the archive:
+
+- `x86_64`: `ae345a8c1466586b3a163fb534301913da663a97b8ed446bc711b2e1963a32c5`
+- `aarch64`: `a3c2443e9564dbf500893e66fd2463be3b79fe42f66825971c44dc1624d454b2`
+
+The acquisition is HTTPS-only and the archive member allowlist requires both
+`runsc` and its adjacent `gvisor-bin` payload. Installation stages a complete
+version, publishes `/usr/local/bin/runsc` atomically, and records ownership so
+install/update/remove refuse foreign, unowned, or symlinked paths. Repeating
+install or update is idempotent, and a failed update leaves the active version
+in place. The supported user commands are:
+
+```text
+ujust runsc install
+ujust runsc update
+ujust runsc remove
+```
+
+This capability does not add `ignore-cgroups=true`, use host networking, or
+claim native runtime acceptance. A consumer must separately prove executable
+`runsc`, rootless `podman --runtime=runsc`, `OCIRuntime=runsc`, ordinary
+networking, lifecycle behavior, and each supported architecture on real
+hardware.
+
 ## Shellcheck Reference
 
 Directive syntax, SC code notes, and quoting fix examples in
