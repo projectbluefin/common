@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "projectbluefin": {
+      "type": "http",
+      "url": "https://mcp.projectbluefin.io/mcp"
+    }
+  }
+}

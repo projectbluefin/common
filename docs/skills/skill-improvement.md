@@ -1,7 +1,7 @@
 ---
 name: skill-improvement
-version: "1.2"
-last_updated: "2026-08-08"
+version: "1.3"
+last_updated: "2026-09-07"
 id: skill-improvement
 one_line_purpose: Capture durable agent learnings in maintained skill docs.
 entry_point: docs/skills/skill-improvement.md
@@ -125,7 +125,7 @@ If the target repo has no `docs/skills/` directory, create it.
 
 ## Which Skill File to Update
 
-Use the closest matching existing skill. Only create a new skill when the change introduces a new reusable domain that has no existing home.
+Use the closest matching existing skill. Run `just skill <query>` or `python3 scripts/select-skill.py <query>` to search and rank existing skill files by topic. Only create a new skill when the change introduces a new reusable domain that has no existing home.
 
 ```
 Changed a workflow?          → ci-tooling/SKILL.md or workflow-map.md

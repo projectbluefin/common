@@ -25,7 +25,14 @@ cross-repository breakage, merge, or production human gates.
 - **Project Bluefin MCP server is mandatory.** Query the org knowledge base via `projectbluefin` MCP (`https://mcp.projectbluefin.io/mcp`) before investigating, designing, or implementing:
   - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions, and per-repository findings across `projectbluefin/*`. Always search relevant keywords first.
   - `get_factory_status()` / `get_work_queue()` — live Hive factory state.
+  - `get_quickstart()` / `get_repository_map()` — factory standards and repo topology.
   - Offline fallback: `~/agent.md`, refreshed by `~/.local/bin/sync-hive-kb` (search with `grep`, never load whole file into context).
+- **Standard agentic repo setup.** Every repository in the `projectbluefin` organization standardizes on these agentic fixtures:
+  - `.vscode/mcp.json` and `.cursor/mcp.json` pointing to `https://mcp.projectbluefin.io/mcp`.
+  - `.github/workflows/copilot-setup-steps.yml` (located under `.github/workflows/` so GitHub Actions and Copilot Cloud Agent detect it).
+  - `.github/copilot.yml` for repo-tailored file exclusion and indexing.
+  - Standard prompt templates under `.github/prompts/` (e.g. `conventional-commit.prompt.md`).
+  - Catalog index in `docs/skills/index.json` with a skill matcher CLI (`just skill <query>`).
 - **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
 - **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.
 - **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.

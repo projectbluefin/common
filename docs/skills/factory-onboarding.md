@@ -1,7 +1,7 @@
 ---
 name: factory-onboarding
-version: "1.0"
-last_updated: "2026-07-29"
+version: "1.1"
+last_updated: "2026-09-07"
 id: factory-onboarding
 one_line_purpose: Onboard repositories to the Project Bluefin factory model.
 entry_point: docs/skills/factory-onboarding.md
@@ -140,12 +140,24 @@ Before marking work done:
 - [ ] Committed in this same PR?
 ```
 
+### Agentic & MCP Workspace Fixtures
+
+Every factory repo maintains standard agentic configurations:
+- `.vscode/mcp.json` and `.cursor/mcp.json` pointing to `https://mcp.projectbluefin.io/mcp` for instant agent access to org knowledge.
+- `.github/workflows/copilot-setup-steps.yml` located under `.github/workflows/` so GitHub Actions and GitHub Copilot Cloud Agent execute it before agent turns.
+- `.github/copilot.yml` path exclusions and language inclusions tailored to the repo.
+- `.github/prompts/conventional-commit.prompt.md` for consistent Conventional Commit formatting.
+- Skill catalog discovery via `docs/skills/index.json` and a `just skill <query>` recipe.
+
 ---
 
 ## Done When
 
 - [ ] `docs/skills/` exists with `skill-improvement.md` and `docs/SKILL.md` task router
 - [ ] `AGENTS.md` includes self-improvement mandate and banned list
+- [ ] `.vscode/mcp.json` and `.cursor/mcp.json` configured for `https://mcp.projectbluefin.io/mcp`
+- [ ] `.github/workflows/copilot-setup-steps.yml` and `.github/copilot.yml` configured
+- [ ] Skill discovery CLI wired into `Justfile` (`just skill <query>`)
 - [ ] Downstream onboarding points agents to local authority plus common as a
       shared sidecar
 - [ ] Every task loop includes preflight, self-repair, validation, and

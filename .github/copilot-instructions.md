@@ -12,5 +12,12 @@ PR rules, mandatory gates, and boundaries.
 
 ## Skill routing
 
-Use [`docs/SKILL.md`](../docs/SKILL.md) to find the skill for your task, then
-load only that skill file from [`docs/skills/`](../docs/skills/).
+Use [`docs/SKILL.md`](../docs/SKILL.md) or run `just skill <query>` to find the
+skill for your task, then load only that skill file from [`docs/skills/`](../docs/skills/).
+
+## MCP integration
+
+The public Project Bluefin Model Context Protocol endpoint is configured in
+`.vscode/mcp.json` and `.cursor/mcp.json` (`https://mcp.projectbluefin.io/mcp`).
+Query `search_knowledge` for org patterns, `get_factory_status` / `get_work_queue`
+for live Hive state, and `get_quickstart` / `get_repository_map` for onboarding.

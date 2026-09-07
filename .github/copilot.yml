@@ -1,0 +1,92 @@
+# GitHub Copilot configuration for bluefin-common repository
+# Optimizes Copilot indexing and context retrieval for shared system configurations
+
+# Disable Copilot in build caches, bytecode, and binary assets
+".pytest_cache/**":
+  enabled: false
+
+"**/__pycache__/**":
+  enabled: false
+
+"system_files/**/icons/**":
+  enabled: false
+
+"system_files/**/pixmaps/**":
+  enabled: false
+
+"system_files/**/sixels/**":
+  enabled: false
+
+# Enable Copilot for system files, scripts, tests, and documentation
+"system_files/**":
+  enabled: true
+
+"scripts/**":
+  enabled: true
+
+"tests/**":
+  enabled: true
+
+"docs/**":
+  enabled: true
+
+".github/**":
+  enabled: true
+
+# Enable Copilot for core configuration and script file types
+"**/*.sh":
+  enabled: true
+
+"**/*.bash":
+  enabled: true
+
+"**/*.bats":
+  enabled: true
+
+"**/*.fish":
+  enabled: true
+
+"**/*.py":
+  enabled: true
+
+"**/*.just":
+  enabled: true
+
+"**/*.yaml":
+  enabled: true
+
+"**/*.yml":
+  enabled: true
+
+"**/*.json":
+  enabled: true
+
+"**/*.jsonc":
+  enabled: true
+
+"**/*.md":
+  enabled: true
+
+"**/*.conf":
+  enabled: true
+
+"**/*.service":
+  enabled: true
+
+"**/*.timer":
+  enabled: true
+
+"**/*.preset":
+  enabled: true
+
+"**/*.rules":
+  enabled: true
+
+"**/*.Brewfile":
+  enabled: true
+
+"Containerfile":
+  enabled: true
+
+"Justfile":
+  enabled: true

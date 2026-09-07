@@ -3,7 +3,7 @@ just := just_executable()
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 # test_libvirt_helper.bats is excluded — requires a running libvirtd session
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py -v --cov=tests --cov-report=term-missing
+    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py tests/test_select_skill.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_privileged_setup.bats
@@ -81,6 +81,10 @@ check-brewfiles:
 check: (_fmt "--check" "Checking")
 
 fix: (_fmt "" "Fixing")
+
+# Find relevant skill files by query keywords or topic
+skill +query:
+    python3 scripts/select-skill.py {{ query }}
 
 # Inspect the directory structure of an OCI image
 tree IMAGE="localhost/bluefin-common:latest":

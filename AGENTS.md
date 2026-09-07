@@ -66,7 +66,12 @@ See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 
 ## Agent fast path
 
-- Mandatory: query org knowledge base via `projectbluefin` MCP (`search_knowledge`) before investigating, designing, or implementing. Offline fallback: `~/agent.md`.
+- Mandatory: query org knowledge base via `projectbluefin` MCP (`https://mcp.projectbluefin.io/mcp`) before investigating, designing, or implementing:
+  - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions across `projectbluefin/*`.
+  - `get_factory_status()` / `get_work_queue()` — live Hive factory state and actionable queue.
+  - `get_quickstart()` / `get_repository_map()` — factory standards and repo topology.
+  - Offline fallback: `~/agent.md` (refreshed by `~/.local/bin/sync-hive-kb`; query with `grep`, never load whole file into context).
+- Skill routing: run `just skill <query>` or `python3 scripts/select-skill.py <query>` to discover relevant skills from `docs/skills/index.json`.
 - Read source before asserting project-internal facts (image names, tags,
   workflow outputs). Use `gh api` to inspect workflows, not memory.
 - Look up external tool docs via Context7 first — see `docs/skills/context7.md`.
