@@ -34,7 +34,7 @@ installs ChairLift for every user:
 
 ```ruby
 tap "frostyard/tap", trusted: true
-cask "chairlift"
+cask "frostyard/tap/chairlift"
 ```
 
 This is OS-managed like the default formula set: add the cask and every user

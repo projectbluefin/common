@@ -524,7 +524,7 @@ def test_brewfile_taps_frostyard_with_trust():
     """Homebrew 6 blocks untrusted taps silently; trusted: true is load-bearing."""
     content = BREWFILE.read_text(encoding="utf-8")
     assert 'tap "frostyard/tap", trusted: true' in content
-    assert 'cask "chairlift"' in content
+    assert 'cask "frostyard/tap/chairlift"' in content
 
 
 # ---------------------------------------------------------------------------
