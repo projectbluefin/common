@@ -93,7 +93,7 @@ ChairLift is a managed cask installed for every user through
 
 ```ruby
 tap "frostyard/tap", trusted: true
-cask "chairlift"
+cask "frostyard/tap/chairlift"
 ```
 
 The tap line requires `trusted: true`; Homebrew 6 blocks untrusted taps. The
@@ -131,7 +131,7 @@ launcher.
 Homebrew 6.0 syntax — `trusted: true` is required:
 ```ruby
 tap "frostyard/tap", trusted: true
-cask "chairlift"
+cask "frostyard/tap/chairlift"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).
