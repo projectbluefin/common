@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Tests for update.just and toggle-updates recipes
 
+bats_require_minimum_version 1.5.0
+
 UPDATE_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/update.just"
 WORKDIR=""
 MOCKDIR=""
@@ -77,13 +79,21 @@ echo "sudo $*" >> "${COMMAND_LOG}"
 exec "$@"
 MOCK
 
-    for cmd in bootc; do
-        cat > "${MOCKDIR}/${cmd}" <<MOCK
+    _write_mock "bootc" <<'MOCK'
 #!/bin/bash
-echo "${cmd} \$*" >> "\${COMMAND_LOG}"
+echo "bootc $*" >> "${COMMAND_LOG}"
+if [[ "${MOCK_BOOTC_STATUS:-0}" != "0" ]]; then
+    echo "mock bootc upgrade failure" >&2
+fi
+exit "${MOCK_BOOTC_STATUS:-0}"
 MOCK
-        chmod +x "${MOCKDIR}/${cmd}"
-    done
+
+    # An installed copy must never take over the native recipes.
+    _write_mock "bctl" <<'MOCK'
+#!/bin/bash
+echo "unexpected bctl invocation" >&2
+exit 99
+MOCK
 
     _write_mock "rpm-ostree" <<'MOCK'
 #!/bin/bash
@@ -128,6 +138,7 @@ _run() {
     run env \
         PATH="${MOCKDIR}:${PATH}" \
         COMMAND_LOG="${COMMAND_LOG}" \
+        MOCK_BOOTC_STATUS="${MOCK_BOOTC_STATUS:-0}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \
         MOCK_ENABLED_TIMER="${MOCK_ENABLED_TIMER:-}" \
@@ -164,6 +175,30 @@ _run() {
     [[ "${output}" == *"Starting OS image update"* ]]
     grep -qF "sudo bootc upgrade" "${COMMAND_LOG}"
     ! grep -qF "rpm-ostree upgrade" "${COMMAND_LOG}"
+}
+
+@test "update: preserves bootc failure and diagnostics without running package updates" {
+    _write_mock "brew" <<'MOCK'
+#!/bin/bash
+echo "brew $*" >> "${COMMAND_LOG}"
+MOCK
+    MOCK_BOOTC_STATUS=42 MOCK_FLATPAK_REMOTES=$'system\nuser' \
+        MOCK_BREW_BIN="${MOCKDIR}/brew" _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 42 ]
+    [[ "${output}" == *"mock bootc upgrade failure"* ]]
+    run ! grep -qE '^(flatpak|brew) ' "${COMMAND_LOG}"
+}
+
+@test "update: updates both flatpak scopes and user-owned brew after bootc succeeds" {
+    _write_mock "brew" <<'MOCK'
+#!/bin/bash
+echo "brew $*" >> "${COMMAND_LOG}"
+MOCK
+    MOCK_FLATPAK_REMOTES=$'system\nuser' MOCK_BREW_BIN="${MOCKDIR}/brew" _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "flatpak update -y" "${COMMAND_LOG}"
+    grep -qF "flatpak update --user -y" "${COMMAND_LOG}"
+    grep -qFx "brew upgrade" "${COMMAND_LOG}"
 }
 
 @test "update: exits early with layered-packages warning when rpm-ostree has layered packages" {

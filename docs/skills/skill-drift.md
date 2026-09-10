@@ -97,12 +97,12 @@ Still useful when deciding which skill a change belongs to:
 
 | Changed path | Update this skill |
 |---|---|
-| `.github/workflows/build.yml` | [`ci-tooling.md`](./ci-tooling/SKILL.md) |
-| `.github/workflows/e2e*.yml`, test configs | [`e2e-ci.md`](./e2e-ci/SKILL.md) |
-| `.github/workflows/release.yml` | [`release-promotion.md`](./release-promotion/SKILL.md) |
+| `.github/workflows/build.yml` | [`ci-tooling/SKILL.md`](./ci-tooling/SKILL.md) |
+| `.github/workflows/e2e*.yml`, test configs | [`e2e-ci/SKILL.md`](./e2e-ci/SKILL.md) |
+| `.github/workflows/release.yml` | [`release-promotion/SKILL.md`](./release-promotion/SKILL.md) |
 | `system_files/**` | [`submodule-boundary.md`](./submodule-boundary.md) or [`dconf-consistency.md`](./dconf-consistency.md) |
 | `Justfile` | whichever skill owns the changed recipe |
-| `Containerfile` | [`containerfile.md`](./containerfile/SKILL.md) |
+| `Containerfile` | [`containerfile/SKILL.md`](./containerfile/SKILL.md) |
 | `.github/CODEOWNERS` | [`governance.md`](./governance.md) |
 
 Not sure? Use [`docs/SKILL.md`](../SKILL.md) as the task-to-skill router.

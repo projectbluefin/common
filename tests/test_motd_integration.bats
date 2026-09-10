@@ -37,6 +37,7 @@ setup() {
 
     export HOME="${WORKDIR}/home"
     export PATH="${WORKDIR}/bin:${PATH}"
+    unset UWELCOME_SHOWN
 }
 
 teardown() {
@@ -102,6 +103,13 @@ teardown() {
 @test "uwelcome.sh: does not call legacy ublue-motd" {
     run grep 'ublue-motd' "${UWELCOME_PROFILE}"
     [ "${status}" -ne 0 ]
+}
+
+@test "uwelcome.sh: skips invocation if UWELCOME_SHOWN is set" {
+    export UWELCOME_SHOWN=1
+    run bash "${UWELCOME_PROFILE}"
+    [ "${status}" -eq 0 ]
+    [ ! -f "${WORKDIR}/uwelcome.log" ]
 }
 
 # ---------------------------------------------------------------------------

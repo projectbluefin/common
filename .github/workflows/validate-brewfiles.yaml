@@ -6,62 +6,21 @@ on:
   pull_request:
     paths:
       - "system_files/shared/usr/share/ublue-os/homebrew/**"
+      - "scripts/validate-brewfiles.sh"
+      - "tests/test_validate_brewfiles.bats"
+      - ".github/workflows/validate-brewfiles.yaml"
+      - "Justfile"
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@a657b8b0cd35d0f65cce41fce9b24cf054b49869 # main
+        uses: Homebrew/actions/setup-homebrew@f8d4222eb633e65c2a0157383cf80861fc7fae7f # main
 
       - name: Validate Brewfiles
         shell: bash
-        run: |
-          echo "Validating Brewfiles in homebrew directory..."
-
-          STATUS_FILE=$(mktemp)
-          echo "PASS" > "$STATUS_FILE"
-
-          while IFS= read -r -d '' brewfile ; do
-            echo "::group:: ===$(basename "$brewfile")==="
-
-            echo "Syncing taps..."
-            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
-            brew bundle --file=./taps.Brewfile > /dev/null 2>&1 || true
-
-            # Extract combined list for parallel check
-            FORMULAS=$(grep -E '^\s*brew\s+["'\'']' "$brewfile" | sed -E 's/^\s*brew\s+["'\'']([^"'\'']+)["'\''].*/formula \1/' || true)
-            CASKS=$(grep -E '^\s*cask\s+["'\'']' "$brewfile" | sed -E 's/^\s*cask\s+["'\'']([^"'\'']+)["'\''].*/cask \1/' || true)
-
-            ENTRIES=$(printf "%s\n%s" "$FORMULAS" "$CASKS" | grep -v '^\s*$' || true)
-
-            if [ -n "$ENTRIES" ]; then
-              # shellcheck disable=SC2016
-              echo "$ENTRIES" | xargs -P 8 -I {} bash -c '
-                TYPE=$(echo "{}" | cut -d" " -f1)
-                NAME=$(echo "{}" | cut -d" " -f2)
-                if ! brew info --$TYPE "$NAME" &> /dev/null; then
-                  echo "✗ $TYPE \"$NAME\" is invalid or missing tap"
-                  echo "FAIL" >> "'"$STATUS_FILE"'"
-                else
-                  echo "✓ $TYPE \"$NAME\" is valid"
-                fi
-              '
-            else
-              echo "No formulas or casks found."
-            fi
-
-            echo "::endgroup::"
-          done < <(find "system_files/shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0)
-
-          rm -f taps.Brewfile
-
-          if grep -q "FAIL" "$STATUS_FILE"; then
-            echo "Validation complete. Some Brewfiles FAILED."
-            exit 1
-          else
-            echo "Validation complete. All Brewfiles PASSED."
-            exit 0
-          fi
+        run: bash scripts/validate-brewfiles.sh

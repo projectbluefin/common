@@ -9,7 +9,8 @@ jetbrains-toolbox:
 [group('Apps')]
 install-jetbrains-toolbox:
     #!/usr/bin/env bash
-    brew tap --trust ublue-os/tap
+    brew tap ublue-os/tap 2>/dev/null || true
+    brew trust ublue-os/tap 2>/dev/null || true
     brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 
 # Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
@@ -47,7 +48,7 @@ install-opentabletdriver:
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
-# Install CNCF tools from curated Brewfile | run: bctl --screen developer
+# Install CNCF tools from curated Brewfile
 [group('Apps')]
 cncf:
     #!/usr/bin/env bash
@@ -60,7 +61,8 @@ install-asus:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Installing ASUS laptop tools..."
-    brew tap --trust ublue-os/tap
+    brew tap ublue-os/tap 2>/dev/null || true
+    brew trust ublue-os/tap 2>/dev/null || true
     brew install --cask ublue-os/tap/asusctl-linux
     brew install --cask ublue-os/tap/rog-control-center-linux
     echo ""

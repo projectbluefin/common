@@ -10,6 +10,8 @@
 #
 # Run: bats tests/test_brew_preinstall.bats
 
+bats_require_minimum_version 1.5.0
+
 BREW_PREINSTALL="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/brew-preinstall"
 BREW_PREINSTALL_WRAPPER="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/brew-preinstall"
 BREW_PREINSTALL_SERVICE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/user/brew-preinstall.service"
@@ -226,6 +228,30 @@ EOF
     [ "${status}" -eq 0 ]
     grep -q "brew uninstall" "${WORKDIR}/brew.log"
     grep -q "fd" "${WORKDIR}/brew.log"
+}
+
+@test "brew-preinstall: repository manifests remove previously managed bluefinctl" {
+    cp "${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/"*.Brewfile \
+        "${WORKDIR}/preinstall.d/"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["bluefinctl"],"casks":[]}' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -q '^brew uninstall bluefinctl --ignore-dependencies$' "${WORKDIR}/brew.log"
+    run ! grep -q 'bluefinctl' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+    run ! grep -q '^brew tap .*bluefinctl' "${WORKDIR}/brew.log"
+}
+
+@test "brew-preinstall: repository manifests leave untracked installs alone" {
+    cp "${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/"*.Brewfile \
+        "${WORKDIR}/preinstall.d/"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    run ! grep -q '^brew uninstall ' "${WORKDIR}/brew.log"
+    run ! grep -q 'bluefinctl' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 }
 
 @test "brew-preinstall: does not uninstall package still in Brewfile" {

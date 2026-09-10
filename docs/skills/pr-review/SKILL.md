@@ -45,49 +45,29 @@ The loop: **dossier → verdict → land.**
 
 ### 0 — Sources (queue sweep)
 
-For "let's review <repo> PRs" the agent assembles the list from three
-sources, in this order:
+For "let's review <repo> PRs" the agent assembles the list from three sources, in order:
 
 1. **Queue feed** (cheap first pass, non-authoritative):
-
    ```bash
    curl --fail --silent --show-error --location --max-time 20 \
      https://projectbluefin.github.io/review/queue.json |
-     jq -r '.items[] | select(.repository == "projectbluefin/<repo>") |
-       [.recommended_action, .number, .title] | @tsv'
+     jq -r '.items[] | select(.repository == "projectbluefin/<repo>") | [.recommended_action, .number, .title] | @tsv'
    ```
-
-   `ready-for-human-merge` items go first. Verify every fact live — the feed
-   is a snapshot, not authority. See [queue-feed.md](../queue-feed.md).
-
-2. **Auto-merge-armed scan** — PRs a human already queued with
-   `gh pr merge --auto` (or the Hive sweep label):
-
+   `ready-for-human-merge` items go first. Verify every fact live — the feed is a snapshot, not authority. See [queue-feed.md](../queue-feed.md).
+2. **Auto-merge-armed scan** — PRs a human already queued with `gh pr merge --auto` (or the Hive sweep label):
    ```bash
-   gh pr list --repo projectbluefin/<repo> \
-     --json number,title,autoMergeRequest \
+   gh pr list --repo projectbluefin/<repo> --json number,title,autoMergeRequest \
      --jq '.[] | select(.autoMergeRequest != null) | "\(.number)\t\(.title)"'
-   gh pr list --repo projectbluefin/<repo> --label lgtm \
-     --json number,title,mergeStateStatus
+   gh pr list --repo projectbluefin/<repo> --label lgtm --json number,title,mergeStateStatus
    ```
-
-   Armed/labelled PRs still show up in the review queue: the human verdict is
-   the only real gate (required approvals are 0 — see
-   [references/merge-queue.md](references/merge-queue.md)). For the Hive
-   sweep contract, see [hive-automerge.md](../hive-automerge.md).
-
+   Armed/labelled PRs still show up in the review queue: the human verdict is the only real gate (required approvals are 0 — see [references/merge-queue.md](references/merge-queue.md)). For the Hive sweep contract, see [hive-automerge.md](../hive-automerge.md).
 3. **Live GitHub state** — the dossier fetch below is the authority.
 
 ### Cadence: stream, don't batch
 
-Default to **streaming**: present one card, take the verdict, execute it
-immediately, then present the next. The human stays engaged because every
-answer produces a visible result before the next question arrives.
+Default to **streaming**: present one card, take the verdict, execute it immediately, then present the next. The human stays engaged because every answer produces a visible result before the next question arrives. Batching verdicts is the fallback for non-interactive runs only.
 
-Batching verdicts is the fallback for non-interactive runs only.
-
-**Easy-wins mode.** Sort ascending by `additions + deletions` and present small
-ones first. Park anything complex in `3-human-queue` with a findings comment.
+**Easy-wins mode.** Sort ascending by `additions + deletions` and present small ones first. Park anything complex in `3-human-queue` with a findings comment.
 
 ### 1 — Dossier (one-call fetch)
 
@@ -97,21 +77,11 @@ gh pr list --limit 60 \
 | jq '[.[] | select(.author.is_bot | not)][:5]'
 ```
 
-Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5
-*after* filtering. For a bot sweep, invert to `select(.author.is_bot)`.
+Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5 *after* filtering. For a bot sweep, invert to `select(.author.is_bot)`. Present each PR as a one-screen card. Field definitions and the `mergeStateStatus` table: [references/card-fields.md](references/card-fields.md).
 
-Present each PR as a one-screen card. Field definitions and the `mergeStateStatus`
-table: [references/card-fields.md](references/card-fields.md).
-
-**Competing-pair detection (mandatory):** pairwise-intersect file paths and
-`closingIssuesReferences` across the batch. Print `⚠️ COMPETING PAIR` on any
-overlap — human must resolve before both can be voted `merge`.
-
-**CI card classification:** classify every red before it costs a human slot.
-Full procedure: [references/red-check-triage.md](references/red-check-triage.md).
-
-**Dismissed-approval check (mandatory):** diff current head against the approved
-commit SHA. Full procedure: [references/dismissed-approval.md](references/dismissed-approval.md).
+- **Competing-pair detection (mandatory):** pairwise-intersect file paths and `closingIssuesReferences` across the batch. Print `⚠️ COMPETING PAIR` on any overlap — human must resolve before both can be voted `merge`.
+- **CI card classification:** classify every red before it costs a human slot. Full procedure: [references/red-check-triage.md](references/red-check-triage.md).
+- **Dismissed-approval check (mandatory):** diff current head against the approved commit SHA. Full procedure: [references/dismissed-approval.md](references/dismissed-approval.md).
 
 ### 2 — Verdict
 
@@ -211,5 +181,5 @@ queue state reading, branch update, and fork PR rebase.
 - [label-workflow.md](../label-workflow.md) — canonical label lifecycle
 - [governance.md](../governance.md) — branch protection and ownership
 - [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
-- [ci-tooling.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
+- [ci-tooling/SKILL.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
 - [lab-testing/SKILL.md](../lab-testing/SKILL.md) — lab verification

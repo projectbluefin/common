@@ -110,9 +110,9 @@ ls .github/workflows/
 
 | If the work is about... | Load |
 |---|---|
-| Workflow pins, floating-tag guard | `ci-tooling.md` |
-| Pre/post-merge or promotion-candidate tests | `e2e-ci.md` |
-| Release cadence, promotion criteria, artifact signing | `release-promotion.md` |
+| Workflow pins, floating-tag guard | `ci-tooling/SKILL.md` |
+| Pre/post-merge or promotion-candidate tests | `e2e-ci/SKILL.md` |
+| Release cadence, promotion criteria, artifact signing | `release-promotion/SKILL.md` |
 | CODEOWNERS or governance policy | `governance.md` |
 | Queue state / lifecycle | `pr-review/SKILL.md` (merge queue section) and Hive context if needed |
 

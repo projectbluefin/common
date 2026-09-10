@@ -1,11 +1,11 @@
-FROM docker.io/library/golang:alpine@sha256:4c9fe60190a2a3350ddc51de80d0224b8a6698d12bdfc999fee45ea9d6c46dbc AS umotd-build
+FROM docker.io/library/golang:alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS umotd-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/umotd /src && \
     git -C /src checkout c9df8ec6b53e9b2a644a6dc511fd6fde1baad08b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
-FROM docker.io/library/golang:alpine@sha256:4c9fe60190a2a3350ddc51de80d0224b8a6698d12bdfc999fee45ea9d6c46dbc AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout 5280521bf21e14802d5a8bb1cffb942fa0b5efb7
@@ -64,7 +64,8 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
       echo "4db215f77201f1c2346a513cd1aea077eaf0805887100d9c05c9ae0527d6a171  zeroplus_technology_corporation-gdu.rules"; \
     } > checksums.txt && \
     for file in $(awk '{print $2}' checksums.txt); do \
-      curl -fsSLo "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
+      curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 2 \
+        --output "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
     done && \
     sha256sum -c checksums.txt && \
     for f in *.rules; do install -Dpm0644 "$f" "/out/shared/usr/lib/udev/rules.d/71-$f"; done && \

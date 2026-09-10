@@ -60,8 +60,15 @@ pattern, and the rules for what can and cannot move to brew.
 ### Remove a package
 1. Remove the `brew "<name>"` line from the Brewfile.
 2. Open a PR.
-3. On next login after the OS update, users who got it through the managed set
-   get it uninstalled. Users who installed it themselves are unaffected.
+3. On next successful login sync after the OS update, packages recorded in
+   the previous managed state get uninstalled. Packages outside that state
+   are unaffected. State records the desired set, not who originally installed
+   each package, so a manually installed package can later become managed.
+
+Bluefinctl is no longer provisioned by common. Removing its dedicated Brewfile
+uses this existing lifecycle to uninstall state-tracked copies; no separate
+cleanup script is needed. Native `ujust` recipes must not delegate to `bctl`,
+even if an untracked copy remains installed.
 
 ### Add or remove a cask
 
@@ -123,8 +130,8 @@ launcher.
 
 Homebrew 6.0 syntax — `trusted: true` is required:
 ```ruby
-tap "projectbluefin/bluefinctl", trusted: true
-brew "bluefinctl"
+tap "frostyard/tap", trusted: true
+cask "chairlift"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).
@@ -140,7 +147,8 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
-- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding a tap without `trusted: true` in a Brewfile, or without a `brew trust` call after `brew tap` in a recipe (Homebrew 6.0 blocks untrusted taps silently)
+- Passing `--trust` to `brew tap` — it is not a valid flag and Homebrew 6.0 exits non-zero; use `brew trust <tap>` as a separate command
 - Using `arm:` / `intel:` checksum keys for a Linux cask — those keys are macOS-only and resolve to no checksum on Linux
 - Adding unknown keys to `/usr/share/chairlift/config.yml` — ChairLift disables
   the whole application on unknown page, group, or field names

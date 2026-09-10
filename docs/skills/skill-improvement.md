@@ -128,17 +128,17 @@ If the target repo has no `docs/skills/` directory, create it.
 Use the closest matching existing skill. Only create a new skill when the change introduces a new reusable domain that has no existing home.
 
 ```
-Changed a workflow?          → ci-tooling.md or workflow-map.md
+Changed a workflow?          → ci-tooling/SKILL.md or workflow-map.md
 Changed a GNOME setting?     → dconf-consistency.md
-Changed a release step?      → release-promotion.md
-Changed the lifecycle bot?   → label-workflow.md or bonedigger.md
-Changed CI gates?            → e2e-ci.md
+Changed a release step?      → release-promotion/SKILL.md
+Changed the lifecycle bot?   → label-workflow.md or bonedigger/SKILL.md
+Changed CI gates?            → e2e-ci/SKILL.md
 New domain entirely?         → create docs/skills/<area>.md
 ```
 
 When in doubt, file a GitHub issue in `projectbluefin/common` with the
 component, evidence, and agent-context gap described in the body. Do **not**
-add it to `factory-improvement.md` as a running list.
+add it to `factory-improvement/SKILL.md` as a running list.
 
 ---
 
@@ -151,7 +151,7 @@ The skill update goes in the **same commit or same PR** as the implementation. N
 git add .github/workflows/something.yml docs/skills/ci-tooling/SKILL.md
 git commit -m "feat(ci): add SHA pinning for new action
 
-Update ci-tooling.md with pinning pattern for this action type.
+Update ci-tooling/SKILL.md with pinning pattern for this action type.
 
 Assisted-by: Claude Sonnet 4.6 via GitHub Copilot
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"

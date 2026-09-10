@@ -56,12 +56,16 @@ unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
 and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
 Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
 
-**In just recipes** that call `brew tap` before cask installs:
+**In just recipes** that call `brew tap` before cask installs, trust is a
+**separate command** — `--trust` is not a valid `brew tap` flag and Homebrew
+6.0 exits non-zero on it:
 ```diff
-- brew tap ublue-os/tap 2>/dev/null || true
-+ brew tap --trust ublue-os/tap
+- brew tap --trust ublue-os/tap
++ brew tap ublue-os/tap 2>/dev/null || true
++ brew trust ublue-os/tap 2>/dev/null || true
 ```
-The `|| true` silencer must be removed — tap failures should surface.
+`brew tap` is idempotent and errors when the tap already exists, so keep the
+`2>/dev/null || true` guard — especially inside `set -euo pipefail` recipes.
 
 **In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
 ```ruby
@@ -70,17 +74,20 @@ tap "ublue-os/experimental-tap", trusted: true
 ```
 
 **Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
-mechanism. The correct 6.0 approach is `--trust` at tap-time and
-`trusted: true` in Brewfiles.
+mechanism. The correct 6.0 approach is `brew trust <tap>` after `brew tap`,
+and `trusted: true` in Brewfiles. See https://docs.brew.sh/Tap-Trust.
 
-### Known trust issues in the codebase (as of 2026-06)
+### Tap trust call sites
 
-| File | Current code | Status |
-|---|---|---|
-| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
-| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
-| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+| File | Expected code |
+|---|---|
+| `system.just` dx recipe | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `system.just` dx recipe | `brew tap ublue-os/experimental-tap` + `brew trust ublue-os/experimental-tap` |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `apps.just` install-asus | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `bazaar-hook` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+
+Regression coverage lives in `tests/test_brew_tap_trust.bats`.
 
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
 

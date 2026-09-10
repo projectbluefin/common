@@ -8,12 +8,12 @@ _default:
 
 # Imports
 
-import "/usr/share/ublue-os/just/apps.just"
-import "/usr/share/ublue-os/just/changelog.just"
-import "/usr/share/ublue-os/just/default.just"
-import "/usr/share/ublue-os/just/shared.just"
-import "/usr/share/ublue-os/just/system.just"
-import "/usr/share/ublue-os/just/update.just"
+import? "/usr/share/ublue-os/just/apps.just"
+import? "/usr/share/ublue-os/just/changelog.just"
+import? "/usr/share/ublue-os/just/default.just"
+import? "/usr/share/ublue-os/just/shared.just"
+import? "/usr/share/ublue-os/just/system.just"
+import? "/usr/share/ublue-os/just/update.just"
 import? "/usr/share/ublue-os/just/flutter.just"
 import? "/usr/share/ublue-os/just/60-custom.just"
 import? "/usr/share/ublue-os/just/60-bonedigger.just"

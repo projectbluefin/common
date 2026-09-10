@@ -127,17 +127,18 @@ Without that trigger, queued PRs remain in `AWAITING_CHECKS` because ordinary
 `pull_request` workflows do not run on merge-group refs. See the lab runbook at
 [`projectbluefin/lab/docs/ops/merge-queue.md`](https://github.com/projectbluefin/lab/blob/main/docs/ops/merge-queue.md).
 
-## Documentation changes — push directly to main
+## Documentation and contract changes — push directly to main
 
-Changes to `docs/` and `docs/skills/` in this repo do **not** need a PR. Push directly to `main`:
+Changes to `docs/**` and `AGENTS.md` in this repo do **not** need a PR. Push directly to `main`:
 
 ```bash
-git add docs/...
+git add docs/... AGENTS.md
 git commit -m "docs: ..."
 git push origin main
 ```
 
-This includes skill updates, `docs/SKILL.md` changes, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`.
+This includes skill updates, `docs/SKILL.md` changes, `AGENTS.md`, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`. Verify before pushing:
+`git diff --cached --name-only` must show only `docs/*` or `AGENTS.md`.
 
 ## Lifecycle automation
 

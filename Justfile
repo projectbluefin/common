@@ -9,11 +9,13 @@ test:
     bats tests/test_privileged_setup.bats
     bats tests/test_bling.bats
     bats tests/test_bling_sh.bats
+    bats tests/test_bling_preexec_rearm.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
     bats tests/test_bling_fastfetch.bats
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
+    bats tests/test_native_recipes.bats
     bats tests/test_ujust.bats
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats
@@ -23,12 +25,14 @@ test:
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_theming_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
     bats tests/test_system_just.bats
+    bats tests/test_brew_tap_trust.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
@@ -69,6 +73,11 @@ _fmt mode verb:
 # .github/workflows/validate-chairlift-config.yaml owns this gate.
 check-chairlift-config:
     python3 tests/check-chairlift-config
+
+# Networked metadata check; syncs/trusts declared taps but installs no packages.
+# Keep separate from the hermetic check recipe.
+check-brewfiles:
+    bash scripts/validate-brewfiles.sh
 
 check: (_fmt "--check" "Checking")
 

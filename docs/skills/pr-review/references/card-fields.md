@@ -8,7 +8,7 @@
 | Age | `createdAt` → human-readable delta |
 | Size | `+additions / -deletions` |
 | Files touched | `files[].path` |
-| Blast radius | see [Blast Radius Map](../SKILL.md#blast-radius-map) |
+| Blast radius | see [Blast Radius Map](triage-operations.md#blast-radius-map) |
 | CI status | `statusCheckRollup` — per-check, classified (see below) |
 | `mergeStateStatus` | see table below |
 | Linked issue | `closingIssuesReferences` |

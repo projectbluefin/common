@@ -30,55 +30,63 @@ Full testing contract (what must be tested, hardware gate boundaries, coverage
 targets, exemptions): [`docs/TESTING.md`](docs/TESTING.md). Coding and
 configuration style conventions: [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md).
 
-## Factory workflow and ownership
+## Factory workflow and ownership — Trust the Machines
 
-Trust the Machines: workflows, branches, assignees, projects, and pull
-requests carry active state. Labels describe the next workflow step. A
-contributor or maintainer may select one canonical label to express intent;
-automation validates it, removes invalid combinations, and performs the
-resulting triage. Agents do not claim work with slash commands. Use the
-canonical contract in
-[`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
+The factory is automation-first: workflows, branches, assignees, projects,
+PR linkages, and merge queues advance active work. Do not simulate workflow
+state by hand or invent transitions that are not implemented in the checkout.
 
-Hive may select work for another monitored repository. Clankers is only the
-authenticated relay for that assignment; verify the assigned repository and
-issue before acting. It does not bypass human approval, review, or merge gates.
+- **The seven canonical labels:**
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
+  Select at most one numbered workflow label (`1-triage`, `2-discussing`,
+  `3-human-queue`, `3-clanker-queue`, `4-review`), with `blocked` or `hold` as
+  an optional overlay; automation enforces the combination and routes the next
+  action.
+- **Humans provide intent** through issue content, form fields, Hive metadata,
+  review, and explicit hold or routing decisions.
+- **Agents implement assigned work** and link it to a PR with `Closes #NNN`;
+  they do not claim work with slash commands or manufacture queue state.
+- **Hive coordination & Clankers relay:** Hive may select work for another
+  monitored repository. Clankers is only the authenticated relay for that
+  assignment; verify the assigned repository and issue in GitHub before acting.
+  It does not bypass human approval, review, or merge gates.
+- **Issue forms & CODEOWNERS ownership:** This repository owns its own issue
+  forms in `.github/ISSUE_TEMPLATE/`; there is one form, and it doubles as the
+  contributor's introduction to the label workflow. The triager section of
+  CODEOWNERS is owned here and synced to downstream factory repositories; edit
+  downstream copies only when the repository-specific section is explicitly in
+  scope. Never write to `ublue-os/*`.
+- **Reusable lifecycle automation** belongs to `projectbluefin/actions`;
+  bonedigger owns report intake and report-specific automation. `common`
+  documents and consumes these contracts; it does not own their
+  implementations.
 
-This repository owns its own issue forms in `.github/ISSUE_TEMPLATE/`; there is
-one form, and it doubles as the contributor's introduction to the label
-workflow. The triager section of CODEOWNERS is owned here and synced
-to downstream factory repositories; edit downstream copies only when the
-repository-specific section is explicitly in scope. Never write to
-`ublue-os/*`.
+See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
+[`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
 
 ## Agent fast path
 
+- Mandatory: query org knowledge base via `projectbluefin` MCP (`search_knowledge`) before investigating, designing, or implementing. Offline fallback: `~/agent.md`.
 - Read source before asserting project-internal facts (image names, tags,
   workflow outputs). Use `gh api` to inspect workflows, not memory.
 - Look up external tool docs via Context7 first — see `docs/skills/context7.md`.
 - When a session surfaces a non-obvious pattern or workaround, update the
   matching `docs/skills/*.md` file in the same PR.
 
-## Trust the Machines
+## Self-Improvement
 
-The factory is automation-first: workflows, branches, assignees, projects,
-PR linkages, and merge queues advance active work. Do not simulate workflow
-state by hand or invent transitions that are not implemented in the checkout.
+Every session: ship the work AND update the relevant skill file in `docs/skills/`.
+Same PR. Not a follow-up.
 
-- The only labels are the seven names in
-  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md). Select at
-  most one numbered workflow label, with `blocked` or `hold` as an optional
-  overlay; automation enforces the combination and routes the next action.
-- Humans provide intent through issue content, form fields, Hive metadata,
-  review, and explicit hold or routing decisions.
-- Agents implement assigned work and link it to a PR with `Closes #NNN`; they
-  do not manufacture queue state.
-- Reusable lifecycle automation belongs to `projectbluefin/actions`; bonedigger
-  owns report intake and report-specific automation. `common` documents and
-  consumes these contracts; it does not own their implementations.
+Banned:
+- No changelog files. Delete `IMPROVEMENTS.md`, `CHANGELOG.md`, `SESSION.md` if found.
+- No session notes committed to the repo (`NOTES.md`, `PLAN.md`, `TODO.md`).
+- No "append here" docs. Route to `docs/skills/` instead.
 
-See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
-[`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
+Before marking work done:
+- [ ] Discovered a workaround, pattern, or convention?
+- [ ] Skill file updated (or created)?
+- [ ] Committed in this same PR?
 
 ## What agents may touch
 
@@ -147,7 +155,7 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 | CI tooling / SHA pinning | `docs/skills/ci-tooling/SKILL.md` |
 | Image registry / tags | `docs/skills/image-registry.md` |
 | Skill improvement mandate | `docs/skills/skill-improvement.md` |
-| PR review checklist | `docs/skills/pr-review.md` |
+| PR review checklist | `docs/skills/pr-review/SKILL.md` |
 | Testing contract | `docs/TESTING.md` |
 | Coding / config style guide | `docs/contributing/style-guide.md` |
 

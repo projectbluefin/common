@@ -46,6 +46,33 @@ metadata:
 
 ---
 
+## Brewfile metadata validation must preserve the actual failure
+
+`just check-brewfiles` runs `scripts/validate-brewfiles.sh`, the same entrypoint
+as `.github/workflows/validate-brewfiles.yaml`. It checks every shared Brewfile,
+not only changed entries. The workflow also triggers for validator/test changes.
+This is networked and syncs the declared taps, so it stays outside `just check`.
+
+Sync the complete declared tap set before checking any package names. Per-file
+tap setup makes bare-name resolution depend on traversal order: ChairLift adds
+`frostyard/tap`, which also provides the five wallpaper casks in `ublue-os/tap`.
+Use fully qualified names in `artwork.Brewfile`; do not hide the collision by
+isolating taps or skipping unchanged Brewfiles. Zed's Linux cask lives in
+`ublue-os/tap`, not `ublue-os/experimental-tap`.
+
+A tap-setup failure must fail validation before package checks. For package
+failures, report the Brewfile and line, exact command, exit status, and captured
+stdout/stderr, then continue to collect the remaining failures. Do not collapse
+ambiguity, authentication, trust, network, and unavailable-cask errors into
+"invalid or missing tap". Pass package names as arguments, never into `bash -c`.
+
+The validator accepts literal `brew`/`cask` declarations (both quote styles,
+indentation, comments, and inline options). Malformed or computed names fail
+explicitly. This is a metadata check, not a complete Ruby DSL, Flatpak,
+installation, checksum-download, or desktop-runtime test. It never installs
+formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`
+and retain real Homebrew validation in CI.
+
 ## Red Flags
 
 - A PR targets `testing` but the branch was created from `main`

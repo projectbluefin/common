@@ -1,7 +1,7 @@
 tap "ublue-os/tap", trusted: true
 
-cask "aurora-wallpapers"
-cask "bazzite-wallpapers"
-cask "bluefin-wallpapers"
-cask "bluefin-wallpapers-extra"
-cask "framework-wallpapers"
+cask "ublue-os/tap/aurora-wallpapers"
+cask "ublue-os/tap/bazzite-wallpapers"
+cask "ublue-os/tap/bluefin-wallpapers"
+cask "ublue-os/tap/bluefin-wallpapers-extra"
+cask "ublue-os/tap/framework-wallpapers"

@@ -43,3 +43,12 @@ for script in "${HOOKS_DIR}"/* ; do
 done
 ```
 A space in `HOOKS_DIR` will silently fail to find hooks if only `$script` is fixed.
+
+## POSIX-`sh` files cannot hold bash array code
+
+`system_files/**/*.sh` is shellchecked with the dialect from its shebang.
+`bling.sh` is `#!/usr/bin/env sh`, so bash arrays, `BASH_SOURCE`, and `+=(...)`
+trip SC3028/SC3030/SC3054 and fail CI. Put bash-only logic in a sibling
+`#!/usr/bin/env bash` file and source it from inside the existing
+`[ "${BLING_SHELL}" = "bash" ]` guard, with a `BLING_DIR` override so bats can
+point at the repo tree instead of `/usr/share/ublue-os/bling`.

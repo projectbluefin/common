@@ -31,7 +31,8 @@ def spawn_brew(app):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} tap --trust ublue-os/tap && {brew} install --cask {app}'
+        'bash', '-c',
+        f'{brew} tap ublue-os/tap; {brew} trust ublue-os/tap; {brew} install --cask {app}'
     ])
 
 def handle_jetbrains():

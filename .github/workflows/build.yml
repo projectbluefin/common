@@ -60,7 +60,7 @@ jobs:
           submodules: true
 
       - name: Setup runner
-        uses: projectbluefin/actions/bootc-build/setup-runner@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
+        uses: projectbluefin/actions/bootc-build/setup-runner@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
         with:
           storage-backend: btrfs
           update-podman: "true"
@@ -112,7 +112,7 @@ jobs:
 
       - name: Scan image for CVEs
         if: github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/scan-image@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
+        uses: projectbluefin/actions/bootc-build/scan-image@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
         with:
           input: /tmp/scan-image.tar
           severity-threshold: CRITICAL
@@ -122,7 +122,7 @@ jobs:
       - name: Push image
         id: push
         if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/push-image@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
+        uses: projectbluefin/actions/bootc-build/push-image@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.generate-tags.outputs.local_tag }}
@@ -179,7 +179,7 @@ jobs:
 
       - name: Create multi-arch manifest
         id: create-manifest
-        uses: projectbluefin/actions/bootc-build/create-manifest@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
+        uses: projectbluefin/actions/bootc-build/create-manifest@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           digests-json: ${{ steps.digests.outputs.json }}
@@ -197,7 +197,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign, generate SBOM, and attest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@eb4c546389f19ad9e42f1af052623de73c620ebb # v1
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           digest: ${{ steps.create-manifest.outputs.digest }}

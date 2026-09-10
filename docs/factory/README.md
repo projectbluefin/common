@@ -98,9 +98,7 @@ The following are wired across the factory today (applies to core pipeline repos
 - **One issue form per repo**, which also introduces the filer to the label workflow
 - **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
 - **bonedigger lifecycle** — issue intake, `ujust report` handling, and priority escalation. Owned by `projectbluefin/bonedigger`; consumed by `bluefin`, `bluefin-lts`, and `dakota` via `bonedigger.yml`. Not present in `common`, `actions`, or `testsuite`.
-- **bonedigger** — scoped to ujust report filing and priority auto-escalation only
 - **pre-commit** — json/yaml/toml hygiene, skill front-matter, doc links, and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`). This is where process conventions are enforced; there is no per-convention CI job.
-- **pre-commit** — json/yaml/toml hygiene and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`)
 - **Renovate** — automated dependency updates (`common`, `bluefin`, `bluefin-lts`, `actions`, `testsuite`; `dakota` not yet)
 - **promotion-candidate-e2e.yml** — weekly Tuesday smoke/common on `bluefin:testing` and `bluefin:lts-testing` before downstream promotions
 - **pr-e2e.yml** — pre-merge composed-image common suite gate for `common` PRs (active)

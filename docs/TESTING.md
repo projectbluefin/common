@@ -11,6 +11,11 @@ just check         # lint Justfile
 pre-commit run --all-files  # hygiene checks (shellcheck, yaml, sha-pinning)
 ```
 
+`just check-brewfiles` is a separate networked check against real Homebrew
+metadata. It syncs/trusts taps declared by the shared Brewfiles, but does not
+install formulae or casks. Use a disposable Homebrew environment when testing
+it locally. Its offline regression suite is `bats tests/test_validate_brewfiles.bats`.
+
 ## What Must Be Tested
 
 ### Rule: new script in `system_files/*/usr/bin/` → new test file in `tests/`
@@ -45,7 +50,7 @@ system boundaries.
 
 ## Bats patterns and testability idioms
 
-Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](skills/shell-scripts/SKILL.md).
+Shell-specific bats patterns live in [`docs/skills/shell-scripts/SKILL.md`](skills/shell-scripts/SKILL.md).
 
 ## Exemptions
 
@@ -81,16 +86,20 @@ Do not add exemptions for scripts with branching logic.
 |------|---------------|
 | `tests/test_hooks.py` | `system_files/bluefin/etc/bazaar/hooks.py` — Bazaar transaction hooks |
 | `tests/test_libsetup.bats` | `libsetup.sh` — `version-script()` function |
-| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup` — hook runner logic |
+| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup`, `hookrunner.sh` — shared hook dispatcher + thin-wrapper guard |
 | `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
 | `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
+| `tests/test_bling_preexec_rearm.bats` | `bling/bash-preexec-rearm.sh` — DEBUG trap re-arm with array/scalar `PROMPT_COMMAND`, idempotency, degradation when bash-preexec is absent |
 | `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |
 | `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
+| `tests/test_native_recipes.bats` | Native recipes with a leftover `bctl`: CLI setup, devmode, signed channel switching, VM setup, Flatpak bundles, and both reset confirmations |
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
 | `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
 | `tests/test_brew_preinstall.bats` | Managed Brewfile lifecycle plus user-unit ordering, resource priority, and preset delivery |
+| `tests/test_validate_brewfiles.bats` | Brewfile metadata validation, tap setup failures, ambiguity diagnostics, safe argument passing, and qualified wallpaper/Zed references |
+| `tests/test_brew_tap_trust.bats` | `apps.just`, `system.just`, `bazaar-hook` — `brew tap` + `brew trust` are separate commands; `brew tap --trust` is invalid (#814) |
 
 ## Quality Epic
 

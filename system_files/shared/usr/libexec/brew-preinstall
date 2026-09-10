@@ -34,31 +34,26 @@ if [[ ${#brewfiles[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# Content-addressed check: hash all Brewfiles combined.
-# If unchanged, nothing to do — fast exit without touching brew.
-current_hash=$(cat "${brewfiles[@]}" | sha256sum | cut -d' ' -f1)
-stored_hash=$(jq -r '.hash // ""' "${STATE_FILE}" 2>/dev/null || echo "")
-
-if [[ "${current_hash}" == "${stored_hash}" ]]; then
-    echo "brew-preinstall: Brewfiles unchanged (${current_hash:0:12}...), nothing to do"
-    exit 0
-fi
-
 eval "$("${BREW_BIN}" shellenv)"
-
-echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
 # Install every tap before any bundle runs. brew bundle decides cask
 # installability before processing the Brewfile's own tap lines, so on a
 # system that has never seen the tap it skips the cask as "requires macOS"
 # and still exits 0 — the cask is silently never installed (first boot of
 # any image shipping a tap+cask pair, e.g. frostyard/tap + chairlift).
+# Vendored taps are also trusted: brew refuses casks from untrusted taps,
+# and the Brewfile's own `trusted:` flag doesn't apply to an already-present
+# tap. This runs every boot, before the hash early-exit, because
+# `brew bundle cleanup` resets the global trust store; both commands are
+# idempotent no-ops once the tap is present and trusted.
 tap_failed=0
 while IFS= read -r tap; do
     [[ -z "${tap}" ]] && continue
-    echo "brew-preinstall: tapping ${tap}"
     if ! brew tap "${tap}"; then
         echo "brew-preinstall: error: tapping ${tap} failed"
+        tap_failed=1
+    elif ! brew trust "${tap}"; then
+        echo "brew-preinstall: error: trusting ${tap} failed"
         tap_failed=1
     fi
 done < <(sed -nE \
@@ -70,6 +65,18 @@ if [[ "${tap_failed}" -ne 0 ]]; then
     echo "brew-preinstall: one or more taps failed; state unchanged, will retry"
     exit 1
 fi
+
+# Content-addressed check: hash all Brewfiles combined.
+# If unchanged, nothing else to do — fast exit without touching bundle.
+current_hash=$(cat "${brewfiles[@]}" | sha256sum | cut -d' ' -f1)
+stored_hash=$(jq -r '.hash // ""' "${STATE_FILE}" 2>/dev/null || echo "")
+
+if [[ "${current_hash}" == "${stored_hash}" ]]; then
+    echo "brew-preinstall: Brewfiles unchanged (${current_hash:0:12}...), nothing to do"
+    exit 0
+fi
+
+echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
 # Install all packages declared in Brewfiles (brew bundle is idempotent).
 # Continue after an individual failure so independent Brewfiles still install,

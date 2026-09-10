@@ -44,7 +44,7 @@ The last successful nightly build is the benchmark: if it ran < 6h ago, dakota b
 
 ## Live toggle-testing methodology (production-accurate rebase testing)
 
-**Purpose:** Verify that `ujust toggle-testing` / `bctl toggle-testing` works correctly
+**Purpose:** Verify that the native `ujust toggle-testing` recipe works correctly
 for real production users — not by testing with a pre-baked testing disk, but by starting
 from a **stable** VM and rebasing live to **testing** exactly as a user would.
 
@@ -61,12 +61,16 @@ The live toggle test is the correct methodology because:
 - It tests the actual recipe logic: reading `image-info.json`, detecting `stable` tag,
   constructing `ghcr.io/projectbluefin/bluefin:testing`, calling `bootc switch`
 - The `:testing` image is pulled live from GHCR during the test — not from a local cache
-- It validates `bctl toggle-testing` (bluefinctl path) AND `ujust toggle-testing` (bash fallback)
+- It must execute the native `ujust toggle-testing` recipe, not a separate wrapper
 - It exercises `--enforce-container-sigpolicy` against the real production cosign signatures
 
 ### Live toggle workflow pattern
 
-Use the `toggle-testing-rebase` WorkflowTemplate with stable as the starting point:
+Inspect the deployed `toggle-testing-rebase` WorkflowTemplate before using it
+with stable as the starting point. Templates that still invoke `bctl` or
+substitute a direct `bootc switch` after recipe failure need updating in their
+owning repository. They do not prove the native recipe works. The requirements
+below do not imply that the deployed template has already been updated:
 
 ```yaml
 # Bluefin: stable → testing → stable (production user flow)
@@ -106,17 +110,17 @@ For LTS:
       value: bluefin-lts-test
 ```
 
-### What the workflow does (step by step)
+### Required workflow behavior (step by step)
 
 ```
 1. ensure-disk    → build/verify golden disk from :stable (BIB, ~20 min first run)
 2. provision-vm   → btrfs reflink clone (~32ms), boot VM with stable image
 3. pre-state      → collect-evidence: bootc status shows booted=stable ✓
 4. toggle-to-target →
-   a. Check bctl availability and version
-   b. Run: echo yes | bctl toggle-testing  (or ujust toggle-testing)
+   a. Verify the VM contains the recipe revision under test
+   b. Run ujust toggle-testing and accept its gum confirmation in a TTY
    c. Verify: bootc status shows staged=testing (live pull from GHCR)
-   d. If bctl didn't stage, guarantee via: sudo bootc switch ghcr.io/.../bluefin:testing
+   d. Fail if the recipe fails or no target is staged; do not bypass it
 5. reboot-forward → VM reboots into the newly staged :testing image
 6. verify-on-target → collect-evidence: bootc status shows booted=testing ✓
 7. toggle-back    → same process, testing → stable (tests the reverse direction)
@@ -125,12 +129,12 @@ For LTS:
 10. teardown      → delete VM + disk.raw
 ```
 
-### What the toggle-testing-rebase WorkflowTemplate tests
+### Required toggle-testing evidence
 
 For each VM, per direction (forward + backward):
-- **bctl availability**: is `bctl` installed and what version?
-- **bctl toggle-testing**: does it correctly invoke `bootc switch` to the target?
-- **ujust toggle-testing logic** (Python-side verification):
+- **Recipe revision**: does the VM contain the change being tested?
+- **Native recipe**: does `ujust toggle-testing` succeed after confirmation?
+- **ujust toggle-testing logic** (verify actual behavior, not just a reimplementation):
   - Reads `image-tag` from `/usr/share/ublue-os/image-info.json`
   - Applies the same mapping logic as the recipe (`stable→testing`, `lts→lts-testing`, etc.)
   - Confirms computed target matches expected
