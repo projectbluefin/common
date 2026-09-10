@@ -126,6 +126,27 @@ desktop file at `/usr/share/applications/org.frostyard.ChairLift.desktop`
 upstream icons under `/usr/share/icons/hicolor/`, so every user gets a
 launcher.
 
+### Hand ChairLift to a dedicated installer
+
+Images that supply their own ChairLift migration may invoke
+`/usr/libexec/brew-preinstall --external-chairlift`. Without that argument,
+common's existing behavior is unchanged. The opt-in excludes the entire
+`chairlift.Brewfile` from tapping, hashing, bundling and managed state, and
+protects the historical unqualified, Frostyard-qualified and Bluefin-qualified
+ChairLift names from OS-diet removal. Other packages keep their usual lifecycle.
+Keep that Brewfile dedicated to ChairLift; do not place unrelated packages in it.
+
+The caller must capture any old managed-state authorization before invoking this
+mode: a successful generic sync drops ChairLift from its state. The caller owns
+first installation, migration, retry and future removal policy. Run generic sync
+even if that dedicated installer fails, so unrelated packages are not blocked.
+
+`brew-preinstall --capabilities` prints `external-chairlift-v1` without touching
+Homebrew or user state. Downstream image builds should require this capability
+before enabling the handoff. Land this common change and update the downstream
+common pin before shipping; do not carry a downstream source patch or silently
+call an older script that ignores the option.
+
 ### Add a tap + package from a non-core tap
 
 Homebrew 6.0 syntax — `trusted: true` is required:
