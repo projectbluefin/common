@@ -70,7 +70,7 @@ jobs:
     name: "Report E2E failure"
     needs: [e2e]
     if: failure()
-    runs-on: ubuntu-latest
+    runs-on: ghost-runners
     permissions:
       issues: write
     steps:
