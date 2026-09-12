@@ -22,7 +22,7 @@ The dominant strategic risk is not any single defect; it is that review throughp
 2. **Throttle agent output to reviewer capacity** (common#1052): cap new agent PRs per repo per day until the queue drains below a defined level.
 3. **Add a reviewer-scaling rung to the contributor ladder** (common#1029): triage and review are the scalable entry points; recruit explicitly for them.
 4. **Fix triage starvation** (common#1067): propose a 14-day first-human-response SLA, run a weekly triage sweep, and prioritize agent review only after each repo's human triage queue is within that SLA.
-5. **Obsolescence detection for superseded agent PRs** (common#1054): auto-close hold-gated PRs whose target code has already been fixed by a merged human PR.
+5. **Obsolescence detection for superseded agent PRs** (common#1054): detect hold-gated PRs whose target code has already been fixed by a merged human PR and flag them for human close. Per `docs/skills/human-gates.md`, a close requires a per-item human keypress — an agent never auto-closes.
 
 ## Phase 1 — Consolidate before scaling (30–90 days)
 
