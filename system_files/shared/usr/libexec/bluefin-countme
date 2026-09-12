@@ -85,22 +85,37 @@ IMAGE_TAG=$(json_field image-tag)
 IMAGE_FLAVOR=$(json_field image-flavor)
 ARCH=$(uname -m)
 
-# image-name is the count. Without it there is nothing to report against, and a
-# guess would land in the wrong image's population.
-if ! sane "$IMAGE_NAME"; then
-    echo "no usable image-name in ${IMAGE_INFO_FILE}, not reporting" >&2
-    exit 0
+# What this system actually booted. Authoritative for the tag, and the fallback
+# for the name: image-info.json is a ublue convention and not every image in the
+# family ships one, but every bootc system knows its own ref.
+BOOTED_REF=$(bootc status --json 2>/dev/null |
+    jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)
+
+# ghcr.io/projectbluefin/bluefin-lts:stable -> bluefin-lts + stable
+#   digest-pinned refs carry no tag, so only the name is taken.
+REF_NAME=""
+REF_TAG=""
+if [[ -n "$BOOTED_REF" ]]; then
+    ref_body="${BOOTED_REF%@*}"
+    case "$ref_body" in
+        */*:*) REF_TAG="${ref_body##*:}"; ref_body="${ref_body%:*}" ;;
+        *:*)   REF_TAG="${ref_body##*:}"; ref_body="${ref_body%:*}" ;;
+    esac
+    REF_NAME="${ref_body##*/}"
 fi
 
 # The baked image-tag is the compose-time tag ("latest"); promotion retags the
-# same digest, so the tag a system actually follows only exists in bootc. Same
-# resolution order as /usr/bin/ublue-image-info.sh.
-BOOTED_REF=$(bootc status --json 2>/dev/null |
-    jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)
-case "$BOOTED_REF" in
-    *@*) ;;                                   # digest-pinned, carries no tag
-    *:*) IMAGE_TAG="${BOOTED_REF##*:}" ;;
-esac
+# same digest, so the tag a system actually follows only exists in bootc.
+sane "$REF_TAG" && IMAGE_TAG="$REF_TAG"
+
+# image-name is the count. Prefer the declared name, fall back to the booted
+# ref, and report nothing rather than guess — a guess lands in the wrong image's
+# population.
+sane "$IMAGE_NAME" || IMAGE_NAME="$REF_NAME"
+if ! sane "$IMAGE_NAME"; then
+    echo "no usable image name from ${IMAGE_INFO_FILE} or bootc, not reporting" >&2
+    exit 0
+fi
 
 QUERY="repo=${IMAGE_NAME}&arch=${ARCH}&countme=${BUCKET}"
 sane "$IMAGE_TAG" && QUERY+="&tag=${IMAGE_TAG}"
