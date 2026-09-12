@@ -21,6 +21,8 @@ case "$1" in
     shellenv)
         printf 'export PATH="%s/bin:$PATH"\n' "${MOCK_PREFIX}"
         ;;
+    bundle)
+        ;;
     *)
         exit 1
         ;;

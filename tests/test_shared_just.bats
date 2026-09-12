@@ -86,25 +86,29 @@ _calls() {
     [ "${output}" = "#!/usr/bin/bash" ]
 }
 
-@test "powerwash: delegates to bctl when bctl is available" {
+@test "powerwash: two confirmations run bootc install reset via sudo" {
     _queue_answers "Yes - wipe this machine" "Yes - wipe this machine"
 
-    _run_powerwash with-bctl
+    _run_powerwash
 
     [ "${status}" -eq 0 ]
-    run grep -Fq "bctl powerwash" <<< "$(_calls)"
+    run grep -Fqx "sudo bootc install reset --experimental" <<< "$(_calls)"
     [ "${status}" -eq 0 ]
+    # Both confirmations were prompted before any destructive call.
+    [ "$(grep -c '^gum ' <<< "$(_calls)")" -eq 2 ]
 }
 
-@test "powerwash: bctl delegation skips gum prompts and sudo entirely" {
+@test "powerwash: never invokes bctl even when bctl is on PATH" {
+    # bctl delegation was removed in #1083; the recipe owns the flow directly.
     _queue_answers "Yes - wipe this machine" "Yes - wipe this machine"
 
     _run_powerwash with-bctl
 
-    run grep -q "^gum " <<< "$(_calls)"
+    [ "${status}" -eq 0 ]
+    run grep -q "^bctl " <<< "$(_calls)"
     [ "${status}" -ne 0 ]
-    run grep -q "^sudo " <<< "$(_calls)"
-    [ "${status}" -ne 0 ]
+    run grep -Fqx "sudo bootc install reset --experimental" <<< "$(_calls)"
+    [ "${status}" -eq 0 ]
 }
 
 @test "powerwash: declining the first confirmation cancels without wiping" {
