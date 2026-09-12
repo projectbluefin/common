@@ -2,7 +2,7 @@
 
 > **Status**: hold-gated planning artifact. Human review required before adoption.
 > Filed by the strategist agent. Tracks [common#1029](https://github.com/projectbluefin/common/issues/1029);
-> Proposed alongside the org-wide roadmap in [common#1073](https://github.com/projectbluefin/common/pull/1073) (open, not yet adopted).
+> Proposed alongside the org-wide roadmap in [common#1073](https://github.com/projectbluefin/common/pull/1073) (landed as ROADMAP.md; its phases remain proposals).
 >
 > Nothing below changes GitHub roles, branch protection, CODEOWNERS, workflow behavior,
 > or hold-gate enforcement until a maintainer adopts it.
@@ -101,7 +101,7 @@ draft operating measures:
 ## Related
 
 - [common#1029](https://github.com/projectbluefin/common/issues/1029) — reviewer-scaling rung finding (this doc's tracker)
-- [common#1073](https://github.com/projectbluefin/common/pull/1073) — proposed org-wide ROADMAP.md (open PR; Phase 0 parent if adopted)
+- [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0 parent)
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
 - [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric
