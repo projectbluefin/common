@@ -120,6 +120,37 @@ teardown() {
     [ ! -f "${HOME}/.bashrc" ]
 }
 
+@test "ublue-bling: declining install in zsh does not modify .zshrc" {
+    export SHELL="/bin/zsh"
+    export ZDOTDIR="${HOME}"
+    printf '#!/bin/bash\nexit 1\n' > "${WORKDIR}/bin/gum"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -ne 0 ]
+    [ ! -f "${HOME}/.zshrc" ]
+}
+
+@test "ublue-bling: declining install in fish does not modify config.fish" {
+    export SHELL="/bin/fish"
+    mkdir -p "${HOME}/.config/fish"
+    printf '#!/bin/bash\nexit 1\n' > "${WORKDIR}/bin/gum"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -ne 0 ]
+    [ ! -f "${HOME}/.config/fish/config.fish" ]
+}
+
+@test "ublue-bling: declining uninstall leaves existing config intact" {
+    export SHELL="/bin/bash"
+    # Install first
+    bash "${BLING_SCRIPT}"
+    grep -qF "### bling.sh source start" "${HOME}/.bashrc"
+
+    # Mock gum to decline uninstall prompt
+    printf '#!/bin/bash\nexit 1\n' > "${WORKDIR}/bin/gum"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -ne 0 ]
+    grep -qF "### bling.sh source start" "${HOME}/.bashrc"
+}
+
 # ---------------------------------------------------------------------------
 # Unknown shell
 # ---------------------------------------------------------------------------
