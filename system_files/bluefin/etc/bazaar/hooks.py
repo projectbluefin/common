@@ -30,7 +30,7 @@ def spawn_brew(app, tap='ublue-os/tap'):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} tap --trust {tap} && {brew} install --cask {app}'
+        'bash', '-c', f'{brew} tap {tap} 2>/dev/null || true; {brew} trust {tap} 2>/dev/null || true; {brew} install --cask {app}'
     ])
 
 def handle_jetbrains():
@@ -133,7 +133,7 @@ def handle_zed():
             try:
                 spawn_brew('ublue-os/experimental-tap/zed-linux',
                            'ublue-os/experimental-tap')
-            except:
+            except Exception:
                 pass
             return ''
 

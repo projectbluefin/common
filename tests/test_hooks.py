@@ -23,6 +23,12 @@ HOOKS_PATH = (
 
 def _load_hooks(env: dict) -> str:
     """Execute hooks.py under a given environment, return stdout."""
+    resp, _ = _load_hooks_with_mock(env)
+    return resp
+
+
+def _load_hooks_with_mock(env: dict) -> tuple[str, list]:
+    """Execute hooks.py under a given environment, return stdout and Popen calls."""
     env_defaults = {
         "BAZAAR_HOOK_INITIATED_UNIX_STAMP": "0",
         "BAZAAR_HOOK_INITIATED_UNIX_STAMP_USEC": "0",
@@ -40,14 +46,14 @@ def _load_hooks(env: dict) -> str:
     env_defaults.update(env)
 
     buf = io.StringIO()
+    popen_calls = []
 
     with patch.dict(os.environ, env_defaults, clear=True):
-        # Mock subprocess.Popen so spawn helpers don't actually launch processes
         with patch("subprocess.Popen") as mock_popen:
             mock_popen.return_value = MagicMock()
+            mock_popen.side_effect = lambda args, **kwargs: (popen_calls.append(args), MagicMock())[1]
             spec = importlib.util.spec_from_file_location("hooks", HOOKS_PATH)
             mod = importlib.util.module_from_spec(spec)
-            # Redirect sys.stdout during exec so print() is captured
             old_stdout = sys.stdout
             sys.stdout = buf
             try:
@@ -57,7 +63,7 @@ def _load_hooks(env: dict) -> str:
             finally:
                 sys.stdout = old_stdout
 
-    return buf.getvalue().strip()
+    return buf.getvalue().strip(), popen_calls
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +268,19 @@ class TestZedHook:
             "BAZAAR_HOOK_STAGE": "teardown",
         })
         assert resp == "deny"
+
+    def test_action_spawns_brew_with_tap_and_trust(self):
+        resp, popen_calls = _load_hooks_with_mock({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "action",
+        })
+        assert resp == ""
+        assert len(popen_calls) == 1
+        cmd = " ".join(popen_calls[0])
+        assert "brew tap ublue-os/experimental-tap" in cmd
+        assert "brew trust ublue-os/experimental-tap" in cmd
+        assert "--trust" not in cmd
+        assert "zed-linux" in cmd
 
 
 # ---------------------------------------------------------------------------
