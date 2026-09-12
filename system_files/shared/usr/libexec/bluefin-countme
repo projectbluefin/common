@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# bluefin-countme — weekly first-party CountMe ping.
+#
+# Reports this image to https://countme.projectbluefin.io/metalink, which is the
+# only source permitted to publish a Project Bluefin count. Upstream Fedora and
+# EPEL reporting is untouched and continues alongside this.
+#
+# Nothing identifying is transmitted: image name, tag, flavor, architecture, and
+# a coarse installation-age bucket. No machine-id, no hostname, no token, no
+# persistent identifier of any kind.
+#
+# State (StateDirectory=bluefin-countme, so /var/lib/bluefin-countme):
+#   epoch    installation timestamp, for the age bucket
+#   lastrun  timestamp of the last successful ping, for the 7-day throttle
+set -euo pipefail
+
+IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+STATE_DIR="${STATE_DIRECTORY:-/var/lib/bluefin-countme}"
+ENDPOINT="${COUNTME_ENDPOINT:-https://countme.projectbluefin.io/metalink}"
+
+# Opt-out. Checked before any state is written, so opting out leaves no trace.
+for marker in /etc/projectbluefin/countme/disabled /etc/dakota-countme/disabled; do
+    if [[ -e "$marker" ]]; then
+        echo "countme disabled by ${marker}"
+        exit 0
+    fi
+done
+
+mkdir -p "$STATE_DIR"
+EPOCH_FILE="${STATE_DIR}/epoch"
+LASTRUN_FILE="${STATE_DIR}/lastrun"
+NOW=$(date +%s)
+
+# Read a numeric cookie, seeding it when absent, empty, or corrupt. A truncated
+# write would otherwise be read as 0 (~1970), making every system look ancient
+# and permanently reporting bucket 4.
+read_cookie() {
+    local file=$1 seed=$2 value
+    value=$(cat "$file" 2>/dev/null || true)
+    if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$seed" > "$file"
+        value=$seed
+    fi
+    printf '%s' "$value"
+}
+
+INSTALL_EPOCH=$(read_cookie "$EPOCH_FILE" "$NOW")
+
+# Client-side throttle. The server cannot deduplicate — it stores no identifier —
+# so one ping per system per week has to be guaranteed here. The timer fires more
+# often than weekly on purpose, to catch systems that were off.
+if [[ -f "$LASTRUN_FILE" ]]; then
+    LASTRUN=$(read_cookie "$LASTRUN_FILE" 0)
+    if (( NOW - LASTRUN < 604800 )); then
+        echo "already reported $(( (NOW - LASTRUN) / 86400 ))d ago, skipping"
+        exit 0
+    fi
+fi
+
+# Fedora's week-based age buckets, matching libdnf5:
+#   1 = week 0 (days 0-6), 2 = weeks 1-3, 3 = weeks 4-19, 4 = weeks 20+
+DAYS=$(( (NOW - INSTALL_EPOCH) / 86400 ))
+if   (( DAYS <   7 )); then BUCKET=1
+elif (( DAYS <  28 )); then BUCKET=2
+elif (( DAYS < 140 )); then BUCKET=3
+else                        BUCKET=4
+fi
+
+# Image metadata. Every field is validated before it is sent: a missing or
+# unexpanded value is dropped from the query rather than transmitted, because a
+# literal '${IMAGE_TAG}' or a bare 'unknown' in the dataset is indistinguishable
+# from a real deployment and cannot be counted.
+json_field() {
+    [[ -r "$IMAGE_INFO_FILE" ]] || return 0
+    jq -r --arg k "$1" '.[$k] // empty' < "$IMAGE_INFO_FILE" 2>/dev/null || true
+}
+
+sane() {
+    local value=$1
+    [[ -n "$value" && "$value" != "null" && "$value" != *'$'* && "$value" != *' '* ]]
+}
+
+IMAGE_NAME=$(json_field image-name)
+IMAGE_TAG=$(json_field image-tag)
+IMAGE_FLAVOR=$(json_field image-flavor)
+ARCH=$(uname -m)
+
+# What this system actually booted. Authoritative for the tag, and the fallback
+# for the name: image-info.json is a ublue convention and not every image in the
+# family ships one, but every bootc system knows its own ref.
+BOOTED_REF=$(bootc status --json 2>/dev/null |
+    jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)
+
+# ghcr.io/projectbluefin/bluefin-lts:stable -> bluefin-lts + stable
+#   digest-pinned refs carry no tag, so only the name is taken.
+REF_NAME=""
+REF_TAG=""
+if [[ -n "$BOOTED_REF" ]]; then
+    ref_body="${BOOTED_REF%@*}"
+    case "$ref_body" in
+        */*:*) REF_TAG="${ref_body##*:}"; ref_body="${ref_body%:*}" ;;
+        *:*)   REF_TAG="${ref_body##*:}"; ref_body="${ref_body%:*}" ;;
+    esac
+    REF_NAME="${ref_body##*/}"
+fi
+
+# The baked image-tag is the compose-time tag ("latest"); promotion retags the
+# same digest, so the tag a system actually follows only exists in bootc.
+sane "$REF_TAG" && IMAGE_TAG="$REF_TAG"
+
+# image-name is the count. Prefer the declared name, fall back to the booted
+# ref, and report nothing rather than guess — a guess lands in the wrong image's
+# population.
+sane "$IMAGE_NAME" || IMAGE_NAME="$REF_NAME"
+if ! sane "$IMAGE_NAME"; then
+    echo "no usable image name from ${IMAGE_INFO_FILE} or bootc, not reporting" >&2
+    exit 0
+fi
+
+QUERY="repo=${IMAGE_NAME}&arch=${ARCH}&countme=${BUCKET}"
+sane "$IMAGE_TAG" && QUERY+="&tag=${IMAGE_TAG}"
+sane "$IMAGE_FLAVOR" && QUERY+="&flavor=${IMAGE_FLAVOR}"
+
+if ! curl -sfG --max-time 30 --retry 2 --retry-delay 5 \
+    -A "bluefin-countme/1 (${IMAGE_NAME})" \
+    "${ENDPOINT}?${QUERY}" -o /dev/null; then
+    # Leave lastrun alone so the next timer firing retries. A missed week is a
+    # gap in the data; a week silently marked as reported is a wrong number.
+    echo "countme ping failed, will retry on next run" >&2
+    exit 0
+fi
+
+printf '%s\n' "$NOW" > "$LASTRUN_FILE"
+echo "reported ${IMAGE_NAME} bucket ${BUCKET}"
