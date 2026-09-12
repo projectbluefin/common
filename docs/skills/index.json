@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18",
+  "generated_at": "2026-09-12",
   "schema_version": "1.0",
   "skills": [
     {
@@ -67,8 +67,8 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.4",
-      "last_updated": "2026-08-18",
+      "version": "1.5",
+      "last_updated": "2026-09-12",
       "doc_type": "procedure"
     },
     {

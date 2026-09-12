@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.4"
-last_updated: "2026-08-18"
+version: "1.5"
+last_updated: "2026-09-12"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -62,8 +62,11 @@ pattern, and the rules for what can and cannot move to brew.
 2. Open a PR.
 3. On next successful login sync after the OS update, packages recorded in
    the previous managed state get uninstalled. Packages outside that state
-   are unaffected. State records the desired set, not who originally installed
-   each package, so a manually installed package can later become managed.
+   are unaffected. On a hash-changing reconciliation, the service snapshots
+   installed formulae and casks before `brew bundle`: declarations already
+   present and absent from prior managed state remain user-owned, while new
+   declarations installed by the bundle become managed. Existing managed
+   entries remain authoritative across later reconciliations.
 
 Bluefinctl is no longer provisioned by common. Removing its dedicated Brewfile
 uses this existing lifecycle to uninstall state-tracked copies; no separate
