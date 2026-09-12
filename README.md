@@ -88,24 +88,28 @@ These overrides are automatically applied to new user accounts through the `/etc
 Automatic updates are handled by `uupd`, which updates the system image,
 Flatpaks, Distrobox containers, and Homebrew together. To keep image updates
 enabled while choosing a different Flatpak cadence, disable only uupd's
-Flatpak module:
+Flatpak module.
+
+`/etc/uupd/config.json` ships on every image — it already sets
+`modules.distrobox.disable = true` — so it always exists and must be edited
+with `jq`, never overwritten with a fresh payload. This snippet refuses to
+install an empty or invalid result, so a missing `jq` or a failed edit cannot
+wipe the shipped config:
 
 ```bash
-sudo install -d -m 0755 /etc/uupd
+command -v jq   # required; install jq first if this prints nothing
 tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
-if sudo test -s /etc/uupd/config.json; then
-    sudo jq '.modules.flatpak.disable = true' /etc/uupd/config.json >"$tmp"
-else
-    printf '%s\n' '{"modules":{"flatpak":{"disable":true}}}' >"$tmp"
-fi
-sudo install -m 0644 "$tmp" /etc/uupd/config.json
+sudo jq '.modules.flatpak.disable = true' /etc/uupd/config.json >"$tmp" \
+    && jq -e . "$tmp" >/dev/null \
+    && sudo install -m 0644 "$tmp" /etc/uupd/config.json
+rm -f "$tmp"
 ```
 
-This requires `jq` when an existing uupd configuration must be preserved. The
-configuration is read on each uupd run, so it applies to the next scheduled
-update. Do not edit `/usr/lib/systemd/system/uupd.timer`; image updates replace
-files there.
+The configuration is read on each uupd run, so it applies to the next
+scheduled update. Do not edit `/usr/lib/systemd/system/uupd.timer`; image
+updates replace files there. To change only the schedule, write a drop-in
+with `sudo systemctl edit uupd.timer`, which lives under `/etc` and survives
+image updates.
 
 After disabling the module, create local systemd service and timer units under
 `/etc/systemd/system` (or user units under `~/.config/systemd/user`) that run
@@ -115,6 +119,9 @@ this system-wide timer runs Flatpak updates every 60 days:
 
 ```ini
 # /etc/systemd/system/flatpak-system-update.service
+[Unit]
+Description=Update system Flatpaks
+
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/flatpak update --system --noninteractive
