@@ -2,7 +2,7 @@
 
 > **Status**: hold-gated planning artifact. Human review required before adoption.
 > Filed by the strategist agent. Tracks [common#1029](https://github.com/projectbluefin/common/issues/1029);
-> Phase 0 item of the org-wide roadmap ([common#1073](https://github.com/projectbluefin/common/pull/1073)).
+> Proposed alongside the org-wide roadmap in [common#1073](https://github.com/projectbluefin/common/pull/1073) (open, not yet adopted).
 >
 > Nothing below changes GitHub roles, branch protection, CODEOWNERS, workflow behavior,
 > or hold-gate enforcement until a maintainer adopts it.
@@ -31,9 +31,10 @@ Reported state, using snapshots dated 2026-08-27 through 2026-09-05:
   v2026.09 monthly tag, while dakota stable was current (0 days old)
   ([common#1078](https://github.com/projectbluefin/common/issues/1078)).
 
-The ROADMAP ([common#1073](https://github.com/projectbluefin/common/pull/1073))
-puts "reviewer-scaling rung" in Phase 0. This document is the concrete proposal
-for that rung.
+The roadmap proposed in [common#1073](https://github.com/projectbluefin/common/pull/1073)
+places "reviewer-scaling rung" in Phase 0. This document is the concrete
+proposal for that rung; both are pending maintainer decision, and this text
+stands on its own if the roadmap is reshaped.
 
 ## Proposal: a four-rung ladder
 
@@ -78,8 +79,8 @@ enforcement.
 
 ## Operating metrics
 
-Adoption can be measured alongside the ROADMAP success table
-([common#1073](https://github.com/projectbluefin/common/pull/1073)); these are
+If the roadmap proposed in [common#1073](https://github.com/projectbluefin/common/pull/1073)
+is adopted, its success table can track adoption; either way these are
 draft operating measures:
 
 - Open hold-gated PR count (baseline: 88 on 2026-09-05) — ROADMAP target: <40
@@ -100,7 +101,7 @@ draft operating measures:
 ## Related
 
 - [common#1029](https://github.com/projectbluefin/common/issues/1029) — reviewer-scaling rung finding (this doc's tracker)
-- [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0 parent)
+- [common#1073](https://github.com/projectbluefin/common/pull/1073) — proposed org-wide ROADMAP.md (open PR; Phase 0 parent if adopted)
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
 - [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric
