@@ -1,7 +1,7 @@
 ---
 name: human-gates
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.2"
+last_updated: "2026-09-11"
 id: human-gates
 one_line_purpose: Decide when to stop for Design, Security, Breakage, or Merge review.
 entry_point: docs/skills/human-gates.md
@@ -86,6 +86,22 @@ Examples:
 This gate is always human. CI passing plus an approving review from a human reviewer is required before merge. Auto-merge fires only after both conditions are met.
 
 Agents never self-merge, never bypass branch protection, and never force-push to a protected branch.
+
+This gate binds agents, not the maintainer's own hands. A review tool that
+executes a merge or close only on the maintainer's explicit per-item keypress
+— with rulesets and branch protection still enforced by GitHub — is the human
+acting at the gate, not an agent self-merging. The reviewed vehicle is the
+`pr-review` card loop: one keypress per card, never a confirm-all prompt
+spanning items. Close carries the same weight as merge — GitHub enforces
+nothing on a close — so this carve-out covers keypress-confirmed closes only;
+closing pull requests without a per-item keypress is agent mutation of
+human-visible state and stays forbidden. Arming auto-merge
+(`gh pr merge --auto`) on the keypress is the same human decision deferred
+until checks pass; it is in scope only pinned to the reviewed head with
+`--match-head-commit`, so drift between keypress and landing fails
+server-side instead of merging unreviewed code. What remains forbidden for
+any tool: `--admin` overrides, submitting an approving review, and any
+non-interactive batch mutation.
 
 ---
 
