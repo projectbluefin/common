@@ -1,0 +1,16 @@
+[Unit]
+Description=Weekly first-party Bluefin CountMe reporting
+Documentation=https://countme.projectbluefin.io
+
+[Timer]
+# Fires more often than weekly so a system that was off does not miss its week.
+# The client throttles to one ping per 7 days, which is what keeps the count
+# honest: the server stores no identifier and cannot deduplicate.
+OnBootSec=15m
+OnUnitInactiveSec=3d
+AccuracySec=1h
+RandomizedDelaySec=12h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
