@@ -41,13 +41,19 @@ only runs when brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
 ```
 
 State files created before cask management have no `casks` key. They are read
-as an empty cask list and require no migration.
+as an empty cask list and require no migration. The `packages` and `casks`
+arrays contain declarations Bluefin owns, not every declaration in the current
+Brewfiles.
 
 ### On every login
 
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
-3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
+3. **Different:** snapshot installed formulae and casks, then run
+   `brew bundle --file=` on each Brewfile (idempotent). A declaration already
+   installed in the snapshot remains user-owned unless it was already present
+   in the previous managed state. A new declaration absent from the snapshot
+   becomes managed after the successful bundle pass.
    Continue through independent Brewfiles, but exit before removals and state
    writes if any bundle fails.
 4. Diff previous formula and cask sets (from state JSON) against the current
@@ -63,8 +69,9 @@ triggers re-run automatically.
 
 **Safety rule:** the uninstall step only removes packages that were in the
 *previous managed state file*. If a user independently ran `brew install inxi`
-themselves, it is not in their state file's managed list and will never be
-touched.
+themselves before `inxi` appeared in a managed Brewfile, the pre-bundle
+snapshot keeps it out of managed state and a later Brewfile removal will never
+touch it.
 
 ### What happens to long-time users on a package removal
 
