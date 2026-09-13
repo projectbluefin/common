@@ -2,7 +2,7 @@
 
 # KEEP THIS POSIX - Needs to work on Bash and ZSH
 
-# Check if bling has already been sourced so that we dont break atuin. https://github.com/atuinsh/atuin/issues/380#issuecomment-1594014644
+# Check if bling has already been sourced so that we dont source twice
 [ "${BLING_SOURCED:-0}" -eq 1 ] && return
 BLING_SOURCED=1
 
