@@ -33,14 +33,15 @@ provision managed packages for every variant. The CLI set contains 11 packages:
 installs ChairLift for every user:
 
 ```ruby
-tap "frostyard/tap", trusted: true
-cask "frostyard/tap/chairlift"
+tap "ublue-os/homebrew-tap", trusted: true
+cask "ublue-os/homebrew-tap/chairlift"
 ```
 
 This is OS-managed like the default formula set: add the cask and every user
 gets it on next login after update; remove it and users whose state file shows
 it as managed have it uninstalled. The `trusted: true` tap flag is required.
-The cask must remain pinned upstream in `frostyard/tap`; do not vendor an
+The cask must remain pinned upstream in `ublue-os/homebrew-tap`, where it
+tracks the rebranded `projectbluefin/chairlift` releases; do not vendor an
 unpinned replacement cask into common.
 
 The cask's desktop entry and icons land in the installing user's

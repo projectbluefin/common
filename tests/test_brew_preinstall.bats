@@ -152,7 +152,7 @@ EOF
     printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
     printf 'brew "jq"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
     mkdir -p "${WORKDIR}/.local/share/ublue-os"
-    printf '{"hash":"old","packages":["jq"],"casks":["chairlift","frostyard/tap/chairlift","ublue-os/tap/chairlift","other"]}\n' \
+    printf '{"hash":"old","packages":["jq"],"casks":["chairlift","frostyard/tap/chairlift","ublue-os/tap/chairlift","ublue-os/homebrew-tap/chairlift","other"]}\n' \
         > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_WRAPPER}" --external-chairlift

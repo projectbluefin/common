@@ -1,8 +1,8 @@
 name: Validate ChairLift Config
 
 # Networked drift gate for /usr/share/chairlift/config.yml. It validates
-# against the ChairLift release the frostyard/tap cask pins, not upstream
-# main; the pin lives in one constant, CHAIRLIFT_SCHEMA_REF in
+# against the ChairLift release the ublue-os/homebrew-tap cask pins, not
+# upstream main; the pin lives in one constant, CHAIRLIFT_SCHEMA_REF in
 # tests/check-chairlift-config, and moves only when the cask does.
 #
 # This is deliberately NOT part of `just check`: that gate must stay

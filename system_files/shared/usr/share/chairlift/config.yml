@@ -1,6 +1,6 @@
 # ChairLift configuration for Bluefin (maintainer defaults).
 # Admin overrides go in /etc/chairlift/config.yml, which takes priority.
-# Reference: https://github.com/frostyard/chairlift/blob/main/CONFIG.md
+# Reference: https://github.com/projectbluefin/chairlift/blob/main/CONFIG.md
 
 system_page:
   system_info_group:
