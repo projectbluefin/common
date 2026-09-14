@@ -124,7 +124,7 @@ source /usr/lib/ublue/setup-services/libsetup.sh
 
 - Calling `version-script` before checking transient preconditions (permanently burns the stamp)
 - Bumping the version number when migrating a hook from downstream (causes re-run on all existing machines)
-- Dropping OEM-specific WirePlumber snippets into `system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` (ships globally)
+- Dropping un-scoped WirePlumber snippets into `system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` (hardware quirks must explicitly match `device.vendor.id` and `device.product.id` so they only affect target hardware)
 - Assuming `hardware-profiles/` loader from bazzite works in stock bluefin WirePlumber
 
 ---
