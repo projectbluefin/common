@@ -52,10 +52,19 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
   so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
   extension). Needed for Flatpak apps to use the GPU. Triggered by
   `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
-- `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset` —
-  enables `nvidia-cdi-refresh.{path,service}` for CDI spec auto-generation.
 
-Changes here flow into **all** nvidia-variant images at next build. Be surgical.
+**Not currently delivered.** The ctx stage publishes `/system_files/nvidia`, but every
+consumer copies `/system_files/shared` and `/system_files/bluefin` only — bluefin
+`Containerfile:48-49`, bluefin-lts `Containerfile:17-18`, utah `Containerfile:66-67`. No
+preset here and no `systemctl enable` anywhere in the org references
+`ublue-nvidia-flatpak-runtime-sync.service`, so neither the unit nor the helper is present in
+a built image. `tests/test_nvidia_flatpak_sync.bats` asserts against the files on disk and
+passes regardless. Changes here reach **no** image until common#1124 is resolved.
+
+There is no `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset`
+in this repo and there never has been; CDI auto-generation is enabled per-consumer
+(bluefin-lts `system_files_overrides/gdx/…`, dakota `elements/bluefin-nvidia/…`) and the
+Fedora bluefin variant has no such preset in either repo.
 
 ### `projectbluefin/bluefin`
 
