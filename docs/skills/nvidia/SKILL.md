@@ -1,7 +1,7 @@
 ---
 name: nvidia
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-15"
 id: nvidia
 one_line_purpose: Maintain NVIDIA GPU support architecture and update procedures.
 entry_point: docs/skills/nvidia/SKILL.md
@@ -39,13 +39,27 @@ metadata:
 
 | Repo | Base OS | Driver source | NCT installed | CDI preset |
 |---|---|---|---|---|
-| `projectbluefin/common` | shared overlay | — | — | ✅ `system_files/nvidia/…/80-nvidia-container-toolkit.preset` |
-| `projectbluefin/bluefin` | Fedora | `ublue-os/akmods-nvidia-open` OCI | ✅ (build script) | inherits from common |
+| `projectbluefin/common` | shared overlay | — | — | ❌ none — see "`system_files/nvidia/` ships to nobody" below |
+| `projectbluefin/bluefin` | Fedora | `ublue-os/akmods-nvidia-open` OCI | ✅ (build script) | ❌ none in either repo |
 | `projectbluefin/bluefin-lts` | CentOS Stream 10 | `ublue-os/akmods-nvidia-open` OCI | ✅ (nvidia build overlay) | ✅ `system_files_overrides/gdx/…/80-nvidia-container-toolkit.preset` |
 | `projectbluefin/dakota` | GNOME OS (BST) | `.run` installer, open kmod | ✅ (built from source) | ✅ `elements/bluefin-nvidia/nvidia-container-toolkit-preset.bst` |
 
 **dakota is the reference implementation.** When in doubt about the correct approach for
 nvidia-related changes, read `elements/bluefin-nvidia/` in dakota first.
+
+### `system_files/nvidia/` ships to nobody
+
+The ctx stage of this repo's `Containerfile` publishes `/system_files/nvidia`, but **no
+consumer copies it**: `projectbluefin/bluefin` (`Containerfile:48-49`),
+`projectbluefin/bluefin-lts` (`Containerfile:17-18`) and `projectbluefin/utah`
+(`Containerfile:66-67`) all take `/system_files/shared` and `/system_files/bluefin` only.
+Nothing in the org enables `ublue-nvidia-flatpak-runtime-sync.service`, and this repo ships
+no preset for it. Editing `system_files/nvidia/` therefore changes no image today.
+
+`80-nvidia-container-toolkit.preset` has **never existed** in this repo
+(`git log --all -- system_files/nvidia/usr/lib/systemd/system-preset` is empty), so bluefin
+does not inherit a CDI preset from here either. Tracked in common#1124 — do not treat
+`system_files/nvidia/` as a live delivery path until that issue is resolved.
 
 ---
 
