@@ -225,7 +225,7 @@ brew "devspace"
 brew "k8sgpt"
 
 # KCL
-# Disabled 2026-09-16: upstream GoReleaser emitted duplicate kcl@0.9.rb / kcl-lsp@0.9.rb 
+# Disabled 2026-09-16: upstream GoReleaser emitted duplicate kcl@0.9.rb / kcl-lsp@0.9.rb
 # with wrong class (KclAT090). Re-enable once upstream deletes them.
 # brew "kcl-lang/tap/kcl"
 
