@@ -108,6 +108,19 @@ read_boot_status() {
             *@*) ;; # digest-pinned ref, no tag to extract
             *:*) IMAGE_TAG="${booted_ref##*:}" ;;
         esac
+        if [[ -n "$booted_ref" ]]; then
+            # image-name from image-info.json is baked at build time and is
+            # equally stale after a rebase (e.g. bluefin -> dakota); derive
+            # it from the booted ref's repository basename so issue routing
+            # follows the live deployment, not the original build
+            # (projectbluefin/common#1009).
+            local booted_repo="${booted_ref%%@*}"
+            booted_repo="${booted_repo%%:*}"
+            local booted_name="${booted_repo##*/}"
+            if [[ -n "$booted_name" ]]; then
+                IMAGE_NAME="$booted_name"
+            fi
+        fi
     else
         BOOTED_DIGEST="unknown"
     fi
