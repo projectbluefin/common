@@ -44,7 +44,7 @@ The Containerfile uses four named stages:
 | `build` | Downloads and assembles all artifacts into `/out/` |
 | `ctx` | Scratch image: the OCI layer consumed by downstream builds |
 
-See [`references/build-stages.md`](references/build-stages.md) for the full stage details, wallpaper source caveat, and ujust completion generation.
+See [`references/build-stages.md`](references/build-stages.md) for the full stage details, wallpaper source caveat, and ujust completions.
 
 ## Key Rules
 
@@ -57,7 +57,7 @@ See [`references/build-stages.md`](references/build-stages.md) for the full stag
 
 - `checkout tags/...` or `--branch` in a Go builder stage — tags are mutable.
 - A `curl` block without an inline `sha256sum -c`.
-- Editing generated ujust completions directly instead of fixing the `sed` pattern.
+- ujust completions are tailored files under `system_files/shared/` guarded by a `RUN` gate in the `build` stage, which never reintroduce a `just --completions | sed` generator.
 - Using `ghcr.io/projectbluefin/` for the wallpaper source (it is `ublue-os`).
 
 ## Verification
@@ -71,5 +71,5 @@ See [`references/build-stages.md`](references/build-stages.md) for the full stag
 
 | File | Description |
 |---|---|
-| [`references/build-stages.md`](references/build-stages.md) | Full build stage definitions, wallpaper source caveat, and ujust completion generation details. |
+| [`references/build-stages.md`](references/build-stages.md) | Full build stage definitions, wallpaper source caveat, and ujust completion details. |
 | [`references/binary-and-testing.md`](references/binary-and-testing.md) | External binary SHA verification pattern, local testing with `just overlay`, adding a new binary, and Renovate tracking. |
