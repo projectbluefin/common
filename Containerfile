@@ -78,7 +78,7 @@ RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
 COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
-# Ujust gate: the tailored completions checked into system_files/shared must bind `ujust` 
+# Ujust gate: the tailored completions checked into system_files/shared must bind `ujust`
 # & /out/shared must not ship files at the same paths to avoid shadow by ctx overlay.
 COPY system_files/shared/usr/share/bash-completion/completions/ujust \
      system_files/shared/usr/share/zsh/site-functions/_ujust \
