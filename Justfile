@@ -17,6 +17,7 @@ test:
     bats tests/test_update_just.bats
     bats tests/test_native_recipes.bats
     bats tests/test_ujust.bats
+    bats tests/test_ujust_completion.bats
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
