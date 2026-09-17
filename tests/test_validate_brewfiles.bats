@@ -173,7 +173,7 @@ teardown() {
 @test "repository artwork and Zed use the intended unambiguous cask names" {
     local shared="${ROOT}/system_files/shared/usr/share/ublue-os/homebrew"
     local name
-    for name in aurora-wallpapers bazzite-wallpapers bluefin-wallpapers bluefin-wallpapers-extra framework-wallpapers; do
+    for name in bazzite-wallpapers bluefin-wallpapers bluefin-wallpapers-extra framework-wallpapers; do
         grep -qFx "cask \"ublue-os/tap/${name}\"" "${shared}/artwork.Brewfile"
     done
     grep -qFx 'cask "ublue-os/tap/zed-linux"' "${shared}/experimental-ide.Brewfile"

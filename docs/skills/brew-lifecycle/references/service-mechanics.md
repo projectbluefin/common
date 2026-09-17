@@ -98,7 +98,7 @@ Keep both lines load-bearing:
 
 ```ruby
 tap "frostyard/tap", trusted: true
-cask "chairlift"
+cask "frostyard/tap/chairlift"
 ```
 
 Homebrew 6 requires `trusted: true` for the Frostyard tap, and the cask must

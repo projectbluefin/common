@@ -1,5 +1,6 @@
 tap "anomalyco/tap"
 tap "charmbracelet/tap"
+tap "llmmanorg/tap"
 tap "ublue-os/tap", trusted: true
 tap "ublue-os/experimental-tap", trusted: true
 brew "anomalyco/tap/opencode"
@@ -8,6 +9,7 @@ brew "charmbracelet/tap/crush"
 brew "kimi-code"
 brew "llm"
 brew "llmfit"
+brew "llmmanorg/tap/llmman"
 brew "mistral-vibe"
 brew "qwen-code"
 brew "ramalama"

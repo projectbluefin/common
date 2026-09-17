@@ -1,2 +1,2 @@
 tap "frostyard/tap", trusted: true
-cask "chairlift"
+cask "frostyard/tap/chairlift"

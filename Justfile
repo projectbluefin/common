@@ -20,6 +20,7 @@ test:
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
+    bats tests/test_default_just.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
     bats tests/test_dynamic_wallpaper.bats
@@ -31,6 +32,7 @@ test:
     bats tests/test_hardware_hooks.bats
     bats tests/test_theming_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
+    bats tests/test_system_just.bats
     bats tests/test_brew_tap_trust.bats
 
 # Preview Bazaar config from this checkout on the local machine

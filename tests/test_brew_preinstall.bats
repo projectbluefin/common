@@ -135,6 +135,86 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Opt-in ChairLift lifecycle handoff
+# ---------------------------------------------------------------------------
+
+@test "brew-preinstall: ChairLift still installs normally without handoff" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_WRAPPER}"
+    [ "${status}" -eq 0 ]
+    grep -Fxq 'brew tap frostyard/tap' "${WORKDIR}/brew.log"
+    grep -Fxq "brew bundle --file=${WORKDIR}/preinstall.d/chairlift.Brewfile" "${WORKDIR}/brew.log"
+    jq -e '.casks == ["chairlift"]' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: external ChairLift skips its tap bundle hash and removal only" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    printf 'brew "jq"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"old","packages":["jq"],"casks":["chairlift","frostyard/tap/chairlift","ublue-os/tap/chairlift","other"]}\n' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_WRAPPER}" --external-chairlift
+    [ "${status}" -eq 0 ]
+    ! grep -q 'chairlift\|frostyard/tap' "${WORKDIR}/brew.log"
+    grep -Fxq "brew bundle --file=${WORKDIR}/preinstall.d/system-cli.Brewfile" "${WORKDIR}/brew.log"
+    grep -Fxq 'brew uninstall --cask other' "${WORKDIR}/brew.log"
+    expected_hash="$(sha256sum "${WORKDIR}/preinstall.d/system-cli.Brewfile" | cut -d' ' -f1)"
+    jq -e --arg hash "${expected_hash}" '.hash == $hash and .packages == ["jq"] and .casks == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    # Changes to the externally owned declaration must not trigger bundle.
+    printf '# external installer update\n' >> "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_WRAPPER}" --external-chairlift
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"nothing to do"* ]]
+    ! grep -q 'brew bundle' "${WORKDIR}/second.log"
+}
+
+@test "brew-preinstall: external ChairLift remains protected when its Brewfile is gone" {
+    printf 'brew "jq"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"old","packages":[],"casks":["chairlift"]}\n' > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}" --external-chairlift
+    [ "${status}" -eq 0 ]
+    ! grep -q 'brew uninstall' "${WORKDIR}/brew.log"
+}
+
+@test "brew-preinstall: no handoff still removes ChairLift dropped from the managed set" {
+    printf 'brew "jq"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"old","packages":[],"casks":["chairlift"]}\n' > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -Fxq 'brew uninstall --cask chairlift' "${WORKDIR}/brew.log"
+}
+
+@test "brew-preinstall: only externally owned ChairLift is a no-op" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}" --external-chairlift
+    [ "${status}" -eq 0 ]
+    [ ! -e "${WORKDIR}/brew.log" ]
+    [ ! -e "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: capability probe works without Homebrew and touches no state" {
+    rm "${WORKDIR}/bin/brew"
+    run bash "${PATCHED_WRAPPER}" --capabilities
+    [ "${status}" -eq 0 ]
+    [ "${output}" = external-chairlift-v1 ]
+    [ ! -e "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: unknown option fails before any Brew operation" {
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}" --external-chairlif
+    [ "${status}" -eq 2 ]
+    [ ! -e "${WORKDIR}/brew.log" ]
+}
+
+# ---------------------------------------------------------------------------
 # Early-exit guards
 # ---------------------------------------------------------------------------
 

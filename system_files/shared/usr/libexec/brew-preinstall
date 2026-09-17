@@ -12,6 +12,16 @@
 # Older state files without a "casks" key are read as an empty cask list.
 set -euo pipefail
 
+# Opt-in handoff for images with a dedicated ChairLift installer. Other images
+# retain the normal bundle/install/remove lifecycle with no arguments.
+external_chairlift=0
+case "$*" in
+    '') ;;
+    --external-chairlift) external_chairlift=1 ;;
+    --capabilities) printf '%s\n' external-chairlift-v1; exit 0 ;;
+    *) echo 'Usage: brew-preinstall [--external-chairlift|--capabilities]' >&2; exit 2 ;;
+esac
+
 PREINSTALL_DIR="/usr/share/ublue-os/homebrew/preinstall.d"
 STATE_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-state.json"
 BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
@@ -27,7 +37,15 @@ if [[ ! -d "${PREINSTALL_DIR}" ]]; then
 fi
 
 shopt -s nullglob
-brewfiles=("${PREINSTALL_DIR}"/*.Brewfile)
+# A dedicated installer owns the whole ChairLift Brewfile when requested,
+# including taps, hash, bundle and managed state. Never partially bundle it.
+brewfiles=()
+for brewfile in "${PREINSTALL_DIR}"/*.Brewfile; do
+    if [[ "${external_chairlift}" -eq 1 && "${brewfile##*/}" == chairlift.Brewfile ]]; then
+        continue
+    fi
+    brewfiles+=("${brewfile}")
+done
 
 if [[ ${#brewfiles[@]} -eq 0 ]]; then
     echo "brew-preinstall: no Brewfiles in ${PREINSTALL_DIR}, skipping"
@@ -130,7 +148,12 @@ fi
 
 previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
-previous_casks=$(jq -r '.casks[]? // empty' "${STATE_FILE}" 2>/dev/null \
+# Hand ChairLift ownership to the caller, not the OS-diet remover. This must
+# work even if the old Brewfile has already disappeared from the new image.
+previous_casks=$(jq -r --argjson external "${external_chairlift}" '
+    .casks[]? // empty |
+    select($external == 0 or (. != "chairlift" and . != "frostyard/tap/chairlift" and . != "ublue-os/tap/chairlift"))
+' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 
 managed_name_present() {
