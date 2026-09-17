@@ -31,6 +31,7 @@ test:
     bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_theming_hook.bats
+    bats tests/test_dynamic_wallpaper_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
     bats tests/test_system_just.bats
     bats tests/test_brew_tap_trust.bats
