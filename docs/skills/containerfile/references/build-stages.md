@@ -107,5 +107,5 @@ They are **not** generated from `just --completions`: Since `just` moved to dyna
 
 Two rules follow from this:
 
-- Never reintroduce a `just --completions | sed` generator step. The gate `RUN` in the `build` stage (content assertions on the checked-in files plus a no-shadow check against `/out/shared/...`) fails the build if the generator — or any other file at those paths — comes back.
+- Never reintroduce a `just --completions | sed` generator step. The gate `RUN` in the `build` stage validates uncommented completion registrations and `ujust-flags` path assignments in the checked-in files, plus a no-shadow check against `/out/shared/...`. It fails if the generator — or any other file at those paths — comes back.
 - `UJUST_JUSTFILE` / `UJUST_FLAGS_FILE` override the entry-justfile path and the flags list in all three completions; they exist for `tests/test_ujust_completion.bats` which points them at sandbox files so the suite passes off-image. Flags live in exactly one place at `system_files/shared/usr/share/ublue-os/just/ujust-flags` (one per line). All three completions read it during TAB press.

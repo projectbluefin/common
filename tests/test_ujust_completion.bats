@@ -51,7 +51,7 @@ teardown() {
 
 @test "bash completion file binds the ujust command" {
     [ -f "${BASH_COMPLETION}" ]
-    grep -qF "complete -F _ujust ujust" "${BASH_COMPLETION}"
+    grep -qE '^complete -F _ujust ujust$' "${BASH_COMPLETION}"
     grep -qF "just --summary" "${BASH_COMPLETION}"
     grep -qF "UJUST_JUSTFILE" "${BASH_COMPLETION}"
 }
@@ -64,7 +64,7 @@ teardown() {
 
 @test "zsh completion file defines a ujust completer" {
     [ -f "${ZSH_COMPLETION}" ]
-    grep -qF "#compdef ujust" "${ZSH_COMPLETION}"
+    grep -qE '^#compdef ujust$' "${ZSH_COMPLETION}"
     grep -qF "_ujust()" "${ZSH_COMPLETION}"
     grep -qF "just --summary" "${ZSH_COMPLETION}"
     grep -qF "UJUST_JUSTFILE" "${ZSH_COMPLETION}"
@@ -84,7 +84,7 @@ teardown() {
 
 @test "fish completion file completes the ujust command" {
     [ -f "${FISH_COMPLETION}" ]
-    grep -qF "complete -c ujust" "${FISH_COMPLETION}"
+    grep -qE '^complete -c ujust ' "${FISH_COMPLETION}"
     grep -qF "just --summary" "${FISH_COMPLETION}"
     grep -qF "UJUST_JUSTFILE" "${FISH_COMPLETION}"
 }
@@ -96,9 +96,9 @@ teardown() {
 }
 
 @test "completions default to the image entry justfile" {
-    grep -qF "${ENTRY_JUSTFILE}" "${BASH_COMPLETION}"
-    grep -qF "${ENTRY_JUSTFILE}" "${ZSH_COMPLETION}"
-    grep -qF "${ENTRY_JUSTFILE}" "${FISH_COMPLETION}"
+    grep -qE '^[[:space:]]*local justfile=.*00-entry\.just' "${BASH_COMPLETION}"
+    grep -qE '^[[:space:]]*local justfile=.*00-entry\.just' "${ZSH_COMPLETION}"
+    grep -qE "^[[:space:]]*echo ${ENTRY_JUSTFILE}$" "${FISH_COMPLETION}"
 }
 
 @test "fish completion file is not a just dynamic-loader shim" {
@@ -120,10 +120,19 @@ teardown() {
 }
 
 @test "completions read flags from the data file instead of embedding lists" {
-    grep -qF "ujust-flags" "${BASH_COMPLETION}"
-    grep -qF "ujust-flags" "${ZSH_COMPLETION}"
-    grep -qF "ujust-flags" "${FISH_COMPLETION}"
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' "${BASH_COMPLETION}"
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' "${ZSH_COMPLETION}"
+    grep -qE '^[[:space:]]*echo .*ujust-flags' "${FISH_COMPLETION}"
     ! grep -qF -- "--list-heading" "${BASH_COMPLETION}" "${ZSH_COMPLETION}" "${FISH_COMPLETION}"
+}
+
+@test "Containerfile gate validates executable completion configuration" {
+    grep -qF "grep -qE '^complete -F _ujust ujust$'" "$REPO_ROOT/Containerfile"
+    grep -qF "grep -qE '^#compdef ujust$'" "$REPO_ROOT/Containerfile"
+    grep -qF "grep -qE '^complete -c ujust '" "$REPO_ROOT/Containerfile"
+    grep -qF "grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/ujust;" "$REPO_ROOT/Containerfile"
+    grep -qF "grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/_ujust;" "$REPO_ROOT/Containerfile"
+    grep -qF "grep -qE '^[[:space:]]*echo .*ujust-flags'" "$REPO_ROOT/Containerfile"
 }
 
 # ---------------------------------------------------------------------------
@@ -170,6 +179,23 @@ teardown() {
 
 @test "bash completion offers flags for a dash-prefixed word" {
     run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+        bash -c '
+            source "${BASH_COMPLETION}"
+            COMP_WORDS=(ujust --l)
+            COMP_CWORD=1
+            COMP_LINE="ujust --l"
+            COMP_POINT=9
+            COMPREPLY=()
+            _ujust ujust --l ""
+            printf "%s\n" "${COMPREPLY[@]}"
+        '
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *--list* ]]
+}
+
+@test "bash completion finds flags next to the entry justfile by default" {
+    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust --l)
@@ -290,6 +316,23 @@ teardown() {
     [ "$(grep -cw "update" "${out}" || true)" -eq 0 ]
 }
 
+@test "zsh completion finds flags next to the entry justfile by default" {
+    [ -n "$(command -v zsh)" ] || skip "zsh not installed"
+    local out="${WORKDIR}/zsh-flags-default.txt"
+
+    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" ZSH_COMPLETION="${ZSH_COMPLETION}" \
+        zsh -c '
+            _call_program() { local _tag=$1; shift; "$@" }
+            _describe() { print -r -- "${(P)${@[-1]}}" > "$OUT" }
+            CURRENT=2
+            words=(ujust --l)
+            source "${ZSH_COMPLETION}"
+        '
+
+    [ "${status}" -eq 0 ]
+    grep -qw -- "--list" "${out}"
+}
+
 @test "zsh completion falls back to recipes when the flags file is missing" {
     [ -n "$(command -v zsh)" ] || skip "zsh not installed"
     local out="${WORKDIR}/zsh-flags-missing.txt"
@@ -335,6 +378,16 @@ teardown() {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
     run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
+        fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust --l"'
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *--list* ]]
+}
+
+@test "fish completion finds flags next to the entry justfile by default" {
+    [ -n "$(command -v fish)" ] || skip "fish not installed"
+
+    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust --l"'
 
     [ "${status}" -eq 0 ]

@@ -86,9 +86,12 @@ COPY system_files/shared/usr/share/bash-completion/completions/ujust \
      system_files/shared/usr/share/ublue-os/just/ujust-flags \
      /tmp/ujust-gate/
 RUN set -e; \
-    grep -qF 'complete -F _ujust ujust' /tmp/ujust-gate/ujust; \
-    grep -qF '#compdef ujust' /tmp/ujust-gate/_ujust; \
-    grep -qF 'complete -c ujust' /tmp/ujust-gate/ujust.fish; \
+    grep -qE '^complete -F _ujust ujust$' /tmp/ujust-gate/ujust; \
+    grep -qE '^#compdef ujust$' /tmp/ujust-gate/_ujust; \
+    grep -qE '^complete -c ujust ' /tmp/ujust-gate/ujust.fish; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/ujust; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/_ujust; \
+    grep -qE '^[[:space:]]*echo .*ujust-flags' /tmp/ujust-gate/ujust.fish; \
     grep -qx -- '--version' /tmp/ujust-gate/ujust-flags; \
     if grep -qF 'JUST_COMPLETE' /tmp/ujust-gate/ujust /tmp/ujust-gate/_ujust /tmp/ujust-gate/ujust.fish; then echo "ujust completion is a just dynamic-loader shim" >&2; exit 1; fi; \
     for f in usr/share/bash-completion/completions/ujust usr/share/zsh/site-functions/_ujust usr/share/fish/vendor_completions.d/ujust.fish usr/share/ublue-os/just/ujust-flags; do \
