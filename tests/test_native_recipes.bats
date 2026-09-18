@@ -109,6 +109,70 @@ teardown() {
     run ! grep -q '^brew ' "${COMMAND_LOG}"
 }
 
+@test "native bluefin-cli: enabling in fish installs CLI bundle" {
+    SHELL=/usr/bin/fish _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    grep -q '^brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile$' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: disabling in fish does not reinstall CLI bundle" {
+    mkdir -p "${HOME}/.config/fish"
+    echo 'source /usr/share/ublue-os/bling/bling.fish' > "${HOME}/.config/fish/config.fish"
+    SHELL=/usr/bin/fish _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: enabling in zsh installs CLI bundle" {
+    SHELL=/usr/bin/zsh _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    grep -q '^brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile$' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: disabling in zsh does not reinstall CLI bundle" {
+    echo 'source /usr/share/ublue-os/bling/bling.sh' > "${HOME}/.zshrc"
+    SHELL=/usr/bin/zsh _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: unknown shell aborts with error" {
+    SHELL=/bin/unknownshell _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -ne 0 ]
+    [[ "${output}" == *"Unknown shell: unknownshell"* ]]
+    run ! grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: ublue-bling failure aborts before brew bundle" {
+    cat > "${WORKDIR}/bin/ublue-bling" <<'FAILMOCK'
+#!/bin/bash
+echo "ublue-bling failed" >> "${COMMAND_LOG}"
+exit 1
+FAILMOCK
+    chmod +x "${WORKDIR}/bin/ublue-bling"
+    _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -ne 0 ]
+    grep -q '^ublue-bling failed' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: brew bundle failure propagates non-zero exit" {
+    cat > "${WORKDIR}/bin/brew" <<'FAILBREW'
+#!/bin/bash
+echo "brew $*" >> "${COMMAND_LOG}"
+exit 1
+FAILBREW
+    chmod +x "${WORKDIR}/bin/brew"
+    _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -ne 0 ]
+    grep -q '^brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile$' "${COMMAND_LOG}"
+}
+
 @test "native devmode: compatibility entry point opens the native wizard" {
     _run_recipe "${SYSTEM_JUST}" devmode
     [ "${status}" -eq 0 ]
