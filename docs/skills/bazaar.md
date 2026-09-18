@@ -27,7 +27,7 @@ metadata:
 
 - Editing Bazaar config in `system_files/bluefin/etc/bazaar/`
 - Porting curated-page structure across Bazaar schema versions
-- Changing Bazaar hook behavior for app install interception
+- Changing Bazaar hook behavior for app install interception (JetBrains, VS Code/Codium, Zed)
 - Adding or changing banner images (JXL→PNG conversion pipeline)
 - Validating Bazaar behavior locally before opening a PR
 
@@ -49,6 +49,8 @@ metadata:
 | `tests/test_hooks.py` | `hooks.py` state machine tests |
 | `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
 | `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
+
+Both hook scripts must remain synchronized: `hooks.py` (host `/run/host/etc/bazaar/hooks.py`) and `bazaar-hook` (`/usr/libexec/bazaar-hook`) must implement identical hook IDs, stages, and package redirect actions.
 
 ## Curated schema and compatibility notes
 
@@ -168,6 +170,7 @@ just test
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
+- Editing `system_files/bluefin/etc/bazaar/hooks.py` without applying the same hook handler to `system_files/bluefin/usr/libexec/bazaar-hook` leaves the in-image entry point out of sync.
 - Dropping `set -e` from the JXL conversion RUN step lets silent build failures through.
 - Using `--color_space=sRGB` instead of `-C sRGB` breaks the conversion with "Unknown argument" error.
 

@@ -254,6 +254,13 @@ class TestZedHook:
         })
         assert resp == "pass"
 
+    def test_setup_dialog_returns_ok(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup-dialog",
+        })
+        assert resp == "ok"
+
     def test_teardown_dialog_download_returns_ok(self):
         resp = _load_hooks({
             "BAZAAR_HOOK_ID": "zed",
@@ -261,6 +268,21 @@ class TestZedHook:
             "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
         })
         assert resp == "ok"
+
+    def test_teardown_dialog_cancel_returns_abort(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown-dialog",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
+        })
+        assert resp == "abort"
+
+    def test_catch_returns_abort(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "catch",
+        })
+        assert resp == "abort"
 
     def test_teardown_returns_deny(self):
         resp = _load_hooks({
@@ -277,11 +299,10 @@ class TestZedHook:
         assert resp == ""
         assert len(popen_calls) == 1
         cmd = " ".join(popen_calls[0])
-        assert "brew tap ublue-os/experimental-tap" in cmd
-        assert "brew trust ublue-os/experimental-tap" in cmd
+        assert "brew tap ublue-os/tap" in cmd
+        assert "brew trust ublue-os/tap" in cmd
         assert "--trust" not in cmd
         assert "zed-linux" in cmd
-
 
 # ---------------------------------------------------------------------------
 # Unknown hook ID

@@ -26,11 +26,12 @@ def spawn_and_detach(args):
 def spawn_ujust(id):
     spawn_and_detach(['flatpak-spawn', '--host', 'xdg-terminal-exec', '-x', f'ujust {id}'])
 
-def spawn_brew(app, tap='ublue-os/tap'):
+def spawn_brew(app):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     spawn_and_detach([
         'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} tap {tap} 2>/dev/null || true; {brew} trust {tap} 2>/dev/null || true; {brew} install --cask {app}'
+        'bash', '-c',
+        f'{brew} tap ublue-os/tap; {brew} trust ublue-os/tap; {brew} install --cask {app}'
     ])
 
 def handle_jetbrains():
@@ -95,9 +96,9 @@ def handle_code():
         case 'action':
             try:
                 if transaction_appid == ('com.vscodium.codium'):
-                    spawn_brew('ublue/tap/vscodium-linux')
+                    spawn_brew('ublue-os/tap/vscodium-linux')
                 else:
-                    spawn_brew('ublue/tap/visual-studio-code-linux')
+                    spawn_brew('ublue-os/tap/visual-studio-code-linux')
             except:
                 pass
             return ''
@@ -131,8 +132,7 @@ def handle_zed():
 
         case 'action':
             try:
-                spawn_brew('ublue-os/experimental-tap/zed-linux',
-                           'ublue-os/experimental-tap')
+                spawn_brew('ublue-os/tap/zed-linux')
             except Exception:
                 pass
             return ''

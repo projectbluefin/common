@@ -107,6 +107,41 @@ def handle_code():
         case 'teardown':
             return 'deny'
 
+def handle_zed():
+
+    def appid_is_zed(appid):
+        return appid == 'dev.zed.Zed'
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and appid_is_zed(transaction_appid):
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'download':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                spawn_brew('ublue-os/tap/zed-linux')
+            except Exception:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
+
 # ---
 
 response = 'pass'
@@ -115,6 +150,8 @@ match hook_id:
         response = handle_jetbrains()
     case 'code':
         response = handle_code()
+    case 'zed':
+        response = handle_zed()
 
 print(response)
 sys.exit(0)
