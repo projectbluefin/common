@@ -53,8 +53,9 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Work on brew / preinstall packages | [`brew-lifecycle/SKILL.md`](skills/brew-lifecycle/SKILL.md) |
 | Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
 | Work with bootc | [`bootc.md`](skills/bootc.md) |
-| Work with NVIDIA GPU support | [`nvidia/SKILL.md`](skills/nvidia/SKILL.md) |
-| Work with OEM first-boot hooks | [`oem-hardware-hooks/SKILL.md`](skills/oem-hardware-hooks/SKILL.md) |
+| Work with NVIDIA GPU support | [`nvidia.md`](skills/nvidia/SKILL.md) |
+| Add or gate a GPU vendor toolkit (AMD, Intel) | [`gpu-toolkit-interface.md`](skills/gpu-toolkit-interface.md) |
+| Work with OEM first-boot hooks | [`oem-hardware-hooks.md`](skills/oem-hardware-hooks/SKILL.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
 | Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |
 | Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |

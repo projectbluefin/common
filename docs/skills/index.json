@@ -261,6 +261,26 @@
       "doc_type": "reference"
     },
     {
+      "id": "gpu-toolkit-interface",
+      "name": "gpu-toolkit-interface",
+      "one_line_purpose": "Define the shared GPU vendor toolkit interface that all GPU support implementations must satisfy.",
+      "entry_point": "docs/skills/gpu-toolkit-interface.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "gpu",
+        "nvidia",
+        "amd",
+        "interface",
+        "architecture",
+        "cdi"
+      ],
+      "description": "Vendor-agnostic GPU toolkit interface. Defines the six capabilities any GPU vendor integration must implement. NVIDIA is the reference implementation; AMD (common#277) must satisfy this interface before vendor-specific AMD code merges.",
+      "version": "0.1",
+      "last_updated": "2026-08-08",
+      "doc_type": "reference"
+    },
+    {
       "id": "hardware-testing",
       "name": "hardware-testing",
       "one_line_purpose": "File hardware test reports and apply promotion policy.",
