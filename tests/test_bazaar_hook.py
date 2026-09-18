@@ -280,6 +280,80 @@ class TestCodeHook:
 
 
 # ---------------------------------------------------------------------------
+# Zed hook
+# ---------------------------------------------------------------------------
+
+class TestZedHook:
+    def test_setup_install_zed_returns_ok(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "dev.zed.Zed",
+        })
+        assert resp == "ok"
+
+    def test_setup_non_zed_returns_pass(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "org.mozilla.firefox",
+        })
+        assert resp == "pass"
+
+    def test_setup_dialog_returns_ok(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "setup-dialog",
+        })
+        assert resp == "ok"
+
+    def test_teardown_dialog_download_returns_ok(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown-dialog",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
+        })
+        assert resp == "ok"
+
+    def test_teardown_dialog_cancel_returns_abort(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown-dialog",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
+        })
+        assert resp == "abort"
+
+    def test_catch_returns_abort(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "catch",
+        })
+        assert resp == "abort"
+
+    def test_action_spawns_brew_and_returns_empty(self):
+        resp, popen_calls = _run_hook_with_mock({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "action",
+            "BAZAAR_TS_APPID": "dev.zed.Zed",
+        })
+        assert resp == ""
+        assert len(popen_calls) == 1
+        cmd = " ".join(popen_calls[0])
+        assert "brew tap ublue-os/tap" in cmd
+        assert "brew trust ublue-os/tap" in cmd
+        assert "zed-linux" in cmd
+
+    def test_teardown_returns_deny(self):
+        resp = _run_hook({
+            "BAZAAR_HOOK_ID": "zed",
+            "BAZAAR_HOOK_STAGE": "teardown",
+        })
+        assert resp == "deny"
+
+
+# ---------------------------------------------------------------------------
 # Unknown hook ID
 # ---------------------------------------------------------------------------
 
