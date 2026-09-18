@@ -96,6 +96,19 @@ fi
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
+# Snapshot installed names before brew bundle. A declaration that was already
+# installed at this point belongs to the user unless the previous state file
+# already says Bluefin managed it. If either inventory query fails, stop before
+# bundling so an incomplete snapshot cannot adopt user-owned software.
+installed_packages_before=$(brew list --formula) || {
+    echo "brew-preinstall: error: could not snapshot installed formulae; state unchanged, will retry"
+    exit 1
+}
+installed_casks_before=$(brew list --cask) || {
+    echo "brew-preinstall: error: could not snapshot installed casks; state unchanged, will retry"
+    exit 1
+}
+
 # Install all packages declared in Brewfiles (brew bundle is idempotent).
 # Continue after an individual failure so independent Brewfiles still install,
 # but leave state untouched so the complete run is retried.
@@ -169,6 +182,29 @@ managed_name_present() {
     return 1
 }
 
+managed_names_for_reconciliation() {
+    local current_names="$1"
+    local previous_names="$2"
+    local installed_before="$3"
+    local name
+
+    while IFS= read -r name; do
+        [[ -z "${name}" ]] && continue
+        if managed_name_present "${name}" "${previous_names}" \
+            || ! managed_name_present "${name}" "${installed_before}"; then
+            printf '%s\n' "${name}"
+        fi
+    done <<< "${current_names}"
+}
+
+# A declaration already present before this run is user-owned unless it was
+# already in managed state. New declarations absent from the snapshot were
+# installed by the successful bundle pass and can become managed.
+managed_packages=$(managed_names_for_reconciliation \
+    "${current_packages}" "${previous_packages}" "${installed_packages_before}")
+managed_casks=$(managed_names_for_reconciliation \
+    "${current_casks}" "${previous_casks}" "${installed_casks_before}")
+
 uninstall_failed=0
 
 if [[ -n "${previous_packages}" ]]; then
@@ -211,8 +247,8 @@ fi
 # Persist new state: hash + full managed package and cask lists for next diff.
 # Write atomically via temp file + rename to avoid corrupt state on SIGKILL.
 mkdir -p "$(dirname "${STATE_FILE}")"
-packages_json=$(echo "${current_packages}" | jq -R . | jq -s 'map(select(length > 0))')
-casks_json=$(echo "${current_casks}" | jq -R . | jq -s 'map(select(length > 0))')
+packages_json=$(echo "${managed_packages}" | jq -R . | jq -s 'map(select(length > 0))')
+casks_json=$(echo "${managed_casks}" | jq -R . | jq -s 'map(select(length > 0))')
 jq -n \
     --arg hash "${current_hash}" \
     --argjson packages "${packages_json}" \
