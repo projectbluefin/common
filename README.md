@@ -83,6 +83,67 @@ Two types of flatpak overrides are provided to grant additional permissions to s
 
 These overrides are automatically applied to new user accounts through the `/etc/skel` template.
 
+### Flatpak Update Schedule
+
+Automatic updates are handled by `uupd`, which updates the system image,
+Flatpaks, Distrobox containers, and Homebrew together. To keep image updates
+enabled while choosing a different Flatpak cadence, disable only uupd's
+Flatpak module.
+
+`/etc/uupd/config.json` ships on every image — it already sets
+`modules.distrobox.disable = true` — so it always exists and must be edited
+with `jq`, never overwritten with a fresh payload. This snippet refuses to
+install an empty or invalid result, so a missing `jq` or a failed edit cannot
+wipe the shipped config:
+
+```bash
+command -v jq   # required; install jq first if this prints nothing
+tmp="$(mktemp)"
+sudo jq '.modules.flatpak.disable = true' /etc/uupd/config.json >"$tmp" \
+    && jq -e . "$tmp" >/dev/null \
+    && sudo install -m 0644 "$tmp" /etc/uupd/config.json
+rm -f "$tmp"
+```
+
+The configuration is read on each uupd run, so it applies to the next
+scheduled update. Do not edit `/usr/lib/systemd/system/uupd.timer`; image
+updates replace files there. To change only the schedule, write a drop-in
+with `sudo systemctl edit uupd.timer`, which lives under `/etc` and survives
+image updates.
+
+After disabling the module, create local systemd service and timer units under
+`/etc/systemd/system` (or user units under `~/.config/systemd/user`) that run
+`flatpak update --system --noninteractive` and/or
+`flatpak update --user --noninteractive` at the cadence you want. For example,
+this system-wide timer runs Flatpak updates every 60 days:
+
+```ini
+# /etc/systemd/system/flatpak-system-update.service
+[Unit]
+Description=Update system Flatpaks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak update --system --noninteractive
+```
+
+```ini
+# /etc/systemd/system/flatpak-system-update.timer
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=60d
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable it with `sudo systemctl daemon-reload` and
+`sudo systemctl enable --now flatpak-system-update.timer`. Keep custom units
+under `/etc` or `~/.config` so they survive image updates. Set
+`modules.flatpak.disable` to `false` or remove it to return Flatpak updates to
+the normal `uupd.timer` schedule.
+
 ## Brewfiles
 
 The `/usr/share/ublue-os/homebrew/` directory contains curated application bundles installable via [bbrew](https://github.com/Valkyrie00/homebrew-bbrew):
