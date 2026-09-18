@@ -60,7 +60,7 @@ jobs:
           submodules: true
 
       - name: Setup runner
-        uses: projectbluefin/actions/bootc-build/setup-runner@c8bb656614b17ed81a7e53e42af48d07c4ceeff4 # v1
+        uses: projectbluefin/actions/bootc-build/setup-runner@4d3b97eb9760539d2b4a8f2a495db0ec3bf9e8a0 # v1
         with:
           storage-backend: btrfs
           update-podman: "true"
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
+        uses: redhat-actions/buildah-build@719e3c40d8af9790c23eca13f7daa339f2867034 # v3
         with:
           containerfiles: |
             ./Containerfile
@@ -112,7 +112,7 @@ jobs:
 
       - name: Scan image for CVEs
         if: github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/scan-image@c8bb656614b17ed81a7e53e42af48d07c4ceeff4 # v1
+        uses: projectbluefin/actions/bootc-build/scan-image@4d3b97eb9760539d2b4a8f2a495db0ec3bf9e8a0 # v1
         with:
           input: /tmp/scan-image.tar
           severity-threshold: CRITICAL
@@ -122,7 +122,7 @@ jobs:
       - name: Push image
         id: push
         if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/push-image@c8bb656614b17ed81a7e53e42af48d07c4ceeff4 # v1
+        uses: projectbluefin/actions/bootc-build/push-image@4d3b97eb9760539d2b4a8f2a495db0ec3bf9e8a0 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.generate-tags.outputs.local_tag }}
@@ -179,7 +179,7 @@ jobs:
 
       - name: Create multi-arch manifest
         id: create-manifest
-        uses: projectbluefin/actions/bootc-build/create-manifest@c8bb656614b17ed81a7e53e42af48d07c4ceeff4 # v1
+        uses: projectbluefin/actions/bootc-build/create-manifest@4d3b97eb9760539d2b4a8f2a495db0ec3bf9e8a0 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           digests-json: ${{ steps.digests.outputs.json }}
@@ -197,7 +197,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign, generate SBOM, and attest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@c8bb656614b17ed81a7e53e42af48d07c4ceeff4 # v1
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@4d3b97eb9760539d2b4a8f2a495db0ec3bf9e8a0 # v1
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           digest: ${{ steps.create-manifest.outputs.digest }}

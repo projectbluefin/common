@@ -97,12 +97,12 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 ## Build-time ublue-os source (wallpapers only)
 
-The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile.md`](containerfile/SKILL.md) for details.
+The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for details.
 
 ## CountMe telemetry reporting
 
 Our images participate in Fedora's weekly CountMe telemetry to track installation statistics anonymously:
-- **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, they use a dnf5-based helper service.
+- **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, Bluefin LTS uses a dnf-based helper service (`bluefin-lts-countme.service` running `dnf makecache`; dnf5 is unpackaged on CS10/EPEL10 and the dnf CLI is unaffected by the libdnf4 metalink-expansion bug).
 - **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it utilizes a custom weekly systemd service/timer (`bluefin-countme.timer` triggering `/usr/libexec/dakota-countme`).
   - It generates and maintains an installation epoch cookie in `/var/lib/dakota-countme-epoch` to mimic Fedora's week-based age buckets.
   - It performs a weekly query to Fedora's metalink using a `libdnf5`-format User Agent with `os_name="Dakota"` (e.g. `libdnf5/5.2.9 (Dakota;${VERSION_ID};${ARCH}) hawkey`).
@@ -117,19 +117,20 @@ To make Dakota show up on the public active users count badges and charts:
 
 Because of the **Absolute Prohibition** against write operations on `ublue-os/*` repositories, these updates cannot be automated or programmatically committed by agents, and must be submitted manually as a PR by a human maintainer.
 
-## Runtime changelog repository selection
+## Runtime repository selection
 
-The `ujust changelogs` fallback chooses the upstream release repository from
-`image-info.json`: `dakota` images use `projectbluefin/dakota`, image names
+Repository routing for booted images is canonically resolved by
+`/usr/libexec/ublue-image-repo` (consumed by `ujust changelogs` and
+`bonedigger-report`). `dakota` images use `projectbluefin/dakota`, image names
 starting with `bluefin-lts` use `projectbluefin/bluefin-lts`, and other Bluefin
 image names use `projectbluefin/bluefin`. Do not infer the LTS repository from
 the tag alone: LTS images may use `stable`, `testing`, or `lts` aliases.
 
-Verify the runtime metadata and recipe together:
+Verify the runtime metadata and resolver together:
 
 ```bash
 jq -r '."image-name", ."image-tag"' /usr/share/ublue-os/image-info.json
-rg -n 'IMAGE_NAME|bluefin-lts|REPO=' system_files/bluefin/usr/share/ublue-os/just/changelog.just
+/usr/libexec/ublue-image-repo "$IMAGE_NAME" "$IMAGE_TAG"
 ```
 
 ## Verification

@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source /usr/lib/ublue/setup-services/libsetup.sh
 
-BREW_BIN="/var/home/linuxbrew/.linuxbrew/bin/brew"
+BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 OEM_DIR="/usr/share/ublue-os/oem"
 
 # Normalize DMI vendor strings to canonical oem/ directory name.

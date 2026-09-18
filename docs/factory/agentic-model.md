@@ -22,6 +22,10 @@ cross-repository breakage, merge, or production human gates.
 
 - **The standard is the codebase itself.** Use what is in production already. When making technical decisions (like choosing a GitHub Action or CLI tool), your first step is to grep the existing codebase. If a tool (e.g., `ublue-os/remove-unwanted-software`) is already heavily used across the org's repos, that is the standard. Use it.
 - **AGENTS.md is the per-repo contract.** Read it before touching anything.
+- **Project Bluefin MCP server is mandatory.** Query the org knowledge base via `projectbluefin` MCP (`https://mcp.projectbluefin.io/mcp`) before investigating, designing, or implementing:
+  - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions, and per-repository findings across `projectbluefin/*`. Always search relevant keywords first.
+  - `get_factory_status()` / `get_work_queue()` — live Hive factory state.
+  - Offline fallback: `~/agent.md`, refreshed by `~/.local/bin/sync-hive-kb` (search with `grep`, never load whole file into context).
 - **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
 - **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.
 - **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.
@@ -180,6 +184,19 @@ Changes to these paths require maintainer review before merge:
 | `Justfile` | All repos |
 | `build_files/` | All repos |
 | `elements/` | `dakota` only |
+
+## Human decision gates
+
+Agents implement autonomously **except** at the four named human gates:
+
+| Gate | Trigger | Action |
+|---|---|---|
+| **Design** | Architectural changes, new subsystems, user-visible behavior changes | Present proposal, stop, wait for approval |
+| **Security** | Authentication, signing, supply chain, secrets, third-party package sources | Present security impact, stop, wait for maintainer approval |
+| **Breakage** | Public input changes, defaults affecting downstream repos (`bluefin`, `bluefin-lts`, `dakota`, `aurora`) | Identify consumers, describe blast radius, wait for approval |
+| **Merge** | Final PR review and merge | Human reviewer approval required; agents never self-merge |
+
+When hitting a gate: stop, present what was done and the decision needed, add the `blocked` label to the related issue, and wait for human decision. See [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
 ## ublue-os absolute prohibition
 

@@ -3,31 +3,37 @@ just := just_executable()
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 # test_libvirt_helper.bats is excluded — requires a running libvirtd session
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py tests/test_curated_config.py tests/test_skill_docs.py -v --cov=tests --cov-report=term-missing
+    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_privileged_setup.bats
     bats tests/test_bling.bats
     bats tests/test_bling_sh.bats
+    bats tests/test_bling_preexec_rearm.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
     bats tests/test_bling_fastfetch.bats
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
+    bats tests/test_native_recipes.bats
     bats tests/test_ujust.bats
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
+    bats tests/test_default_just.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_theming_hook.bats
     bats tests/test_nvidia_flatpak_sync.bats
+    bats tests/test_system_just.bats
+    bats tests/test_brew_tap_trust.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
@@ -62,6 +68,17 @@ _fmt mode verb:
     echo "{{ verb }} syntax: Justfile"
     {{ just }} --unstable --fmt {{ mode }} -f Justfile || failed=1
     exit "$failed"
+
+# Check the ChairLift maintainer config against upstream's pinned schema.
+# Requires network access, so it is deliberately NOT wired into `check`:
+# .github/workflows/validate-chairlift-config.yaml owns this gate.
+check-chairlift-config:
+    python3 tests/check-chairlift-config
+
+# Networked metadata check; syncs/trusts declared taps but installs no packages.
+# Keep separate from the hermetic check recipe.
+check-brewfiles:
+    bash scripts/validate-brewfiles.sh
 
 check: (_fmt "--check" "Checking")
 

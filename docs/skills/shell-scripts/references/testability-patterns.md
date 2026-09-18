@@ -156,20 +156,24 @@ and `INDEX_PATH` to point at the fixture tree before calling `build_catalog()`
 or `main()`. This keeps `--write` and `--check` safe in unit tests without
 touching the live repo files.
 
-### Isolate fallback paths from host-installed commands
+### Test retired delegation with a failing stub
 
-When testing a script's fallback implementation, a developer-machine command
-can short-circuit the code under test before mocks run. For example, a host
-`bctl` can bypass the `ujust changelogs` repository-selection logic. Filter
-known host-only paths from `PATH` after prepending the test stubs:
+Native recipes must work even when a retired delegate remains installed.
+Put a failing stub ahead of host commands in `PATH`, rather than hiding a
+particular installation directory:
 
 ```bash
-export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\\n' \\
-    | grep -v '/.local/bin' | paste -sd: -)"
+printf '#!/bin/bash\necho "unexpected bctl invocation" >&2\nexit 99\n' > "${MOCKDIR}/bctl"
+chmod +x "${MOCKDIR}/bctl"
+export PATH="${MOCKDIR}:${PATH}"
 ```
 
-This keeps the test deterministic while retaining system tools needed by the
-script. Do not weaken assertions to accommodate the host command.
+The update and changelog suites use this to prove that an installed `bctl`
+cannot take over the recipe. Mock all remaining side-effecting commands and
+assert their calls as well as the exit status. Use `run ! grep ...` for negative
+Bats assertions: plain `! grep ...` can be ignored when another assertion follows.
+Never execute real host updates, channel switches, package installs, or resets
+in unit tests.
 
 ### XDG_CONFIG_HOME isolation in bats tests
 

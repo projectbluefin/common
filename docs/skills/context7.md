@@ -123,5 +123,5 @@ Add rows here as you confirm new IDs during sessions, with the date.
 ## See also
 
 - [`bootc.md`](bootc.md) — the canonical example of this policy in action
-- [`ci-pitfalls.md`](ci-pitfalls/SKILL.md) — CI traps that Context7 lookups prevent
+- [`ci-pitfalls/SKILL.md`](ci-pitfalls/SKILL.md) — CI traps that Context7 lookups prevent
 - [`skill-improvement.md`](skill-improvement.md) — record Context7 sources in skill frontmatter

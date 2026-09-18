@@ -28,6 +28,8 @@ on:
       - ".github/workflows/**"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   e2e:
     strategy:

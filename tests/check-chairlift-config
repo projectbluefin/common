@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Validate the ChairLift config against upstream's live schema.
+
+ChairLift does not ignore unknown configuration keys. Upstream
+internal/config/validate.go classifies any page, group, or group field name
+it does not recognise as KindSchema, and internal/config/config.go::Load()
+answers a KindSchema error with disabledConfig() -- every group on every
+page forced off, plus a persistent "Configuration error" toast.
+
+So a single invented key in our maintainer config does not degrade one
+feature: it ships an empty application to every Bluefin user. Bluefin
+preinstalls ChairLift silently at login, so nobody opts into that.
+
+Sources of truth, both read live from upstream at the PINNED tag:
+  * pages and groups -- upstream's own config.yml, which enumerates every
+    page and group and is kept in lockstep with defaultConfig().
+  * group and action FIELD names -- the yaml struct tags on GroupConfig and
+    ActionConfig in internal/config/config.go. config.yml cannot supply
+    these, because it only exercises a subset of the optional fields.
+
+The tag matters. Bluefin ships whichever release frostyard/tap's chairlift
+cask pins, so that binary's loader is the only one whose opinion counts.
+Validating against upstream's moving `main` would false-red on renames that
+never reach our users, and -- far worse -- false-green on a key the pinned
+binary rejects, which is exactly the disabledConfig() outcome this script
+exists to prevent. Bump CHAIRLIFT_SCHEMA_REF in the same change as the cask.
+
+Do not update the expectations in this file from memory -- this script
+reads upstream directly, on purpose.
+
+Network access is required, so this is deliberately NOT part of
+`just check`. .github/workflows/validate-chairlift-config.yaml owns it:
+path filter on the config and this validator, plus a weekly cron and
+workflow_dispatch to catch upstream drift between commits.
+"""
+
+from pathlib import Path
+import re
+import sys
+import urllib.error
+import urllib.request
+
+import yaml
+
+#: The ChairLift release Bluefin actually ships, pinned by frostyard/tap's
+#: chairlift cask. Single source of truth for every upstream fetch below;
+#: bump it together with the cask version, never independently.
+CHAIRLIFT_SCHEMA_REF = "v0.10.1"
+
+UPSTREAM_RAW = (
+    f"https://raw.githubusercontent.com/frostyard/chairlift/{CHAIRLIFT_SCHEMA_REF}"
+)
+UPSTREAM_CONFIG_URL = f"{UPSTREAM_RAW}/config.yml"
+UPSTREAM_SCHEMA_URL = f"{UPSTREAM_RAW}/internal/config/config.go"
+
+ROOT = Path(__file__).resolve().parent.parent
+OUR_CONFIG = ROOT / "system_files/shared/usr/share/chairlift/config.yml"
+
+STRUCT_RE = r"type\s+%s\s+struct\s*\{(.*?)\}"
+YAML_TAG_RE = re.compile(r'yaml:"([^",]+)')
+
+
+def _fetch(url: str) -> str:
+    # No Authorization header: raw.githubusercontent.com serves public
+    # repository content anonymously and does not draw on the api.github.com
+    # rate limit, so a token would buy nothing and would hand a credential to
+    # a request that never needed one.
+    with urllib.request.urlopen(url, timeout=30) as response:
+        return response.read().decode("utf-8")
+
+
+def fetch_upstream_schema() -> dict[str, set[str]]:
+    """Return upstream's canonical page -> {group} map."""
+    raw = _fetch(UPSTREAM_CONFIG_URL)
+    parsed = yaml.safe_load(raw)
+    if not isinstance(parsed, dict) or not parsed:
+        raise ValueError(f"upstream config.yml did not parse as a mapping: {raw[:200]}")
+
+    schema: dict[str, set[str]] = {}
+    for page, groups in parsed.items():
+        if not isinstance(groups, dict):
+            raise ValueError(f"upstream page {page!r} is not a mapping")
+        schema[page] = set(groups)
+    return schema
+
+
+def _struct_fields(source: str, struct: str) -> set[str]:
+    match = re.search(STRUCT_RE % struct, source, re.DOTALL)
+    if not match:
+        raise ValueError(f"could not find {struct} in upstream config.go")
+    fields = set(YAML_TAG_RE.findall(match.group(1)))
+    if not fields:
+        raise ValueError(f"{struct} in upstream config.go exposed no yaml tags")
+    return fields
+
+
+def fetch_upstream_fields() -> tuple[set[str], set[str]]:
+    """Return (group field names, action field names) from upstream structs."""
+    source = _fetch(UPSTREAM_SCHEMA_URL)
+    return _struct_fields(source, "GroupConfig"), _struct_fields(source, "ActionConfig")
+
+
+def main() -> int:
+    if not OUR_CONFIG.exists():
+        print(f"✗ missing {OUR_CONFIG.relative_to(ROOT)}")
+        return 1
+
+    try:
+        upstream = fetch_upstream_schema()
+        group_fields, action_fields = fetch_upstream_fields()
+    except (urllib.error.URLError, ValueError, yaml.YAMLError) as err:
+        print(f"✗ could not read upstream ChairLift schema at {CHAIRLIFT_SCHEMA_REF}: {err}")
+        return 1
+
+    ours = yaml.safe_load(OUR_CONFIG.read_text(encoding="utf-8"))
+    if not isinstance(ours, dict):
+        print(f"✗ {OUR_CONFIG.relative_to(ROOT)} did not parse as a mapping")
+        return 1
+
+    failures: list[str] = []
+
+    for page, groups in ours.items():
+        if page not in upstream:
+            failures.append(
+                f"page \"{page}\" does not exist in ChairLift's schema "
+                f"(known pages: {', '.join(sorted(upstream))})"
+            )
+            continue
+        if not isinstance(groups, dict):
+            failures.append(f'page "{page}" must be a mapping of groups')
+            continue
+        for group, settings in groups.items():
+            if group not in upstream[page]:
+                failures.append(
+                    f"group \"{page}.{group}\" does not exist in ChairLift's schema "
+                    f"(known groups for {page}: {', '.join(sorted(upstream[page]))})"
+                )
+                continue
+            if not isinstance(settings, dict):
+                failures.append(f'group "{page}.{group}" must be a mapping of fields')
+                continue
+            # Field names matter as much as group names: validateGroupFieldEntries
+            # classifies an unknown field as KindSchema too, so a typo such as
+            # `bundle_paths` for `bundles_paths` disables the whole app.
+            for field, value in settings.items():
+                if field not in group_fields:
+                    failures.append(
+                        f'field "{page}.{group}.{field}" does not exist in '
+                        f"ChairLift's schema (known fields: "
+                        f"{', '.join(sorted(group_fields))})"
+                    )
+                elif field == "actions" and isinstance(value, list):
+                    for index, action in enumerate(value):
+                        if not isinstance(action, dict):
+                            continue
+                        for action_field in action:
+                            if action_field not in action_fields:
+                                failures.append(
+                                    f'field "{page}.{group}.actions[{index}].'
+                                    f'{action_field}" does not exist in '
+                                    f"ChairLift's schema (known action fields: "
+                                    f"{', '.join(sorted(action_fields))})"
+                                )
+
+    print(f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} (pinned by the frostyard/tap cask):")
+    for page, groups in sorted(upstream.items()):
+        print(f"  {page}: {', '.join(sorted(groups))}")
+    print(f"  group fields: {', '.join(sorted(group_fields))}")
+    print(f"  action fields: {', '.join(sorted(action_fields))}")
+
+    if failures:
+        print()
+        print("✗ ChairLift config uses keys absent from upstream's schema.")
+        print("  ChairLift fails closed on unknown keys: an unrecognised page,")
+        print("  group, or field makes Load() return disabledConfig(), which")
+        print("  disables EVERY feature group and shows a configuration-error")
+        print("  toast. Remove the key and express the intent in a comment.")
+        print()
+        for failure in failures:
+            print(f"    - {failure}")
+        return 1
+
+    print()
+    print("✓ ChairLift config uses only keys upstream defines.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

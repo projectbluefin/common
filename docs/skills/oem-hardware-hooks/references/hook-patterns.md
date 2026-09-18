@@ -14,7 +14,7 @@ will never retry on future logins.
 
 ```bash
 # Check ALL transient preconditions before calling version-script
-BREW_BIN="/var/home/linuxbrew/.linuxbrew/bin/brew"
+BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "hook: brew not found, will retry on next login"
     exit 0   # ← exit 0 to retry; version-script not yet called

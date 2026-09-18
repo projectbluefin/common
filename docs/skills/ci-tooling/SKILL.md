@@ -1,7 +1,7 @@
 ---
 name: ci-tooling
-version: "2.2"
-last_updated: "2026-08-08"
+version: "2.3"
+last_updated: "2026-08-09"
 id: ci-tooling
 one_line_purpose: Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.
 entry_point: docs/skills/ci-tooling/SKILL.md
@@ -17,6 +17,7 @@ description: >-
 metadata:
   type: reference
   context7-sources:
+    - /websites/github_en_actions
     - /pre-commit/pre-commit.com
     - /sigstore/cosign
     - /containers/skopeo
@@ -55,9 +56,11 @@ metadata:
 
 1. Read the workflow or pre-commit hook before describing it; do not rely on memory.
 2. Classify the ref or tool involved: external action, internal `projectbluefin/*` reusable, schema validator, or local hook.
-3. Apply the policy in this order: artifact-protecting CI gates first, agent-enforced process conventions second.
-4. Run the lightest verification that matches the change (`pre-commit`, `actionlint`, or direct source inspection).
-5. If the session uncovered a non-obvious CI trap, write it to [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) in the same change. If it's a shell authoring/testability pattern, write it to [`shell-scripts.md`](../shell-scripts/SKILL.md).
+3. For workflow steps that call repo-local entrypoints such as `just check`, read the full dependency chain and install every clean-runner dependency in that workflow before the step.
+4. Keep `just check` hermetic. A check that reaches a third-party host belongs in its own workflow with a path filter and a cron, not in the repo-wide gate — otherwise someone else's outage reddens every open PR and the merge queue, and offline contributors cannot commit. Enforce this over the whole recipe **closure** — header, body, and every recipe `check` depends on — not the header line alone; `tests/test_chairlift_config.py::test_just_check_stays_hermetic` does this and carries mutation tests proving it. Keep workflow/job permissions minimal (`contents: read` unless more is required); GitHub Actions supports step-level `env` and workflow/job `permissions`, source: `/websites/github_en_actions`.
+5. Apply the policy in this order: artifact-protecting CI gates first, agent-enforced process conventions second.
+6. Run the lightest verification that matches the change (`pre-commit`, `actionlint`, or direct source inspection).
+7. If the session uncovered a non-obvious CI trap, write it to [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) in the same change. If it's a shell authoring/testability pattern, write it to [`shell-scripts.md`](../shell-scripts/SKILL.md).
 
 ---
 

@@ -7,6 +7,7 @@ on:
     paths:
       - "system_files/**"
       - "tests/**"
+      - "scripts/validate-brewfiles.sh"
       - "Justfile"
   push:
     branches:
@@ -14,9 +15,13 @@ on:
     paths:
       - "system_files/**"
       - "tests/**"
+      - "scripts/validate-brewfiles.sh"
       - "Justfile"
   merge_group:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
@@ -33,7 +38,7 @@ jobs:
       - name: Install test deps
         run: |
           sudo apt-get install -y bats
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pyyaml
 
       - name: Run shellcheck — extensionless scripts
         run: |
@@ -52,7 +57,7 @@ jobs:
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
       - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+        run: python3 -m pytest tests/test_hooks.py tests/test_chairlift_config.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -91,8 +96,8 @@ jobs:
       - name: Run bats (changelog.just)
         run: bats tests/test_changelog.bats
 
-      - name: Run bats (update.just)
-        run: bats tests/test_update_just.bats
+      - name: Run bats (update.just and native recipes)
+        run: bats tests/test_update_just.bats tests/test_native_recipes.bats
 
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
@@ -114,6 +119,11 @@ jobs:
 
       - name: Run bats (brew-preinstall)
         run: bats tests/test_brew_preinstall.bats
+
+      - name: Test Brewfile validator
+        run: |
+          shellcheck scripts/validate-brewfiles.sh tests/test_validate_brewfiles.bats
+          bats tests/test_validate_brewfiles.bats
 
       - name: Run bats (oem-brew hook)
         run: bats tests/test_oem_brew.bats

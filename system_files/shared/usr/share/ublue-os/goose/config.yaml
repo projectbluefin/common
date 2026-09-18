@@ -1,0 +1,11 @@
+# Bluefin default Goose configuration.
+extensions:
+  linux-mcp-server:
+    args: []
+    bundled: false
+    cmd: linux-mcp-server
+    enabled: true
+    envs: {}
+    name: linux-mcp-server
+    timeout: 300
+    type: stdio

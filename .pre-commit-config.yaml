@@ -7,10 +7,16 @@ repos:
         - id: check-toml
         - id: check-yaml
         - id: end-of-file-fixer
+          # Verbatim upstream ChairLift artwork; keep it byte-identical to
+          # the release the cask pins so its sha256 stays verifiable.
+          exclude: ^system_files/shared/usr/share/icons/hicolor/.*/apps/org\.frostyard\.ChairLift.*\.svg$
         - id: trailing-whitespace
         - id: check-merge-conflict
         - id: detect-private-key
         - id: check-added-large-files
+          # Same artwork: upstream ships these two app icons well over the
+          # 500 KiB default and we do not re-encode vendored assets.
+          exclude: ^system_files/shared/usr/share/icons/hicolor/scalable/apps/org\.frostyard\.ChairLift.*\.svg$
   - repo: https://github.com/rhysd/actionlint
     rev: 03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
     hooks:

@@ -64,7 +64,7 @@ _patched_script() {
     local patched_script="${WORKDIR}/oem-brew-patched.sh"
     sed \
         -e "s|source /usr/lib/ublue/setup-services/libsetup.sh|source ${LIBSETUP_REAL}|" \
-        -e "s|BREW_BIN=\"/var/home/linuxbrew/.linuxbrew/bin/brew\"|BREW_BIN=\"${WORKDIR}/bin/brew\"|" \
+        -e "s|BREW_BIN=\"/home/linuxbrew/.linuxbrew/bin/brew\"|BREW_BIN=\"${WORKDIR}/bin/brew\"|" \
         -e "s|OEM_DIR=\"/usr/share/ublue-os/oem\"|OEM_DIR=\"${WORKDIR}/oem\"|" \
         -e "s|/sys/devices/virtual/dmi/id/chassis_vendor|${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor|g" \
         -e "s|/sys/devices/virtual/dmi/id/sys_vendor|${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor|g" \

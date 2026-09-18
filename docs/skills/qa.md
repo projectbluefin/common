@@ -91,7 +91,7 @@ See each repo's AGENTS.md for repo-specific test commands. Common entry points:
 
 ### Testing `update.just` on GitHub Actions
 
-`tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/var/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
+`tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
 
 ```bash
 # common
@@ -110,7 +110,7 @@ just bats               # BATS integration tests
 
 ## bonedigger integration
 
-bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger.md](bonedigger/SKILL.md).
+bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger/SKILL.md](bonedigger/SKILL.md).
 
 ## libsetup.sh — setup versioning
 
@@ -131,3 +131,25 @@ version-script my-service user 1 || exit 0
 **State file:** `~/.local/share/ublue/setup_versioning.json` (user-scoped, not global).
 
 **Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
+
+## hookrunner.sh — setup hook dispatch
+
+`system_files/shared/usr/lib/ublue/setup-services/hookrunner.sh` is the single source of truth for how the three setup services discover and run their hooks. `ublue-system-setup`, `ublue-user-setup` and `ublue-privileged-setup` are thin wrappers over it — each supplies only its `/etc/ublue-os/setup.json` key and its default directory:
+
+```bash
+HOOKRUNNER="${HOOKRUNNER:-/usr/lib/ublue/setup-services/hookrunner.sh}"
+source "${HOOKRUNNER}"
+run_setup_hooks "user-hooks-directory" "/usr/share/ublue-os/user-setup.hooks.d"
+```
+
+| Wrapper | Config key | Default directory |
+| --- | --- | --- |
+| `ublue-system-setup` | `system-hooks-directory` | `/usr/share/ublue-os/system-setup.hooks.d` |
+| `ublue-user-setup` | `user-hooks-directory` | `/usr/share/ublue-os/user-setup.hooks.d` |
+| `ublue-privileged-setup` | `privileged-hooks-directory` | `/usr/share/ublue-os/privileged-setup.hooks.d` |
+
+`$HOOKRUNNER` is overridable so the wrappers can be exercised from a source checkout, matching the `$LIBSETUP` convention used by the OEM hardware hooks.
+
+**Do not** reintroduce a private `get_config` or `for script in ...` loop in a wrapper — `tests/test_setup_scripts.bats` fails the build if you do. The three scripts were byte-identical copies before, which is how one dispatch-loop defect shipped three times over.
+
+**Test coverage:** `tests/test_setup_scripts.bats` and `tests/test_privileged_setup.bats`. Run `just test` to verify.

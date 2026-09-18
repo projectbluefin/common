@@ -10,7 +10,7 @@ done
 
 if [[ "${CHOOSE}" == true ]] && ! command -v fzf >/dev/null 2>&1; then
     BREW_BIN="${BREW_BIN:-$(command -v brew 2>/dev/null || true)}"
-    BREW_BIN="${BREW_BIN:-/var/home/linuxbrew/.linuxbrew/bin/brew}"
+    BREW_BIN="${BREW_BIN:-/home/linuxbrew/.linuxbrew/bin/brew}"
 
     if [[ ! -x "${BREW_BIN}" ]]; then
         echo "ujust: fzf is missing and Homebrew was not found" >&2

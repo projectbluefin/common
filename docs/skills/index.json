@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08",
+  "generated_at": "2026-08-18",
   "schema_version": "1.0",
   "skills": [
     {
@@ -67,8 +67,8 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.4",
+      "last_updated": "2026-08-18",
       "doc_type": "procedure"
     },
     {
@@ -102,8 +102,8 @@
         "github-actions"
       ],
       "description": "CI policy and tooling \u2014 SHA pinning, pre-commit guards, Renovate digest tracking, and workflow config. Use when editing .github/workflows/ files.",
-      "version": "2.2",
-      "last_updated": "2026-08-08",
+      "version": "2.3",
+      "last_updated": "2026-08-09",
       "doc_type": "reference"
     },
     {

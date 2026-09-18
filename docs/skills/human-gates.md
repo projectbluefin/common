@@ -103,7 +103,7 @@ When you hit a gate:
    My approach: [what you're proposing]
    Alternative approaches: [if any]
    ```
-3. Add the `agent/blocked` label to the related issue (not a new PR comment).
+3. Add the `blocked` label to the related issue (not a new PR comment).
 4. Wait for explicit human approval before opening a PR.
 
 ---

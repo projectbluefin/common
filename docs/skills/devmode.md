@@ -40,7 +40,7 @@ metadata:
 
 File: `system_files/bluefin/usr/share/ublue-os/just/system.just`
 
-`ujust toggle-devmode` is a legacy compatibility name. Docs and UX should point users to `ujust devmode` or `bctl --screen developer`.
+`ujust toggle-devmode` is a legacy compatibility name. Docs and UX should point users to `ujust devmode`.
 
 ---
 
@@ -150,7 +150,7 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 
 1. Treat `ujust devmode` as the canonical entrypoint; only mention `toggle-devmode` as legacy compatibility context.
 2. Verify the current implementation in `system_files/bluefin/usr/share/ublue-os/just/system.just` before documenting behavior.
-3. Describe Developer Mode as an in-place setup flow: `bctl --screen developer` first when available, otherwise the gum wizard.
+3. Describe Developer Mode as an in-place setup flow: `ujust devmode` opens the gum wizard.
 4. Document optional tools exactly as the wizard presents them, including incus via `brew install incus`.
 5. Reject stale fallbacks: no `setup-incus` recipe, no `rpm-ostree install`, no `incus-distrobox` guidance.
 6. If touching downstream overrides, prefer removing stale overrides so common's implementation remains the source of truth.
@@ -174,7 +174,7 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 
 ## Verification
 
-- [ ] User-facing docs recommend `ujust devmode` or `bctl`, not `ujust toggle-devmode`
+- [ ] User-facing docs recommend `ujust devmode`, not `ujust toggle-devmode`
 - [ ] No docs mention `setup-incus`
 - [ ] No docs recommend `rpm-ostree install` for Developer Mode tooling
 - [ ] Bluefin Developer Mode is described as in-place setup, not image rebasing

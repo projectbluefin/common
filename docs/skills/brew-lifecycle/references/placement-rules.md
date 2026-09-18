@@ -56,12 +56,16 @@ unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
 and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
 Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
 
-**In just recipes** that call `brew tap` before cask installs:
+**In just recipes** that call `brew tap` before cask installs, trust is a
+**separate command** — `--trust` is not a valid `brew tap` flag and Homebrew
+6.0 exits non-zero on it:
 ```diff
-- brew tap ublue-os/tap 2>/dev/null || true
-+ brew tap --trust ublue-os/tap
+- brew tap --trust ublue-os/tap
++ brew tap ublue-os/tap 2>/dev/null || true
++ brew trust ublue-os/tap 2>/dev/null || true
 ```
-The `|| true` silencer must be removed — tap failures should surface.
+`brew tap` is idempotent and errors when the tap already exists, so keep the
+`2>/dev/null || true` guard — especially inside `set -euo pipefail` recipes.
 
 **In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
 ```ruby
@@ -70,19 +74,41 @@ tap "ublue-os/experimental-tap", trusted: true
 ```
 
 **Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
-mechanism. The correct 6.0 approach is `--trust` at tap-time and
-`trusted: true` in Brewfiles.
+mechanism. The correct 6.0 approach is `brew trust <tap>` after `brew tap`,
+and `trusted: true` in Brewfiles. See https://docs.brew.sh/Tap-Trust.
 
-### Known trust issues in the codebase (as of 2026-06)
+### Tap trust call sites
 
-| File | Current code | Status |
-|---|---|---|
-| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
-| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
-| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+| File | Expected code |
+|---|---|
+| `system.just` dx recipe | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `system.just` dx recipe | `brew tap ublue-os/experimental-tap` + `brew trust ublue-os/experimental-tap` |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `apps.just` install-asus | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `bazaar-hook` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+
+Regression coverage lives in `tests/test_brew_tap_trust.bats`.
 
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
+
+---
+
+## Linux cask checksum keys
+
+Architecture-specific cask checksums are OS-specific. For Linux artifacts,
+use Homebrew's Linux keys:
+
+```ruby
+sha256 arm64_linux:  "<arm64-sha256>",
+       x86_64_linux: "<amd64-sha256>"
+```
+
+Do not use `arm:` / `intel:` for a Linux-only cask. Those keys select macOS
+checksums, leaving `sha256` unset when Homebrew simulates Linux. `brew readall`
+then reports `Missing Linux stanzas can leave Linux sha256 as nil`, and
+`brew audit` reports that a checksum is required.
+
+Source: Homebrew Cask DSL (`/homebrew/brew`).
 
 ---
 
@@ -95,8 +121,8 @@ into the image). Each shell initializes it with a silent fallback:
 ```sh
 if command -v starship >/dev/null 2>&1; then
     _starship_bin="starship"
-elif [ -x "/var/home/linuxbrew/.linuxbrew/bin/starship" ]; then
-    _starship_bin="/var/home/linuxbrew/.linuxbrew/bin/starship"
+elif [ -x "/home/linuxbrew/.linuxbrew/bin/starship" ]; then
+    _starship_bin="/home/linuxbrew/.linuxbrew/bin/starship"
 else
     return 0  # silent fallback to default prompt
 fi

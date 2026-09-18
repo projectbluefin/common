@@ -141,8 +141,8 @@ device-info:
     fi
 
     cat &> /tmp/deviceinfo-out <<EOF
-    --#--# sudo bootc status --verbose:
-    $(sudo bootc status --verbose)
+    --#--# bootc status --verbose:
+    $(bootc status --verbose)
     --#--# fpaste --sysinfo --printonly:
     $(fpaste --sysinfo --printonly)
     --#--# flatpak list --columns=application,version,options:

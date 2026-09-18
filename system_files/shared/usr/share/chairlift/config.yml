@@ -1,0 +1,79 @@
+# ChairLift configuration for Bluefin (maintainer defaults).
+# Admin overrides go in /etc/chairlift/config.yml, which takes priority.
+# Reference: https://github.com/frostyard/chairlift/blob/main/CONFIG.md
+
+system_page:
+  system_info_group:
+    enabled: true
+  bootc_status_group:
+    enabled: true
+  health_group:
+    enabled: true
+    app_id: io.missioncenter.MissionCenter
+
+updates_page:
+  # frostyard/chairlift#54 resolved via the system-integration split
+  # (frostyard/chairlift#102): the fixed /usr/libexec/bootc-update-stage
+  # path is now backed by an image-side stage script, and the bootc polkit
+  # policy ships in system_files/shared/usr/share/polkit-1/actions/. The
+  # helper runs plain `bootc upgrade`, which stages the update; it is
+  # finalized by ostree-finalize-staged on the user's own next shutdown or
+  # reboot. Never --apply/--soft-reboot (those reboot) and never
+  # --download-only (that locks finalization, so nothing applies on reboot).
+  bootc_updates_group:
+    enabled: true
+  flatpak_updates_group:
+    enabled: true
+  brew_updates_group:
+    enabled: true
+  brew_trust_group:
+    enabled: true
+  # Update policy on Bluefin belongs to uupd (silent background staging,
+  # 6-hour timer + AC connect; user reboots on their own schedule).
+  # ChairLift has no update-scheduling group to disable here: upstream's
+  # updates_page schema is exactly the four groups above. Its bootc group
+  # is a manual "stage now" action only, so nothing competes with uupd.
+  # Do NOT invent a group to express this policy — an unknown group key
+  # fails ChairLift's strict schema validation and disables the entire
+  # app (see docs/skills/brew-lifecycle.md).
+
+applications_page:
+  applications_installed_group:
+    enabled: true
+    app_id: io.github.kolunmi.Bazaar
+  flatpak_user_group:
+    enabled: true
+  flatpak_system_group:
+    enabled: true
+  brew_group:
+    enabled: true
+  brew_search_group:
+    enabled: true
+  brew_bundles_group:
+    enabled: true
+    bundles_paths:
+      - /usr/share/ublue-os/homebrew
+
+maintenance_page:
+  maintenance_cleanup_group:
+    enabled: false
+  maintenance_brew_group:
+    enabled: true
+  maintenance_flatpak_group:
+    enabled: true
+  maintenance_optimization_group:
+    enabled: true
+
+features_page:
+  # updex is not present on Bluefin. Unlike bootc staging, no updex helper
+  # ships on the image, so this stays off regardless of the polkit fix in
+  # frostyard/chairlift#54 — flip only if/when updex ever ships on Bluefin.
+  features_group:
+    enabled: false
+
+help_page:
+  help_resources_group:
+    enabled: true
+    website: https://docs.projectbluefin.io/
+    issues: https://issues.projectbluefin.io/
+    chat: https://ask.projectbluefin.io/

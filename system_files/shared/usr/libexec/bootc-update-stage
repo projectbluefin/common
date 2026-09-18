@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# bootc-update-stage — privileged helper invoked via ChairLift's fixed
+# org.frostyard.ChairLift.bootc.stage polkit action (pkexec exec.path is
+# pinned to this exact path; see
+# system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy).
+#
+# Stages the next bootc system image update. Plain `bootc upgrade` fetches
+# the new image and queues it as a staged deployment; ostree-finalize-staged
+# applies it at the user's next ordinary shutdown or reboot. Nothing here
+# reboots, restarts, or otherwise changes the running system. uupd remains
+# the owner of Bluefin's background update policy; this script only backs
+# ChairLift's manual "check for updates now" action.
+#
+# Contract: no arguments are read or required. Any arguments pkexec may
+# forward are ignored so this cannot be used to run arbitrary bootc
+# subcommands through a privileged invocation.
+set -euo pipefail
+
+# Deliberately no flags:
+#   --apply / --soft-reboot   reboot the machine; that is the user's call.
+#   --download-only           downloads the image but locks finalization, so
+#                             the update would NOT apply on the next reboot
+#                             (bootc-upgrade(8): "it will not be applied on
+#                             reboot"), and it would also re-lock an update
+#                             uupd had already staged for shutdown.
+#   --from-downloaded         only unlocks a previously downloaded update and
+#                             never checks the registry.
+# Plain `bootc upgrade` is the one verb that both stages a fresh update and
+# leaves an existing staged deployment finalizable on shutdown.
+#
+# Progress output is deliberately NOT suppressed: ChairLift's StageUpdate
+# merges this process's stdout and stderr and streams each line into its
+# progress view, so `--quiet` would leave the user staring at an empty
+# dialog for the length of an image pull.
+exec /usr/bin/bootc upgrade

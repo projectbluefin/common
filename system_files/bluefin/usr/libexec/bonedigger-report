@@ -16,6 +16,7 @@ RESUME_DIR=""
 IMAGE_NAME=""
 IMAGE_REF=""
 IMAGE_TAG=""
+IMAGE_VERSION="unknown"
 IMAGE_FLAVOR=""
 BUG_REPO=""
 BOOTC_JSON="{}"
@@ -79,39 +80,47 @@ read_image_info() {
 }
 
 read_boot_status() {
+    local booted_ref
+
     BOOTC_JSON="$(bootc status --json 2>/dev/null || printf '{}')"
     BOOTC_STATUS="$(bootc status 2>/dev/null || printf 'Unavailable')"
 
     if command -v jq &>/dev/null; then
         BOOTED_DIGEST="$(printf '%s' "$BOOTC_JSON" | \
             jq -r '.status.booted.imageDigest // "unknown"' 2>/dev/null || printf 'unknown')"
+        # The image-tag baked into image-info.json is whatever the build
+        # was tagged at compose time (always "latest"); promotion retags
+        # the same digest, so only bootc knows the followed tag.
+        booted_ref="$(printf '%s' "$BOOTC_JSON" | \
+            jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
+        # Unprivileged `bootc status` fails on bootc >= 1.14, so fall back to
+        # the boot-time snapshot written by ublue-booted-image.service on
+        # images that ship it (projectbluefin/dakota#1418).
+        if [[ -z "$booted_ref" && -r /run/ublue-os/booted-image ]]; then
+            read -r booted_ref < /run/ublue-os/booted-image || true
+        fi
+        if [[ -n "$booted_ref" ]]; then
+            # The baked image-ref is equally stale for rebased or locally
+            # built deployments (projectbluefin/dakota#1328).
+            IMAGE_REF="$booted_ref"
+        fi
+        case "$booted_ref" in
+            *@*) ;; # digest-pinned ref, no tag to extract
+            *:*) IMAGE_TAG="${booted_ref##*:}" ;;
+        esac
     else
         BOOTED_DIGEST="unknown"
     fi
+
+    IMAGE_VERSION="$(sed -n 's/^IMAGE_VERSION="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/os-release 2>/dev/null | head -1)"
+    IMAGE_VERSION="${IMAGE_VERSION:-unknown}"
 }
 
 route_issue_repo() {
-    case "$IMAGE_NAME" in
-        bluefin-lts*)
-            BUG_REPO="projectbluefin/bluefin-lts"
-            ;;
-        bluefin)
-            if [[ "$IMAGE_TAG" == lts* ]]; then
-                BUG_REPO="projectbluefin/bluefin-lts"
-            else
-                BUG_REPO="projectbluefin/bluefin"
-            fi
-            ;;
-        bluefin*)
-            BUG_REPO="projectbluefin/bluefin"
-            ;;
-        dakota*)
-            BUG_REPO="projectbluefin/dakota"
-            ;;
-        *)
-            BUG_REPO="projectbluefin/common"
-            ;;
-    esac
+    # Routing grammar lives in one place only — see
+    # system_files/shared/usr/libexec/ublue-image-repo.
+    BUG_REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/common" "$IMAGE_NAME" "$IMAGE_TAG")"
 }
 
 scrub_kernel_log() {
@@ -303,7 +312,8 @@ collect_baseline() {
         printf '### System\n\n'
         printf '| Field | Value |\n| --- | --- |\n'
         printf '| Image | `%s` |\n' "$IMAGE_REF"
-        printf '| Version | `%s` |\n' "$IMAGE_TAG"
+        printf '| Tag | `%s` |\n' "$IMAGE_TAG"
+        printf '| Version | `%s` |\n' "$IMAGE_VERSION"
         printf '| Flavor | `%s` |\n' "$IMAGE_FLAVOR"
         printf '| Kernel | `%s` |\n' "$(uname -r)"
         printf '| Architecture | `%s` |\n' "$(uname -m)"
@@ -606,8 +616,8 @@ confirm_report() {
     failed_units="$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | \
         awk '{print $1}' | head -10 | scrub_journal_log || true)"
     failed_units="${failed_units:-none}"
-    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n* Image: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s' \
-        "$IMAGE_REF" "$IMAGE_TAG" "${BOOTED_DIGEST:-unknown}" "$(uname -r)" "$(uname -m)" \
+    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n* Image: %s\n* Tag: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s' \
+        "$IMAGE_REF" "$IMAGE_TAG" "$IMAGE_VERSION" "${BOOTED_DIGEST:-unknown}" "$(uname -r)" "$(uname -m)" \
         "$failed_units")"
 
     printf '\nWill post to: https://github.com/%s/issues/%s\n\n%s\n\n' \
@@ -653,6 +663,9 @@ start_bug_report() {
     local reproduction
 
     read_image_info
+    # read_boot_status must run before routing: it corrects IMAGE_TAG
+    # from the booted bootc image, and lts routing keys off the tag.
+    read_boot_status
     route_issue_repo
     gum style --bold --foreground 212 "Bug report"
     gum style --foreground 245 \
@@ -663,7 +676,6 @@ start_bug_report() {
 
     printf '\nSelect any relevant smart-log profiles (or none):\n'
     choose_profiles
-    read_boot_status
     create_draft "$BUG_REPO"
     : > "$DRAFT_DIR/bug-report.txt"
     collect_baseline "$title" "$description" "$reproduction"

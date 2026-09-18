@@ -78,7 +78,7 @@ Current correct trigger subjects:
 
 All three repos run with `run_e2e: false` in `promote-testing-to-main.yml`. The e2e quality gate runs separately via `post-testing-e2e.yml` (bluefin) rather than at the PR gate level.
 
-**Why `run_e2e: false`:** The gate queries GitHub's runs API by `head_sha = <testing-branch-SHA>`. Workflows triggered via `workflow_run` are stored in the API under the **default branch (main) SHA**, so the gate never finds a match regardless of whether E2E passed. This is the structural mismatch documented in [e2e-ci.md — Promotion gate never-stall design](../../e2e-ci/SKILL.md#promotion-gate--never-stall-design).
+**Why `run_e2e: false`:** The gate queries GitHub's runs API by `head_sha = <testing-branch-SHA>`. Workflows triggered via `workflow_run` are stored in the API under the **default branch (main) SHA**, so the gate never finds a match regardless of whether E2E passed. This is the structural mismatch documented in [e2e-ci references/never-stall-design.md](../../e2e-ci/references/never-stall-design.md).
 
 ### Merge model
 
