@@ -9,7 +9,7 @@ category: meta
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
-dependencies: [nvidia]
+dependencies: []
 tags: [gpu, nvidia, amd, interface, architecture, cdi]
 description: >-
   Vendor-agnostic GPU toolkit interface. Defines the six capabilities any
@@ -76,7 +76,7 @@ reference implementations for this capability.
 - `80-nvidia-container-toolkit.preset`
 - Spec written to `/var/run/cdi/nvidia.yaml`
 
-**AMD gap**: `amd-container-toolkit` (ROCm CTK) uses a similar CDI flow via `amdgpu-ctk cdi generate`. An `amd-cdi-refresh.service` + path unit + 80-series preset must be defined before AMD merges.
+**AMD gap**: `amd-container-toolkit` (ROCm CTK) uses a similar CDI flow via `amd-ctk cdi generate --output=/var/run/cdi/amd.json`. An `amd-cdi-refresh.service` + path unit + 80-series preset must be defined before AMD merges.
 
 ### 3. Container runtime toolkit (vendor tool)
 
@@ -91,7 +91,7 @@ reference implementations for this capability.
 - `nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place`
 
 **AMD implementation target**:
-- `amdgpu-ctk` or equivalent base package from the ROCm repos
+- `amd-ctk` or equivalent base package from the ROCm repos
 - Equivalent rootless config if needed by the AMD runtime
 
 ### 4. Flatpak GPU extension management
@@ -113,11 +113,11 @@ reference implementations for this capability.
 
 | Requirement | Detail |
 |-------------|--------|
-| Hook type | `check` + `sync` hook pair in `usr/share/ublue-os/system-setup.hooks.d/` |
+| Hook / Service type | Systemd unit using `ExecCondition` (`check`) and `ExecStart` (`sync`) |
 | `check` exit contract | Exit 0 = action needed; exit non-zero = already done |
 | Idempotent `sync` | Safe to run more than once |
 
-**NVIDIA implementation**: The `ublue-nvidia-flatpak-runtime-sync` script is triggered by `ublue-nvidia-flatpak-runtime-sync.service`, which is enabled by the 80-series preset. See `docs/skills/oem-hardware-hooks.md`.
+**NVIDIA implementation**: `system_files/nvidia/usr/lib/systemd/system/ublue-nvidia-flatpak-runtime-sync.service` invokes `ublue-nvidia-flatpak-runtime-sync check` via `ExecCondition=` and `ublue-nvidia-flatpak-runtime-sync sync` via `ExecStart=`. See `docs/skills/oem-hardware-hooks/SKILL.md` for hook patterns.
 
 **AMD implementation target**: AMD-specific first-boot hook if any GPU-version-matched runtime sync is needed.
 
