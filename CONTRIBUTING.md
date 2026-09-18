@@ -58,3 +58,6 @@ Full layer validation (the `common` behave suite from
 - [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) —
   coding and configuration conventions for shell scripts, Just recipes,
   JSON/YAML, and the Containerfile.
+- [`docs/contributing/reviewer-ladder.md`](docs/contributing/reviewer-ladder.md) —
+  draft proposal for a four-rung contributor ladder (Triager, Domain
+  Reviewer); unadopted until a maintainer decision.
