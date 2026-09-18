@@ -25,9 +25,12 @@ import time
 import urllib.request
 import urllib.error
 
-# HTTP statuses considered transient (rate limiting / token scope hiccups /
-# server errors) rather than a real "this ref doesn't exist" signal.
-TRANSIENT_HTTP_STATUSES = {403, 429, 500, 502, 503, 504}
+# HTTP statuses that do not carry a verdict about whether the ref exists:
+# rate limiting, server errors, and credential/scope rejections. 401 belongs
+# here because GET /orgs/{org}/packages/... does not accept the Actions
+# GITHUB_TOKEN and answers 401 regardless of the ref -- failing the guard on
+# it reports a token capability as a ref regression.
+TRANSIENT_HTTP_STATUSES = {401, 403, 429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
 
