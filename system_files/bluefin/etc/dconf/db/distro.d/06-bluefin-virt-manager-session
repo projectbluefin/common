@@ -1,0 +1,10 @@
+# Bluefin ships no system libvirtd/virtqemud daemon or socket, so the
+# virt-manager Flatpak's default qemu:///system connection can never open
+# (see "Failed to connect socket to '/var/run/libvirt/virtqemud-sock'").
+# `ujust toggle-devmode` / `ujust devmode` sets up qemu:///session as the
+# libvirt default via /usr/libexec/ensure-libvirt-session-config, so make
+# virt-manager's own remembered connection list match that rootless setup
+# instead of defaulting to the system connection it can't reach.
+
+[org/virt-manager/virt-manager]
+connections=['qemu:///session']
