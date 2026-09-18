@@ -1,0 +1,22 @@
+[Unit]
+Description=First-party Bluefin CountMe reporting
+Documentation=https://countme.projectbluefin.io
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=!/etc/projectbluefin/countme/disabled
+ConditionPathExists=!/etc/dakota-countme/disabled
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=bluefin-countme
+ExecStart=/usr/libexec/bluefin-countme
+
+# Nothing identifying is sent, and nothing outside its own state is read.
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
