@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # bootc-update-stage — privileged helper invoked via ChairLift's fixed
-# org.frostyard.ChairLift.bootc.stage polkit action (pkexec exec.path is
+# io.projectbluefin.chairlift.bootc.stage polkit action (pkexec exec.path is
 # pinned to this exact path; see
-# system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy).
+# system_files/shared/usr/share/polkit-1/actions/io.projectbluefin.chairlift.bootc.policy).
 #
 # Stages the next bootc system image update. Plain `bootc upgrade` fetches
 # the new image and queues it as a staged deployment; ostree-finalize-staged

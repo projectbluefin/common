@@ -18,8 +18,9 @@ Sources of truth, both read live from upstream at the PINNED tag:
     ActionConfig in internal/config/config.go. config.yml cannot supply
     these, because it only exercises a subset of the optional fields.
 
-The tag matters. Bluefin ships whichever release frostyard/tap's chairlift
-cask pins, so that binary's loader is the only one whose opinion counts.
+The tag matters. Bluefin ships whichever release ublue-os/homebrew-tap's
+chairlift cask pins, so that binary's loader is the only one whose opinion
+counts.
 Validating against upstream's moving `main` would false-red on renames that
 never reach our users, and -- far worse -- false-green on a key the pinned
 binary rejects, which is exactly the disabledConfig() outcome this script
@@ -42,13 +43,14 @@ import urllib.request
 
 import yaml
 
-#: The ChairLift release Bluefin actually ships, pinned by frostyard/tap's
-#: chairlift cask. Single source of truth for every upstream fetch below;
-#: bump it together with the cask version, never independently.
-CHAIRLIFT_SCHEMA_REF = "v0.10.1"
+#: The ChairLift release Bluefin actually ships, pinned by
+#: ublue-os/homebrew-tap's chairlift cask. Single source of truth for every
+#: upstream fetch below; bump it together with the cask version, never
+#: independently.
+CHAIRLIFT_SCHEMA_REF = "v0.12.2"
 
 UPSTREAM_RAW = (
-    f"https://raw.githubusercontent.com/frostyard/chairlift/{CHAIRLIFT_SCHEMA_REF}"
+    f"https://raw.githubusercontent.com/projectbluefin/chairlift/{CHAIRLIFT_SCHEMA_REF}"
 )
 UPSTREAM_CONFIG_URL = f"{UPSTREAM_RAW}/config.yml"
 UPSTREAM_SCHEMA_URL = f"{UPSTREAM_RAW}/internal/config/config.go"
@@ -162,7 +164,10 @@ def main() -> int:
                                     f"{', '.join(sorted(action_fields))})"
                                 )
 
-    print(f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} (pinned by the frostyard/tap cask):")
+    print(
+        f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} "
+        "(pinned by the ublue-os/homebrew-tap cask):"
+    )
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")
     print(f"  group fields: {', '.join(sorted(group_fields))}")

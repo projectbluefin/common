@@ -58,7 +58,7 @@ eval "$("${BREW_BIN}" shellenv)"
 # installability before processing the Brewfile's own tap lines, so on a
 # system that has never seen the tap it skips the cask as "requires macOS"
 # and still exits 0 — the cask is silently never installed (first boot of
-# any image shipping a tap+cask pair, e.g. frostyard/tap + chairlift).
+# any image shipping a tap+cask pair, e.g. ublue-os/homebrew-tap + chairlift).
 # Vendored taps are also trusted: brew refuses casks from untrusted taps,
 # and the Brewfile's own `trusted:` flag doesn't apply to an already-present
 # tap. This runs every boot, before the hash early-exit, because
@@ -152,7 +152,11 @@ previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
 # work even if the old Brewfile has already disappeared from the new image.
 previous_casks=$(jq -r --argjson external "${external_chairlift}" '
     .casks[]? // empty |
-    select($external == 0 or (. != "chairlift" and . != "frostyard/tap/chairlift" and . != "ublue-os/tap/chairlift"))
+    select($external == 0
+        or (. != "chairlift"
+            and . != "frostyard/tap/chairlift"
+            and . != "ublue-os/tap/chairlift"
+            and . != "ublue-os/homebrew-tap/chairlift"))
 ' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 

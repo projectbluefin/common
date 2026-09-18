@@ -1,6 +1,6 @@
 [Desktop Entry]
-# Vendored from ChairLift v0.10.1 (data/org.frostyard.ChairLift.desktop),
-# https://github.com/frostyard/chairlift — GPL-3.0. The only edit is the
+# Vendored from ChairLift v0.12.2 (data/io.projectbluefin.chairlift.desktop),
+# https://github.com/projectbluefin/chairlift — GPL-3.0. The only edit is the
 # absolute Exec= path below.
 #
 # Homebrew's chairlift cask installs this entry and its icons under the
@@ -11,7 +11,7 @@
 # docs/skills/brew-lifecycle/references/service-mechanics.md.
 Name=ChairLift
 Exec=/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper
-Icon=org.frostyard.ChairLift
+Icon=io.projectbluefin.chairlift
 Terminal=false
 Type=Application
 Categories=System;GTK;
