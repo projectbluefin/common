@@ -114,9 +114,12 @@ read_boot_status() {
             # it from the booted ref's repository basename so issue routing
             # follows the live deployment, not the original build
             # (projectbluefin/common#1009).
+            # Take the basename before stripping the tag: the first colon in
+            # a full reference can belong to a registry port
+            # (localhost:5000/bluefin:latest), not the tag.
             local booted_repo="${booted_ref%%@*}"
-            booted_repo="${booted_repo%%:*}"
             local booted_name="${booted_repo##*/}"
+            booted_name="${booted_name%%:*}"
             if [[ -n "$booted_name" ]]; then
                 IMAGE_NAME="$booted_name"
             fi
