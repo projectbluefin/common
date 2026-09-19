@@ -23,11 +23,6 @@ RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
   mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
   sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
 
-RUN install -d /out/shared/usr/share/bash-completion/completions /out/shared/usr/share/zsh/site-functions /out/shared/usr/share/fish/vendor_completions.d/ && \
-  just --completions bash | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/bash-completion/completions/ujust && \
-  just --completions zsh | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/zsh/site-functions/_ujust && \
-  just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/fish/vendor_completions.d/ujust.fish
-
 # Fetch game-devices-udev rules as individual raw files at a fixed commit SHA.
 # Codeberg/Gitea archive tarballs are generated on demand and their checksums
 # drift across infra changes, so per-file raw fetches with sha256 pins are used
@@ -82,6 +77,26 @@ RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
 
 COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
+
+# Ujust gate: the tailored completions checked into system_files/shared must bind `ujust`
+# & /out/shared must not ship files at the same paths to avoid shadow by ctx overlay.
+COPY system_files/shared/usr/share/bash-completion/completions/ujust \
+     system_files/shared/usr/share/zsh/site-functions/_ujust \
+     system_files/shared/usr/share/fish/vendor_completions.d/ujust.fish \
+     system_files/shared/usr/share/ublue-os/just/ujust-flags \
+     /tmp/ujust-gate/
+RUN set -e; \
+    grep -qE '^complete -F _ujust ujust$' /tmp/ujust-gate/ujust; \
+    grep -qE '^#compdef ujust$' /tmp/ujust-gate/_ujust; \
+    grep -qE '^complete -c ujust ' /tmp/ujust-gate/ujust.fish; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/ujust; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/_ujust; \
+    grep -qE '^[[:space:]]*echo .*ujust-flags' /tmp/ujust-gate/ujust.fish; \
+    grep -qx -- '--version' /tmp/ujust-gate/ujust-flags; \
+    if grep -qF 'JUST_COMPLETE' /tmp/ujust-gate/ujust /tmp/ujust-gate/_ujust /tmp/ujust-gate/ujust.fish; then echo "ujust completion is a just dynamic-loader shim" >&2; exit 1; fi; \
+    for f in usr/share/bash-completion/completions/ujust usr/share/zsh/site-functions/_ujust usr/share/fish/vendor_completions.d/ujust.fish usr/share/ublue-os/just/ujust-flags; do \
+        if [ -e "/out/shared/${f}" ]; then echo "ujust completion shadowed by /out/shared/${f}" >&2; exit 1; fi; \
+    done
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
