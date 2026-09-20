@@ -9,3 +9,11 @@ paths:
   .github/workflows/e2e.yml:
     ignore:
       - '"continue-on-error" is not available'
+
+# actionlint does not yet know the ubuntu-26.04 runner images that Renovate
+# is moving workflows to. Until upstream adds them, list them here so the
+# pre-commit hook does not reject every ubuntu-26.04 bump.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
