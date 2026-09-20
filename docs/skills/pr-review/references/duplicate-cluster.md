@@ -35,7 +35,11 @@ reviewed. Never re-read the head at keypress time: a push that lands between
 the evidence and the keypress would become the pinned head and merge
 unreviewed.
 
+`sha_S` is whichever of `sha_A` / `sha_B` belongs to the survivor the human
+named — substitute that variable, do not re-read the head:
+
 ```bash
+sha_S=$sha_A  # or $sha_B — the survivor's SHA from step 1
 gh pr merge <S> --squash --auto --match-head-commit "$sha_S"
 ```
 
@@ -43,6 +47,27 @@ gh pr merge <S> --squash --auto --match-head-commit "$sha_S"
 server-side refusal rather than a silent merge of unreviewed code. Reading the
 SHA before rendering the diff (step 1) keeps drift in that safe direction: the
 worst case is a refusal, never an unreviewed merge.
+
+`--auto` only arms a merge that is still waiting on something. On a repo
+without a merge queue, a survivor whose checks already pass has nothing to
+queue, and GitHub rejects the request with `Pull request is in clean status`.
+That is the common case for an already-green survivor, and it is **not** a
+failure that should halt the cluster. Re-run without `--auto`, keeping the
+same pin:
+
+```bash
+gh pr merge <S> --squash --match-head-commit "$sha_S"
+```
+
+The pin is the invariant, not the arming mode: both forms refuse if the head
+moved off `$sha_S`. Never drop `--match-head-commit` to get a merge through,
+and never reach for `--admin` without explicit human instruction.
+
+On `common`, where `main` has a merge queue, the arming form is the one that
+works and the direct form is the one that gets rejected — see
+[`merge-queue.md`](merge-queue.md). Read the error before choosing: only
+`in clean status` justifies the direct form. Any other rejection stops the
+procedure.
 
 A refusal is not an error to retry around. It means the survivor moved after
 the human looked at it: go back to step 1, re-present the fresh diff, and take
