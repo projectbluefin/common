@@ -1,0 +1,16 @@
+[Unit]
+Description=Project Bluefin weekly telemetry timer
+Documentation=https://docs.projectbluefin.io/analytics
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=!/etc/projectbluefin/countme/disabled
+ConditionPathExists=!/etc/bluefin-countme-opt-out
+ConditionPathExists=!/etc/dakota-countme/disabled
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=12h
+FixedRandomDelay=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,23 @@
+[Unit]
+Description=Project Bluefin anonymous weekly telemetry report
+Documentation=https://docs.projectbluefin.io/analytics
+After=network-online.target ublue-booted-image.service
+Wants=network-online.target
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=!/etc/projectbluefin/countme/disabled
+ConditionPathExists=!/etc/bluefin-countme-opt-out
+ConditionPathExists=!/etc/dakota-countme/disabled
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/bluefin-countme
+StateDirectory=bluefin-countme
+
+# Run as root (no DynamicUser) so bootc status fallback can query status if needed.
+# Hardened sandbox:
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+SystemCallFilter=@system-service @mount
