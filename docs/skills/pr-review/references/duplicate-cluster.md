@@ -13,9 +13,12 @@ Resolve a confirmed cluster as a unit, halting on the first failure.
 **1. The human confirms the duplicate and names the survivor.**
 
 Present diff evidence first, then let the human choose. `gh pr diff` works for
-fork heads, so there is no reason to decide from titles alone:
+fork heads, so there is no reason to decide from titles alone. Capture each
+head SHA *with* the diff, so the evidence and the SHA describe the same code:
 
 ```bash
+sha_A=$(gh pr view <A> --json headRefOid --jq .headRefOid)
+sha_B=$(gh pr view <B> --json headRefOid --jq .headRefOid)
 gh pr diff <A>
 gh pr diff <B>
 ```
@@ -27,15 +30,23 @@ survivor from the shared issue or dependency alone.
 **2. Arm the survivor after an explicit per-item merge keypress and before
 touching anything else.**
 
-Read the head SHA live and pin the merge to it:
+Pin the merge to the SHA you captured in step 1 — the head the human actually
+reviewed. Never re-read the head at keypress time: a push that lands between
+the evidence and the keypress would become the pinned head and merge
+unreviewed.
 
 ```bash
-sha=$(gh pr view <S> --json headRefOid --jq .headRefOid)
-gh pr merge <S> --squash --auto --match-head-commit "$sha"
+gh pr merge <S> --squash --auto --match-head-commit "$sha_S"
 ```
 
-`--match-head-commit` makes a push that lands between your read and the merge a
-server-side refusal rather than a silent merge of unreviewed code.
+`--match-head-commit` makes any head that is not the reviewed one a
+server-side refusal rather than a silent merge of unreviewed code. Reading the
+SHA before rendering the diff (step 1) keeps drift in that safe direction: the
+worst case is a refusal, never an unreviewed merge.
+
+A refusal is not an error to retry around. It means the survivor moved after
+the human looked at it: go back to step 1, re-present the fresh diff, and take
+a new keypress. Never re-read the SHA to make the merge succeed.
 
 **3. After a separate explicit keypress for each item, comment on each
 superseded PR** naming the survivor and the evidence. Run each command

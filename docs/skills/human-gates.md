@@ -97,8 +97,9 @@ nothing on a close — so this carve-out covers keypress-confirmed closes only;
 closing pull requests without a per-item keypress is agent mutation of
 human-visible state and stays forbidden. Arming auto-merge
 (`gh pr merge --auto`) on the keypress is the same human decision deferred
-until checks pass; it is in scope only pinned to the reviewed head with
-`--match-head-commit`, so drift between keypress and landing fails
+until checks pass; it is in scope only pinned with `--match-head-commit` to the
+head SHA captured alongside the diff the human reviewed — not to a head re-read
+at keypress time — so drift between review and landing fails
 server-side instead of merging unreviewed code. What remains forbidden for
 any tool: `--admin` overrides, submitting an approving review, and any
 non-interactive batch mutation.
