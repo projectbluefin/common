@@ -31,15 +31,17 @@ for f in "${skill_files[@]}"; do
         continue
     fi
 
+    # Here-strings, not pipes: `grep -q` exits on first match, and under
+    # `pipefail` a SIGPIPE'd producer would make a matched key look missing.
     for key in name version last_updated tags description; do
-        if ! printf '%s\n' "$fm" | grep -qE "^${key}:"; then
+        if ! grep -qE "^${key}:" <<<"$fm"; then
             echo "error: $f missing required key '$key'"
             rc=1
         fi
     done
 
-    if ! printf '%s\n' "$fm" | grep -qE "^metadata:" || \
-       ! printf '%s\n' "$fm" | grep -qE "^  type:"; then
+    if ! grep -qE "^metadata:" <<<"$fm" || \
+       ! grep -qE "^  type:" <<<"$fm"; then
         echo "error: $f missing metadata.type"
         rc=1
     fi
