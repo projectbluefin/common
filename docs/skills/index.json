@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18",
+  "generated_at": "2026-09-20",
   "schema_version": "1.0",
   "skills": [
     {
@@ -15,10 +15,10 @@
         "flatpak",
         "apps"
       ],
-      "description": "Use when editing Bazaar config or hooks in common. Covers curated schema migration, JXL\u2192PNG banner conversion, Bluefin-owned files, and local preview workflow.",
+      "description": "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
       "last_updated": "2026-07-01",
-      "doc_type": "reference"
+      "doc_type": "procedure"
     },
     {
       "id": "bonedigger",

@@ -16,7 +16,7 @@ FROM docker.io/library/alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b
 
 COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:470572484d5b7b8f5ce422f8a7af4fbdbe66f6a7075a5ae425ce0658f3e3738c / /out/bluefin/usr/share
 
-RUN apk add just curl libjxl-tools
+RUN apk add just curl
 
 # Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
@@ -66,14 +66,6 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
     for f in *.rules; do install -Dpm0644 "$f" "/out/shared/usr/lib/udev/rules.d/71-$f"; done && \
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
-
-# Convert Bazaar JXL banners to PNG to prevent stable Bazaar v0.8.2 from crashing
-COPY bluefin-branding/system_files/etc/bazaar /tmp/bazaar-banners
-RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
-    for f in /tmp/bazaar-banners/*.jxl; do \
-      name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
-    done
 
 COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome

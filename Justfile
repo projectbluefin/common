@@ -42,6 +42,11 @@ bazaar-preview:
     set -euo pipefail
     sudo -v
     flatpak info io.github.kolunmi.Bazaar >/dev/null
+
+    if [[ -d bluefin-branding/system_files/etc/bazaar ]]; then
+        sudo install -d -m0755 /etc/bazaar
+        sudo install -m0644 bluefin-branding/system_files/etc/bazaar/*.jxl /etc/bazaar/
+    fi
     sudo install -d -m0755 /etc/bazaar
     sudo install -m0644 system_files/bluefin/etc/bazaar/bazaar.yaml /etc/bazaar/bazaar.yaml
     sudo install -m0644 system_files/bluefin/etc/bazaar/curated.yaml /etc/bazaar/curated.yaml

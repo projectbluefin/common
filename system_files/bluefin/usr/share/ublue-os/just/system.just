@@ -334,6 +334,12 @@ bazaar-preview source="{{ invocation_directory() }}":
     done
     sudo -v
     flatpak info io.github.kolunmi.Bazaar >/dev/null
+
+    BRANDING_DIR="${SRC_DIR}/bluefin-branding/system_files/etc/bazaar"
+    if [[ -d "${BRANDING_DIR}" ]]; then
+        sudo install -d -m0755 /etc/bazaar
+        sudo install -m0644 "${BRANDING_DIR}"/*.jxl /etc/bazaar/
+    fi
     sudo install -d -m0755 /etc/bazaar
     sudo install -m0644 "${BAZAAR_DIR}/bazaar.yaml" /etc/bazaar/bazaar.yaml
     sudo install -m0644 "${BAZAAR_DIR}/curated.yaml" /etc/bazaar/curated.yaml
