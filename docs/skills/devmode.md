@@ -60,7 +60,7 @@ File: `system_files/bluefin/usr/share/ublue-os/just/system.just`
 | IDE | VS Code | `ublue-os/tap/visual-studio-code-linux` |
 | IDE | VSCodium | `ublue-os/tap/vscodium-linux` |
 | IDE | Antigravity | `ublue-os/tap/antigravity-linux` |
-| IDE | Zed | `ublue-os/experimental-tap/zed-linux` |
+| IDE | Zed | `ublue-os/tap/zed-linux` |
 | IDE | JetBrains Toolbox | `ublue-os/tap/jetbrains-toolbox-linux` |
 | CLI Editors | Neovim | brew nvim |
 | CLI Editors | Helix | brew helix |

@@ -147,13 +147,9 @@ toggle-devmode:
     _dx_wants    "incus"          && INSTALL_INCUS=1
 
     # Taps are silent/fast — run before the progress bar
-    if _dx_wants -E "VS Code|VSCodium|Antigravity|JetBrains"; then
+    if _dx_wants -E "VS Code|VSCodium|Antigravity|Zed|JetBrains"; then
         brew tap ublue-os/tap 2>/dev/null || true
         brew trust ublue-os/tap 2>/dev/null || true
-    fi
-    if _dx_wants "Zed"; then
-        brew tap ublue-os/experimental-tap 2>/dev/null || true
-        brew trust ublue-os/experimental-tap 2>/dev/null || true
     fi
 
     # Build install queue for the progress bar
@@ -169,7 +165,7 @@ toggle-devmode:
     _dx_wants -F "  VS Code"      && _dx_add "VS Code"           "brew install --cask ublue-os/tap/visual-studio-code-linux"
     _dx_wants    "VSCodium"       && _dx_add "VSCodium"          "brew install --cask ublue-os/tap/vscodium-linux"
     _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-linux"
-    _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask ublue-os/experimental-tap/zed-linux"
+    _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask ublue-os/tap/zed-linux"
     _dx_wants    "JetBrains"      && _dx_add "JetBrains Toolbox" "brew install --cask ublue-os/tap/jetbrains-toolbox-linux"
     _dx_wants    "Neovim"         && _dx_add "Neovim"            "brew install nvim"
     _dx_wants    "Helix"          && _dx_add "Helix"             "brew install helix"

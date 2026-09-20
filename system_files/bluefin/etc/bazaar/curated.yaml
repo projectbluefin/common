@@ -205,49 +205,6 @@ rows:
 - banner:
     height: 400
     image:
-      light-uri: file:///run/host/etc/bazaar/06-bluefin-day.jxl
-      dark-uri: file:///run/host/etc/bazaar/06-bluefin-night.jxl
-      fit: cover
-      can-shrink: true
-- section:
-    title:
-      en: Developers
-      fr: Développeurs
-      id: Pengembangan
-      pl: Programiści
-    subtitle:
-      string:
-        en: Unleash the power of Cloud Native
-        fr: Déchainez la puissance du Cloud Native
-        id: Manfaatkan kekuatan Cloud Native
-        pl: Uwolnij moc dystrybucji Cloud Native
-    appids:
-      list:
-      - io.podman_desktop.PodmanDesktop
-      - org.gnome.Builder
-      - com.getpostman.Postman
-      - me.iepure.devtoolbox
-      - io.kinvolk.Headlamp
-      - app.freelens.Freelens
-      - de.leopoldluley.Clapgrep
-      - com.mardojai.ForgeSparks
-      - studio.planetpeanut.Bobby
-      - cc.arduino.IDE2
-      - dev.geopjr.Calligraphy
-      - io.github.lo2dev.Echo
-      - org.gnome.design.IconLibrary
-      - io.github.ronniedroid.concessio
-      - io.github.nokse22.asciidraw
-      - dev.geopjr.Collision
-      - io.github.tobagin.digger
-      - app.drey.Elastic
-      - io.github.mfat.sshpilot
-      - io.github.shonebinu.Brief
-      - io.github.getnf.embellish
-      - de.wwwtech.gitte
-- banner:
-    height: 400
-    image:
       light-uri: file:///run/host/etc/bazaar/10-bluefin-day.jxl
       dark-uri: file:///run/host/etc/bazaar/10-bluefin-night.jxl
       fit: cover
@@ -302,3 +259,73 @@ rows:
       - io.github.qwersyk.Newelle
       - ai.jan.Jan
       - ink.whis.Whis
+- banner:
+    height: 400
+    image:
+      light-uri: file:///run/host/etc/bazaar/06-bluefin-day.jxl
+      dark-uri: file:///run/host/etc/bazaar/06-bluefin-night.jxl
+      fit: cover
+      can-shrink: true
+- section:
+    title:
+      en: Desktop Development
+      fr: Développement Desktop
+      id: Pengembangan Desktop
+      pl: Programowanie aplikacji desktopowych
+    subtitle:
+      string:
+        en: Native IDEs, Systems & GUI Tooling with Host Integration
+        fr: IDEs natifs, systèmes et outils GUI avec intégration hôte
+        id: IDE Asli, Sistem & Alat GUI dengan Integrasi Host
+        pl: Natywne środowiska IDE, narzędzia systemowe i GUI z integracją hosta
+    appids:
+      list:
+      - dev.zed.Zed
+      - com.visualstudio.code
+      - com.vscodium.codium
+      - com.jetbrains.IntelliJ-IDEA-Community
+      - com.jetbrains.PyCharm-Professional
+      - com.jetbrains.CLion
+      - com.google.AndroidStudio
+      - org.gnome.Builder
+      - cc.arduino.IDE2
+      - org.gnome.design.IconLibrary
+      - dev.geopjr.Collision
+      - app.drey.Elastic
+      - io.github.lo2dev.Echo
+- banner:
+    height: 400
+    image:
+      light-uri: file:///run/host/etc/bazaar/04-bluefin-day.jxl
+      dark-uri: file:///run/host/etc/bazaar/04-bluefin-night.jxl
+      fit: cover
+      can-shrink: true
+- section:
+    title:
+      en: Cloud Native Development
+      fr: Développement Cloud Native
+      id: Pengembangan Cloud Native
+      pl: Programowanie Cloud Native
+    subtitle:
+      string:
+        en: Containers, Kubernetes, APIs, and Microservices
+        fr: Conteneurs, Kubernetes, APIs et microservices
+        id: Kontainer, Kubernetes, API, dan Layanan Mikro
+        pl: Kontenery, Kubernetes, API i mikrousługi
+    appids:
+      list:
+      - io.podman_desktop.PodmanDesktop
+      - io.kinvolk.Headlamp
+      - app.freelens.Freelens
+      - com.getpostman.Postman
+      - io.dbeaver.DBeaverCommunity
+      - me.iepure.devtoolbox
+      - de.leopoldluley.Clapgrep
+      - com.mardojai.ForgeSparks
+      - io.github.mfat.sshpilot
+      - io.github.tobagin.digger
+      - io.github.nokse22.asciidraw
+      - io.github.ronniedroid.concessio
+      - io.github.shonebinu.Brief
+      - io.github.getnf.embellish
+      - de.wwwtech.gitte

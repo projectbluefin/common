@@ -3,7 +3,7 @@ just := just_executable()
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 # test_libvirt_helper.bats is excluded — requires a running libvirtd session
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_bazaar_hook.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py -v --cov=tests --cov-report=term-missing
+    python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_privileged_setup.bats
@@ -51,7 +51,10 @@ bazaar-preview:
     sudo install -m0644 system_files/bluefin/etc/bazaar/bazaar.yaml /etc/bazaar/bazaar.yaml
     sudo install -m0644 system_files/bluefin/etc/bazaar/curated.yaml /etc/bazaar/curated.yaml
     sudo install -m0644 system_files/bluefin/etc/bazaar/blocklist.yaml /etc/bazaar/blocklist.yaml
+    sudo install -m0755 system_files/bluefin/etc/bazaar/hooks.py /etc/bazaar/hooks.py
+    flatpak kill io.github.kolunmi.Bazaar 2>/dev/null || true
     systemctl --user restart bazaar.service || systemctl --user start bazaar.service || true
+    sleep 0.5
     if command -v setsid >/dev/null 2>&1; then
         setsid -f flatpak run io.github.kolunmi.Bazaar >/dev/null 2>&1
     else

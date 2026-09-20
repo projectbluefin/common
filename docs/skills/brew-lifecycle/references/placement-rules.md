@@ -45,7 +45,7 @@ Anything with those kinds of dependencies stays on the image as an RPM.
 - `gum`, `just`, `zenity` — used by ujust scripts
 - `gcc`, `gcc-c++`, `make`, `git` — required by brew's build toolchain
 - `bootc`, `uupd` — OS update stack
-- `fastfetch` — called by ublue-motd before brew runs on first login
+- `fastfetch` — exec'd by `/usr/bin/ublue-fastfetch` on first login, before brew is available. (There is no `ublue-motd`; the MOTD stack is `umotd` + `uwelcome`.)
 
 ---
 
@@ -85,7 +85,7 @@ and `trusted: true` in Brewfiles. See https://docs.brew.sh/Tap-Trust.
 | `system.just` dx recipe | `brew tap ublue-os/experimental-tap` + `brew trust ublue-os/experimental-tap` |
 | `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
 | `apps.just` install-asus | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
-| `bazaar-hook` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
+| `bazaar/hooks.py` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
 
 Regression coverage lives in `tests/test_brew_tap_trust.bats`.
 

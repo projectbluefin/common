@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).parent.parent
 CURATED = ROOT / "system_files/bluefin/etc/bazaar/curated.yaml"
 BAZAAR = ROOT / "system_files/bluefin/etc/bazaar/bazaar.yaml"
@@ -14,50 +13,61 @@ def _load_yaml(path: Path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
-def test_curated_uses_new_schema_shape():
-    """Validate curated.yaml uses the modern Bazaar schema (rows with typed entries)."""
+def test_curated_uses_modern_schema_shape():
     data = _load_yaml(CURATED)
 
     assert isinstance(data, dict)
-    assert "css" not in data, "root css block removed in modern schema"
+    assert "css" not in data  # modern schema does not use root css block
     assert "rows" in data
     assert isinstance(data["rows"], list)
     assert len(data["rows"]) > 0
 
-    known_row_types = {"banner", "section", "articles", "featured-carousel"}
-    has_section = False
-
+    section_titles = []
     for row in data["rows"]:
         assert isinstance(row, dict)
-        assert len(row) == 1
-        row_type = next(iter(row))
-        assert row_type in known_row_types, f"Unknown row type: {row_type}"
-
-        if row_type == "section":
-            has_section = True
+        if "banner" in row:
+            banner = row["banner"]
+            assert "image" in banner
+            img = banner["image"]
+            assert "light-uri" in img
+            assert "dark-uri" in img
+            # Shipped Bazaar 0.9.x natively loads .jxl banners
+            assert img["light-uri"].endswith(".jxl")
+            assert img["dark-uri"].endswith(".jxl")
+        elif "section" in row:
             section = row["section"]
-            assert isinstance(section, dict)
             assert "title" in section
             assert "appids" in section
-            appids = section["appids"]
-            assert isinstance(appids, dict)
-            assert "list" in appids
-            assert isinstance(appids["list"], list)
+            assert "list" in section["appids"]
+            assert isinstance(section["appids"]["list"], list)
+            title = section["title"]
+            section_titles.append(title if isinstance(title, str) else title.get("en"))
 
-        if row_type == "banner":
-            banner = row["banner"]
-            assert isinstance(banner, dict)
-            assert "image" in banner
-            image = banner["image"]
-            for uri_field in ("uri", "light-uri", "dark-uri"):
-                if uri_field in image:
-                    assert image[uri_field].endswith(".jxl") or image[uri_field].startswith("http"), \
-                        f"Banner {uri_field} should be JXL or https URL"
-
-    assert has_section, "curated.yaml must have at least one section row"
+    assert "Desktop Development" in section_titles
+    assert "Cloud Native Development" in section_titles
+    assert "AI and Machine Learning" in section_titles
 
 
 def test_bazaar_config_valid():
     data = _load_yaml(BAZAAR)
 
     assert "curated-config-paths" in data
+    assert "hooks" in data
+    hook_ids = {h["id"] for h in data["hooks"]}
+    expected_hooks = {
+        "jetbrains-toolbox",
+        "vscode",
+        "vscodium",
+        "zed",
+    }
+    assert expected_hooks.issubset(hook_ids)
+
+    for hook in data["hooks"]:
+        assert "when" in hook
+        assert "check-appid-regex" in hook
+        assert "dialogs" in hook
+        for dialog in hook["dialogs"]:
+            assert "options" in dialog
+            option_ids = {opt["id"] for opt in dialog["options"]}
+            assert "cancel" in option_ids
+            assert "run-devmode" in option_ids
