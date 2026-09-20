@@ -67,13 +67,17 @@ gh pr close <D>
 
 Never close the whole cluster from a script or batch command.
 
-Never `--reason "not planned"`, and never a label swap in place of a close.
-Both misreport why the work went away.
+Never swap a label in place of a close: the PR stays open while the board
+claims the work went away.
 
 **5. Re-check the linked issues.**
 
 A still-open issue whose last open PR you just closed is a **finding to
 report**, not something to silently fix. Surface it to the human.
+
+Do not close that issue yourself, and never reach for
+`gh issue close --reason "not planned"` to tidy it up. The work was superseded,
+not abandoned, so that reason misreports why the issue went away.
 
 ## Why the order matters
 

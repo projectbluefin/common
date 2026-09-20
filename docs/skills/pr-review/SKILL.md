@@ -167,6 +167,7 @@ queue state reading, branch update, and fork PR rebase.
 | File | Contents |
 |---|---|
 | [references/card-fields.md](references/card-fields.md) | Full card field reference and `mergeStateStatus` table |
+| [references/duplicate-cluster.md](references/duplicate-cluster.md) | Duplicate-cluster resolution: arm the survivor, then close the rest |
 | [references/red-check-triage.md](references/red-check-triage.md) | Classifying red checks, infra-flake correlation, `gh` CLI traps |
 | [references/dismissed-approval.md](references/dismissed-approval.md) | Dismissed-approval regression check procedure |
 | [references/worked-example.md](references/worked-example.md) | Worked example session |
