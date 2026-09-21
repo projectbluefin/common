@@ -20,6 +20,10 @@ MOCK
 
     export HOME="${WORKDIR}/home"
     export PATH="${WORKDIR}/bin:${PATH}"
+
+    # Inherited from the host login shell on Bluefin; would make the root-guard
+    # tests pass vacuously via the UWELCOME_SHOWN guard.
+    unset UWELCOME_SHOWN
 }
 
 teardown() {
@@ -37,6 +41,12 @@ MOCK
 
 called() {
     [ -f "${WORKDIR}/calls" ]
+}
+
+# Use instead of `! called`: errexit ignores failures of !-inverted commands, so
+# `! called` only asserts while it is the final command of a test.
+not_called() {
+    [ ! -f "${WORKDIR}/calls" ]
 }
 
 @test "legacy no-show-user-motd marker migrates to uwelcome/disabled" {
@@ -89,7 +99,7 @@ called() {
     run bash "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
-    ! called
+    not_called
 }
 
 @test "uwelcome is skipped when UWELCOME_SHOWN is already set (no double greeting)" {
@@ -99,7 +109,7 @@ called() {
     run bash "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
-    ! called
+    not_called
 }
 
 @test "UWELCOME_SHOWN is exported so a chained shell does not greet twice" {
@@ -121,7 +131,7 @@ called() {
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
-    ! called
+    not_called
 }
 
 @test "an empty UWELCOME_SHOWN is treated as unset and the greeting runs" {
