@@ -41,7 +41,7 @@ metadata:
 |---|---|---|---|---|
 | `projectbluefin/common` | shared overlay | — | — | ❌ none — see "`system_files/nvidia/` ships to nobody" below |
 | `projectbluefin/bluefin` | Fedora | `ublue-os/akmods-nvidia-open` OCI | ✅ (build script) | ❌ none in either repo |
-| `projectbluefin/bluefin-lts` | CentOS Stream 10 | `ublue-os/akmods-nvidia-open` OCI | ✅ (nvidia build overlay) | ✅ `system_files_overrides/gdx/…/80-nvidia-container-toolkit.preset` |
+| `projectbluefin/bluefin-lts` | CentOS Stream 10 | `ublue-os/akmods-nvidia-open` OCI | ✅ (nvidia build overlay) | ✅ `system_files_overrides/nvidia/…/80-nvidia-container-toolkit.preset` |
 | `projectbluefin/dakota` | GNOME OS (BST) | `.run` installer, open kmod | ✅ (built from source) | ✅ `elements/bluefin-nvidia/nvidia-container-toolkit-preset.bst` |
 
 **dakota is the reference implementation.** When in doubt about the correct approach for
