@@ -50,9 +50,12 @@ nvidia-related changes, read `elements/bluefin-nvidia/` in dakota first.
 ### `system_files/nvidia/` ships to nobody
 
 The ctx stage of this repo's `Containerfile` publishes `/system_files/nvidia`, but **no
-consumer copies it**: `projectbluefin/bluefin` (`Containerfile:48-49`),
-`projectbluefin/bluefin-lts` (`Containerfile:17-18`) and `projectbluefin/utah`
-(`Containerfile:66-67`) all take `/system_files/shared` and `/system_files/bluefin` only.
+consumer copies it**: in `projectbluefin/bluefin`, `projectbluefin/bluefin-lts` and
+`projectbluefin/utah`, every `COPY --from=common /system_files/...` line in the
+`Containerfile` names `/system_files/shared` or `/system_files/bluefin` — none names
+`/system_files/nvidia`. Verify with
+`grep -n 'COPY --from=common /system_files' Containerfile` in each repo rather than by line
+number; those line numbers drift.
 Nothing in the org enables `ublue-nvidia-flatpak-runtime-sync.service`, and this repo ships
 no preset for it. Editing `system_files/nvidia/` therefore changes no image today.
 
