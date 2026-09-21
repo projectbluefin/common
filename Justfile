@@ -1,7 +1,9 @@
 just := just_executable()
 
-# Run unit tests (pytest for hooks.py, bats for shell scripts)
 # test_libvirt_helper.bats is excluded — requires a running libvirtd session
+# Every suite in tests/ must be listed below or declared excluded above with a
+# reason; tests/test_suite_registration.bats enforces that.
+# Run unit tests (pytest for hooks.py, bats for shell scripts)
 test:
     python3 -m pytest tests/test_hooks.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py -v --cov=tests --cov-report=term-missing
     bats tests/test_libsetup.bats
@@ -38,6 +40,9 @@ test:
     bats tests/test_system_just.bats
     bats tests/test_brew_tap_trust.bats
     bats tests/test_apps_just.bats
+    bats tests/test_image_repo.bats
+    bats tests/test_suite_registration.bats
+    bats tests/test_shared_just.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
