@@ -134,6 +134,9 @@ jobs:
       - name: Run bats (bonedigger report)
         run: bats tests/test_bonedigger_report.bats
 
+      - name: Run bats (apps.just — install-opentabletdriver, cncf)
+        run: bats tests/test_apps_just.bats
+
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

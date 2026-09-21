@@ -2,9 +2,9 @@
 # Tests for apps.just recipes: install-opentabletdriver and cncf.
 #
 # Scope note: the `install-jetbrains-toolbox` and `install-asus` recipes in the
-# same file are deliberately NOT covered here — their `brew tap --trust` lines
-# are being changed by other open PRs. This file only exercises recipes that do
-# not use `brew tap`.
+# same file are not covered here yet. Their `brew tap` / `brew trust` lines are
+# covered by tests/test_brew_tap_trust.bats; recipe-level coverage for them is
+# a follow-up.
 
 APPS_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/apps.just"
 WORKDIR=""
@@ -184,12 +184,6 @@ _run_cncf() {
     grep -q "brew bundle" "${CNCF_SCRIPT}"
 }
 
-@test "apps.just recipes covered here do not call brew tap" {
-    # Guards the scope boundary of this file against future edits.
-    ! grep -q "brew tap" "${OTD_SCRIPT}"
-    ! grep -q "brew tap" "${CNCF_SCRIPT}"
-}
-
 # --- install-opentabletdriver: install branch ----------------------------
 
 @test "install-opentabletdriver: gum confirm affirmative runs the install branch" {
@@ -284,14 +278,14 @@ _run_cncf() {
     [ ! -f "${FAKE_ROOT}/etc/udev/rules.d/71-opentabletdriver.rules" ]
 }
 
-@test "install-opentabletdriver: uninstall targets the wrong modprobe filename (regression guard)" {
-    # The recipe writes blacklist-opentabletdriver.conf on install but removes
-    # blacklist-opentabletdriver.rules on uninstall, so the blacklist survives.
-    # This test pins the current behaviour; flip it when the recipe is fixed.
+@test "install-opentabletdriver: uninstall removes the modprobe blacklist it installed" {
+    # Install writes blacklist-opentabletdriver.conf; uninstall must remove the
+    # same file, or hid_uclogic and wacom stay blacklisted after removal
+    # (projectbluefin/common#1065: uninstall used to target a .rules name).
     printf '%s\n' "blacklist wacom" > "${FAKE_ROOT}/etc/modprobe.d/blacklist-opentabletdriver.conf"
     MOCK_GUM_CONFIRM_EXIT=1 _run_otd
     [ "$status" -eq 0 ]
-    [ -f "${FAKE_ROOT}/etc/modprobe.d/blacklist-opentabletdriver.conf" ]
+    [ ! -f "${FAKE_ROOT}/etc/modprobe.d/blacklist-opentabletdriver.conf" ]
 }
 
 @test "install-opentabletdriver: gum confirm exit code 130 (Ctrl-C) does nothing" {
