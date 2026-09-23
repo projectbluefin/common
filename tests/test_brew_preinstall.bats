@@ -417,6 +417,29 @@ EOF
     cp "${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/"*.Brewfile \
         "${WORKDIR}/preinstall.d/"
 
+    # Override brew mock: ChairLift is not installed on this fresh machine,
+    # so the named cask query must fail. With the permissive default mock
+    # the rebrand migration gate would read "installed" and "migrate" a
+    # cask that is not there.
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   ;;
+    trust|untap) ;;
+    list)
+        if [[ "\$2" == "--cask" && -n "\$3" ]]; then
+            exit 1
+        fi
+        exit 0
+        ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
     [ "${status}" -eq 0 ]
     run ! grep -q '^brew uninstall ' "${WORKDIR}/brew.log"
@@ -1129,8 +1152,15 @@ case "\$1" in
         exit 1
         ;;
     list)
-        [[ "\${installed_tap}" == none ]] && exit 1
+        # Real Homebrew: bare inventory queries succeed even when empty,
+        # but a named cask query for an absent cask exits 1. The pre-bundle
+        # snapshot uses the bare forms; the migration gate uses the named
+        # one.
+        if [[ "\${2:-}" == "--cask" && -n "\${3:-}" && "\${3:-}" != "--versions" ]]; then
+            [[ "\${installed_tap}" == none ]] && exit 1
+        fi
         if [[ "\$*" == *"--versions"* ]]; then
+            [[ "\${installed_tap}" == none ]] && exit 1
             printf 'chairlift %s\n' "\${installed_version}"
         fi
         exit 0
