@@ -57,8 +57,14 @@ jobs:
             exit 0
           fi
 
+          # Excludes mirror the push paths-ignore list and must stay root-scoped:
+          # '*.md' (not '**/*.md') because Markdown under system_files/ is copied
+          # into the image by the Containerfile, so it is a real build input.
+          # .github/workflows/** is intentionally NOT excluded: Renovate bumps action
+          # SHAs via digest PRs that only touch workflows; those must still build so
+          # the merge queue can satisfy the required Build checks.
           if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- . \
-            ':(exclude,glob)**/*.md' \
+            ':(exclude,glob)*.md' \
             ':(exclude,glob)LICENSE' \
             ':(exclude,glob).gitignore' \
             ':(exclude,glob)docs/**' \
