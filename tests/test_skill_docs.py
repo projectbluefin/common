@@ -218,6 +218,43 @@ def test_check_skill_frontmatter_passes_with_valid_files(tmp_path: Path) -> None
     assert result.stderr == ""
 
 
+def test_check_skill_frontmatter_accepts_front_matter_larger_than_a_pipe_buffer(
+    tmp_path: Path,
+) -> None:
+    # A required key on the first line lets `grep -q` exit before the whole
+    # front-matter is consumed. If the key test feeds grep through a pipe, the
+    # producer takes SIGPIPE once the payload exceeds the 64 KiB pipe buffer,
+    # and `pipefail` turns a successful match into a "missing key" error.
+    skills = tmp_path / "docs" / "skills"
+    padding = "\n".join(
+        " " * 12 + f"x_pad_{i:03d}: {'a' * 180}" for i in range(400)
+    )
+
+    write_skill(
+        skills / "large.md",
+        frontmatter="""
+            name: Large
+            version: "1.0"
+            last_updated: "2026-08-01"
+            tags: [docs]
+            description: Large skill description
+            metadata:
+              type: reference
+"""
+        + padding,
+    )
+
+    text = (skills / "large.md").read_text()
+    assert len(text.encode()) > 64 * 1024
+    assert len(text.splitlines()) < 500
+
+    result = run_script("bash", CHECK_SKILL_FRONTMATTER, tmp_path)
+
+    assert result.returncode == 0, result.stdout
+    assert "missing required key" not in result.stdout
+    assert "missing metadata.type" not in result.stdout
+
+
 def test_check_skill_frontmatter_reports_missing_front_matter(
     tmp_path: Path,
 ) -> None:

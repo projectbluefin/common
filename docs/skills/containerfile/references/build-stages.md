@@ -1,6 +1,6 @@
 # Containerfile — Build Stages
 
-Part of [containerfile](../SKILL.md) — full stage definitions, wallpaper source caveat, and ujust completion generation.
+Part of [containerfile](../SKILL.md) — full stage definitions, wallpaper source caveat, and ujust completions.
 
 ## Build stages
 
@@ -100,14 +100,12 @@ sed -i 's|~\/\.local\/share|\/usr\/share|' *.xml
 
 ---
 
-## ujust completion generation
+## ujust completions
 
-The `ujust` shell completions are **not hand-authored** — they are generated at build time from the `just` binary by replacing all occurrences of `just` with `ujust` in the completion output:
+The `ujust` shell completions are tailored files checked into `system_files/shared/` (bash, zsh, fish), completing `ujust` flags plus recipe names from `/usr/share/ublue-os/just/00-entry.just` via `just --summary`.
+They are **not** generated from `just --completions`: Since `just` moved to dynamic `clap_complete` loader output, a build-time `sed s/just/ujust/` rename can no longer work. The real registration line (`complete ... just`) is emitted at TAB-time on the live system, past any build-time filter, and binds the wrong command name (projectbluefin/bluefin#1171).
 
-```bash
-just --completions bash | sed -E 's/([\(_" ])just/\1ujust/g' > .../completions/ujust
-just --completions zsh  | sed -E 's/([\(_" ])just/\1ujust/g' > .../_ujust
-just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > .../ujust.fish
-```
+Two rules follow from this:
 
-The sed pattern `([\(_" ])just` only substitutes `just` when preceded by `(`, `_`, `"`, ` `, or `(` — avoiding substring matches inside longer words. Do not edit the generated completions directly; edit the sed pattern if the substitution is wrong.
+- Never reintroduce a `just --completions | sed` generator step. The gate `RUN` in the `build` stage validates uncommented completion registrations and `ujust-flags` path assignments in the checked-in files, plus a no-shadow check against `/out/shared/...`. It fails if the generator — or any other file at those paths — comes back.
+- `UJUST_JUSTFILE` / `UJUST_FLAGS_FILE` override the entry-justfile path and the flags list in all three completions; they exist for `tests/test_ujust_completion.bats` which points them at sandbox files so the suite passes off-image. Flags live in exactly one place at `system_files/shared/usr/share/ublue-os/just/ujust-flags` (one per line). All three completions read it during TAB press.

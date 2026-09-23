@@ -37,7 +37,7 @@ jobs:
 
       - name: Install test deps
         run: |
-          sudo apt-get install -y bats
+          sudo apt-get install -y bats fish zsh
           pip install pytest pytest-cov pyyaml
 
       - name: Run shellcheck — extensionless scripts
@@ -80,6 +80,9 @@ jobs:
 
       - name: Run bats (ublue-bling)
         run: bats tests/test_bling.bats
+
+      - name: Run bats (ujust completion)
+        run: bats tests/test_ujust_completion.bats
 
       - name: Run bats (bling.sh)
         run: bats tests/test_bling_sh.bats
@@ -130,6 +133,9 @@ jobs:
 
       - name: Run bats (bonedigger report)
         run: bats tests/test_bonedigger_report.bats
+
+      - name: Run bats (apps.just — install-opentabletdriver, cncf)
+        run: bats tests/test_apps_just.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |

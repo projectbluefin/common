@@ -15,7 +15,7 @@
 REPO_ROOT="$BATS_TEST_DIRNAME/.."
 APPS_JUST="${REPO_ROOT}/system_files/shared/usr/share/ublue-os/just/apps.just"
 SYSTEM_JUST="${REPO_ROOT}/system_files/bluefin/usr/share/ublue-os/just/system.just"
-BAZAAR_HOOK="${REPO_ROOT}/system_files/bluefin/usr/libexec/bazaar-hook"
+BAZAAR_HOOKS="${REPO_ROOT}/system_files/bluefin/etc/bazaar/hooks.py"
 
 WORKDIR=""
 
@@ -109,15 +109,13 @@ BREW_MOCK
     grep -qx "brew install --cask ublue-os/tap/asusctl-linux" "${WORKDIR}/brew.log"
 }
 
-@test "system.just dx tap block taps then trusts both taps" {
+@test "system.just dx tap block taps then trusts ublue-os/tap" {
     # Extract just the tap/trust lines from the dx recipe and run them, so the
     # test does not need to drive the whole interactive gum menu.
     sed -n '/# Taps are silent\/fast/,/^$/p' "${SYSTEM_JUST}" \
         | sed -e 's/_dx_wants[^;]*;/true;/' > "${WORKDIR}/dx-taps.sh"
     grep -q "brew tap ublue-os/tap" "${WORKDIR}/dx-taps.sh"
     grep -q "brew trust ublue-os/tap" "${WORKDIR}/dx-taps.sh"
-    grep -q "brew tap ublue-os/experimental-tap" "${WORKDIR}/dx-taps.sh"
-    grep -q "brew trust ublue-os/experimental-tap" "${WORKDIR}/dx-taps.sh"
 
     {
         printf '%s\n' '#!/usr/bin/env bash'
@@ -130,13 +128,11 @@ BREW_MOCK
     run "${WORKDIR}/dx-taps-run.sh"
     [ "$status" -eq 0 ]
     _assert_tap_then_trust "ublue-os/tap"
-    _assert_tap_then_trust "ublue-os/experimental-tap"
 }
 
-@test "bazaar-hook spawn_brew issues tap and trust as separate commands" {
+@test "bazaar hooks.py spawn_brew issues tap and trust as separate commands" {
     # spawn_brew builds a single `bash -c` string; assert on its shape.
-    grep -q "brew} tap ublue-os/tap" "${BAZAAR_HOOK}"
-    grep -q "brew} trust ublue-os/tap" "${BAZAAR_HOOK}"
-    run grep -c -- "tap --trust" "${BAZAAR_HOOK}"
+    grep -q "brew} tap {tap}; {brew} trust {tap}" "${BAZAAR_HOOKS}"
+    run grep -c -- "tap --trust" "${BAZAAR_HOOKS}"
     [ "$status" -ne 0 ]
 }

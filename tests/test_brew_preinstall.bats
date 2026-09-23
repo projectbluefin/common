@@ -22,7 +22,7 @@ PATCHED_SCRIPT=""
 PATCHED_WRAPPER=""
 
 setup() {
-    WORKDIR="$(mktemp -d)"
+    WORKDIR="$(mktemp -d /var/tmp/bluefin-common-brew-preinstall.XXXXXX)"
     export WORKDIR
 
     mkdir -p "${WORKDIR}/bin" "${WORKDIR}/preinstall.d"
@@ -64,6 +64,29 @@ BREWMOCK
         -e "s|/usr/libexec/brew-preinstall|${PATCHED_SCRIPT}|g" \
         "${BREW_PREINSTALL_WRAPPER}" > "${PATCHED_WRAPPER}"
     chmod +x "${PATCHED_WRAPPER}"
+}
+
+mock_brew_lists() {
+    local formulas="$1"
+    local casks="$2"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle) ;;
+    list)
+        case "\$2" in
+            --formula) printf '%s\n' "${formulas}" ;;
+            --cask) printf '%s\n' "${casks}" ;;
+        esac
+        ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
 }
 
 teardown() {
@@ -293,6 +316,72 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Ownership — declarations already installed before bundle remain user-owned
+# ---------------------------------------------------------------------------
+
+@test "brew-preinstall: does not adopt a user-owned formula or remove it later" {
+    echo 'brew "htop"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mock_brew_lists "htop" ""
+
+    BREW_LOG="${WORKDIR}/first.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.packages == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q '^brew uninstall htop ' "${WORKDIR}/second.log"
+    jq -e '.packages == ["ripgrep"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: manages a formula installed by the bundle and removes it later" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.packages == ["ripgrep"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    echo 'brew "htop"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -q '^brew uninstall ripgrep --ignore-dependencies$' \
+        "${WORKDIR}/second.log"
+    jq -e '.packages == ["htop"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: preserves a previously managed formula across reconciliation" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+
+    echo 'brew "fd"' >> "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mock_brew_lists "ripgrep" ""
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q '^brew uninstall ripgrep ' "${WORKDIR}/second.log"
+    jq -e '.packages == ["fd", "ripgrep"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: preserves legacy managed formula state" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["ripgrep"]}\n' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+    mock_brew_lists "ripgrep" ""
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.packages == ["ripgrep"] and .casks == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+# ---------------------------------------------------------------------------
 # Package removal — packages dropped from Brewfile are uninstalled
 # ---------------------------------------------------------------------------
 
@@ -361,7 +450,12 @@ printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
 case "\$1" in
     shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
     bundle)   ;;
-    list)     exit 1 ;;
+    list)
+        if [[ "\$2" == "--formula" && -n "\$3" ]]; then
+            exit 1
+        fi
+        exit 0
+        ;;
     uninstall) ;;
 esac
 BREWMOCK
@@ -488,7 +582,7 @@ case "\$1" in
     shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
     bundle)   ;;
     list)
-        if [[ "\$*" == *"--cask"* ]]; then
+        if [[ "\$2" == "--cask" && -n "\$3" ]]; then
             exit 1
         fi
         exit 0
@@ -528,6 +622,54 @@ BREWMOCK
     [[ "${pkgs}" == *"ripgrep"* ]]
     casks="$(jq -r '.casks[]' "${state_file}")"
     [[ "${casks}" == *"chairlift"* ]]
+}
+
+@test "brew-preinstall: does not adopt a user-owned cask or remove it later" {
+    echo 'cask "chairlift"' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    mock_brew_lists "" "chairlift"
+
+    BREW_LOG="${WORKDIR}/first.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.casks == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    echo 'cask "zed"' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q '^brew uninstall --cask chairlift$' "${WORKDIR}/second.log"
+    jq -e '.casks == ["zed"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: manages a cask installed by the bundle and removes it later" {
+    echo 'cask "chairlift"' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.casks == ["chairlift"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    echo 'cask "zed"' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -q '^brew uninstall --cask chairlift$' "${WORKDIR}/second.log"
+    jq -e '.casks == ["zed"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: preserves a previously managed cask across reconciliation" {
+    echo 'cask "chairlift"' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+
+    echo 'cask "zed"' >> "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    mock_brew_lists "" "chairlift"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q '^brew uninstall --cask chairlift$' "${WORKDIR}/second.log"
+    jq -e '.casks == ["chairlift", "zed"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 }
 
 @test "brew-preinstall: accepts indented single-quoted cask declarations" {
@@ -712,6 +854,146 @@ BREWMOCK
     [ "${stored_hash}" = "oldhash" ]
     pkgs="$(jq -r '.packages[]' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
     [[ "${pkgs}" == *"fd"* ]]
+}
+
+@test "brew-preinstall: inventory failure aborts before bundle and state write" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["fd"],"casks":[]}\n' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    list) exit 1 ;;
+    bundle) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"could not snapshot installed formulae"* ]]
+    ! grep -q '^brew bundle ' "${WORKDIR}/brew.log"
+    jq -e '.hash == "oldhash" and .packages == ["fd"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+# Mock whose formula inventory is read from a file the bundle pass appends to,
+# and whose bundle of a named Brewfile fails while a marker file exists. Models
+# a partial bundle failure: the successful Brewfile still installs its package.
+mock_brew_partial_bundle() {
+    local failing="$1"
+
+    : > "${WORKDIR}/installed-formulas"
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)
+        if [[ "\$*" == *"${failing}"* && -f "${WORKDIR}/bundle-fails" ]]; then
+            exit 1
+        fi
+        brewfile="\${2#--file=}"
+        sed -nE 's/^[[:space:]]*brew[[:space:]]+"([^"]+)".*/\1/p' "\${brewfile}" \
+            >> "${WORKDIR}/installed-formulas"
+        sort -u -o "${WORKDIR}/installed-formulas" "${WORKDIR}/installed-formulas"
+        ;;
+    list)
+        case "\$2" in
+            --formula) cat "${WORKDIR}/installed-formulas" ;;
+            --cask) ;;
+        esac
+        ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+}
+
+@test "brew-preinstall: retry after partial bundle failure still manages bundle-installed packages" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/a-ok.Brewfile"
+    echo 'brew "fd"' > "${WORKDIR}/preinstall.d/b-fail.Brewfile"
+    mock_brew_partial_bundle "b-fail"
+    touch "${WORKDIR}/bundle-fails"
+
+    BREW_LOG="${WORKDIR}/first.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+    grep -qx "ripgrep" "${WORKDIR}/installed-formulas"
+
+    rm -f "${WORKDIR}/bundle-fails"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.packages == ["fd","ripgrep"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    # The now-managed package is removable once its declaration disappears.
+    echo 'brew "fd"' > "${WORKDIR}/preinstall.d/a-ok.Brewfile"
+    BREW_LOG="${WORKDIR}/third.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -q '^brew uninstall ripgrep --ignore-dependencies$' "${WORKDIR}/third.log"
+}
+
+@test "brew-preinstall: retry after partial bundle failure keeps user-owned packages user-owned" {
+    echo 'brew "htop"' > "${WORKDIR}/preinstall.d/a-ok.Brewfile"
+    echo 'brew "fd"' > "${WORKDIR}/preinstall.d/b-fail.Brewfile"
+    mock_brew_partial_bundle "b-fail"
+    printf 'htop\n' > "${WORKDIR}/installed-formulas"
+    touch "${WORKDIR}/bundle-fails"
+
+    BREW_LOG="${WORKDIR}/first.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+
+    rm -f "${WORKDIR}/bundle-fails"
+    BREW_LOG="${WORKDIR}/second.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    jq -e '.packages == ["fd"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    echo 'brew "fd"' > "${WORKDIR}/preinstall.d/a-ok.Brewfile"
+    BREW_LOG="${WORKDIR}/third.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q '^brew uninstall htop ' "${WORKDIR}/third.log"
+}
+
+@test "brew-preinstall: pending inventory is written during a run and cleared on success" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/a-ok.Brewfile"
+    echo 'brew "fd"' > "${WORKDIR}/preinstall.d/b-fail.Brewfile"
+    mock_brew_partial_bundle "b-fail"
+    printf 'htop\n' > "${WORKDIR}/installed-formulas"
+    touch "${WORKDIR}/bundle-fails"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    jq -e '.packages == ["htop"] and .casks == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-pending.json"
+
+    rm -f "${WORKDIR}/bundle-fails"
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"reusing pre-bundle inventory"* ]]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-pending.json" ]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-pending.json.tmp" ]
+}
+
+@test "brew-preinstall: pending inventory from a different hash is not reused" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"staleh","packages":[],"casks":[]}\n' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-pending.json"
+    mock_brew_lists "ripgrep" ""
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"reusing pre-bundle inventory"* ]]
+    jq -e '.packages == []' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 }
 
 @test "brew-preinstall: taps all Brewfile taps before any bundle runs" {

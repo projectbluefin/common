@@ -1,32 +1,27 @@
-FROM docker.io/library/golang:alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS umotd-build
+FROM docker.io/library/golang:alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS umotd-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/umotd /src && \
     git -C /src checkout c9df8ec6b53e9b2a644a6dc511fd6fde1baad08b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
-FROM docker.io/library/golang:alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout 5280521bf21e14802d5a8bb1cffb942fa0b5efb7
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
-FROM docker.io/library/alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
+FROM docker.io/library/alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS build
 
 COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:470572484d5b7b8f5ce422f8a7af4fbdbe66f6a7075a5ae425ce0658f3e3738c / /out/bluefin/usr/share
 
-RUN apk add just curl libjxl-tools
+RUN apk add just curl
 
 # Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
   mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
   sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
-
-RUN install -d /out/shared/usr/share/bash-completion/completions /out/shared/usr/share/zsh/site-functions /out/shared/usr/share/fish/vendor_completions.d/ && \
-  just --completions bash | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/bash-completion/completions/ujust && \
-  just --completions zsh | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/zsh/site-functions/_ujust && \
-  just --completions fish | sed -E 's/([\(_" ])just/\1ujust/g' > /out/shared/usr/share/fish/vendor_completions.d/ujust.fish
 
 # Fetch game-devices-udev rules as individual raw files at a fixed commit SHA.
 # Codeberg/Gitea archive tarballs are generated on demand and their checksums
@@ -72,16 +67,28 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
-# Convert Bazaar JXL banners to PNG to prevent stable Bazaar v0.8.2 from crashing
-COPY bluefin-branding/system_files/etc/bazaar /tmp/bazaar-banners
-RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
-    for f in /tmp/bazaar-banners/*.jxl; do \
-      name=$(basename "$f" .jxl); \
-      djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
-    done
-
 COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
+
+# Ujust gate: the tailored completions checked into system_files/shared must bind `ujust`
+# & /out/shared must not ship files at the same paths to avoid shadow by ctx overlay.
+COPY system_files/shared/usr/share/bash-completion/completions/ujust \
+     system_files/shared/usr/share/zsh/site-functions/_ujust \
+     system_files/shared/usr/share/fish/vendor_completions.d/ujust.fish \
+     system_files/shared/usr/share/ublue-os/just/ujust-flags \
+     /tmp/ujust-gate/
+RUN set -e; \
+    grep -qE '^complete -F _ujust ujust$' /tmp/ujust-gate/ujust; \
+    grep -qE '^#compdef ujust$' /tmp/ujust-gate/_ujust; \
+    grep -qE '^complete -c ujust ' /tmp/ujust-gate/ujust.fish; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/ujust; \
+    grep -qE '^[[:space:]]*local flags_file=.*ujust-flags' /tmp/ujust-gate/_ujust; \
+    grep -qE '^[[:space:]]*echo .*ujust-flags' /tmp/ujust-gate/ujust.fish; \
+    grep -qx -- '--version' /tmp/ujust-gate/ujust-flags; \
+    if grep -qF 'JUST_COMPLETE' /tmp/ujust-gate/ujust /tmp/ujust-gate/_ujust /tmp/ujust-gate/ujust.fish; then echo "ujust completion is a just dynamic-loader shim" >&2; exit 1; fi; \
+    for f in usr/share/bash-completion/completions/ujust usr/share/zsh/site-functions/_ujust usr/share/fish/vendor_completions.d/ujust.fish usr/share/ublue-os/just/ujust-flags; do \
+        if [ -e "/out/shared/${f}" ]; then echo "ujust completion shadowed by /out/shared/${f}" >&2; exit 1; fi; \
+    done
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/

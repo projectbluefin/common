@@ -62,6 +62,75 @@ teardown() {
     [ "$output" = "projectbluefin/common" ]
 }
 
+@test "read_boot_status derives image name, tag, and ref from a rebased booted deployment" {
+    cat << 'EOF' > "$WORKDIR/bin/bootc"
+#!/usr/bin/bash
+if [[ "$1" == "status" && "$2" == "--json" ]]; then
+    printf '%s' '{"status":{"booted":{"image":{"image":{"image":"ghcr.io/projectbluefin/dakota:stable"},"imageDigest":"sha256:deadbeef"}}}}'
+    exit 0
+fi
+printf 'Booted: ghcr.io/projectbluefin/dakota:stable\n'
+EOF
+    chmod +x "$WORKDIR/bin/bootc"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        IMAGE_NAME="bluefin"
+        IMAGE_TAG="latest"
+        read_boot_status
+        printf "%s|%s|%s" "$IMAGE_NAME" "$IMAGE_TAG" "$IMAGE_REF"
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "dakota|stable|ghcr.io/projectbluefin/dakota:stable" ]
+}
+
+@test "read_boot_status strips the digest from a digest-pinned booted ref" {
+    cat << 'EOF' > "$WORKDIR/bin/bootc"
+#!/usr/bin/bash
+if [[ "$1" == "status" && "$2" == "--json" ]]; then
+    printf '%s' '{"status":{"booted":{"image":{"image":{"image":"ghcr.io/projectbluefin/dakota@sha256:deadbeef"},"imageDigest":"sha256:deadbeef"}}}}'
+    exit 0
+fi
+printf 'Booted: ghcr.io/projectbluefin/dakota@sha256:deadbeef\n'
+EOF
+    chmod +x "$WORKDIR/bin/bootc"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        IMAGE_NAME="bluefin"
+        IMAGE_TAG="latest"
+        read_boot_status
+        printf "%s|%s" "$IMAGE_NAME" "$IMAGE_TAG"
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "dakota|latest" ]
+}
+
+@test "read_boot_status keeps the repository basename when the registry has a port" {
+    cat << 'EOF' > "$WORKDIR/bin/bootc"
+#!/usr/bin/bash
+if [[ "$1" == "status" && "$2" == "--json" ]]; then
+    printf '%s' '{"status":{"booted":{"image":{"image":{"image":"localhost:5000/bluefin:latest"},"imageDigest":"sha256:deadbeef"}}}}'
+    exit 0
+fi
+printf 'Booted: localhost:5000/bluefin:latest\n'
+EOF
+    chmod +x "$WORKDIR/bin/bootc"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        IMAGE_NAME="dakota"
+        IMAGE_TAG="stable"
+        read_boot_status
+        printf "%s|%s" "$IMAGE_NAME" "$IMAGE_TAG"
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "bluefin|latest" ]
+}
+
 @test "queue choices map to at most one supported queue label" {
     run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
         "$BONEDIGGER_SCRIPT" "Submit to the clanker queue for machine analysis"
