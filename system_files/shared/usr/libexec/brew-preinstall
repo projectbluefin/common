@@ -95,22 +95,25 @@ if [[ "${current_hash}" == "${stored_hash}" ]]; then
 fi
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
+bundle_failed=0
 
 # Migrate legacy frostyard/tap/chairlift before bundling new ublue-os tap cask.
 # Homebrew's cask_installed? matches on the un-namespaced token ("chairlift")
 # and skips upgrade across different taps, leaving users stranded on v0.10.1.
-if [[ "${external_chairlift}" -eq 0 ]] && command -v jq >/dev/null 2>&1; then
+if [[ "${external_chairlift}" -eq 0 ]]; then
     installed_chairlift_tap=$(brew info --cask --json=v2 chairlift 2>/dev/null | jq -r '.casks[0].tap // empty' 2>/dev/null || true)
     if [[ "${installed_chairlift_tap}" == "frostyard/tap" ]]; then
         echo "brew-preinstall: migrating legacy frostyard/tap/chairlift before bundle..."
-        brew uninstall --cask frostyard/tap/chairlift || true
+        if ! brew uninstall --cask frostyard/tap/chairlift; then
+            echo "brew-preinstall: error: failed to uninstall legacy frostyard/tap/chairlift"
+            bundle_failed=1
+        fi
     fi
 fi
 
 # Install all packages declared in Brewfiles (brew bundle is idempotent).
 # Continue after an individual failure so independent Brewfiles still install,
 # but leave state untouched so the complete run is retried.
-bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
     # Capture output for the skipped-cask check, then echo it. Do NOT pipe

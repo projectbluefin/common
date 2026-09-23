@@ -830,6 +830,68 @@ BREWMOCK
     [ "${status}" -eq 0 ]
     grep -q "brew uninstall --cask frostyard/tap/chairlift" "${WORKDIR}/brew.log"
 }
+
+@test "brew-preinstall: legacy chairlift migration failure keeps state unstamped and fails" {
+    cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
+tap "ublue-os/homebrew-tap", trusted: true
+cask "ublue-os/homebrew-tap/chairlift"
+BREWFILE
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    tap|trust) exit 0 ;;
+    info)
+        if [[ "\$*" == *"--cask --json=v2 chairlift"* ]]; then
+            echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+        fi
+        ;;
+    uninstall)
+        echo "uninstall simulated error" >&2
+        exit 1
+        ;;
+    bundle)
+        exit 0
+        ;;
+    list)
+        exit 0
+        ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"failed to uninstall legacy frostyard/tap/chairlift"* ]]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: external-chairlift flag skips legacy chairlift migration" {
+    cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
+tap "ublue-os/homebrew-tap", trusted: true
+cask "ublue-os/homebrew-tap/chairlift"
+BREWFILE
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    tap|trust) exit 0 ;;
+    info)
+        echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+        ;;
+    uninstall|bundle|list) exit 0 ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}" --external-chairlift
+    [ "${status}" -eq 0 ]
+    ! grep -q "brew uninstall --cask frostyard/tap/chairlift" "${WORKDIR}/brew.log"
+}
 @test "brew-preinstall: never references /dev/stderr (ENXIO under systemd)" {
     ! sed 's/#.*//' "${BREW_PREINSTALL}" | grep -q "/dev/stderr"
 }
