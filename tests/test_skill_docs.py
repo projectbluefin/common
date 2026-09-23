@@ -411,3 +411,61 @@ def test_generate_skill_index_rejects_missing_entry_point(
     assert mod.main() == 1
     captured = capsys.readouterr()
     assert "missing required front-matter key(s)" in captured.err
+
+
+def test_skill_catalog_schema_category_enum() -> None:
+    schema_path = REPO_ROOT / "docs/skills/index.schema.json"
+    schema = json.loads(schema_path.read_text())
+    categories = schema["$defs"]["skill"]["properties"]["category"]["enum"]
+    expected = ["ci-ops", "test-authoring", "meta", "platform", "product"]
+    assert categories == expected
+
+
+def test_all_repo_skills_validate_against_schema() -> None:
+    mod = load_generate_skill_index()
+    catalog = mod.build_catalog()
+    mod.validate_catalog(catalog)
+
+
+def test_generate_skill_index_accepts_widened_categories(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    skills_dir = repo_root / "docs" / "skills"
+    skills_dir.mkdir(parents=True)
+    write_skill(
+        skills_dir / "platform-skill.md",
+        frontmatter="""
+            id: platform-skill
+            name: Platform skill
+            one_line_purpose: Platform purpose
+            entry_point: docs/skills/platform-skill.md
+            category: platform
+            status: active
+            tags: [platform]
+            description: Platform skill description
+            version: "1.0"
+            last_updated: "2026-09-23"
+        """,
+    )
+    write_skill(
+        skills_dir / "product-skill.md",
+        frontmatter="""
+            id: product-skill
+            name: Product skill
+            one_line_purpose: Product purpose
+            entry_point: docs/skills/product-skill.md
+            category: product
+            status: active
+            tags: [product]
+            description: Product skill description
+            version: "1.0"
+            last_updated: "2026-09-23"
+        """,
+    )
+    schema_text = (REPO_ROOT / "docs/skills/index.schema.json").read_text()
+    (skills_dir / "index.schema.json").write_text(schema_text)
+
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, repo_root)
+    catalog = mod.build_catalog()
+    mod.validate_catalog(catalog)
+    assert [s["category"] for s in catalog["skills"]] == ["platform", "product"]

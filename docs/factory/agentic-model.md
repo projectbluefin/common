@@ -219,6 +219,7 @@ See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full 
 
 ## PR comment policy
 
+- **Never post COMMENT-state reviews or informational status comments.** Review actions must drive a concrete outcome: approve + merge/enqueue, fix + push + merge/enqueue once policy is met in an isolated worktree, or `--request-changes` only when an unresolvable design or product decision blocks progress.
 - One comment per PR event, max. Combine all findings into one comment.
 - Never duplicate GitHub UI state (approvals, CI status).
 - Test reports: what ran + pass/fail + blockers only. No diff summaries.

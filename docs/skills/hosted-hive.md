@@ -22,7 +22,9 @@ metadata:
 
 # Hosted Hive
 
-Use the operator-supplied `HIVE_URL`. The hostname identifies a deployment,
+Use the operator-supplied `HIVE_URL`. Spoke deployments are hosted under
+`*.hive.hivecommons.dev` (migrated from legacy `*.hive.kubestellar.io`, with login
+hub at `https://hive.hivecommons.dev`). The hostname identifies a deployment,
 not a repository. Read the live API before making any decision.
 
 ## Authority and authentication
@@ -39,6 +41,13 @@ Read the relevant record before acting:
 | `GET /api/config/agent/{name}/prompt` | inspect the effective prompt text | checked-in implementations return prompt text under `prompt`; some also include source metadata such as `agent` or `sourceFiles` | re-read after any prompt change |
 | `GET /api/summaries` | inspect task, progress, and result evidence | the returned summary object for the specific agent or work item | re-read after a kick or config change that should alter task state |
 | `POST /api/kick/{agent}` | request a transient agent kick | request body may include optional `prompt`; success is `ok: true` with `output` text | always re-read `/api/status` and `/api/summaries` |
+
+Management & Operations controls in Hive v2:
+- `hub.contribute_queue_order`: Drag-and-drop operator priority override. Pinned items sort first.
+- `hub.contribute_queue_hold`: Per-issue manual park (`%s#%d`). Held items are excluded until resumed.
+- `hub.contribute_labels_mode` & `hub.contribute_deny_labels`: Label filter mode (`allow` or `deny`). When `allow`, only issues matching the list (e.g., `3-clanker-queue`) are offered to contributors.
+- `hub.disabled_tiers` & `hub.tier_limits`: Disabled tiers (`newcomer`, `contributor`, etc.) and caps on `MaxConcurrent`, `MaxPerHour`, and `MaxPerDay`.
+
 
 Authenticate using the deployment's supported bearer, cookie, or session
 mechanism. Never print, persist, echo, or place tokens in JSON, prompts,

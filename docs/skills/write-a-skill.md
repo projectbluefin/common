@@ -1,7 +1,7 @@
 ---
 name: write-a-skill
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-23"
 id: write-a-skill
 one_line_purpose: Author a new skill doc following front-matter and size rules.
 entry_point: docs/skills/write-a-skill.md
@@ -52,7 +52,7 @@ last_updated: YYYY-MM-DD
 id: <kebab-case-skill-name>
 one_line_purpose: <short imperative summary, distinct from description>
 entry_point: docs/skills/<name>.md
-category: <ci-ops | test-authoring | meta>
+category: <ci-ops | test-authoring | meta | platform | product>
 mcp_compliance_level: partial
 optimization_status: draft
 status: <active | deprecated | reserved>
@@ -73,9 +73,10 @@ metadata:
   `description`).
 - `entry_point`: repo-relative path to this file (`docs/skills/<name>.md`, or
   `docs/skills/<name>/SKILL.md` for a per-skill directory).
-- `category`: one of `ci-ops`, `test-authoring`, `meta`. Pick the closest fit;
-  propose widening the enum in a PR if none fit (update
-  `docs/skills/index.schema.json` in the same change).
+- `category`: one of `ci-ops`, `test-authoring`, `meta`, `platform`, `product`.
+  Pick the closest fit (`platform` for OS/desktop/runtime integration; `product`
+  for user-facing surface/copy); propose widening the enum in a PR if none fit
+  (update `docs/skills/index.schema.json` in the same change).
 - `mcp_compliance_level` / `optimization_status`: currently informational
   placeholders (`partial` / `draft` for every skill) — kept for forward
   compatibility with MCP tooling, not yet load-bearing.

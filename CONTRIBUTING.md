@@ -61,3 +61,12 @@ Full layer validation (the `common` behave suite from
 - [`docs/contributing/reviewer-ladder.md`](docs/contributing/reviewer-ladder.md) —
   draft proposal for a four-rung contributor ladder (Triager, Domain
   Reviewer); unadopted until a maintainer decision.
+- [`docs/contributing/hold-gate-rubric.md`](docs/contributing/hold-gate-rubric.md) —
+  draft proposal for hold-gate PR queue prioritization rubric (P0/P1/P2 risk tiers
+  and release-gate expedite lane); unadopted until a maintainer decision.
+- [`docs/contributing/triage-sla.md`](docs/contributing/triage-sla.md) —
+  draft proposal for a 14-day first-response SLA on human-authored issues and
+  a triage-first review-allocation rule; unadopted until a maintainer decision.
+- [`docs/contributing/agent-lane-throttle.md`](docs/contributing/agent-lane-throttle.md) —
+  draft proposal for demand-side throttling of agent-filed PRs under review
+  backlog; unadopted until a maintainer decision.

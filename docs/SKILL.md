@@ -40,6 +40,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |
 | Edit `system_files/shared/`, `bluefin/`, or `nvidia/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
 | Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
+| Add an image variant or write `image-info.json` | [`image-identity.md`](skills/image-identity.md) |
 | Modify the `Containerfile` or add a binary | [`containerfile/SKILL.md`](skills/containerfile/SKILL.md) |
 | Use Context7 to look up external tools | [`context7.md`](skills/context7.md) |
 | Change `.github/workflows/` | [`ci-tooling/SKILL.md`](skills/ci-tooling/SKILL.md) + [`workflow-map.md`](skills/workflow-map.md) |

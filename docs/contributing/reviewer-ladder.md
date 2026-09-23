@@ -33,8 +33,10 @@ Reported state, using snapshots dated 2026-08-27 through 2026-09-05:
 
 The roadmap proposed in [common#1073](https://github.com/projectbluefin/common/pull/1073)
 places "reviewer-scaling rung" in Phase 0. This document is the concrete
-proposal for that rung; both are pending maintainer decision, and this text
-stands on its own if the roadmap is reshaped.
+proposal for that rung; the demand-side complement — a triage SLA for
+human-authored issues and a triage-first review-allocation rule — is proposed
+separately in [triage-sla.md](triage-sla.md). Both are pending maintainer
+decision, and this text stands on its own if the roadmap is reshaped.
 
 ## Proposal: a four-rung ladder
 
@@ -104,5 +106,7 @@ draft operating measures:
 - [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0 parent)
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
-- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric
+- [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
+  (its concrete proposal lives in [triage-sla.md](triage-sla.md))
+- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric ([hold-gate-rubric.md](hold-gate-rubric.md))
 - [common#1078](https://github.com/projectbluefin/common/issues/1078) — release cadence breakdown (downstream symptom)

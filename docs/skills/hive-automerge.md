@@ -31,7 +31,7 @@ identify it.
 
 1. **Queue action** — dashboard button or API call
    `POST /api/prs/{owner}/{repo}/{number}/queue-automerge` on the hosted Hive
-   (`hosted-projectbluefin-knuckle-gjvq.hive.kubestellar.io`). Requires
+   (`hosted-projectbluefin-knuckle-gjvq.hive.hivecommons.dev`). Requires
    merger/owner role; the repo must be managed by the hive; the queuer must
    not be the PR author.
 2. **What queuing does** — the Hive GitHub App posts an `APPROVE` review with

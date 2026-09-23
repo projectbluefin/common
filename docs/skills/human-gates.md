@@ -1,7 +1,7 @@
 ---
 name: human-gates
-version: "1.2"
-last_updated: "2026-09-11"
+version: "1.3"
+last_updated: "2026-09-23"
 id: human-gates
 one_line_purpose: Decide when to stop for Design, Security, Breakage, or Merge review.
 entry_point: docs/skills/human-gates.md
@@ -45,6 +45,18 @@ Examples:
 - Restructuring the repo layout or CI model
 
 **Action:** Describe your proposed design clearly: what you're proposing, why, and what you're uncertain about. Ask for human approval before writing code or opening a PR.
+
+**Decision records for product-defining decisions.** Decisions that change
+what a product *is* — the account/identity model, user-visible defaults,
+or a shipped feature such as family safety — require a decision record
+under `docs/design/` **before** the associated PR can move past `4-review`.
+The record frames the decision (options, threat/UX model, upgrade/rollback
+path, gate checklist) and carries a maintainer fill-in section; agents
+frame, they do not decide. A product-defining PR sitting in `4-review`
+without a record is a `blocked`-label candidate, not a review-latency
+problem. First example:
+[`docs/design/systemd-homed-default.md`](../design/systemd-homed-default.md)
+(dakota#962, [common#1050](https://github.com/projectbluefin/common/issues/1050)).
 
 ---
 
