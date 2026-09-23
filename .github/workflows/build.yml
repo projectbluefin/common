@@ -3,15 +3,7 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '*.md'
-      - 'LICENSE'
-      - '.gitignore'
-      - 'docs/**'
-      - 'AGENTS.md'
-      # .github/workflows/** intentionally NOT ignored: Renovate bumps action SHAs via
-      # digest PRs that only touch workflows; required Build checks must run so the
-      # merge queue can satisfy them.
+    # Required build checks must report for documentation-only pull requests.
   push:
     branches:
       - main
@@ -36,8 +28,52 @@ env:
   IMAGE_NAME: common
 
 jobs:
+  image_changes:
+    name: Check image inputs
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      build_required: ${{ steps.detect.outputs.build_required }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: false
+
+      - name: Detect image input changes
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        id: detect
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if ! git fetch --no-tags --depth=1 origin "$BASE_SHA"; then
+            echo "::warning::Unable to fetch base commit; running the image build."
+            echo "build_required=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- . \
+            ':(exclude,glob)**/*.md' \
+            ':(exclude,glob)LICENSE' \
+            ':(exclude,glob).gitignore' \
+            ':(exclude,glob)docs/**' \
+            ':(exclude,glob)AGENTS.md'; then
+            echo "build_required=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_required=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build_push:
     name: Build and push image (${{ matrix.arch }})
+    needs: [image_changes]
+    if: ${{ always() && !cancelled() }}
+    env:
+      BUILD_REQUIRED: ${{ needs.image_changes.outputs.build_required || 'true' }}
     runs-on: ${{ matrix.runs_on }}
     permissions:
       contents: read
@@ -57,9 +93,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          submodules: true
+          submodules: ${{ env.BUILD_REQUIRED == 'true' }}
 
       - name: Setup runner
+        if: env.BUILD_REQUIRED == 'true'
         uses: projectbluefin/actions/bootc-build/setup-runner@4441ecec75c618ab0260e27e21c5aab22f750810 # v1
         with:
           storage-backend: btrfs
@@ -79,6 +116,7 @@ jobs:
 
       - name: Build Image
         id: build_image
+        if: env.BUILD_REQUIRED == 'true'
         uses: redhat-actions/buildah-build@719e3c40d8af9790c23eca13f7daa339f2867034 # v3
         with:
           containerfiles: |
@@ -88,7 +126,7 @@ jobs:
           oci: true
 
       - name: Export image for scanning
-        if: github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
         shell: bash
         run: |
           set -eoux pipefail
@@ -99,7 +137,7 @@ jobs:
             "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
       - name: Promote image to root storage for push
-        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         shell: bash
         run: |
           set -eoux pipefail
@@ -111,7 +149,7 @@ jobs:
             "containers-storage:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
 
       - name: Scan image for CVEs
-        if: github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
         uses: projectbluefin/actions/bootc-build/scan-image@4441ecec75c618ab0260e27e21c5aab22f750810 # v1
         with:
           input: /tmp/scan-image.tar
@@ -121,7 +159,7 @@ jobs:
 
       - name: Push image
         id: push
-        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: projectbluefin/actions/bootc-build/push-image@4441ecec75c618ab0260e27e21c5aab22f750810 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
@@ -129,14 +167,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write digest to file
-        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         shell: bash
         run: |
           mkdir -p /tmp/digests
           echo "${{ steps.push.outputs.digest }}" > "/tmp/digests/${{ matrix.arch_suffix }}.txt"
 
       - name: Upload digest
-        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: digest-${{ matrix.arch_suffix }}
