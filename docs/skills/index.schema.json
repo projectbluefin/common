@@ -56,7 +56,7 @@
         },
         "category": {
           "type": "string",
-          "enum": ["ci-ops", "test-authoring", "meta"]
+          "enum": ["ci-ops", "test-authoring", "meta", "platform", "product"]
         },
         "status": {
           "type": "string",
