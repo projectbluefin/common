@@ -97,12 +97,12 @@ ChairLift is a managed cask installed for every user from
 Keep both lines load-bearing:
 
 ```ruby
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 ```
 
 Homebrew 6 requires `trusted: true` for the tap, and the cask must remain
-pinned upstream in `ublue-os/homebrew-tap`, which tracks the rebranded
+pinned upstream in `ublue-os/tap`, which tracks the rebranded
 `projectbluefin/chairlift` releases.
 
 Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`

@@ -58,7 +58,7 @@ eval "$("${BREW_BIN}" shellenv)"
 # installability before processing the Brewfile's own tap lines, so on a
 # system that has never seen the tap it skips the cask as "requires macOS"
 # and still exits 0 — the cask is silently never installed (first boot of
-# any image shipping a tap+cask pair, e.g. ublue-os/homebrew-tap + chairlift).
+# any image shipping a tap+cask pair, e.g. ublue-os/tap + chairlift).
 # Vendored taps are also trusted: brew refuses casks from untrusted taps,
 # and the Brewfile's own `trusted:` flag doesn't apply to an already-present
 # tap. This runs every boot, before the hash early-exit, because
@@ -100,11 +100,23 @@ bundle_failed=0
 # Migrate legacy frostyard/tap/chairlift before bundling new ublue-os tap cask.
 # Homebrew's cask_installed? matches on the un-namespaced token ("chairlift")
 # and skips upgrade across different taps, leaving users stranded on v0.10.1.
-if [[ "${external_chairlift}" -eq 0 ]]; then
-    installed_chairlift_tap=$(brew info --cask --json=v2 chairlift 2>/dev/null | jq -r '.casks[0].tap // empty' 2>/dev/null || true)
+#
+# Gate on *installation*, not resolvability: `brew info --cask chairlift`
+# happily resolves the bare token from any tapped source, so a machine that
+# merely has frostyard/tap tapped (ChairLift never installed) would otherwise
+# uninstall a non-installed cask, fail, and retry the whole run every boot.
+if [[ "${external_chairlift}" -eq 0 ]] && brew list --cask chairlift &>/dev/null; then
+    installed_chairlift_tap=$(brew info --cask --json=v2 chairlift 2>/dev/null \
+        | jq -r '.casks[0] | select(.installed != null) | .tap // empty' 2>/dev/null || true)
     if [[ "${installed_chairlift_tap}" == "frostyard/tap" ]]; then
         echo "brew-preinstall: migrating legacy frostyard/tap/chairlift before bundle..."
-        if ! brew uninstall --cask frostyard/tap/chairlift; then
+        if brew uninstall --cask frostyard/tap/chairlift; then
+            # Drop the frozen pre-rebrand tap so the bare token can never
+            # resolve back to it. Best-effort: a leftover tap is harmless
+            # once the cask is gone, and other casks may still need it.
+            brew untap frostyard/tap \
+                || echo "brew-preinstall: warning: could not untap frostyard/tap"
+        else
             echo "brew-preinstall: error: failed to uninstall legacy frostyard/tap/chairlift"
             bundle_failed=1
         fi
@@ -169,8 +181,7 @@ previous_casks=$(jq -r --argjson external "${external_chairlift}" '
     select($external == 0
         or (. != "chairlift"
             and . != "frostyard/tap/chairlift"
-            and . != "ublue-os/tap/chairlift"
-            and . != "ublue-os/homebrew-tap/chairlift"))
+            and . != "ublue-os/tap/chairlift"))
 ' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 

@@ -57,7 +57,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 `validate-chairlift-config.yaml` validates against an external upstream schema
 that can drift without a common commit. It fetches ChairLift's page, group, and
 field names and fails closed because unknown keys disable the whole
-application. It reads the tag the `ublue-os/homebrew-tap` cask pins rather
+application. It reads the tag the `ublue-os/tap` cask pins rather
 than upstream `main`, so it cannot green-light a key the shipped binary
 rejects.
 It is a separate workflow on purpose: `just check` must stay hermetic, so no

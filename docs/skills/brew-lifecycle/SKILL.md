@@ -92,12 +92,12 @@ ChairLift is a managed cask installed for every user through
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile`:
 
 ```ruby
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 ```
 
 The tap line requires `trusted: true`; Homebrew 6 blocks untrusted taps. The
-cask must remain pinned upstream in `ublue-os/homebrew-tap` rather than being
+cask must remain pinned upstream in `ublue-os/tap` rather than being
 replaced with a local mutable download in common.
 
 Bluefin owns `/usr/share/chairlift/config.yml`, shipped from
@@ -133,8 +133,8 @@ Images that supply their own ChairLift migration may invoke
 common's existing behavior is unchanged. The opt-in excludes the entire
 `chairlift.Brewfile` from tapping, hashing, bundling and managed state, and
 protects the historical unqualified, Frostyard-qualified and Bluefin-qualified
-ChairLift cask names (including both `ublue-os/tap/chairlift` and
-`ublue-os/homebrew-tap/chairlift`) from OS-diet removal. Other packages keep
+ChairLift cask names (`chairlift`, `frostyard/tap/chairlift` and
+`ublue-os/tap/chairlift`) from OS-diet removal. Other packages keep
 their usual lifecycle.
 Keep that Brewfile dedicated to ChairLift; do not place unrelated packages in it.
 
@@ -153,8 +153,8 @@ call an older script that ignores the option.
 
 Homebrew 6.0 syntax — `trusted: true` is required:
 ```ruby
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).

@@ -55,7 +55,7 @@ This is networked and syncs the declared taps, so it stays outside `just check`.
 
 Sync the complete declared tap set before checking any package names. Per-file
 tap setup makes bare-name resolution depend on traversal order: ChairLift adds
-`ublue-os/homebrew-tap`, which also provides the wallpaper casks.
+`ublue-os/tap`, which also provides the wallpaper casks.
 Use fully qualified names in `artwork.Brewfile`; do not hide the collision by
 isolating taps or skipping unchanged Brewfiles. Zed's Linux cask lives in
 `ublue-os/tap`, not `ublue-os/experimental-tap`.

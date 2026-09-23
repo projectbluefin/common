@@ -152,7 +152,7 @@ EOF
     printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
     printf 'brew "jq"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
     mkdir -p "${WORKDIR}/.local/share/ublue-os"
-    printf '{"hash":"old","packages":["jq"],"casks":["chairlift","frostyard/tap/chairlift","ublue-os/tap/chairlift","ublue-os/homebrew-tap/chairlift","other"]}\n' \
+    printf '{"hash":"old","packages":["jq"],"casks":["chairlift","frostyard/tap/chairlift","ublue-os/tap/chairlift","other"]}\n' \
         > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_WRAPPER}" --external-chairlift
@@ -797,8 +797,8 @@ BREWMOCK
 
 @test "brew-preinstall: uninstalls legacy frostyard/tap/chairlift before bundling new cask" {
     cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 BREWFILE
 
     cat > "${WORKDIR}/bin/brew" << BREWMOCK
@@ -810,7 +810,7 @@ case "\$1" in
     tap|trust) exit 0 ;;
     info)
         if [[ "\$*" == *"--cask --json=v2 chairlift"* ]]; then
-            echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+            echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap","installed":"0.10.1"}]}'
         fi
         ;;
     uninstall)
@@ -829,12 +829,73 @@ BREWMOCK
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -q "brew uninstall --cask frostyard/tap/chairlift" "${WORKDIR}/brew.log"
+    grep -q "brew untap frostyard/tap" "${WORKDIR}/brew.log"
+}
+
+@test "brew-preinstall: leaves a merely-resolvable legacy chairlift installed elsewhere alone" {
+    cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
+BREWFILE
+
+    # frostyard/tap is still tapped, so the bare token resolves to its frozen
+    # cask — but ChairLift is not installed. Nothing to migrate.
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    tap|trust) exit 0 ;;
+    info)
+        echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+        ;;
+    list)
+        exit 1
+        ;;
+    uninstall|untap) exit 0 ;;
+    bundle) exit 0 ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q "brew uninstall --cask frostyard/tap/chairlift" "${WORKDIR}/brew.log"
+    ! grep -q "brew untap frostyard/tap" "${WORKDIR}/brew.log"
+    [ -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: leaves an installed non-legacy chairlift alone" {
+    cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
+BREWFILE
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    tap|trust) exit 0 ;;
+    info)
+        echo '{"casks":[{"token":"chairlift","tap":"ublue-os/tap","installed":"0.12.2"}]}'
+        ;;
+    uninstall|untap|bundle|list) exit 0 ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -q "brew uninstall --cask frostyard/tap/chairlift" "${WORKDIR}/brew.log"
 }
 
 @test "brew-preinstall: legacy chairlift migration failure keeps state unstamped and fails" {
     cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 BREWFILE
 
     cat > "${WORKDIR}/bin/brew" << BREWMOCK
@@ -844,7 +905,7 @@ case "\$1" in
     tap|trust) exit 0 ;;
     info)
         if [[ "\$*" == *"--cask --json=v2 chairlift"* ]]; then
-            echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+            echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap","installed":"0.10.1"}]}'
         fi
         ;;
     uninstall)
@@ -869,8 +930,8 @@ BREWMOCK
 
 @test "brew-preinstall: external-chairlift flag skips legacy chairlift migration" {
     cat > "${WORKDIR}/preinstall.d/chairlift.Brewfile" << 'BREWFILE'
-tap "ublue-os/homebrew-tap", trusted: true
-cask "ublue-os/homebrew-tap/chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 BREWFILE
 
     cat > "${WORKDIR}/bin/brew" << BREWMOCK
@@ -881,7 +942,7 @@ case "\$1" in
     shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
     tap|trust) exit 0 ;;
     info)
-        echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap"}]}'
+        echo '{"casks":[{"token":"chairlift","tap":"frostyard/tap","installed":"0.10.1"}]}'
         ;;
     uninstall|bundle|list) exit 0 ;;
 esac
