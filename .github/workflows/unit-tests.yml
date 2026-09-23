@@ -143,6 +143,9 @@ jobs:
       - name: Run bats (brew-preinstall)
         run: bats tests/test_brew_preinstall.bats
 
+      - name: Run bats (damask service and flatpak overrides)
+        run: bats tests/test_damask_service.bats
+
       - name: Test Brewfile validator
         run: |
           shellcheck scripts/validate-brewfiles.sh tests/test_validate_brewfiles.bats

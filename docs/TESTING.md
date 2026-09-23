@@ -133,6 +133,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_image_repo.bats` | `usr/libexec/ublue-image-repo` — image-name/tag routing to upstream GitHub repos |
 | `tests/test_shared_just.bats` | `shared.just` — `powerwash` (double confirmation) and `toggle-tpm2` recipes |
 | `tests/test_escl_fixture.bats` | `tests/fixtures/escl-scanner/run-fixture.sh` — eSCL readiness probing, device detection, capture determinism/geometry/size assertions, DNS-SD discovery, with the simulator and client stubbed |
+| `tests/test_damask_service.bats` | `damask.service`, Flatpak sandbox overrides, and tmpfiles symlink configuration |
 
 ## Quality Epic
 
