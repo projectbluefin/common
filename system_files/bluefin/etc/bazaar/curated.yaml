@@ -192,6 +192,7 @@ rows:
       - io.github.vikdevelop.SaveDesktop
       - org.gnome.World.PikaBackup
       - io.ente.auth
+      - de.leopoldluley.Clapgrep
       - org.fedoraproject.MediaWriter
       - org.raspberrypi.rpi-imager
       - hu.irl.cameractrls
@@ -282,6 +283,7 @@ rows:
         pl: Natywne środowiska IDE, narzędzia systemowe i GUI z integracją hosta
     appids:
       list:
+      - de.wwwtech.gitte
       - dev.zed.Zed
       - com.visualstudio.code
       - com.vscodium.codium
@@ -291,10 +293,13 @@ rows:
       - com.google.AndroidStudio
       - org.gnome.Builder
       - cc.arduino.IDE2
+      - io.github.shonebinu.Brief
       - org.gnome.design.IconLibrary
+      - io.github.getnf.embellish
       - dev.geopjr.Collision
       - app.drey.Elastic
-      - io.github.lo2dev.Echo
+      - io.github.nokse22.asciidraw
+      - io.github.ronniedroid.concessio
 - banner:
     height: 400
     image:
@@ -321,13 +326,10 @@ rows:
       - app.freelens.Freelens
       - com.getpostman.Postman
       - io.dbeaver.DBeaverCommunity
+      - io.github.anil_e.Codd
       - me.iepure.devtoolbox
-      - de.leopoldluley.Clapgrep
       - com.mardojai.ForgeSparks
       - io.github.mfat.sshpilot
+      - io.github.sugarycandybar.Carabiner
       - io.github.tobagin.digger
-      - io.github.nokse22.asciidraw
-      - io.github.ronniedroid.concessio
-      - io.github.shonebinu.Brief
-      - io.github.getnf.embellish
-      - de.wwwtech.gitte
+      - io.github.lo2dev.Echo
