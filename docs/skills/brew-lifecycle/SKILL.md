@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
 version: "1.5"
-last_updated: "2026-09-12"
+last_updated: "2026-09-23"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -178,6 +178,9 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 - Using `arm:` / `intel:` checksum keys for a Linux cask — those keys are macOS-only and resolve to no checksum on Linux
 - Adding unknown keys to `/usr/share/chairlift/config.yml` — ChairLift disables
   the whole application on unknown page, group, or field names
+- Placing a bundle Brewfile in a subdirectory of
+  `/usr/share/ublue-os/homebrew/` — ChairLift's `brew_bundles_group` does not
+  recurse, so the bundle silently never appears on the Applications page
 - Writing `/etc/chairlift/config.yml` from image content or setup code; that
   path is administrator-owned override state
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
@@ -208,6 +211,6 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 
 | File | Contents |
 |---|---|
-| [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift managed cask, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, shared/ vs bluefin/ placement rule |
+| [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift managed cask, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, ChairLift brew bundles, shared/ vs bluefin/ placement rule |
 | [service-mechanics.md](references/service-mechanics.md) | How brew-preinstall.service works, state file format, login flow, ChairLift config ownership, long-time user removal scenario, bonedigger-report integration, merging order, path convention |
 | [placement-rules.md](references/placement-rules.md) | No rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust details, Starship shell initialization |

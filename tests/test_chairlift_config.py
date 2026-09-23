@@ -31,6 +31,9 @@ BREWFILE = (
     ROOT
     / "system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile"
 )
+#: The directory ChairLift's brew_bundles_group scans. Its image path is the
+#: one in config.yml; this is the repo-side path of the same tree.
+BUNDLES_DIR = ROOT / "system_files/shared/usr/share/ublue-os/homebrew"
 BOOTC_POLICY = (
     ROOT
     / "system_files/shared/usr/share/polkit-1/actions"
@@ -527,7 +530,66 @@ def test_bundles_paths_point_at_bluefin_brewfiles():
     assert group["bundles_paths"] == ["/usr/share/ublue-os/homebrew"]
 
 
-def test_help_links_point_at_bluefin():
+#: Bundles ChairLift renders on its Applications page, keyed by Brewfile name.
+#: ChairLift derives the bundle's display name from the filename, so these
+#: stems are user-visible. They must be immediate children of the directory in
+#: brew_bundles_group.bundles_paths -- a nested file is never discovered -- and
+#: the filename must carry the exact suffix ChairLift globs for.
+EXPECTED_BUNDLES = {
+    "wallpaper-slideshow": "app.drey.Damask",
+    "video-wallpaper": "io.github.jeffshee.Hidamari",
+}
+
+
+def test_bundle_brewfiles_are_discoverable_by_chairlift():
+    """Each bundle must be an immediate *.Brewfile child of bundles_paths.
+
+    ChairLift only scans the top level of each configured path and only for
+    the *.Brewfile suffix, so a misplaced file is silently absent from the UI
+    rather than an error -- the user just never sees the bundle. Pin both
+    halves of that discovery contract against the configured path.
+    """
+    configured = _load_config()["applications_page"]["brew_bundles_group"][
+        "bundles_paths"
+    ]
+    assert configured == ["/usr/share/ublue-os/homebrew"], (
+        "update BUNDLES_DIR if the image path in config.yml changed"
+    )
+    image_path = configured[0].removeprefix("/usr/share/ublue-os/homebrew")
+    assert image_path == "", "BUNDLES_DIR assumes the path is the scan root"
+
+    for stem in EXPECTED_BUNDLES:
+        bundle = BUNDLES_DIR / f"{stem}.Brewfile"
+        assert bundle.is_file(), f"missing bundle Brewfile: {bundle.name}"
+        assert bundle.parent == BUNDLES_DIR, (
+            f"{bundle.name} must be an immediate child of {BUNDLES_DIR.name}/; "
+            "ChairLift does not recurse"
+        )
+        assert oct(bundle.stat().st_mode & 0o777) == "0o644", (
+            f"{bundle.name} must be world-readable so every user's ChairLift "
+            "can read it"
+        )
+
+
+def test_bundle_brewfiles_declare_the_expected_flatpaks():
+    """Pin the app ids: a typo here installs the wrong app, or none at all."""
+    for stem, app_id in EXPECTED_BUNDLES.items():
+        content = (BUNDLES_DIR / f"{stem}.Brewfile").read_text(encoding="utf-8")
+        declarations = [
+            line.strip()
+            for line in content.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        assert declarations == [f'flatpak "{app_id}"'], (
+            f"{stem}.Brewfile must declare exactly flatpak \"{app_id}\", "
+            f"found {declarations}"
+        )
+
+
+def test_bundle_names_do_not_collide_with_other_discovered_brewfiles():
+    """A duplicate stem would render two identically-named bundles."""
+    stems = [path.stem for path in BUNDLES_DIR.glob("*.Brewfile")]
+    assert len(stems) == len(set(stems)), f"duplicate bundle names: {stems}"
     resources = _load_config()["help_page"]["help_resources_group"]
     for key in ("website", "issues", "chat"):
         assert resources[key].startswith("https://"), f"{key} must be https"

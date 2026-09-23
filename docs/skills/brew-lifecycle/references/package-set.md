@@ -101,12 +101,42 @@ These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
 - `ide.Brewfile`
 - `k8s-tools.Brewfile`
 - `swift.Brewfile`
+- `video-wallpaper.Brewfile` — Hidamari, video wallpaper
+- `wallpaper-slideshow.Brewfile` — Damask, wallpaper slideshow
 
 Bluefin-specific (in `system_files/bluefin/`):
 - `full-desktop.Brewfile` — GNOME Circle + community flatpaks
 
 These are validated by the `validate-brewfiles.yaml` CI workflow on every PR
 that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
+
+### A second consumer: ChairLift `brew_bundles_group`
+
+`ujust bbrew` is not the only reader of this directory. ChairLift's
+`applications_page.brew_bundles_group` in
+`/usr/share/chairlift/config.yml` points `bundles_paths` at
+`/usr/share/ublue-os/homebrew` and renders one installable bundle per
+**immediate** `*.Brewfile` child, naming the bundle after the filename stem.
+So a file added here also appears on ChairLift's Applications page without any
+further wiring — and the filename is user-visible UI text.
+
+Two consequences when adding a bundle:
+
+- The file must be a **direct** child of the directory and carry the exact
+  `.Brewfile` suffix. ChairLift does not recurse, and a misplaced file is
+  silently absent from the UI rather than an error.
+- Names must be unique and readable as a bundle label
+  (`wallpaper-slideshow`, not `wallpaper_slideshow_v2`).
+
+The bundle only covers **install**. Uninstall is ChairLift's
+`flatpak_user_group` / `flatpak_system_group`; do not add an uninstall action
+for a bundle, and do not invent a group to express one — an unknown group key
+fails ChairLift's strict schema validation and disables the whole application.
+
+`flatpak "..."` lines are a Bluefin convention, not stock Homebrew Bundle. The
+`validate-brewfiles.sh` validator and `brew bundle` both ignore them, so a
+flatpak-only Brewfile passes CI with zero package checks. Unit tests, not the
+Brewfile validator, are what pin these app ids.
 
 ---
 
