@@ -30,6 +30,7 @@ rows:
       - re.sonny.Eloquent
       - de.schmidhuberj.DieBahn
       - org.gnome.gitlab.cheywood.Pulp
+      - com.github.Darazaki.Spedread
       - io.github.pleromix.IceBox
       - com.github.ADBeveridge.Raider
       - io.github.kelvinnovais.Kasasa
