@@ -191,6 +191,7 @@ rows:
       - org.gnome.gitlab.somas.Apostrophe
       - io.github.vikdevelop.SaveDesktop
       - org.gnome.World.PikaBackup
+      - io.ente.auth
       - org.fedoraproject.MediaWriter
       - org.raspberrypi.rpi-imager
       - hu.irl.cameractrls
