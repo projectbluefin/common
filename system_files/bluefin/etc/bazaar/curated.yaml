@@ -231,6 +231,7 @@ rows:
       - io.github.josephmawa.Egghead
       - page.codeberg.lo_vely.Nucleus
       - org.turbowarp.TurboWarp
+      - io.github.GGalya1.RiscvAdventure
       - as.may.moat
       - app.drey.MultiplicationPuzzle
       - io.github.josephmawa.SpellingBee
