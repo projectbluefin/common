@@ -228,7 +228,7 @@ rows:
       list:
       - org.endlessos.Key
       - io.github.david_swift.Flashcards
-      - dev.bragefuglseth.Keypunch
+      - no.bragefuglseth.Keypunch
       - org.tuxpaint.Tuxpaint
       - im.bernard.Memorado
       - io.github.josephmawa.Egghead
