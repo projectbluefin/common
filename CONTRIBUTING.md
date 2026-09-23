@@ -61,3 +61,6 @@ Full layer validation (the `common` behave suite from
 - [`docs/contributing/reviewer-ladder.md`](docs/contributing/reviewer-ladder.md) —
   draft proposal for a four-rung contributor ladder (Triager, Domain
   Reviewer); unadopted until a maintainer decision.
+- [`docs/contributing/hold-gate-rubric.md`](docs/contributing/hold-gate-rubric.md) —
+  draft proposal for hold-gate PR queue prioritization rubric (P0/P1/P2 risk tiers
+  and release-gate expedite lane); unadopted until a maintainer decision.

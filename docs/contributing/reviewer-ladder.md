@@ -104,5 +104,5 @@ draft operating measures:
 - [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0 parent)
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
-- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric
+- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric ([hold-gate-rubric.md](hold-gate-rubric.md))
 - [common#1078](https://github.com/projectbluefin/common/issues/1078) — release cadence breakdown (downstream symptom)
