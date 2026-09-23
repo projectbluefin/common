@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-22",
+  "generated_at": "2026-09-23",
   "schema_version": "1.0",
   "skills": [
     {
@@ -400,8 +400,8 @@
         "security"
       ],
       "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
-      "version": "1.2",
-      "last_updated": "2026-09-11",
+      "version": "1.3",
+      "last_updated": "2026-09-23",
       "doc_type": "reference"
     },
     {
