@@ -101,23 +101,69 @@ bundle_failed=0
 # Homebrew's cask_installed? matches on the un-namespaced token ("chairlift")
 # and skips upgrade across different taps, leaving users stranded on v0.10.1.
 #
-# Gate on *installation*, not resolvability: `brew info --cask chairlift`
-# happily resolves the bare token from any tapped source, so a machine that
-# merely has frostyard/tap tapped (ChairLift never installed) would otherwise
-# uninstall a non-installed cask, fail, and retry the whole run every boot.
-if [[ "${external_chairlift}" -eq 0 ]] && brew list --cask chairlift &>/dev/null; then
-    installed_chairlift_tap=$(brew info --cask --json=v2 chairlift 2>/dev/null \
-        | jq -r '.casks[0] | select(.installed != null) | .tap // empty' 2>/dev/null || true)
-    if [[ "${installed_chairlift_tap}" == "frostyard/tap" ]]; then
-        echo "brew-preinstall: migrating legacy frostyard/tap/chairlift before bundle..."
-        if brew uninstall --cask frostyard/tap/chairlift; then
+# Gate on *installation*, not resolvability: the bare token resolves from any
+# tapped source, so a machine that merely has frostyard/tap tapped (ChairLift
+# never installed) would otherwise uninstall a non-installed cask, fail, and
+# retry the whole run every boot.
+#
+# Ask what is *installed*, never what the bare token resolves to: ublue-os/tap
+# was tapped above, so both taps now provide "chairlift" and
+# `brew info --cask chairlift` either raises an ambiguity error or answers for
+# the new, still-uninstalled cask. Either answer would skip the migration,
+# brew bundle's token-matching cask_installed? would then see ChairLift as
+# present, the run would exit 0 and stamp the hash — stranding the user on the
+# pre-rebrand v0.10.1 build forever. `brew info --json=v2 --installed`
+# enumerates the Caskroom instead and resolves each entry from its own
+# installed caskfile, so the tap it reports is the tap that installed it.
+#
+# Inconclusive answers migrate rather than skip: a redundant uninstall is
+# repaired by the bundle that runs immediately after, a skipped migration is
+# not repaired at all. Only images that actually bundle the rebranded cask
+# take part, so a Brewfile still pinning the old bare token is left alone.
+if [[ "${external_chairlift}" -eq 0 ]] \
+    && grep -qs "ublue-os/tap/chairlift" "${brewfiles[@]}" \
+    && brew list --cask chairlift &>/dev/null; then
+    installed_chairlift_tap=$(brew info --json=v2 --installed 2>/dev/null \
+        | jq -r 'first(.casks[]? | select(.token == "chairlift") | .tap // empty) // empty' \
+            2>/dev/null || true)
+    # Fully qualified, so this lookup can never be ambiguous.
+    tapped_chairlift_version=$(brew info --cask --json=v2 ublue-os/tap/chairlift 2>/dev/null \
+        | jq -r 'first(.casks[]?.version // empty) // empty' 2>/dev/null || true)
+    installed_chairlift_version=$(brew list --cask --versions chairlift 2>/dev/null \
+        | awk 'NR == 1 { print $2 }' || true)
+
+    chairlift_migrated=0
+    if [[ "${installed_chairlift_tap}" == "ublue-os/tap" ]]; then
+        chairlift_migrated=1
+    elif [[ -z "${installed_chairlift_tap}" \
+        && -n "${tapped_chairlift_version}" \
+        && "${installed_chairlift_version}" == "${tapped_chairlift_version}" ]]; then
+        # Installed caskfile records no tap (older brew, or a repaired
+        # receipt), but the installed build already matches the cask the new
+        # tap ships — nothing legacy left to migrate.
+        chairlift_migrated=1
+    fi
+
+    if [[ "${chairlift_migrated}" -eq 0 ]]; then
+        echo "brew-preinstall: migrating legacy chairlift (installed tap: ${installed_chairlift_tap:-unknown}) before bundle..."
+        # Name the legacy cask explicitly while its tap is still present;
+        # once it is gone the bare token is unambiguous again.
+        legacy_chairlift_token=chairlift
+        frostyard_tapped=0
+        if brew tap 2>/dev/null | grep -Fxq frostyard/tap; then
+            legacy_chairlift_token=frostyard/tap/chairlift
+            frostyard_tapped=1
+        fi
+        if brew uninstall --cask "${legacy_chairlift_token}"; then
             # Drop the frozen pre-rebrand tap so the bare token can never
             # resolve back to it. Best-effort: a leftover tap is harmless
             # once the cask is gone, and other casks may still need it.
-            brew untap frostyard/tap \
-                || echo "brew-preinstall: warning: could not untap frostyard/tap"
+            if [[ "${frostyard_tapped}" -eq 1 ]]; then
+                brew untap frostyard/tap \
+                    || echo "brew-preinstall: warning: could not untap frostyard/tap"
+            fi
         else
-            echo "brew-preinstall: error: failed to uninstall legacy frostyard/tap/chairlift"
+            echo "brew-preinstall: error: failed to uninstall legacy ${legacy_chairlift_token}"
             bundle_failed=1
         fi
     fi

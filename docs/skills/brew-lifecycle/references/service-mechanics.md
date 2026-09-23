@@ -105,6 +105,16 @@ Homebrew 6 requires `trusted: true` for the tap, and the cask must remain
 pinned upstream in `ublue-os/tap`, which tracks the rebranded
 `projectbluefin/chairlift` releases.
 
+Machines upgrading from the pre-rebrand `frostyard/tap/chairlift` cask are
+migrated by `brew-preinstall` before it bundles. Detection must read
+*installed* state only (`brew info --json=v2 --installed`, which enumerates the
+Caskroom and resolves each entry from its own installed caskfile): once both
+taps are present, the bare token `chairlift` is ambiguous, so
+`brew info --cask chairlift` either errors or answers for the new, uninstalled
+cask. An inconclusive answer migrates rather than skips — the bundle that runs
+immediately afterwards repairs a redundant uninstall, while a skipped migration
+strands the user on v0.10.1 with the hash already stamped.
+
 Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`
 (`system_files/shared/usr/share/chairlift/config.yml` in this repo). Admins own
 `/etc/chairlift/config.yml`; never overwrite that path from image content,
