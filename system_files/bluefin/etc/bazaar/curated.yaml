@@ -278,7 +278,7 @@ rows:
       string:
         en: Native IDEs, Systems & GUI Tooling with Host Integration
         fr: IDEs natifs, systèmes et outils GUI avec intégration hôte
-        id: IDE Asli, Sistem & Alat GUI dengan Integrasi Host
+        id: IDE, Alat Sistem & Pengembangan Desktop dengan Integrasi Host
         pl: Natywne środowiska IDE, narzędzia systemowe i GUI z integracją hosta
     appids:
       list:
