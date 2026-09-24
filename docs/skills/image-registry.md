@@ -101,26 +101,33 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for details.
 
-## Dakota CountMe reporting
+## CountMe reporting (Dakota and Utah)
 
-Only Dakota currently publishes a first-party count. It ships
-`/usr/libexec/bluefin-countme` and `bluefin-countme.{service,timer}` from this
-repo through Dakota's pinned `elements/bluefin/common.bst`. The units require
-`ID=bluefin-dakota`; the script also exits before reporting from other images.
+`/usr/libexec/projectbluefin-countme` and `projectbluefin-countme.{service,timer}`
+ship from `system_files/shared` to every consumer; Dakota gets them through
+its pinned `elements/bluefin/common.bst`, Utah through `COMMON_IMAGE_SHA`. The
+script exits before any network call unless `image-info.json`'s `image-name`
+starts with `dakota` or `utah`, so Bluefin Classic and LTS never report.
 
-The timer tries on activation and once per calendar day, so an offline attempt
-can retry. The script records a success in `/var/lib/bluefin-countme/lastrun`
-only after `/metalink` accepts the ping and sends at most once per UTC
-Monday-anchored week. It reads `:stable` or `:testing` from the booted image
-ref, including tagged digest refs. The baked `latest` tag is not a stream: if
-the booted ref provides no valid stream, it retries instead of reporting it.
-The opt-out is `systemctl mask --now bluefin-countme.timer bluefin-countme.service`.
+The timer and service follow upstream
+[`eos-phone-home`](https://github.com/endlessm/eos-phone-home): run on
+activation and three hours after each run, skip machines with an empty
+`/home`. The script sends at most once per 24h (`/var/lib/projectbluefin-countme/last`),
+only `{"image": "<image-name>/<image-flavor>:<stream>"}` to
+`PUT countme.projectbluefin.io/v1/ping`. The stream is the booted ref's tag
+from `bootc status` (`stable`, `testing`, else `unknown`), never the baked
+`image-tag`. No booted bootc image means no report. A failed send exits 0 and
+the next timer run retries.
 
-`countme.projectbluefin.io/counts.json` derives Dakota's named stream counts
-from its own D1 rows; other tags remain unclassified. These are estimated
-check-ins without a machine identifier, not a distinct-device census. Fedora
-countme and `ublue-os/countme` are not sources for Project Bluefin counts;
-Bluefin Classic's upstream chart is separate.
+Opt out with `systemctl mask --now projectbluefin-countme.timer`. The previous
+opt-out files (`/etc/projectbluefin/countme/disabled`,
+`/etc/bluefin-countme-opt-out`, `/etc/dakota-countme/disabled`) still block
+the service.
+
+`countme.projectbluefin.io/v1/daily.json` lists systems active per UTC day
+and image. These are anonymous check-ins without a machine identifier, not a
+device census. Fedora countme and `ublue-os/countme` are not sources for
+Project Bluefin counts.
 
 ## Runtime repository selection
 
