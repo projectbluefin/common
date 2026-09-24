@@ -47,8 +47,12 @@ test:
     bats tests/test_damask_service.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats
+<<<<<<< HEAD
     bats tests/test_bluefin_countme.bats
     bats tests/test_escl_fixture.bats
+=======
+    bats tests/test_projectbluefin_countme.bats
+>>>>>>> 9cb7aeb (feat(countme): replace bluefin-countme with a daily projectbluefin-countme ping)
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:

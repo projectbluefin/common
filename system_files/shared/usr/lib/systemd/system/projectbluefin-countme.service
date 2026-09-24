@@ -1,0 +1,16 @@
+[Unit]
+Description=Send daily active-system ping to Project Bluefin
+Documentation=https://docs.projectbluefin.io/analytics
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/run/ostree-booted
+ConditionDirectoryNotEmpty=/home
+# Opt-out files honored by the previous bluefin-countme units.
+ConditionPathExists=!/etc/projectbluefin/countme/disabled
+ConditionPathExists=!/etc/bluefin-countme-opt-out
+ConditionPathExists=!/etc/dakota-countme/disabled
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/projectbluefin-countme
+StateDirectory=projectbluefin-countme
