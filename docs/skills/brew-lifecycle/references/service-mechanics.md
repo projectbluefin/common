@@ -41,13 +41,23 @@ only runs when brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
 ```
 
 State files created before cask management have no `casks` key. They are read
-as an empty cask list and require no migration.
+as an empty cask list and require no migration. The `packages` and `casks`
+arrays contain declarations Bluefin owns, not every declaration in the current
+Brewfiles.
 
 ### On every login
 
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
-3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
+3. **Different:** snapshot installed formulae and casks, then run
+   `brew bundle --file=` on each Brewfile (idempotent). A declaration already
+   installed in the snapshot remains user-owned unless it was already present
+   in the previous managed state. A new declaration absent from the snapshot
+   becomes managed after the successful bundle pass.
+   The snapshot is persisted to `brew-preinstall-pending.json` keyed by the
+   current hash and reused if a later run retries the same hash, so packages
+   installed by a partially failed bundle are not misread as user-owned. It is
+   deleted once the run reaches the state write.
    Continue through independent Brewfiles, but exit before removals and state
    writes if any bundle fails.
 4. Diff previous formula and cask sets (from state JSON) against the current
@@ -63,8 +73,9 @@ triggers re-run automatically.
 
 **Safety rule:** the uninstall step only removes packages that were in the
 *previous managed state file*. If a user independently ran `brew install inxi`
-themselves, it is not in their state file's managed list and will never be
-touched.
+themselves before `inxi` appeared in a managed Brewfile, the pre-bundle
+snapshot keeps it out of managed state and a later Brewfile removal will never
+touch it.
 
 ### What happens to long-time users on a package removal
 
@@ -97,12 +108,23 @@ ChairLift is a managed cask installed for every user from
 Keep both lines load-bearing:
 
 ```ruby
-tap "frostyard/tap", trusted: true
-cask "chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 ```
 
-Homebrew 6 requires `trusted: true` for the Frostyard tap, and the cask must
-remain pinned upstream in `frostyard/tap`.
+Homebrew 6 requires `trusted: true` for the tap, and the cask must remain
+pinned upstream in `ublue-os/tap`, which tracks the rebranded
+`projectbluefin/chairlift` releases.
+
+Machines upgrading from the pre-rebrand `frostyard/tap/chairlift` cask are
+migrated by `brew-preinstall` before it bundles. Detection must read
+*installed* state only (`brew info --json=v2 --installed`, which enumerates the
+Caskroom and resolves each entry from its own installed caskfile): once both
+taps are present, the bare token `chairlift` is ambiguous, so
+`brew info --cask chairlift` either errors or answers for the new, uninstalled
+cask. An inconclusive answer migrates rather than skips — the bundle that runs
+immediately afterwards repairs a redundant uninstall, while a skipped migration
+strands the user on v0.10.1 with the hash already stamped.
 
 Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`
 (`system_files/shared/usr/share/chairlift/config.yml` in this repo). Admins own
@@ -151,21 +173,22 @@ user-scope artifacts are first-user-wins.
 
 | Path | Source |
 |---|---|
-| `/usr/share/applications/org.frostyard.ChairLift.desktop` | upstream `data/org.frostyard.ChairLift.desktop`, `Exec=` rewritten to the absolute wrapper path |
-| `/usr/share/icons/hicolor/scalable/apps/org.frostyard.ChairLift.svg` | upstream, verbatim |
-| `/usr/share/icons/hicolor/scalable/apps/org.frostyard.ChairLift-flower.svg` | upstream, verbatim |
-| `/usr/share/icons/hicolor/symbolic/apps/org.frostyard.ChairLift-symbolic.svg` | upstream, verbatim |
+| `/usr/share/applications/io.projectbluefin.chairlift.desktop` | upstream `data/io.projectbluefin.chairlift.desktop`, `Exec=` rewritten to the absolute wrapper path |
+| `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift.svg` | upstream, verbatim |
+| `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift-flower.svg` | upstream, verbatim |
+| `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.chairlift-symbolic.svg` | upstream, verbatim |
 
-All four are vendored from ChairLift v0.10.1 (GPL-3.0, `frostyard/chairlift`)
-and must be refreshed from the tag the cask pins whenever it is bumped. The
-three icons are byte-identical to upstream, so the claim is checkable:
+All four are vendored from ChairLift v0.12.2 (GPL-3.0,
+`projectbluefin/chairlift`) and must be refreshed from the tag the cask pins
+whenever it is bumped. The three icons are byte-identical to upstream, so the
+claim is checkable:
 
 ```bash
-BASE=https://raw.githubusercontent.com/frostyard/chairlift/v0.10.1/data/icons/hicolor
+BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v0.12.2/data/icons/hicolor
 cd system_files/shared/usr/share/icons/hicolor
-for icon in scalable/apps/org.frostyard.ChairLift.svg \
-            scalable/apps/org.frostyard.ChairLift-flower.svg \
-            symbolic/apps/org.frostyard.ChairLift-symbolic.svg; do
+for icon in scalable/apps/io.projectbluefin.chairlift.svg \
+            scalable/apps/io.projectbluefin.chairlift-flower.svg \
+            symbolic/apps/io.projectbluefin.chairlift-symbolic.svg; do
   diff <(curl -fsSL "$BASE/$icon") "$icon" && echo "ok $icon"
 done
 ```

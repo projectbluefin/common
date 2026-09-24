@@ -12,7 +12,7 @@ unclassified red.
 | **stale-red** | `validate` red on a lint/index step whose fix already landed on `main` — most often `check-skill-index` reporting a missing `docs/SKILL.md` link | Confirm the fix is on `main`, then `gh pr update-branch <N>` |
 | **infra-flake** | A check died on a network or API error, not an assertion — HTTP 403/429/5xx, DNS, registry timeouts | Re-run, then file the fragility. See below |
 | **fork-expected** | `Compose PR test image` red on a fork PR | Expected — the Actions token cannot push to `ghcr.io/projectbluefin/*` from fork context |
-| **bad-title** | `validate` red on the "Validate PR title (Conventional Commits)" step only | Needs a Conventional Commits prefix. Common on bot PRs titled `[quality] ...`. The edit alone will not turn it green — see the retitle invariant in `SKILL.md` |
+| **bad-title** | `validate` red on the "Validate PR title (Conventional Commits)" step only | Needs a Conventional Commits prefix. Common on bot/orchestrator PRs titled `[architect] ...`, `[quality] ...`, `[strategist] ...`, `[sec-check] ...`, `[scanner] ...`. The edit alone will not turn it green — see the retitle invariant in `SKILL.md` (close and reopen required) |
 | **real failure** | Anything else | Report to human as blocking |
 
 ## Identify the failing step first

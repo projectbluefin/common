@@ -29,6 +29,19 @@
       ],
       datasourceTemplate: "github-releases",
       depNameTemplate: "projectbluefin/bonedigger"
+    },
+    // OpenTabletDriver release pin in the install-opentabletdriver ujust
+    // recipe (projectbluefin/common#1170). Matches the OTD_RELEASE variable;
+    // the tarball and systemd-unit sha256s next to it are NOT managed by
+    // Renovate and must be updated manually in the same PR.
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^system_files/shared/usr/share/ublue-os/just/apps\\.just$/"],
+      matchStrings: [
+        "OTD_RELEASE\\s*=\\s*\"(?<currentValue>v[0-9.]+)\""
+      ],
+      datasourceTemplate: "github-releases",
+      depNameTemplate: "OpenTabletDriver/OpenTabletDriver"
     }
   ],
 

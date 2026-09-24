@@ -108,6 +108,22 @@ read_boot_status() {
             *@*) ;; # digest-pinned ref, no tag to extract
             *:*) IMAGE_TAG="${booted_ref##*:}" ;;
         esac
+        if [[ -n "$booted_ref" ]]; then
+            # image-name from image-info.json is baked at build time and is
+            # equally stale after a rebase (e.g. bluefin -> dakota); derive
+            # it from the booted ref's repository basename so issue routing
+            # follows the live deployment, not the original build
+            # (projectbluefin/common#1009).
+            # Take the basename before stripping the tag: the first colon in
+            # a full reference can belong to a registry port
+            # (localhost:5000/bluefin:latest), not the tag.
+            local booted_repo="${booted_ref%%@*}"
+            local booted_name="${booted_repo##*/}"
+            booted_name="${booted_name%%:*}"
+            if [[ -n "$booted_name" ]]; then
+                IMAGE_NAME="$booted_name"
+            fi
+        fi
     else
         BOOTED_DIGEST="unknown"
     fi
@@ -117,27 +133,10 @@ read_boot_status() {
 }
 
 route_issue_repo() {
-    case "$IMAGE_NAME" in
-        bluefin-lts*)
-            BUG_REPO="projectbluefin/bluefin-lts"
-            ;;
-        bluefin)
-            if [[ "$IMAGE_TAG" == lts* ]]; then
-                BUG_REPO="projectbluefin/bluefin-lts"
-            else
-                BUG_REPO="projectbluefin/bluefin"
-            fi
-            ;;
-        bluefin*)
-            BUG_REPO="projectbluefin/bluefin"
-            ;;
-        dakota*)
-            BUG_REPO="projectbluefin/dakota"
-            ;;
-        *)
-            BUG_REPO="projectbluefin/common"
-            ;;
-    esac
+    # Routing grammar lives in one place only — see
+    # system_files/shared/usr/libexec/ublue-image-repo.
+    BUG_REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/common" "$IMAGE_NAME" "$IMAGE_TAG")"
 }
 
 scrub_kernel_log() {

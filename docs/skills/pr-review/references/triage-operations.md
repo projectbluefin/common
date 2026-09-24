@@ -16,6 +16,13 @@ Same dossier → verdict → stage → land loop, with issue verdicts:
 | `needsinfo` | Comment requesting more information |
 | `defer` | Leave open |
 
+### Triage-first ordering (proposed)
+
+A triage-SLA proposal ([triage-sla.md](../../../contributing/triage-sla.md))
+adds one ordering rule to this sweep: when human-authored `1-triage` issues
+are over SLA (14 days, no first human response), present them first in the
+session, oldest first, before agent-lane PR cards. This is a proposal — it
+does not change the verdict vocabulary above until adopted.
 ---
 
 ## Blast Radius Map
@@ -29,3 +36,5 @@ Same dossier → verdict → stage → land loop, with issue verdicts:
 | `Containerfile` | ALL variants | No |
 | `docs/**`, `AGENTS.md` | Documentation only | N/A (doc-only push) |
 | `tests/**` | Test suite only | N/A |
+
+For hold-gate queue risk tiers (P0 security/shared blast radius, P1 release-gate/defects, P2 tests/docs) and the release-gate expedite lane, see the draft [prioritization rubric](../../../contributing/hold-gate-rubric.md).

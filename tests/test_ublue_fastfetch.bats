@@ -65,6 +65,20 @@ teardown() {
     ! grep -q -- "--logo" "${WORKDIR}/fastfetch.log"
 }
 
+@test "ublue-fastfetch: ignores fastfetch alias when checking executable" {
+    run bash -c "shopt -s expand_aliases; alias fastfetch=ublue-fastfetch; source '${SCRIPT_UNDER_TEST}'"
+    [ "${status}" -eq 0 ]
+    [ -f "${WORKDIR}/fastfetch.log" ]
+}
+
+@test "ublue-fastfetch: exits cleanly when fastfetch alias is defined but executable is missing" {
+    mkdir -p "${WORKDIR}/empty-bin"
+    run env PATH="${WORKDIR}/empty-bin:/usr/bin:/bin" \
+        bash -c "shopt -s expand_aliases; alias fastfetch=ublue-fastfetch; source '${SCRIPT_UNDER_TEST}'"
+    [ "${status}" -eq 0 ]
+    [ ! -f "${WORKDIR}/fastfetch.log" ]
+}
+
 @test "ublue-fastfetch: passes --config value from json to fastfetch" {
     run bash "${SCRIPT_UNDER_TEST}"
     [ "${status}" -eq 0 ]

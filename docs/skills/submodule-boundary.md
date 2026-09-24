@@ -49,7 +49,7 @@ bluefin-branding → projectbluefin/branding (wallpapers, logos)
 
 ## Local testing without a full build
 
-Use `just overlay` to test `system_files/` changes as a systemd-sysext on a running Bluefin system, without building the full OCI image. See [`containerfile.md`](containerfile/SKILL.md) for the full recipe, SELinux requirements, and activation steps.
+Use `just overlay` to test `system_files/` changes as a systemd-sysext on a running Bluefin system, without building the full OCI image. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for the full recipe, SELinux requirements, and activation steps.
 
 ## Dakota exclusion pattern
 

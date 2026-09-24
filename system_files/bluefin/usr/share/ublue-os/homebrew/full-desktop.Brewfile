@@ -3,8 +3,7 @@
 #
 # This Brewfile contains a curated list of high-quality flatpak applications
 # that provide a full desktop experience on Bluefin. Install with:
-#   bluefinctl
-# and select "full-desktop" from the menu.
+#   brew bundle --file=/usr/share/ublue-os/homebrew/full-desktop.Brewfile
 #
 # These applications are all available from Flathub and include GNOME Circle
 # apps and other well-maintained community applications.

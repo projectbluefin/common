@@ -1,6 +1,6 @@
 # ChairLift configuration for Bluefin (maintainer defaults).
 # Admin overrides go in /etc/chairlift/config.yml, which takes priority.
-# Reference: https://github.com/frostyard/chairlift/blob/main/CONFIG.md
+# Reference: https://github.com/projectbluefin/chairlift/blob/main/CONFIG.md
 
 system_page:
   system_info_group:
@@ -31,8 +31,10 @@ updates_page:
   # Update policy on Bluefin belongs to uupd (silent background staging,
   # 6-hour timer + AC connect; user reboots on their own schedule).
   # ChairLift has no update-scheduling group to disable here: upstream's
-  # updates_page schema is exactly the four groups above. Its bootc group
-  # is a manual "stage now" action only, so nothing competes with uupd.
+  # updates_page schema is a fixed set of groups (as of v0.12.2, the four
+  # above plus update_all_group and sysupdate_updates_group, which we leave
+  # unlisted so they keep upstream's defaults). Its bootc group is a manual
+  # "stage now" action only, so nothing competes with uupd.
   # Do NOT invent a group to express this policy — an unknown group key
   # fails ChairLift's strict schema validation and disables the entire
   # app (see docs/skills/brew-lifecycle.md).

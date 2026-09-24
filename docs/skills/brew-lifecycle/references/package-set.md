@@ -7,8 +7,8 @@ Part of [brew-lifecycle](../SKILL.md) — current default package list, what bel
 ## Current default package set (preinstall.d)
 
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
-is the only file that auto-installs packages for every user on every variant.
-As of 2026-06, it contains 11 packages:
+defines the default CLI set. Other Brewfiles in the same directory also
+provision managed packages for every variant. The CLI set contains 11 packages:
 
 | Package | Purpose | Deps |
 |---|---|---|
@@ -33,14 +33,15 @@ As of 2026-06, it contains 11 packages:
 installs ChairLift for every user:
 
 ```ruby
-tap "frostyard/tap", trusted: true
-cask "chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"
 ```
 
 This is OS-managed like the default formula set: add the cask and every user
 gets it on next login after update; remove it and users whose state file shows
 it as managed have it uninstalled. The `trusted: true` tap flag is required.
-The cask must remain pinned upstream in `frostyard/tap`; do not vendor an
+The cask must remain pinned upstream in `ublue-os/tap`, where it
+tracks the rebranded `projectbluefin/chairlift` releases; do not vendor an
 unpinned replacement cask into common.
 
 The cask's desktop entry and icons land in the installing user's
@@ -117,4 +118,6 @@ that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
 
 **Resolution:** `shared/preinstall.d/` is the unambiguous home for any package that is factory-wide. `bluefin/preinstall.d/` should only contain packages that are intentionally absent from Dakota.
 
-**Concrete example:** `bluefinctl.Brewfile` was in `bluefin/preinstall.d/` — Dakota appeared to get it incidentally but the intent was ambiguous. Moving it to `shared/preinstall.d/` made the intent explicit and confirmed coverage for all variants (common PR 750, 2026-06-21).
+**Concrete example:** `chairlift.Brewfile` lives in
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, making its
+all-variant provisioning explicit.

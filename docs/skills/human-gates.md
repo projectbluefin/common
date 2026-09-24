@@ -1,7 +1,7 @@
 ---
 name: human-gates
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.3"
+last_updated: "2026-09-23"
 id: human-gates
 one_line_purpose: Decide when to stop for Design, Security, Breakage, or Merge review.
 entry_point: docs/skills/human-gates.md
@@ -46,6 +46,18 @@ Examples:
 
 **Action:** Describe your proposed design clearly: what you're proposing, why, and what you're uncertain about. Ask for human approval before writing code or opening a PR.
 
+**Decision records for product-defining decisions.** Decisions that change
+what a product *is* — the account/identity model, user-visible defaults,
+or a shipped feature such as family safety — require a decision record
+under `docs/design/` **before** the associated PR can move past `4-review`.
+The record frames the decision (options, threat/UX model, upgrade/rollback
+path, gate checklist) and carries a maintainer fill-in section; agents
+frame, they do not decide. A product-defining PR sitting in `4-review`
+without a record is a `blocked`-label candidate, not a review-latency
+problem. First example:
+[`docs/design/systemd-homed-default.md`](../design/systemd-homed-default.md)
+(dakota#962, [common#1050](https://github.com/projectbluefin/common/issues/1050)).
+
 ---
 
 ### 2. Security Gate
@@ -87,6 +99,23 @@ This gate is always human. CI passing plus an approving review from a human revi
 
 Agents never self-merge, never bypass branch protection, and never force-push to a protected branch.
 
+This gate binds agents, not the maintainer's own hands. A review tool that
+executes a merge or close only on the maintainer's explicit per-item keypress
+— with rulesets and branch protection still enforced by GitHub — is the human
+acting at the gate, not an agent self-merging. The reviewed vehicle is the
+`pr-review` card loop: one keypress per card, never a confirm-all prompt
+spanning items. Close carries the same weight as merge — GitHub enforces
+nothing on a close — so this carve-out covers keypress-confirmed closes only;
+closing pull requests without a per-item keypress is agent mutation of
+human-visible state and stays forbidden. Arming auto-merge
+(`gh pr merge --auto`) on the keypress is the same human decision deferred
+until checks pass; it is in scope only pinned with `--match-head-commit` to the
+head SHA captured alongside the diff the human reviewed — not to a head re-read
+at keypress time — so drift between review and landing fails
+server-side instead of merging unreviewed code. What remains forbidden for
+any tool: `--admin` overrides, submitting an approving review, and any
+non-interactive batch mutation.
+
 ---
 
 ## How to Signal a Gate
@@ -103,7 +132,7 @@ When you hit a gate:
    My approach: [what you're proposing]
    Alternative approaches: [if any]
    ```
-3. Add the `agent/blocked` label to the related issue (not a new PR comment).
+3. Add the `blocked` label to the related issue (not a new PR comment).
 4. Wait for explicit human approval before opening a PR.
 
 ---

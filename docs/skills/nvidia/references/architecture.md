@@ -52,10 +52,21 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
   so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
   extension). Needed for Flatpak apps to use the GPU. Triggered by
   `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
-- `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset` —
-  enables `nvidia-cdi-refresh.{path,service}` for CDI spec auto-generation.
 
-Changes here flow into **all** nvidia-variant images at next build. Be surgical.
+**Not currently delivered.** The ctx stage publishes `/system_files/nvidia`, but every
+consumer copies `/system_files/shared` and `/system_files/bluefin` only — in bluefin,
+bluefin-lts and utah, `grep -n 'COPY --from=common /system_files' Containerfile` returns
+only `shared` and `bluefin` lines, never `nvidia` (cited by content because the line
+numbers in those repos drift). No
+preset here and no `systemctl enable` anywhere in the org references
+`ublue-nvidia-flatpak-runtime-sync.service`, so neither the unit nor the helper is present in
+a built image. `tests/test_nvidia_flatpak_sync.bats` asserts against the files on disk and
+passes regardless. Changes here reach **no** image until common#1124 is resolved.
+
+There is no `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset`
+in this repo and there never has been; CDI auto-generation is enabled per-consumer
+(bluefin-lts `system_files_overrides/nvidia/…`, dakota `elements/bluefin-nvidia/…`) and the
+Fedora bluefin variant has no such preset in either repo.
 
 ### `projectbluefin/bluefin`
 
@@ -78,14 +89,17 @@ exclusion even after adding the official toolkit.
 
 ### `projectbluefin/bluefin-lts` (nvidia build overlay)
 
-`gdx/` is the internal build override directory name for the nvidia stack in LTS — it is not a user-facing variant or image name.
+`nvidia/` is the internal build override directory name for the nvidia stack in LTS — it is
+the override directory name, not a user-facing image name. Arch-specific companions
+(`x86_64-nvidia/`, `aarch64-nvidia/`) exist alongside it.
 
-- `build_scripts/overrides/gdx/20-nvidia.sh` — nvidia install script
-- `system_files_overrides/gdx/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset`
+- `build_scripts/overrides/nvidia/20-nvidia.sh` — nvidia install script
+- `system_files_overrides/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset`
 
-The LTS build uses an override directory system. `build.sh` calls `run_buildscripts_for gdx`
-(runs `build_scripts/overrides/gdx/*.sh`) and `copy_systemfiles_for gdx` (copies
-`system_files_overrides/gdx/` to `/`). Nvidia changes for LTS go in those two locations.
+The LTS build uses an override directory system. `build_scripts/build.sh` calls
+`run_buildscripts_for nvidia` (runs `build_scripts/overrides/nvidia/*.sh`) and
+`copy_systemfiles_for nvidia` (copies `system_files_overrides/nvidia/` to `/`), plus the
+arch-specific variants. Nvidia changes for LTS go in those two locations.
 
 The LTS build installs the *full* `nvidia-container-toolkit` package (not `-base`) from the
 `fedora-nvidia` repo that the akmods bundle enables. This is pre-existing behavior; don't

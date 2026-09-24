@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18",
+  "generated_at": "2026-09-23",
   "schema_version": "1.0",
   "skills": [
     {
@@ -15,10 +15,10 @@
         "flatpak",
         "apps"
       ],
-      "description": "Use when editing Bazaar config or hooks in common. Covers curated schema migration, JXL\u2192PNG banner conversion, Bluefin-owned files, and local preview workflow.",
+      "description": "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
       "last_updated": "2026-07-01",
-      "doc_type": "reference"
+      "doc_type": "procedure"
     },
     {
       "id": "bonedigger",
@@ -67,8 +67,8 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.4",
-      "last_updated": "2026-08-18",
+      "version": "1.5",
+      "last_updated": "2026-09-12",
       "doc_type": "procedure"
     },
     {
@@ -261,6 +261,26 @@
       "doc_type": "reference"
     },
     {
+      "id": "gpu-toolkit-interface",
+      "name": "gpu-toolkit-interface",
+      "one_line_purpose": "Define the shared GPU vendor toolkit interface that all GPU support implementations must satisfy.",
+      "entry_point": "docs/skills/gpu-toolkit-interface.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "gpu",
+        "nvidia",
+        "amd",
+        "interface",
+        "architecture",
+        "cdi"
+      ],
+      "description": "Vendor-agnostic GPU toolkit interface. Defines the six capabilities any GPU vendor integration must implement. NVIDIA is the reference implementation; AMD (common#277) must satisfy this interface before vendor-specific AMD code merges.",
+      "version": "0.1",
+      "last_updated": "2026-08-08",
+      "doc_type": "reference"
+    },
+    {
       "id": "hardware-testing",
       "name": "hardware-testing",
       "one_line_purpose": "File hardware test reports and apply promotion policy.",
@@ -380,8 +400,26 @@
         "security"
       ],
       "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
+      "version": "1.3",
+      "last_updated": "2026-09-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "image-identity",
+      "name": "image-identity",
+      "one_line_purpose": "Decide who owns image-identity and variant metadata across the org.",
+      "entry_point": "docs/skills/image-identity.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "identity",
+        "variants",
+        "image-info",
+        "ownership"
+      ],
+      "description": "Ownership map for image-identity and variant metadata across the factory: which layer common owns, which each repo owns, and the field drift between them. Use when adding a variant or writing image-info.json.",
       "version": "1.0",
-      "last_updated": "2026-06-23",
+      "last_updated": "2026-09-23",
       "doc_type": "reference"
     },
     {
@@ -431,8 +469,8 @@
         "workflow"
       ],
       "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
-      "version": "2.0",
-      "last_updated": "2026-07-28",
+      "version": "2.1",
+      "last_updated": "2026-09-23",
       "doc_type": "procedure"
     },
     {
@@ -467,8 +505,8 @@
         "akmods"
       ],
       "description": "NVIDIA GPU support architecture and update procedures. Use when editing nvidia files in system_files/nvidia/, bluefin scripts, or dakota elements.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-15",
       "doc_type": "reference"
     },
     {
@@ -521,8 +559,8 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.5",
-      "last_updated": "2026-08-08",
+      "version": "3.6",
+      "last_updated": "2026-09-06",
       "doc_type": "procedure"
     },
     {
@@ -591,7 +629,7 @@
       ],
       "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
       "version": "1.0",
-      "last_updated": "2026-07-20",
+      "last_updated": "2026-09-23",
       "doc_type": "policy"
     },
     {
@@ -694,8 +732,8 @@
         "documentation"
       ],
       "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-update mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-23",
       "doc_type": "procedure"
     }
   ]

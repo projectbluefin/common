@@ -34,7 +34,7 @@ Load this when cutting a release, evaluating whether a monthly tag is safe to cr
 ## When NOT to Use
 
 - CI workflow editing (SHA pinning, pre-commit, Renovate) → [`ci-tooling.md`](../ci-tooling/SKILL.md)
-- Debugging silent CI failures or `startup_failure` → [`ci-pitfalls.md`](../ci-tooling/SKILL.md)
+- Debugging silent CI failures or `startup_failure` → [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md)
 - PR review or issue triage workflows
 
 ---

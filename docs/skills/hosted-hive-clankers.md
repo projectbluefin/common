@@ -29,13 +29,14 @@ issue before acting.
 
 ## Availability
 
-Use the operator-supplied relay origin. When the deployment exposes
-`GET /api/contribute/status`, inspect `hub`, `active_contributors`,
-`total_registered`, and `actionable_items` before treating the relay as ready.
-The checked-in direct hub accepts contributor WebSocket connections at
-`/contribute`; the checked-in proxy also forwards `/api/contribute/ws`. Use the
-endpoint the operator gives you. If reachability, path, or identity differs
-from the checked-in source, treat the relay as ambiguous and escalate.
+Use the operator-supplied relay origin. When connecting via Clankers, connect to
+`wss://clankers.projectbluefin.io/v1/connect` (manifest at `https://clankers.projectbluefin.io/`,
+health at `/health`, profile at `/v1/me`). Upstream Hive spokes are hosted under
+`*.hive.hivecommons.dev` (migrated from legacy `*.hive.kubestellar.io`) with the
+contributor WebSocket at `/api/contribute/ws` (`/contribute` is the HTML landing page).
+When the deployment exposes `GET /api/contribute/status`, inspect `hub`,
+`active_contributors`, `total_registered`, and `actionable_items`. If reachability,
+path, or domain differs from the checked-in source, treat the relay as ambiguous.
 
 ## Registration and contributor protocol
 
@@ -48,23 +49,35 @@ Follow the checked-in request and message contract:
 2. Open the operator-supplied WebSocket and require the first frame to be
    `auth_challenge` with a `nonce`.
 3. Send `{"type":"auth_response","registration_token":"...","cli_backend":"...","model":"..."}`.
-   Do not add fields that the
-   checked-in protocol does not establish.
+   On direct Hive endpoints (`/api/contribute/ws`), pass `registration_token`,
+   `cli_backend`, and `model`. Ephemeral task-scoped GitHub tokens are minted
+   by the hub and delivered later with `task_assign` — never send personal tokens.
 4. Accept only `auth_ok`; inspect `contributor_id`, `trust_tier`, and the
    returned `permissions`. `auth_failed` is terminal.
 5. Send `{"type":"ready"}` only after authentication succeeds.
-6. On `task_assign`, inspect `task_id`, `kind`, `repo`, `number`, and `title`.
+6. Awaiting assignment: Hive v2 returns either `task_assign` or explicit
+   `task_unavailable` with a machine-readable reason (`hub_not_ready`,
+   `contribution_suspended`, `tier_disabled`, `concurrency_limit`,
+   `hourly_limit`, `daily_limit`, `no_matching_work`, `role_not_permitted`,
+   or `token_mint_failed`).
+7. On `task_assign`, inspect `task_id`, `kind`, `repo`, `number`, and `title`.
+   Candidate selection order is: operator priority override (`queue_order`),
+   contributor's own work (`#2390`), opt-in label interests (`#2637`), fewer
+   recent failures (`#2435`), then scan order. Items must carry `3-clanker-queue`
+   when label allow-filtering is enabled.
    The assignment may also carry ephemeral `github_token`,
    `token_expires_at`, `restrictions`, and `contributor_labels`. Verify `repo`
    and `number` against GitHub before doing work, and never echo the token or
    restriction payload.
-7. Accept `token_refresh` only for the active task and replace the prior task
+8. Accept `token_refresh` only for the active task and replace the prior task
    credential without logging either value.
-8. Honor `task_revoke`; stop work for that `task_id` and do not continue
+9. Honor `task_revoke`; stop work for that `task_id` and do not continue
    writing after revocation.
-9. Maintain liveness. Respond to `ping` with `pong` while preserving `seq`, and
+10. Maintain liveness. Respond to `ping` with `pong` while preserving `seq`, and
    treat a missing ping, missing pong, closed socket, or mismatched task ID as
-   a stop-and-escalate condition.
+   a stop-and-escalate condition. Send periodic `task_progress` (every 2m with
+   recent tmux output) and finish with `task_complete` (with `pr_url`) or
+   `task_failed`.
 
 ## Trust tiers and permissions
 

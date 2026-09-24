@@ -69,11 +69,13 @@ Bazzite swaps wireplumber from their own COPR (`ublue-os/bazzite`) and enables
 `wireplumber-sysconf.service` in deck builds to process those directories. Stock
 WirePlumber 0.5.x (what bluefin ships) has no `hardware-profiles/` loader.
 
-**For common:** do not drop OEM-specific WirePlumber snippets into
-`system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` — that ships
-globally to every machine. If the rule only applies to one OEM family, store it in
-that vendor's `oem/<Vendor>/` directory and have the OEM user hook copy it into the
-user's WirePlumber fragment directory:
+**For common:** do not drop un-scoped or vendor-wide WirePlumber snippets into
+`system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` — that directory ships
+globally to every machine. Hardware quirks shipped here must be strictly matched to
+specific USB/PCI IDs (`device.vendor.id` + `device.product.id`) and target node paths.
+If the rule only applies to a single OEM family needing user-level customization,
+store it in that vendor's `oem/<Vendor>/` directory and have the OEM user hook copy
+it into the user's WirePlumber fragment directory:
 
 ```bash
 install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"
@@ -124,4 +126,4 @@ the file and repeated logins safely refresh it.
 ## Known gaps (tracking issues)
 
 - `20-framework.sh` in `projectbluefin/bluefin` is superseded by `20-oem-brew.sh` in common — file a cleanup issue in bluefin to delete it after common ships.
-- `apps.just` ASUS recipe still calls `brew install --cask` directly without `--trust`; update to use Brewfile or `--trust` flag.
+- `apps.just` ASUS recipe calls `brew install --cask` directly after `brew tap` + `brew trust`; consider moving to a Brewfile with `trusted: true` instead.

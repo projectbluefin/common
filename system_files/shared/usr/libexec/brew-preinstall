@@ -10,10 +10,27 @@
 #     "packages": ["pkg1", "pkg2", ...],
 #     "casks": ["cask1", ...] }
 # Older state files without a "casks" key are read as an empty cask list.
+# In-flight snapshot: ~/.local/share/ublue-os/brew-preinstall-pending.json
+#   Same shape; holds the pre-bundle inventory of a run that has not completed
+#   yet so a retry reuses it instead of re-snapshotting its own partial installs.
 set -euo pipefail
+
+# Opt-in handoff for images with a dedicated ChairLift installer. Other images
+# retain the normal bundle/install/remove lifecycle with no arguments.
+external_chairlift=0
+case "$*" in
+    '') ;;
+    --external-chairlift) external_chairlift=1 ;;
+    --capabilities) printf '%s\n' external-chairlift-v1; exit 0 ;;
+    *) echo 'Usage: brew-preinstall [--external-chairlift|--capabilities]' >&2; exit 2 ;;
+esac
 
 PREINSTALL_DIR="/usr/share/ublue-os/homebrew/preinstall.d"
 STATE_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-state.json"
+# Pre-bundle inventory of an in-flight run, kept until that run completes so a
+# retry after a partial bundle failure does not mistake its own installs for
+# pre-existing user software.
+PENDING_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-pending.json"
 BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 
 if [[ ! -x "${BREW_BIN}" ]]; then
@@ -27,7 +44,15 @@ if [[ ! -d "${PREINSTALL_DIR}" ]]; then
 fi
 
 shopt -s nullglob
-brewfiles=("${PREINSTALL_DIR}"/*.Brewfile)
+# A dedicated installer owns the whole ChairLift Brewfile when requested,
+# including taps, hash, bundle and managed state. Never partially bundle it.
+brewfiles=()
+for brewfile in "${PREINSTALL_DIR}"/*.Brewfile; do
+    if [[ "${external_chairlift}" -eq 1 && "${brewfile##*/}" == chairlift.Brewfile ]]; then
+        continue
+    fi
+    brewfiles+=("${brewfile}")
+done
 
 if [[ ${#brewfiles[@]} -eq 0 ]]; then
     echo "brew-preinstall: no Brewfiles in ${PREINSTALL_DIR}, skipping"
@@ -40,7 +65,7 @@ eval "$("${BREW_BIN}" shellenv)"
 # installability before processing the Brewfile's own tap lines, so on a
 # system that has never seen the tap it skips the cask as "requires macOS"
 # and still exits 0 — the cask is silently never installed (first boot of
-# any image shipping a tap+cask pair, e.g. frostyard/tap + chairlift).
+# any image shipping a tap+cask pair, e.g. ublue-os/tap + chairlift).
 # Vendored taps are also trusted: brew refuses casks from untrusted taps,
 # and the Brewfile's own `trusted:` flag doesn't apply to an already-present
 # tap. This runs every boot, before the hash early-exit, because
@@ -77,11 +102,121 @@ if [[ "${current_hash}" == "${stored_hash}" ]]; then
 fi
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
+bundle_failed=0
+
+# Migrate legacy frostyard/tap/chairlift before bundling new ublue-os tap cask.
+# Homebrew's cask_installed? matches on the un-namespaced token ("chairlift")
+# and skips upgrade across different taps, leaving users stranded on v0.10.1.
+#
+# Gate on *installation*, not resolvability: the bare token resolves from any
+# tapped source, so a machine that merely has frostyard/tap tapped (ChairLift
+# never installed) would otherwise uninstall a non-installed cask, fail, and
+# retry the whole run every boot.
+#
+# Ask what is *installed*, never what the bare token resolves to: ublue-os/tap
+# was tapped above, so both taps now provide "chairlift" and
+# `brew info --cask chairlift` either raises an ambiguity error or answers for
+# the new, still-uninstalled cask. Either answer would skip the migration,
+# brew bundle's token-matching cask_installed? would then see ChairLift as
+# present, the run would exit 0 and stamp the hash — stranding the user on the
+# pre-rebrand v0.10.1 build forever. `brew info --json=v2 --installed`
+# enumerates the Caskroom instead and resolves each entry from its own
+# installed caskfile, so the tap it reports is the tap that installed it.
+#
+# Inconclusive answers migrate rather than skip: a redundant uninstall is
+# repaired by the bundle that runs immediately after, a skipped migration is
+# not repaired at all. Only images that actually bundle the rebranded cask
+# take part, so a Brewfile still pinning the old bare token is left alone.
+if [[ "${external_chairlift}" -eq 0 ]] \
+    && grep -qs "ublue-os/tap/chairlift" "${brewfiles[@]}" \
+    && brew list --cask chairlift &>/dev/null; then
+    installed_chairlift_tap=$(brew info --json=v2 --installed 2>/dev/null \
+        | jq -r 'first(.casks[]? | select(.token == "chairlift") | .tap // empty) // empty' \
+            2>/dev/null || true)
+    # Fully qualified, so this lookup can never be ambiguous.
+    tapped_chairlift_version=$(brew info --cask --json=v2 ublue-os/tap/chairlift 2>/dev/null \
+        | jq -r 'first(.casks[]?.version // empty) // empty' 2>/dev/null || true)
+    installed_chairlift_version=$(brew list --cask --versions chairlift 2>/dev/null \
+        | awk 'NR == 1 { print $2 }' || true)
+
+    chairlift_migrated=0
+    if [[ "${installed_chairlift_tap}" == "ublue-os/tap" ]]; then
+        chairlift_migrated=1
+    elif [[ -z "${installed_chairlift_tap}" \
+        && -n "${tapped_chairlift_version}" \
+        && "${installed_chairlift_version}" == "${tapped_chairlift_version}" ]]; then
+        # Installed caskfile records no tap (older brew, or a repaired
+        # receipt), but the installed build already matches the cask the new
+        # tap ships — nothing legacy left to migrate.
+        chairlift_migrated=1
+    fi
+
+    if [[ "${chairlift_migrated}" -eq 0 ]]; then
+        echo "brew-preinstall: migrating legacy chairlift (installed tap: ${installed_chairlift_tap:-unknown}) before bundle..."
+        # Name the legacy cask explicitly while its tap is still present;
+        # once it is gone the bare token is unambiguous again.
+        legacy_chairlift_token=chairlift
+        frostyard_tapped=0
+        if brew tap 2>/dev/null | grep -Fxq frostyard/tap; then
+            legacy_chairlift_token=frostyard/tap/chairlift
+            frostyard_tapped=1
+        fi
+        if brew uninstall --cask "${legacy_chairlift_token}"; then
+            # Drop the frozen pre-rebrand tap so the bare token can never
+            # resolve back to it. Best-effort: a leftover tap is harmless
+            # once the cask is gone, and other casks may still need it.
+            if [[ "${frostyard_tapped}" -eq 1 ]]; then
+                brew untap frostyard/tap \
+                    || echo "brew-preinstall: warning: could not untap frostyard/tap"
+            fi
+        else
+            echo "brew-preinstall: error: failed to uninstall legacy ${legacy_chairlift_token}"
+            bundle_failed=1
+        fi
+    fi
+fi
+
+# Snapshot installed names before brew bundle. A declaration that was already
+# installed at this point belongs to the user unless the previous state file
+# already says Bluefin managed it. If either inventory query fails, stop before
+# bundling so an incomplete snapshot cannot adopt user-owned software.
+installed_packages_before=$(brew list --formula) || {
+    echo "brew-preinstall: error: could not snapshot installed formulae; state unchanged, will retry"
+    exit 1
+}
+installed_casks_before=$(brew list --cask) || {
+    echo "brew-preinstall: error: could not snapshot installed casks; state unchanged, will retry"
+    exit 1
+}
+
+# A previous run for these same Brewfiles may have failed after brew bundle
+# already installed part of the set. Its pre-bundle inventory is recorded
+# alongside the state file, so reuse it instead of the snapshot just taken:
+# otherwise the retry sees its own partial installs as pre-existing and
+# permanently marks them user-owned, excluding them from the removal
+# lifecycle. The record is keyed by the Brewfile hash and cleared once a run
+# completes; a stale, missing or unreadable record falls back to the fresh
+# snapshot, which can only widen user ownership, never narrow it.
+pending_hash=$(jq -r '.hash // ""' "${PENDING_FILE}" 2>/dev/null || echo "")
+if [[ -n "${pending_hash}" && "${pending_hash}" == "${current_hash}" ]]; then
+    echo "brew-preinstall: reusing pre-bundle inventory from an interrupted run"
+    installed_packages_before=$(jq -r '.packages[]? // empty' "${PENDING_FILE}" 2>/dev/null || true)
+    installed_casks_before=$(jq -r '.casks[]? // empty' "${PENDING_FILE}" 2>/dev/null || true)
+else
+    pending_packages_json=$(echo "${installed_packages_before}" | jq -R . | jq -s 'map(select(length > 0))')
+    pending_casks_json=$(echo "${installed_casks_before}" | jq -R . | jq -s 'map(select(length > 0))')
+    mkdir -p "$(dirname "${PENDING_FILE}")"
+    jq -n \
+        --arg hash "${current_hash}" \
+        --argjson packages "${pending_packages_json}" \
+        --argjson casks "${pending_casks_json}" \
+        '{"hash": $hash, "packages": $packages, "casks": $casks}' > "${PENDING_FILE}.tmp"
+    mv -f "${PENDING_FILE}.tmp" "${PENDING_FILE}"
+fi
 
 # Install all packages declared in Brewfiles (brew bundle is idempotent).
 # Continue after an individual failure so independent Brewfiles still install,
 # but leave state untouched so the complete run is retried.
-bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
     # Capture output for the skipped-cask check, then echo it. Do NOT pipe
@@ -130,7 +265,15 @@ fi
 
 previous_packages=$(jq -r '.packages[]? // empty' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
-previous_casks=$(jq -r '.casks[]? // empty' "${STATE_FILE}" 2>/dev/null \
+# Hand ChairLift ownership to the caller, not the OS-diet remover. This must
+# work even if the old Brewfile has already disappeared from the new image.
+previous_casks=$(jq -r --argjson external "${external_chairlift}" '
+    .casks[]? // empty |
+    select($external == 0
+        or (. != "chairlift"
+            and . != "frostyard/tap/chairlift"
+            and . != "ublue-os/tap/chairlift"))
+' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 
 managed_name_present() {
@@ -145,6 +288,29 @@ managed_name_present() {
 
     return 1
 }
+
+managed_names_for_reconciliation() {
+    local current_names="$1"
+    local previous_names="$2"
+    local installed_before="$3"
+    local name
+
+    while IFS= read -r name; do
+        [[ -z "${name}" ]] && continue
+        if managed_name_present "${name}" "${previous_names}" \
+            || ! managed_name_present "${name}" "${installed_before}"; then
+            printf '%s\n' "${name}"
+        fi
+    done <<< "${current_names}"
+}
+
+# A declaration already present before this run is user-owned unless it was
+# already in managed state. New declarations absent from the snapshot were
+# installed by the successful bundle pass and can become managed.
+managed_packages=$(managed_names_for_reconciliation \
+    "${current_packages}" "${previous_packages}" "${installed_packages_before}")
+managed_casks=$(managed_names_for_reconciliation \
+    "${current_casks}" "${previous_casks}" "${installed_casks_before}")
 
 uninstall_failed=0
 
@@ -188,13 +354,16 @@ fi
 # Persist new state: hash + full managed package and cask lists for next diff.
 # Write atomically via temp file + rename to avoid corrupt state on SIGKILL.
 mkdir -p "$(dirname "${STATE_FILE}")"
-packages_json=$(echo "${current_packages}" | jq -R . | jq -s 'map(select(length > 0))')
-casks_json=$(echo "${current_casks}" | jq -R . | jq -s 'map(select(length > 0))')
+packages_json=$(echo "${managed_packages}" | jq -R . | jq -s 'map(select(length > 0))')
+casks_json=$(echo "${managed_casks}" | jq -R . | jq -s 'map(select(length > 0))')
 jq -n \
     --arg hash "${current_hash}" \
     --argjson packages "${packages_json}" \
     --argjson casks "${casks_json}" \
     '{"hash": $hash, "packages": $packages, "casks": $casks}' > "${STATE_FILE}.tmp"
 mv -f "${STATE_FILE}.tmp" "${STATE_FILE}"
+
+# The run finished; its pre-bundle inventory is no longer needed.
+rm -f "${PENDING_FILE}"
 
 echo "brew-preinstall: complete"

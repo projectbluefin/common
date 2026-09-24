@@ -1,4 +1,4 @@
-# See https://github.com/kolunmi/bazaar/blob/main/docs/overview.md#hooks
+# See https://github.com/bazaar-org/bazaar/blob/main/docs/overview.md#hooks
 
 import os, subprocess, sys
 
@@ -23,18 +23,28 @@ stage_idx = os.getenv('BAZAAR_HOOK_STAGE_IDX')
 def spawn_and_detach(args):
     subprocess.Popen(args, start_new_session=True, stdout=subprocess.DEVNULL)
 
-def spawn_ujust(id):
-    spawn_and_detach(['flatpak-spawn', '--host', 'xdg-terminal-exec', '-x', f'ujust {id}'])
+def make_popup_terminal_argv(cmd):
+    brew_env = 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv 2>/dev/null)"'
+    pause = 'echo; echo "------------------"; echo "Process completed. Press ENTER to close..."; read -r'
+    full_cmd = f'{brew_env}; {cmd}; {pause}'
+    return [
+        'flatpak-spawn', '--host',
+        'xdg-terminal-exec',
+        '--app-id=io.github.kolunmi.Bazaar',
+        '--title=Bazaar',
+        '--',
+        'bash', '-c', full_cmd
+    ]
 
-def spawn_brew(app):
+def spawn_ujust(command):
+    spawn_and_detach(make_popup_terminal_argv(f'ujust {command}'))
+
+def spawn_brew(app, tap='ublue-os/tap'):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
-    spawn_and_detach([
-        'flatpak-spawn', '--host', 'xdg-terminal-exec', '-x',
-        'bash', '-c', f'{brew} install --cask {app}'
-    ])
+    cmd = f'{brew} tap {tap}; {brew} trust {tap}; {brew} install --cask {app}'
+    spawn_and_detach(make_popup_terminal_argv(cmd))
 
 def handle_jetbrains():
-
     def appid_is_jetbrains(appid):
         return appid.startswith('com.jetbrains.') or appid == ('com.google.AndroidStudio')
 
@@ -49,7 +59,7 @@ def handle_jetbrains():
             return 'ok'
 
         case 'teardown-dialog':
-            if dialog_response_id == 'run-ujust':
+            if dialog_response_id in ('run-ujust', 'run-devmode'):
                 return 'ok'
             else:
                 return 'abort'
@@ -59,23 +69,24 @@ def handle_jetbrains():
 
         case 'action':
             try:
-                spawn_ujust('install-jetbrains-toolbox')
+                if dialog_response_id == 'run-devmode':
+                    spawn_ujust('devmode')
+                else:
+                    spawn_ujust('install-jetbrains-toolbox')
             except:
                 pass
             return ''
 
         case 'teardown':
-            # always prevent installation of JetBrains flatpaks
             return 'deny'
 
-def handle_code():
-
-    def appid_is_code(appid):
-        return appid == ('com.visualstudio.code') or appid == ('com.vscodium.codium')
+def handle_vscode():
+    def appid_is_vscode(appid):
+        return appid == 'com.visualstudio.code'
 
     match stage:
         case 'setup':
-            if transaction_type == 'install' and appid_is_code(transaction_appid):
+            if transaction_type == 'install' and appid_is_vscode(transaction_appid):
                 return 'ok'
             else:
                 return 'pass'
@@ -84,7 +95,7 @@ def handle_code():
             return 'ok'
 
         case 'teardown-dialog':
-            if dialog_response_id == 'download':
+            if dialog_response_id in ('download', 'run-devmode'):
                 return 'ok'
             else:
                 return 'abort'
@@ -94,10 +105,82 @@ def handle_code():
 
         case 'action':
             try:
-                if transaction_appid == ('com.vscodium.codium'):
-                    spawn_brew('ublue/tap/vscodium-linux')
+                if dialog_response_id == 'run-devmode':
+                    spawn_ujust('devmode')
                 else:
-                    spawn_brew('ublue/tap/visual-studio-code-linux')
+                    spawn_brew('ublue-os/tap/visual-studio-code-linux')
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
+def handle_vscodium():
+    def appid_is_vscodium(appid):
+        return appid == 'com.vscodium.codium'
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and appid_is_vscodium(transaction_appid):
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id in ('download', 'run-devmode'):
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                if dialog_response_id == 'run-devmode':
+                    spawn_ujust('devmode')
+                else:
+                    spawn_brew('ublue-os/tap/vscodium-linux')
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
+def handle_zed():
+    def appid_is_zed(appid):
+        return appid.startswith('dev.zed.Zed')
+
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and appid_is_zed(transaction_appid):
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id in ('download', 'run-devmode'):
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                if dialog_response_id == 'run-devmode':
+                    spawn_ujust('devmode')
+                else:
+                    spawn_brew('ublue-os/tap/zed-linux')
             except:
                 pass
             return ''
@@ -111,8 +194,12 @@ response = 'pass'
 match hook_id:
     case 'jetbrains-toolbox':
         response = handle_jetbrains()
-    case 'code':
-        response = handle_code()
+    case 'vscode':
+        response = handle_vscode()
+    case 'vscodium':
+        response = handle_vscodium()
+    case 'zed':
+        response = handle_zed()
 
 print(response)
 sys.exit(0)

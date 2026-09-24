@@ -2,7 +2,7 @@
 
 # KEEP THIS POSIX - Needs to work on Bash and ZSH
 
-# Check if bling has already been sourced so that we dont break atuin. https://github.com/atuinsh/atuin/issues/380#issuecomment-1594014644
+# Check if bling has already been sourced so that we dont source twice
 [ "${BLING_SOURCED:-0}" -eq 1 ] && return
 BLING_SOURCED=1
 
@@ -66,4 +66,14 @@ if command -v mise >/dev/null 2>&1; then
       eval "$(mise activate zsh)"
     fi
   fi
+fi
+
+# Keep bash-preexec's DEBUG trap alive. Must stay last so the re-arm hook is the
+# final PROMPT_COMMAND entry, after every hook above has queued its own.
+# See: https://github.com/projectbluefin/common/issues/869
+if [ "${BLING_SHELL}" = "bash" ]; then
+    BLING_REARM="${BLING_DIR:-/usr/share/ublue-os/bling}/bash-preexec-rearm.sh"
+    # shellcheck source=/dev/null
+    [ -f "${BLING_REARM}" ] && . "${BLING_REARM}"
+    unset BLING_REARM
 fi

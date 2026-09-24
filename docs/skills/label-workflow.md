@@ -1,7 +1,7 @@
 ---
 name: label-workflow
-version: "2.0"
-last_updated: "2026-07-28"
+version: "2.1"
+last_updated: "2026-09-23"
 id: label-workflow
 one_line_purpose: Route factory work using the canonical label workflow.
 entry_point: docs/skills/label-workflow.md
@@ -51,6 +51,24 @@ not additional labels or state.
 own a lifecycle implementation. Reusable lifecycle automation belongs to
 `projectbluefin/actions`. Report intake and report-specific automation belong
 to `projectbluefin/bonedigger`.
+
+## Downstream consumer subsets
+
+The seven canonical labels are the factory-wide contract for the core pipeline
+repos (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`).
+A downstream **consumer** product — for example Bluefin Server — may maintain a
+smaller label subset for its own issue forms and lifecycle. That subset is
+product-local: it is **not** an extension of the factory catalog, is not
+synchronized to the core pipeline repos, and is never the organization-wide
+source of truth.
+
+| Product | Local subset |
+|---|---|
+| Bluefin Server | `kind/bug`, `status/triage`, `kind/enhancement`, `status/discussing`, `flow/agent-donation` |
+
+Treat a consumer subset as local configuration only. Do not read it as standing
+in for, or adding to, the seven canonical factory labels above, and do not copy
+it into a core pipeline repo.
 
 ## Workflow
 
@@ -123,11 +141,13 @@ child issues to a parent with plain text such as `Part of #NNN`.
 - A slash command being treated as a state transition.
 - A document claiming that `common` owns lifecycle automation.
 - Queue state inferred from an issue body, comment, or stale local checkout.
+- Treating a downstream consumer label subset as part of the factory contract.
 
 ## Verification
 
 - [ ] `gh label list` on the repository returns only the seven canonical labels
       plus repository-local automation labels.
+- [ ] Downstream consumer subsets are documented as local, never as factory contract.
 - [ ] No workflow guidance invents another label or slash-command transition.
 - [ ] Work is routed by the owning workflow, assignment, project, branch, and PR.
 - [ ] Pull requests link issues with `Closes #NNN`.

@@ -48,6 +48,9 @@ configuration, or lifecycle automation owned by `projectbluefin/actions`.
 - Applying both queue labels, using `machine-id`, or reviving generic OTel
   capture.
 - Falling back to a browser issue form or a QR login flow.
+- Parsing a booted OCI ref by cutting at the first colon: that colon may be a
+  registry port (`localhost:5000/bluefin:latest` → `localhost`). Strip the
+  digest, take the repository basename, then strip the tag — in that order.
 
 ## Verification
 

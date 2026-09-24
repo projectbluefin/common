@@ -4,10 +4,14 @@
 # Run: bats tests/test_privileged_setup.bats
 
 PRIVILEGED_SETUP="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/ublue-privileged-setup"
+HOOKRUNNER_LIB="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/ublue/setup-services/hookrunner.sh"
 WORKDIR=""
 
 setup() {
     WORKDIR="$(mktemp -d)"
+    # The wrapper sources the shared dispatcher from its installed location by
+    # default; point it at the checkout copy instead.
+    export HOOKRUNNER="${HOOKRUNNER_LIB}"
 }
 
 teardown() {

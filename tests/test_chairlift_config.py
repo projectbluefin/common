@@ -1,6 +1,6 @@
 """Regression checks for the ChairLift config and preinstall Brewfile.
 
-ChairLift (https://github.com/frostyard/chairlift) reads
+ChairLift (https://github.com/projectbluefin/chairlift) reads
 /usr/share/chairlift/config.yml for maintainer defaults. These tests pin
 the Bluefin decisions: frostyard/chairlift#54 resolved via the
 system-integration split (frostyard/chairlift#102), so bootc staging is
@@ -34,20 +34,20 @@ BREWFILE = (
 BOOTC_POLICY = (
     ROOT
     / "system_files/shared/usr/share/polkit-1/actions"
-    / "org.frostyard.ChairLift.bootc.policy"
+    / "io.projectbluefin.chairlift.bootc.policy"
 )
 BOOTC_STAGE_SCRIPT = ROOT / "system_files/shared/usr/libexec/bootc-update-stage"
 CHAIRLIFT_VALIDATOR = ROOT / "tests/check-chairlift-config"
 CHAIRLIFT_WORKFLOW = ROOT / ".github/workflows/validate-chairlift-config.yaml"
 JUSTFILE = ROOT / "Justfile"
 DESKTOP_FILE = (
-    ROOT / "system_files/shared/usr/share/applications/org.frostyard.ChairLift.desktop"
+    ROOT / "system_files/shared/usr/share/applications/io.projectbluefin.chairlift.desktop"
 )
 ICON_ROOT = ROOT / "system_files/shared/usr/share/icons/hicolor"
 ICONS = (
-    ICON_ROOT / "scalable/apps/org.frostyard.ChairLift.svg",
-    ICON_ROOT / "scalable/apps/org.frostyard.ChairLift-flower.svg",
-    ICON_ROOT / "symbolic/apps/org.frostyard.ChairLift-symbolic.svg",
+    ICON_ROOT / "scalable/apps/io.projectbluefin.chairlift.svg",
+    ICON_ROOT / "scalable/apps/io.projectbluefin.chairlift-flower.svg",
+    ICON_ROOT / "symbolic/apps/io.projectbluefin.chairlift-symbolic.svg",
 )
 #: Homebrew's shared prefix on Bluefin. The cask links chairlift-wrapper here.
 CHAIRLIFT_WRAPPER = "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
@@ -76,9 +76,16 @@ FORBIDDEN_BOOTC_FLAGS = (
 # lives in .github/workflows/validate-chairlift-config.yaml, which fetches
 # upstream's config.yml and fails on drift.
 KNOWN_GROUPS = {
-    "system_page": {"system_info_group", "bootc_status_group", "health_group"},
+    "system_page": {
+        "system_info_group",
+        "bootc_status_group",
+        "health_group",
+        "channel_group",
+    },
     "updates_page": {
+        "update_all_group",
         "bootc_updates_group",
+        "sysupdate_updates_group",
         "flatpak_updates_group",
         "brew_updates_group",
         "brew_trust_group",
@@ -96,8 +103,15 @@ KNOWN_GROUPS = {
         "maintenance_brew_group",
         "maintenance_flatpak_group",
         "maintenance_optimization_group",
+        "reset_group",
     },
-    "features_page": {"features_group"},
+    "features_page": {
+        "features_group",
+        "dx_group",
+        "gaming_group",
+        "ai_group",
+        "troubleshooting_group",
+    },
     "help_page": {"help_resources_group"},
 }
 
@@ -113,6 +127,8 @@ KNOWN_FIELDS = {
     "issues",
     "chat",
     "bundles_paths",
+    "ai_images",
+    "ai_model",
 }
 KNOWN_ACTION_FIELDS = {"title", "script", "sudo"}
 
@@ -156,7 +172,7 @@ def test_bootc_stage_polkit_policy_pins_fixed_helper_path():
     """The polkit action must annotate the exact fixed path ChairLift's
     pkexec invocation expects, and require authentication."""
     content = BOOTC_POLICY.read_text(encoding="utf-8")
-    assert "org.frostyard.ChairLift.bootc.stage" in content
+    assert "io.projectbluefin.chairlift.bootc.stage" in content
     assert (
         '<annotate key="org.freedesktop.policykit.exec.path">'
         "/usr/libexec/bootc-update-stage</annotate>" in content
@@ -313,11 +329,11 @@ def test_schema_validator_pins_the_shipped_chairlift_release():
     validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
 
     refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
-    assert refs == ["v0.10.1"], (
-        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v0.10.1, got {refs}"
+    assert refs == ["v0.12.2"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v0.12.2, got {refs}"
     )
 
-    urls = re.findall(r"https://raw\.githubusercontent\.com/frostyard/chairlift/\S*", validator)
+    urls = re.findall(r"https://raw\.githubusercontent\.com/projectbluefin/chairlift/\S*", validator)
     unpinned = [url for url in urls if "{CHAIRLIFT_SCHEMA_REF}" not in url]
     assert not unpinned, (
         f"upstream URLs bypass the pin: {unpinned}; build every URL from "
@@ -415,7 +431,7 @@ def test_just_check_stays_hermetic():
     """`just check` is the repo-wide pre-commit gate documented across the
     skill docs and the PR template. Chaining a third-party network fetch
     into it makes every unrelated PR, the merge queue, and every offline
-    contributor depend on frostyard/chairlift being reachable.
+    contributor depend on projectbluefin/chairlift being reachable.
 
     Inspect the whole recipe closure -- header, body, and every recipe
     `check` depends on -- because `just check` runs all of it. A header-only
@@ -495,9 +511,9 @@ def test_chairlift_drift_workflow_documents_the_pin():
 
 def test_update_scheduling_is_not_expressed_as_a_config_group():
     """Bluefin's update policy belongs to uupd, but that intent must not be
-    encoded as a made-up group. upstream's updates_page is exactly the four
-    groups in KNOWN_GROUPS; anything settings-shaped here is an invention
-    that would fail strict validation."""
+    encoded as a made-up group. The only legitimate groups are the ones
+    upstream defines (mirrored in KNOWN_GROUPS); anything settings-shaped
+    here is an invention that would fail strict validation."""
     updates = _load_config()["updates_page"]
     invented = {name for name in updates if "setting" in name or "schedul" in name}
     assert not invented, (
@@ -520,11 +536,15 @@ def test_help_links_point_at_bluefin():
         )
 
 
-def test_brewfile_taps_frostyard_with_trust():
-    """Homebrew 6 blocks untrusted taps silently; trusted: true is load-bearing."""
+def test_brewfile_taps_homebrew_tap_with_trust():
+    """Homebrew 6 blocks untrusted taps silently; trusted: true is load-bearing.
+
+    The cask must stay the rebranded upstream release: ublue-os/tap
+    pins projectbluefin/chairlift, which is the source the schema gate in
+    tests/check-chairlift-config validates against."""
     content = BREWFILE.read_text(encoding="utf-8")
-    assert 'tap "frostyard/tap", trusted: true' in content
-    assert 'cask "chairlift"' in content
+    assert 'tap "ublue-os/tap", trusted: true' in content
+    assert 'cask "ublue-os/tap/chairlift"' in content
 
 
 # ---------------------------------------------------------------------------
@@ -563,7 +583,7 @@ def test_chairlift_desktop_entry_ships_system_wide():
     entry = _desktop_entry()
     assert entry.get("Name") == "ChairLift"
     assert entry.get("Type") == "Application"
-    assert entry.get("Icon") == "org.frostyard.ChairLift"
+    assert entry.get("Icon") == "io.projectbluefin.chairlift"
     assert entry.get("NoDisplay") == "false", (
         "the system-wide entry must be visible; it is the launcher for every "
         "user the cask's user-scoped artifact never reaches"
@@ -585,9 +605,9 @@ def test_chairlift_desktop_entry_execs_the_homebrew_wrapper():
 
 
 def test_chairlift_icons_ship_system_wide():
-    """Icon=org.frostyard.ChairLift only resolves if the theme icon exists in
-    a system search path; the flower and symbolic variants are referenced by
-    the app itself."""
+    """Icon=io.projectbluefin.chairlift only resolves if the theme icon exists
+    in a system search path; the flower and symbolic variants are referenced
+    by the app itself."""
     for icon in ICONS:
         assert icon.is_file(), f"missing icon: {icon.relative_to(ROOT)}"
         assert icon.stat().st_size > 0, f"empty icon: {icon.relative_to(ROOT)}"
@@ -600,6 +620,6 @@ def test_chairlift_desktop_entry_records_upstream_provenance():
     """These are verbatim upstream GPL-3.0 artifacts. Keep the attribution and
     the version next to them so a cask bump has an obvious place to look."""
     header = DESKTOP_FILE.read_text(encoding="utf-8")
-    assert "frostyard/chairlift" in header
-    assert "v0.10.1" in header
+    assert "projectbluefin/chairlift" in header
+    assert "v0.12.2" in header
     assert "GPL-3.0" in header

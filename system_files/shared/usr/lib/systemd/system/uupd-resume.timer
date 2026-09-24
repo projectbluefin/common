@@ -1,0 +1,12 @@
+[Unit]
+Description=Auto Update Timer For Universal Blue (post-sleep)
+Wants=network-online.target
+After=suspend.target hibernate.target suspend-then-hibernate.target
+
+[Timer]
+OnActiveSec=20min
+RemainAfterElapse=no
+Unit=uupd.service
+
+[Install]
+WantedBy=suspend.target hibernate.target suspend-then-hibernate.target

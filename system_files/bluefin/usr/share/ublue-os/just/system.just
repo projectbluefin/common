@@ -7,9 +7,6 @@
 [no-exit-message]
 bluefin-cli:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl bluefin-cli
-    fi
     set -e
     BLING_SRC_DIR="/usr/share/ublue-os/bling"
     BLING_SCRIPT="bling.sh"
@@ -42,21 +39,26 @@ bluefin-cli:
         brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
     fi
 
-# alias for toggle-devmode — opens the Developer panel in bluefinctl when available
+# alias for toggle-devmode
 devmode:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl --screen developer
-    fi
     ujust toggle-devmode
+
+# Install the opt-in local Bluespeed assistant stack.
+[group('System')]
+bluespeed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v brew &>/dev/null; then
+        echo "bluespeed: Homebrew is required" >&2
+        exit 127
+    fi
+    brew bundle --no-lock --file=/usr/share/ublue-os/homebrew/ai-tools.Brewfile
 
 # Set up the Developer Experience
 [group('System')]
 toggle-devmode:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl devmode --enable
-    fi
     set -e
     JUSTFILE="{{ justfile() }}"
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
@@ -145,11 +147,9 @@ toggle-devmode:
     _dx_wants    "incus"          && INSTALL_INCUS=1
 
     # Taps are silent/fast — run before the progress bar
-    if _dx_wants -E "VS Code|VSCodium|Antigravity|JetBrains"; then
-        brew tap --trust ublue-os/tap
-    fi
-    if _dx_wants "Zed"; then
-        brew tap --trust ublue-os/experimental-tap
+    if _dx_wants -E "VS Code|VSCodium|Antigravity|Zed|JetBrains"; then
+        brew tap ublue-os/tap 2>/dev/null || true
+        brew trust ublue-os/tap 2>/dev/null || true
     fi
 
     # Build install queue for the progress bar
@@ -165,7 +165,7 @@ toggle-devmode:
     _dx_wants -F "  VS Code"      && _dx_add "VS Code"           "brew install --cask ublue-os/tap/visual-studio-code-linux"
     _dx_wants    "VSCodium"       && _dx_add "VSCodium"          "brew install --cask ublue-os/tap/vscodium-linux"
     _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-linux"
-    _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask ublue-os/experimental-tap/zed-linux"
+    _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask ublue-os/tap/zed-linux"
     _dx_wants    "JetBrains"      && _dx_add "JetBrains Toolbox" "brew install --cask ublue-os/tap/jetbrains-toolbox-linux"
     _dx_wants    "Neovim"         && _dx_add "Neovim"            "brew install nvim"
     _dx_wants    "Helix"          && _dx_add "Helix"             "brew install helix"
@@ -241,9 +241,6 @@ toggle-devmode:
 [group('System')]
 toggle-testing:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl toggle-testing
-    fi
     set -euo pipefail
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
@@ -275,9 +272,6 @@ toggle-testing:
 [group('System')]
 setup-vms:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl setup-vms
-    fi
     set -euo pipefail
     flatpak install --system --noninteractive flathub \
         org.virt_manager.virt-manager \
@@ -289,9 +283,6 @@ setup-vms:
 [group('System')]
 toggle-vms:
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        exec bctl toggle-vms
-    fi
     set -euo pipefail
     if flatpak list --system --columns=application 2>/dev/null | grep -q "org.virt_manager.virt-manager"; then
         gum confirm "Remove the VM stack (virt-manager + QEMU)?" || exit 0
@@ -309,10 +300,6 @@ toggle-vms:
 [group('System')]
 install-system-flatpaks $confirm="1":
     #!/usr/bin/env bash
-    if command -v bctl &>/dev/null; then
-        FLAG=""; [ "$confirm" = "0" ] && FLAG="--yes"
-        exec bctl install-system-flatpaks $FLAG
-    fi
     if [ "$confirm" != 0 ] ; then
         gum confirm "Install system flatpaks?" || exit 0
     fi
@@ -320,7 +307,7 @@ install-system-flatpaks $confirm="1":
 
 # Install default system flatpaks (alias for install-system-flatpaks)
 
-# For additional applications, run: bctl --screen developer
+# For additional developer tools, run: ujust devmode
 [group('System')]
 bluefin-apps:
     echo "Installing default system flatpaks..."
@@ -343,6 +330,12 @@ bazaar-preview source="{{ invocation_directory() }}":
     done
     sudo -v
     flatpak info io.github.kolunmi.Bazaar >/dev/null
+
+    BRANDING_DIR="${SRC_DIR}/bluefin-branding/system_files/etc/bazaar"
+    if [[ -d "${BRANDING_DIR}" ]]; then
+        sudo install -d -m0755 /etc/bazaar
+        sudo install -m0644 "${BRANDING_DIR}"/*.jxl /etc/bazaar/
+    fi
     sudo install -d -m0755 /etc/bazaar
     sudo install -m0644 "${BAZAAR_DIR}/bazaar.yaml" /etc/bazaar/bazaar.yaml
     sudo install -m0644 "${BAZAAR_DIR}/curated.yaml" /etc/bazaar/curated.yaml

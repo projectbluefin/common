@@ -1,2 +1,2 @@
-tap "frostyard/tap", trusted: true
-cask "chairlift"
+tap "ublue-os/tap", trusted: true
+cask "ublue-os/tap/chairlift"

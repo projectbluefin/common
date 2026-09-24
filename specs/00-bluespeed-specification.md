@@ -246,7 +246,7 @@ Fully offline once the Solr container image is pulled. Index updates are new con
 | **Role** | Bluefin-specific system semantics — variant detection, atomic OS state, package inventory, ujust recipes, and curated unit documentation |
 | **Transport** | stdio |
 | **Language** | Go |
-| **Status** | **Active development** — functional today with 11 tools |
+| **Status** | ⚠️ **Archived** — `projectbluefin/bluefin-mcp` was archived on 2026-09-07. Was functional with 11 tools. See [Deprecation of bluefin-mcp](#bluefin-mcp). |
 
 This is the **Bluefin semantics layer** — it tells the AI what Bluefin-specific things actually *mean*. While `linux-mcp-server` reports that `flatpak-nuke-fedora.service` failed, `bluefin-mcp` explains that this service intentionally removes non-Flathub Flatpak remotes on every boot, that Bluefin enforces Flathub as the sole app source, and that failure means the Fedora remote may still be active and producing duplicate app entries.
 
@@ -277,7 +277,7 @@ This is the **Bluefin semantics layer** — it tells the AI what Bluefin-specifi
 
 **Knowledge store**: Ships with pre-populated documentation for all 10 Bluefin custom systemd units. Users (or their AI) can add docs for additional units via `store_unit_docs`. The store is thread-safe with atomic writes, persisted to `~/.local/share/bluefin-mcp/units.json`.
 
-**Planned extension — community knowledge search**: The vector search capability described in [Knowledge Architecture](#knowledge-architecture) (semantic search over embeddings in sqlite-vec) will be added to `bluefin-mcp` as additional tools rather than a separate MCP server. This consolidates all Bluefin-specific context into a single server. See [bluefin-mcp](#bluefin-mcp) for the planned tool surface.
+**Planned extension — community knowledge search**: The vector search capability described in [Knowledge Architecture](#knowledge-architecture) (semantic search over embeddings in sqlite-vec) was planned to be added to `bluefin-mcp` as additional tools rather than a separate MCP server. Because `bluefin-mcp` is now archived, this capability is planned for the new local-first Layer 3 server named in [Deprecation of bluefin-mcp](#bluefin-mcp) rather than the archived server.
 
 **Internal boundaries**: Consolidation into one binary does not mean one undifferentiated codebase. The existing `internal/system/` package structure already enforces separation. When vector search lands, it should live in its own package (`internal/knowledge/` or similar) with a clean interface boundary to the rest of the server. One binary, multiple internal domains — so that if the vector search subsystem ever needs to split out, the seam is already there.
 
@@ -378,19 +378,19 @@ The OKP Solr index contains Red Hat's full documentation corpus: product docs, r
 
 This is **keyword search with sophisticated ranking**, not semantic search. It works well for queries with specific technical terms ("systemd unit file options", "CVE-2026-1234") but may miss conceptual queries ("how do I make my desktop more secure").
 
-### Layer 2.5: Bluefin System Semantics (bluefin-mcp) — Active
+### Layer 2.5: Bluefin System Semantics (bluefin-mcp) — Archived
 
-**Access pattern**: Direct tool calls for Bluefin-specific context.
+**Access pattern**: _(retired)_ Direct tool calls for Bluefin-specific context.
 
-`bluefin-mcp` provides the Bluefin semantics layer — variant detection, atomic OS state, ujust recipes, package inventory, and curated systemd unit documentation. Unlike linux-mcp-server (generic system facts) or okp-mcp (Red Hat docs), this server understands what Bluefin-specific things *mean*.
+> ⚠️ **Deprecation** — `bluefin-mcp` was the Bluefin semantics layer — variant detection, atomic OS state, ujust recipes, package inventory, and curated systemd unit documentation. Unlike linux-mcp-server (generic system facts) or okp-mcp (Red Hat docs), this server understood what Bluefin-specific things *mean*. `projectbluefin/bluefin-mcp` was **archived on 2026-09-07**, so this layer is **retired**, not Active. Whether it is revived elsewhere or dropped is a design decision for the spec owner. See [Deprecation of bluefin-mcp](#bluefin-mcp).
 
-This layer is **already functional** with 11 tools. See [Component Stack: bluefin-mcp](#mcp-server-bluefin-mcp) for the full tool surface.
-
-### Layer 3: Community Knowledge (bluefin-mcp vector search) — Planned
+### Layer 3: Community Knowledge (local vector search) — Planned
 
 **Access pattern**: Semantic search over embeddings in a local vector store.
 
-This is the local replacement for dosu-mcp and the home for Bluefin-specific knowledge that doesn't exist in Red Hat's corpus. These capabilities will be added as new tools within `bluefin-mcp` — consolidating all Bluefin context into a single MCP server rather than running a separate process:
+> ⚠️ **Home re-stated** — This is the local replacement for dosu-mcp and the home for Bluefin-specific knowledge that doesn't exist in Red Hat's corpus. These capabilities were planned to be added as new tools within `bluefin-mcp`; because that server is now archived, the planned home is **to be determined** — a new local-first MCP server able to run the embedding model and open the vector store directly (see [Deprecation of bluefin-mcp](#bluefin-mcp)). The capability must stay **local-first**: it runs on the user's machine, unlike the hosted organization knowledge base at [`mcp.projectbluefin.io`](https://mcp.projectbluefin.io/mcp), which has no machine to inspect.
+
+This consolidates all Bluefin context into a single MCP server rather than running a separate process:
 
 **Ingestion sources:**
 - docs.projectbluefin.io (project documentation)
@@ -726,9 +726,21 @@ This should be rare — embedding model changes are a major version event, not a
 
 ## bluefin-mcp
 
+> ⚠️ **Deprecation of bluefin-mcp** — `projectbluefin/bluefin-mcp` was **archived on 2026-09-07**. It was the Bluefin-specific system-semantics server (variant detection, atomic OS state, package inventory, ujust recipes, curated unit documentation), reading the *user's own machine* over stdio.
+>
+> This is deliberately **not** replaced by the hosted organization knowledge base at [`mcp.projectbluefin.io`](https://mcp.projectbluefin.io/mcp). That endpoint serves the org's documentation corpus to any client and has no machine to inspect — it cannot run `bootc status`, `lspci -nnk`, or `flatpak list`. The local system-semantics capability is therefore **retired**, not migrated. Whether it is revived in a new repo or dropped entirely is a design decision for the spec owner.
+>
+> The distinction, so the two are not conflated:
+>
+> | Capability | Server | Where it runs | What it sees |
+> |------------|--------|---------------|--------------|
+> | Local Bluefin system semantics | _(bluefin-mcp, archived)_ | User's machine | `bootc status`, `lspci`, `flatpak list`, `ujust`, distrobox |
+> | Community knowledge (planned) | New local-first server | User's machine | Embeddings over docs corpus |
+> | Hosted organization knowledge | `mcp.projectbluefin.io` | Hosted | Documentation corpus only — no machine access |
+
 ### Current Tools (Shipped)
 
-`bluefin-mcp` is functional today with 11 tools across four categories. See [Component Stack: bluefin-mcp](#mcp-server-bluefin-mcp) for the full tool reference and architecture.
+`bluefin-mcp` **was** functional with 11 tools across four categories (now archived — see [Deprecation of bluefin-mcp](#bluefin-mcp)). See [Component Stack: bluefin-mcp](#mcp-server-bluefin-mcp) for the full tool reference and architecture it shipped.
 
 ### Planned Tools — Community Knowledge Search
 
@@ -1113,6 +1125,8 @@ This is enforced in the system prompt, not just suggested. Low-trust content fro
 
 ### What's Not in bluefin-mcp
 
+> _`bluefin-mcp` is archived (see [Deprecation of bluefin-mcp](#bluefin-mcp)); this inventory documents what it used to cover versus the hosted `mcp.projectbluefin.io` knowledge base._
+
 - **Raw system facts** — that's linux-mcp-server's job (CPU load, process lists, journal logs, network state)
 - **RHEL/Red Hat documentation** — that's okp-mcp's job
 - **Live web search** — the knowledge base is a static snapshot, not a search engine
@@ -1147,7 +1161,9 @@ The agent (Goose + LLM) decides which MCP tools to call based on the query. The 
 | "How do I install a Flatpak?" | `bluefin-mcp` → `get_flatpak_list` + semantic search (planned) |
 | "My bluetooth won't connect" | `linux-mcp-server` → service status + logs, `okp-mcp` → search for solutions |
 
-### Semantic Search Detail (bluefin-mcp, planned)
+### Semantic Search Detail (local-first server, planned)
+
+> _Planned for the Layer 3 server named in [Deprecation of bluefin-mcp](#bluefin-mcp), not the archived `bluefin-mcp`. Runs locally, unlike `mcp.projectbluefin.io`._
 
 ```mermaid
 sequenceDiagram
@@ -3077,7 +3093,9 @@ tests:
       - results may include "cockpit-machines" or RHEL virt docs
 ```
 
-#### bluefin-mcp (vector search, planned)
+#### local-first vector search server (planned)
+
+> _Home re-stated per [Deprecation of bluefin-mcp](#bluefin-mcp): a new local-first server, not the archived `bluefin-mcp`._
 
 ```yaml
 tests:

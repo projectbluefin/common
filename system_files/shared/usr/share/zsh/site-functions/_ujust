@@ -1,0 +1,39 @@
+#compdef ujust
+
+_ujust() {
+    # UJUST_JUSTFILE override exists for testing; default is the image entry justfile.
+    local justfile="${UJUST_JUSTFILE:-/usr/share/ublue-os/just/00-entry.just}"
+
+    if (( CURRENT == 2 )); then
+        # Complete flags from the ujust-flags data file shipped next to
+        # the entry justfile (one flag per line). Falls through to recipes
+        # if the data file is missing.
+        if [[ "${words[CURRENT]}" == -* ]]; then
+            local flags_file="${UJUST_FLAGS_FILE:-${justfile:h}/ujust-flags}"
+            if [[ -f "$flags_file" ]]; then
+                local -a flags
+                flags=(${(f)"$(<$flags_file)"})
+                _describe -t flags 'flag' flags && return 0
+            fi
+        fi
+
+        if [[ -f "$justfile" ]] && (( $+commands[just] )); then
+            local -a recipes
+            recipes=(${(f)"$(_call_program recipes just --summary --justfile "$justfile" 2>/dev/null)"})
+            # just --summary outputs recipe names separated by spaces
+            recipes=($=recipes)
+            if (( $#recipes > 0 )); then
+                _describe -t recipes 'recipe' recipes && return 0
+            fi
+        fi
+    fi
+
+    # Fall back to native just completion if available
+    if (( $+functions[_just] )); then
+        words=(just --justfile "$justfile" "${words[@]:1}")
+        (( CURRENT += 2 ))
+        _just
+    fi
+}
+
+_ujust "$@"

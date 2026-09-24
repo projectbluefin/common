@@ -93,7 +93,7 @@ Each factory repo must have ALL of:
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
 | `bonedigger.yml` wired (image repos only) | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
-| Hive labels present | `gh label list --repo projectbluefin/{repo} \| grep hive` |
+| Canonical lifecycle labels present | `gh label list --repo projectbluefin/{repo} \| grep -E '1-triage\|3-clanker-queue'` |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
 | Squash-only merge | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed` |
 

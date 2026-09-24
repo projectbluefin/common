@@ -136,5 +136,15 @@ SC2207 (arrays from command output) is suppressed globally in the shellcheck ste
 | Binary | Source | Renovate pattern |
 |---|---|---|
 | `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
+| `opentabletdriver` | `OpenTabletDriver/OpenTabletDriver` GitHub releases | `OTD_RELEASE="v…"` in `system_files/shared/usr/share/ublue-os/just/apps.just` |
 
 When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json5` so the version stays current automatically.
+
+### Pinned release fetches with sha256 verification (projectbluefin/common#1170)
+
+`install-opentabletdriver` pins both fetches and verifies them with `sha256sum -c -` before anything is extracted, copied as root, or enabled:
+
+- the release tarball: pinned tag in `OTD_RELEASE` (Renovate-tracked above) plus a `sha256:` digest for the exact asset;
+- the flathub `opentabletdriver.service` unit: pinned to a full commit SHA plus its own sha256 — never fetch a moving branch ref (`refs/heads/…`) for something that gets installed.
+
+**Coupling to know:** Renovate PRs update `OTD_RELEASE` only. The two hashes are not managed by Renovate — a version bump fails the recipe's checksum gate (fail-closed, never fail-open) until the hashes are updated manually in the same PR. Compute them with `sha256sum` against the new release asset and the raw file at the pinned ref. Tests in `tests/test_apps_just.bats` mirror these pins as constants and must move with them.
