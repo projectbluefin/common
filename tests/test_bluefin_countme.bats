@@ -30,6 +30,15 @@ BOOTC_EOF
 teardown() {
     rm -rf "${TEST_TMPDIR}"
 }
+set_fake_now() {
+    export COUNTME_TEST_NOW="$1"
+    cat << 'DATE_EOF' > "${MOCK_BIN}/date"
+#!/usr/bin/env bash
+printf '%s\n' "$COUNTME_TEST_NOW"
+DATE_EOF
+    chmod +x "${MOCK_BIN}/date"
+}
+
 
 @test "bluefin-countme generates epoch and sends countme=1 on first run for dakota" {
     cat << 'EOF' > "${IMAGE_INFO_FILE}"
@@ -96,6 +105,41 @@ EOF
     calls_2=$(wc -l < "${STATE_DIRECTORY}/curl_calls.log")
 
     [ "$calls_1" -eq "$calls_2" ]
+}
+
+@test "a successful ping cannot repeat within the same UTC week" {
+    printf '{"image-name":"dakota","image-tag":"stable"}\n' > "${IMAGE_INFO_FILE}"
+    last=$(date -u -d '2026-09-21T00:00:00Z' +%s)
+    now=$(date -u -d '2026-09-27T12:00:00Z' +%s)
+    printf '%s\n' "$last" > "${STATE_DIRECTORY}/lastrun"
+    set_fake_now "$now"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -eq 0 ]
+    [ ! -f "${STATE_DIRECTORY}/curl_calls.log" ]
+}
+
+@test "a new UTC week can report even after a recent ping" {
+    printf '{"image-name":"dakota","image-tag":"testing"}\n' > "${IMAGE_INFO_FILE}"
+    last=$(date -u -d '2026-09-27T23:30:00Z' +%s)
+    now=$(date -u -d '2026-09-28T00:15:00Z' +%s)
+    printf '%s\n' "$last" > "${STATE_DIRECTORY}/lastrun"
+    set_fake_now "$now"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -eq 0 ]
+    [ -f "${STATE_DIRECTORY}/curl_calls.log" ]
+    [ "$(< "${STATE_DIRECTORY}/lastrun")" -eq "$now" ]
+}
+
+@test "a failed upload returns failure and leaves this week retryable" {
+    printf '{"image-name":"dakota","image-tag":"testing"}\n' > "${IMAGE_INFO_FILE}"
+    printf '#!/usr/bin/env bash\nexit 22\n' > "${MOCK_BIN}/curl"
+    chmod +x "${MOCK_BIN}/curl"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -eq 22 ]
+    [ ! -f "${STATE_DIRECTORY}/lastrun" ]
 }
 
 @test "bluefin-countme calculates bucket based on epoch age" {
@@ -165,5 +209,32 @@ BOOTC_EOF
 
     run cat "${STATE_DIRECTORY}/curl_calls.log"
     [ "$status" -eq 0 ]
+    [[ "$output" =~ "tag=testing" ]]
+}
+@test "a missing booted stream does not invent a latest count" {
+    printf '{"image-name":"dakota","image-tag":"latest"}\n' > "${IMAGE_INFO_FILE}"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -ne 0 ]
+    [ ! -f "${STATE_DIRECTORY}/curl_calls.log" ]
+    [ ! -f "${STATE_DIRECTORY}/lastrun" ]
+}
+
+@test "missing image and booted tags cannot invent stable check-ins" {
+    printf '{"image-name":"dakota"}\n' > "${IMAGE_INFO_FILE}"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -ne 0 ]
+    [ ! -f "${STATE_DIRECTORY}/curl_calls.log" ]
+    [ ! -f "${STATE_DIRECTORY}/lastrun" ]
+}
+
+@test "digest-pinned booted ref retains its testing tag" {
+    printf '{"image-name":"dakota","image-tag":"latest"}\n' > "${IMAGE_INFO_FILE}"
+    printf 'ghcr.io/projectbluefin/dakota:testing@sha256:abc123\n' > "${BOOTED_IMAGE_FILE}"
+
+    run bash system_files/shared/usr/libexec/bluefin-countme
+    [ "$status" -eq 0 ]
+    run cat "${STATE_DIRECTORY}/curl_calls.log"
     [[ "$output" =~ "tag=testing" ]]
 }

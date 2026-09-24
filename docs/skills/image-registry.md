@@ -17,6 +17,8 @@ description: >-
   tags, or registry structure.
 metadata:
   type: reference
+  context7-sources:
+    - /systemd/systemd
 ---
 
 # Image Registry
@@ -99,24 +101,26 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for details.
 
-## CountMe telemetry reporting
+## Dakota CountMe reporting
 
-Our images participate in weekly CountMe telemetry to track installation statistics anonymously:
-- **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, Bluefin LTS uses a dnf-based helper service (`bluefin-lts-countme.service` running `dnf makecache`; dnf5 is unpackaged on CS10/EPEL10 and the dnf CLI is unaffected by the libdnf4 metalink-expansion bug).
-- **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, Dakota reports anonymously to Project Bluefin's first-party telemetry deployment (`https://countme.projectbluefin.io/metalink`) via `/usr/libexec/bluefin-countme` triggered by `bluefin-countme.timer`.
-  - Maintains installation epoch and last-run timestamp in `/var/lib/bluefin-countme/` (`epoch`, `lastrun`) via `StateDirectory=bluefin-countme`.
-  - Sends week-based age buckets matching Fedora conventions (weeks 1, 2-4, 5-24, 25+).
-  - Queries the first-party endpoint with query parameters `repo`, `tag`, `flavor`, `gamemode`, `arch`, and `countme`.
-  - Dakota's legacy client that reported to Fedora mirrors (`mirrors.fedoraproject.org`) has been deprecated in favor of this first-party reporter.
-### Dashboard processing dependency
+Only Dakota currently publishes a first-party count. It ships
+`/usr/libexec/bluefin-countme` and `bluefin-countme.{service,timer}` from this
+repo through Dakota's pinned `elements/bluefin/common.bst`. The units require
+`ID=bluefin-dakota`; the script also exits before reporting from other images.
 
-The results of Fedora's public CountMe dataset are parsed and processed by the pipeline inside the **`ublue-os/countme`** repository.
+The timer tries on activation and once per calendar day, so an offline attempt
+can retry. The script records a success in `/var/lib/bluefin-countme/lastrun`
+only after `/metalink` accepts the ping and sends at most once per UTC
+Monday-anchored week. It reads `:stable` or `:testing` from the booted image
+ref, including tagged digest refs. The baked `latest` tag is not a stream: if
+the booted ref provides no valid stream, it retries instead of reporting it.
+The opt-out is `systemctl mask --now bluefin-countme.timer bluefin-countme.service`.
 
-To make Dakota show up on the public active users count badges and charts:
-1. **`data_processing.py`** in `ublue-os/countme` must have `"Dakota"` added to the `os_groups["universal_blue"]` list.
-2. **`generate_badge_data.py`** in `ublue-os/countme` must have `"dakota"` defined in `project_mappings`.
-
-Because of the **Absolute Prohibition** against write operations on `ublue-os/*` repositories, these updates cannot be automated or programmatically committed by agents, and must be submitted manually as a PR by a human maintainer.
+`countme.projectbluefin.io/counts.json` derives Dakota's named stream counts
+from its own D1 rows; other tags remain unclassified. These are estimated
+check-ins without a machine identifier, not a distinct-device census. Fedora
+countme and `ublue-os/countme` are not sources for Project Bluefin counts;
+Bluefin Classic's upstream chart is separate.
 
 ## Runtime repository selection
 
