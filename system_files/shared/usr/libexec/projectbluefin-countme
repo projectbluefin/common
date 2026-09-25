@@ -21,7 +21,7 @@ ref=$(bootc status --json 2>/dev/null | jq -r '.status.booted.image.image.image 
 ref=${ref%%@*}
 tag=${ref##*:}
 [[ $tag == stable || $tag == testing ]] || tag=unknown
-image="$name/$(jq -r '."image-flavor"' "$info"):$tag"
+image="$name/$(jq -r '."image-flavor" // "main"' "$info"):$tag"
 
 # Like eos-phone-home, a failed send exits 0; the timer tries again later.
 curl -fsS --max-time 30 -X PUT --json "$(jq -nc --arg i "$image" '{image: $i}')" \

@@ -14,3 +14,12 @@ ConditionPathExists=!/etc/dakota-countme/disabled
 Type=simple
 ExecStart=/usr/libexec/projectbluefin-countme
 StateDirectory=projectbluefin-countme
+
+# Run as root (no DynamicUser) so bootc status can query status.
+# Hardened sandbox:
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+SystemCallFilter=@system-service @mount
