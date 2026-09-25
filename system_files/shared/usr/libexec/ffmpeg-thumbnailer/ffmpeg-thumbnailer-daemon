@@ -87,6 +87,9 @@ def run_container_ffmpeg(seek: str, size: int, in_fd: int, out_fd: int) -> bool:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
+        if res.returncode == 125:
+            # Podman exit 125 = container does not exist or not running
+            return "UNAVAILABLE"
         return res.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as exc:
         log(f"podman exec failed ({exc})")
@@ -94,6 +97,18 @@ def run_container_ffmpeg(seek: str, size: int, in_fd: int, out_fd: int) -> bool:
 
 
 def make_thumbnail(size: int, in_fd: int, out_fd: int) -> str:
+    # Security: validate that in_fd and out_fd are regular files and out_fd is owned by the current user
+    try:
+        in_st = os.fstat(in_fd)
+        out_st = os.fstat(out_fd)
+        import stat
+        if not (stat.S_ISREG(in_st.st_mode) and stat.S_ISREG(out_st.st_mode)):
+            return "ERR: invalid file descriptor type"
+        if out_st.st_uid != os.getuid():
+            return "ERR: output file owner mismatch"
+    except OSError as err:
+        return f"ERR: fd fstat failed ({err})"
+
     with _slots:
         for seek in ("00:00:03", "00:00:00"):
             try:
@@ -103,7 +118,10 @@ def make_thumbnail(size: int, in_fd: int, out_fd: int) -> str:
             except OSError as err:
                 return f"ERR: seek/truncate failed ({err})"
 
-            if run_container_ffmpeg(seek, size, in_fd, out_fd):
+            ret = run_container_ffmpeg(seek, size, in_fd, out_fd)
+            if ret == "UNAVAILABLE":
+                return "ERR_UNAVAILABLE"
+            if ret is True:
                 try:
                     if os.fstat(out_fd).st_size > 0:
                         return "OK"

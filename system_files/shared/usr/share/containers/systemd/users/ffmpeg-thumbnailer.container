@@ -1,7 +1,9 @@
 [Unit]
 Description=FFmpeg Video Thumbnailer Container (Alpine / Software / AMD / Intel)
 Documentation=https://github.com/projectbluefin/common
-ConditionPathExists=!/sys/module/nvidia/version
+# Select Alpine image on all non-NVIDIA hosts, and on aarch64 NVIDIA hosts (where CUDA image is unavailable)
+ConditionPathExists=|!/sys/module/nvidia/version
+ConditionArchitecture=|!x86-64
 
 [Container]
 ContainerName=ffmpeg-thumbnailer

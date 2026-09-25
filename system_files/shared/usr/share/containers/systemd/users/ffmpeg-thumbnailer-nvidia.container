@@ -1,6 +1,8 @@
 [Unit]
 Description=FFmpeg Video Thumbnailer Container (NVIDIA CUDA / NVDEC)
 Documentation=https://github.com/projectbluefin/common
+# Select NVIDIA CUDA image on x86-64 hosts with active NVIDIA driver module
+ConditionArchitecture=x86-64
 ConditionPathExists=/sys/module/nvidia/version
 
 [Container]
@@ -13,7 +15,7 @@ RunInit=true
 SecurityLabelDisable=true
 Network=none
 ReadOnly=true
-AddDevice=-nvidia.com/gpu=all
+AddDevice=nvidia.com/gpu=all
 AddDevice=-/dev/dri
 
 [Service]

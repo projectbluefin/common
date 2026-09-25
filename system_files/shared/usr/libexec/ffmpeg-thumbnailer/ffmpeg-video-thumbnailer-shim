@@ -108,9 +108,12 @@ def main():
             if resp == "OK" and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
                 sys.exit(0)
             sys.stderr.write(f"ffmpeg-thumbnailer: daemon returned '{resp}'\n")
-            # If the daemon was reached and replied with an error, do not fall back
-            # to an unthrottled local ffmpeg run. Let GNOME record the failure.
-            sys.exit(1)
+            if resp == "ERR_UNAVAILABLE":
+                # Container is pulling, offline, or starting up: allow local fallback
+                daemon_attempted = False
+            else:
+                # Video decode failed: do not fan out with local ffmpeg
+                sys.exit(1)
         except (ConnectionRefusedError, FileNotFoundError):
             # Daemon socket exists but daemon is not listening; fall through to local fallback
             daemon_attempted = False
