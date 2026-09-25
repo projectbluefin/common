@@ -104,7 +104,7 @@ draft operating measures:
 
 - [common#1029](https://github.com/projectbluefin/common/issues/1029) — reviewer-scaling rung finding (this doc's tracker)
 - [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0 parent)
-- [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
+- [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data ([reviewer-coverage.md](reviewer-coverage.md) is the published map)
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
 - [common#1067](https://github.com/projectbluefin/common/issues/1067) — user-issue triage starvation
   (its concrete proposal lives in [triage-sla.md](triage-sla.md))

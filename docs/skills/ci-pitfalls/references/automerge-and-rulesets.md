@@ -6,11 +6,14 @@ Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the merge-q
 
 ## Renovate automerge — how it works in `common`
 
-<!-- TODO(context7): verify platformAutomerge behavior and merge queue interaction against Renovate docs -->
+Renovate applies every matching `packageRules` entry in order; later entries override
+earlier values for the same option. Source: [Renovate packageRules
+documentation](https://docs.renovatebot.com/configuration-options/#packagerules).
 
-`common` uses `platformAutomerge: true` in `renovate.json`. Renovate calls GitHub's native
-auto-merge API when it opens an eligible PR (digest/pin/patch/minor). GitHub's auto-merge
-enqueues the PR into the merge queue once all required checks pass — no separate workflow needed.
+`common` uses `platformAutomerge: true` in `renovate.json`. For updates whose package
+rules enable automerge, Renovate calls GitHub's native auto-merge API. GitHub's
+auto-merge enqueues the PR into the merge queue once all required checks pass — no
+separate workflow needed.
 
 **Why `platformAutomerge` instead of a workflow:** `common/main` has a merge queue ruleset.
 `github-actions[bot]` cannot bypass the merge queue, so any workflow attempting a direct
@@ -18,7 +21,15 @@ enqueues the PR into the merge queue once all required checks pass — no separa
 PR review ruleset (actor_id 2740, bypass_mode: pull_request) and uses GitHub's own auto-merge
 API, which the merge queue respects natively.
 
-**Eligible update types:** `digest`, `pin`, `patch`, `minor`. Major bumps require human review.
+**Eligible update types:** `digest` and `pin` updates automerge for all managers. `patch`
+and `minor` updates automerge for non-`github-actions` managers; GitHub Actions
+`patch`/`minor` updates require human review, including `projectbluefin/actions`.
+Major bumps require human review.
+
+The inherited `github-actions (non-major)` group remains intact. Renovate only enables
+automerge for a grouped branch when every upgrade in that branch is automerge-eligible;
+therefore a mixed digest plus minor/patch group waits for human review as a whole.
+Digest-only groups continue to automerge.
 
 **Bypass actors in the PR review ruleset:**
 - OrganizationAdmin — `bypass_mode: always`

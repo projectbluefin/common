@@ -309,23 +309,15 @@ _prepare_overrides() {
     [ "${status}" -eq 0 ]
 }
 
-# Documents current behaviour: NO_COLOR=1 only suppresses the palette the
-# recipe applies itself. `diff --color="always"` is hardcoded, so diff's own
-# ANSI escapes are still emitted. Pinning this makes any future fix visible.
-@test "check-local-overrides: diff --color=always is unconditional (NO_COLOR gap)" {
-    local recipe
-    recipe="$(_extract_recipe check-local-overrides)"
-
-    run grep -Fq -- '--color="always"' <<< "${recipe}"
-    [ "${status}" -eq 0 ]
-
+# `NO_COLOR` suppresses ANSI sequences from both the recipe and `diff`.
+@test "check-local-overrides: emits no escape codes when NO_COLOR=1" {
     _prepare_overrides
     printf 'local\n' > "${WORKDIR}/etc/custom.conf"
 
     NO_COLOR_VALUE=1 _run_script "${WORKDIR}/overrides.sh"
 
-    run grep -q $'\x1b\\[' <<< "${output}"
-    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"custom.conf"* ]]
+    [[ "${output}" != *$'\x1b['* ]]
 }
 
 @test "check-local-overrides: excludes host identity and credential files" {

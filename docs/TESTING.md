@@ -36,6 +36,35 @@ and have no testable logic beyond syntax.
 
 **Do not introduce additional frameworks.** `bats` for shell, `pytest` for Python.
 
+## Integration Contract
+
+A test that nothing runs is noise, not coverage. Every suite in `tests/` must
+be wired to a runner, and that wiring is **enforced in CI** — not left to
+whoever remembers to add it.
+
+- **Every `tests/test_*.bats` / `tests/test_*.py` must be named in the Justfile
+  `test` recipe, or declared excluded** with a one-line reason in the comment
+  block directly above the recipe (e.g. `# test_x.bats is excluded — requires a
+  running libvirtd session`). Drift is caught by
+  [`tests/test_suite_registration.bats`](../tests/test_suite_registration.bats),
+  which runs in
+  [`.github/workflows/unit-tests.yml`](../.github/workflows/unit-tests.yml) on
+  pull requests that touch `tests/`, `system_files/`,
+  `scripts/validate-brewfiles.sh`, or the `Justfile` (that workflow's `paths`
+  filter). Adding or renaming a suite means editing the runner and the gate
+  together — the gate failing is the signal that you forgot one of them.
+- **Never reference a suite that does not exist.** A dangling runner line makes
+  the whole `just test` recipe fail.
+- **Permanently-red tests are prohibited.** A test that always fails (e.g. one
+  that stamps `date.today()` and compares against "today") trains everyone to
+  ignore failures. Fix it or remove it — do not commit a known-red suite.
+
+This is the org-wide convention called for in [projectbluefin/common#1046](https://github.com/projectbluefin/common/issues/1046):
+a nightly cross-repo job that flags test files matched by no runner is **proposed**
+in [`projectbluefin/actions`](https://github.com/projectbluefin/actions) so every
+factory repo inherits it; this section is the `common`-side statement of the
+same contract.
+
 ## Hardware Gate Boundary
 
 Some scripts interact with hardware that cannot be present in CI:

@@ -1,7 +1,7 @@
 ---
 name: devmode
 version: "1.0"
-last_updated: "2026-06-23"
+last_updated: "2026-09-23"
 id: devmode
 one_line_purpose: Configure the Bluefin Developer Mode setup wizard.
 entry_point: docs/skills/devmode.md
@@ -43,6 +43,23 @@ File: `system_files/bluefin/usr/share/ublue-os/just/system.just`
 `ujust toggle-devmode` is a legacy compatibility name. Docs and UX should point users to `ujust devmode`.
 
 ---
+## How Lima Stacks with Devcontainers
+
+Lima provides the machine layer, while Devcontainers provide the project layer:
+
+```
+Host (Bluefin, immutable)
+  └── Lima Ubuntu VM        <- persistent machine via KVM, $HOME mounted writable
+        └── devcontainer    <- project-scoped container inside the VM
+              └── code
+```
+
+This replicates the Windows WSL2 + Dev Containers workflow:
+1. VS Code connects to `lima-ubuntu` via the Remote - SSH extension.
+2. VS Code detects `.devcontainer/devcontainer.json` and prompts "Reopen in Container".
+3. Containers run inside the Lima VM with full IntelliSense, debugging, and terminal access.
+
+---
 
 ## What it installs
 
@@ -54,9 +71,8 @@ File: `system_files/bluefin/usr/share/ublue-os/just/system.just`
 | Section | Item | What it installs |
 |---|---|---|
 | Docker | Docker | docker + docker-compose + lazydocker + dive |
-| Podman | Podman Desktop | flatpak `io.podman_desktop.PodmanDesktop` |
-| Virtualization | Virtual Machines | flatpak virt-manager + QEMU extension |
-| Virtualization | incus | brew install incus (see caveat below) |
+| Virtualization | Podman Desktop | flatpak `io.podman_desktop.PodmanDesktop` |
+| Virtualization | Lima | brew install lima + `setup-lima` automated setup |
 | IDE | VS Code | `ublue-os/tap/visual-studio-code-linux` |
 | IDE | VSCodium | `ublue-os/tap/vscodium-linux` |
 | IDE | Antigravity | `ublue-os/tap/antigravity-linux` |
@@ -80,6 +96,7 @@ Title box
   → "Install now?" confirm
   → gum spin progress per package
   → pkexec group setup (conditional on selection)
+  → setup-lima execution (if Lima selected)
   → marker file written to ~/.config/bluefin/devmode
   → done box
 ```
@@ -95,11 +112,24 @@ Groups are added via `pkexec` at the end, conditional on what was selected:
 | Package | Group added |
 |---|---|
 | Docker | `docker` |
-| Virtual Machines | `libvirt` |
-| incus | `incus-admin` |
+| Lima | `kvm` (handled via KVM preflight in `setup-lima`) |
 | Always | `dialout` |
 
+
 `dx-group` remains as a standalone recipe for manual use.
+
+---
+
+## Lima Setup Details (`ujust setup-lima`)
+
+`ujust setup-lima` provides zero-config WSL equivalent machine setup:
+1. **KVM preflight**: checks `/dev/kvm` access, adds the user to the `kvm` group via `pkexec` if needed, and prompts for a reboot if group membership changed.
+2. **Package install**: installs `lima` via Homebrew (pulling `qemu` automatically).
+3. **SSH config wiring**: prepends `Include ~/.lima/*/ssh.config` to `~/.ssh/config` before any `Host *` or `Match` blocks, ensuring `chmod 700 ~/.ssh` and `chmod 600 ~/.ssh/config`.
+4. **Instance creation**: launches `limactl start --name ubuntu --mount-writable --tty=false template:ubuntu-lts` (warning user about ~600MB initial cloud image download).
+5. **Persistence**: enables systemd autostart across reboots via `limactl autostart enable ubuntu`.
+6. **Health check**: verifies SSH connectivity with `limactl shell ubuntu true`.
+7. **Connection instructions**: prints VS Code Remote SSH connection guidance.
 
 ---
 
@@ -141,7 +171,7 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 ## Known caveats
 
 - **Docker daemon**: `brew install docker` provides the CLI. The `moby-engine` daemon must be present in the base image as a layered system package. If `dockerd` is missing, docker CLI works but containers won't run. Verify moby is in the Containerfile before shipping.
-- **incus via brew**: incus is installed via `brew install incus` inside the devmode wizard. If Homebrew is unavailable or that install step fails, the wizard fails at that step. There is no separate recipe and no fallback.
+- **Lima guest runtime**: Lima uses `containerd`/`nerdctl` by default. For devcontainer workflows requiring the Docker daemon, Docker can be installed inside the Lima guest VM (`limactl shell ubuntu sudo apt-get install docker.io`).
 - **`gum choose --no-limit` section headers**: header strings (e.g. `── Docker ───`) are selectable items. They are filtered out in the summary/install logic by using specific `grep -q` patterns that don't match header text. Do not use item names that are substrings of header text.
 
 ---
@@ -151,7 +181,7 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 1. Treat `ujust devmode` as the canonical entrypoint; only mention `toggle-devmode` as legacy compatibility context.
 2. Verify the current implementation in `system_files/bluefin/usr/share/ublue-os/just/system.just` before documenting behavior.
 3. Describe Developer Mode as an in-place setup flow: `ujust devmode` opens the gum wizard.
-4. Document optional tools exactly as the wizard presents them, including incus via `brew install incus`.
+4. Document optional tools exactly as the wizard presents them (Podman Desktop and Lima in Virtualization).
 5. Reject stale fallbacks: no `setup-incus` recipe, no `rpm-ostree install`, no `incus-distrobox` guidance.
 6. If touching downstream overrides, prefer removing stale overrides so common's implementation remains the source of truth.
 
@@ -168,13 +198,15 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 
 - Docs that tell users to run `ujust toggle-devmode`
 - Any mention of a `setup-incus` recipe
-- Any `rpm-ostree install incus` fallback
+- Any `rpm-ostree install` fallback
 - Any suggestion that Developer Mode rebases to a `-dx` image
 - Dakota-specific docs or overrides that assume `dakota-dx` exists
 
 ## Verification
 
 - [ ] User-facing docs recommend `ujust devmode`, not `ujust toggle-devmode`
+- [ ] devmode wizard collapses Virtualization to Podman Desktop and Lima
+- [ ] `setup-lima` provides automated, zero-config Ubuntu LTS VM setup
 - [ ] No docs mention `setup-incus`
 - [ ] No docs recommend `rpm-ostree install` for Developer Mode tooling
 - [ ] Bluefin Developer Mode is described as in-place setup, not image rebasing
@@ -184,5 +216,6 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 
 ## PR history
 
+- PR #1175 (`feat/lima-dev-environment`) — WSL/container machine equivalent developer environment via Lima
 - PR #545 (`feat/devmode-wizard`) — initial implementation, closes issue #103
 - PR #544 (`feat/setup-vms-recipe`) — superseded; `setup-vms` and `toggle-vms` recipes incorporated here
