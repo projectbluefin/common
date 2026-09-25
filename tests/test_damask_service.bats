@@ -23,7 +23,7 @@ teardown() {
 @test "damask flatpak override: file exists and specifies backgrounds filesystems" {
     [ -f "${OVERRIDE_FILE}" ]
     grep -Fxq "[Context]" "${OVERRIDE_FILE}"
-    grep -Fxq "filesystems=/usr/share/backgrounds:ro;xdg-data/backgrounds:ro;" "${OVERRIDE_FILE}"
+    grep -Fxq "filesystems=host-os:ro;xdg-data/backgrounds:ro;" "${OVERRIDE_FILE}"
 }
 
 @test "damask tmpfiles: configuration exists and defines valid symlink override" {

@@ -1,2 +1,2 @@
 [Context]
-filesystems=/usr/share/backgrounds:ro;xdg-data/backgrounds:ro;
+filesystems=host-os:ro;xdg-data/backgrounds:ro;
