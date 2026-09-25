@@ -181,7 +181,7 @@ To ensure new and existing repositories remain compliant with this baseline:
    - `.pre-commit-config.yaml` runs `no-floating-action-tags` to prevent unpinned external action tags from being committed.
    - `scripts/check-actions-security.py` verifies top-level permissions declarations and action pinning.
 2. **Automated CI Validation:**
-   - `validate.yml` runs `pre-commit run --all-files` on all pull requests, calling `scripts/check-actions-security.py`. Conformance unit tests run in local and CI test recipes via `Justfile` (`just test`).
+   - `validate.yml` runs `pre-commit run --all-files` on all pull requests, calling `scripts/check-actions-security.py`. Conformance unit tests run locally via `Justfile` (`just test`).
 3. **Cross-Repo Scanner:**
    - The shared script `scripts/check-actions-security.py` is available for inclusion in all repository CI lanes and scanner audits.
 
@@ -195,8 +195,6 @@ To ensure new and existing repositories remain compliant with this baseline:
 | [common#969](https://github.com/projectbluefin/common/pull/969) | `common` | Pillar 1: Permissions | Added top-level `permissions: {}` to `e2e.yml`, `pr-e2e.yml`, and `promotion-candidate-e2e.yml`. |
 | [bluefin-lts#505](https://github.com/projectbluefin/bluefin-lts/pull/505) | `bluefin-lts` | Pillar 1: Permissions | Scoped `pr-testsuite.yml` permissions block. |
 | [bluefin-lts#511](https://github.com/projectbluefin/bluefin-lts/pull/511) | `bluefin-lts` | Pillar 1: Permissions | Added top-level `permissions: {}` to `pr-e2e.yml`. |
-| [dakota-iso#189](https://github.com/projectbluefin/dakota-iso/pull/189) | `dakota-iso` | Pillar 1: Permissions | Added explicit permissions block to `test.yml` (replacing closed #124). |
-| [dakota-iso#190](https://github.com/projectbluefin/dakota-iso/pull/190) | `dakota-iso` | Pillar 2: SHA Pinning | Pinned `action-shellcheck` SHA and scoped permissions (replacing closed #125). |
-| [dakota-iso#169](https://github.com/projectbluefin/dakota-iso/pull/169) | `dakota-iso` | Pillar 2: Trust Model | Clarified `@v1` managed tag policy for internal reusable workflows (replacing closed #126). |
-| [dakota-iso#206](https://github.com/projectbluefin/dakota-iso/pull/206) | `dakota-iso` | Pillar 1: Permissions | Declared top-level `permissions: {}` in `build-iso-bluefin` (replacing closed #130). |
+| [dakota-iso#189](https://github.com/projectbluefin/dakota-iso/pull/189) | `dakota-iso` | Pillar 2: SHA Pinning | Pinned `action-shellcheck` SHA and scoped permissions in `lint.yml` (replacing closed #125). |
+| [dakota-iso#169](https://github.com/projectbluefin/dakota-iso/pull/169) | `dakota-iso` | Pillar 1: Permissions | Added top-level `permissions: {}` in `test-luks-install.yml` and `test-plain-install.yml` (replacing closed #130). |
 | [actions#434](https://github.com/projectbluefin/actions/pull/434) | `actions` | Pillar 4: Checksums | Added SHA-256 verification and exact cache keys to `install-cosign`. |
