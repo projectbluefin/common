@@ -90,3 +90,73 @@ def test_shim_uri_parsing_and_arg_forwarding(shim_mod, tmp_path):
                     shim_mod.main()
                 assert exc.value.code == 0
                 mock_fallback.assert_called_once_with("/tmp/my video.mp4", out_file, 512)
+
+
+def test_daemon_handle_request_invalid_fd_type(daemon_mod, tmp_path):
+    # Pass a non-regular file descriptor (e.g. socket) to verify security rejection
+    s1, s2 = socket.socketpair()
+    try:
+        res = daemon_mod.handle_request(b"THUMB\t256\n", [s1.fileno(), s2.fileno()])
+        assert "invalid file descriptor type" in res
+    finally:
+        s1.close()
+        s2.close()
+
+
+def test_daemon_returns_unavailable_when_container_missing(daemon_mod, tmp_path):
+    in_file = tmp_path / "in.mp4"
+    in_file.write_bytes(b"dummy")
+    out_file = tmp_path / "out.png"
+
+    in_fd = os.open(str(in_file), os.O_RDONLY)
+    out_fd = os.open(str(out_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+
+    try:
+        with mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=125)
+            res = daemon_mod.handle_request(b"THUMB\t256\n", [in_fd, out_fd])
+            assert res == "ERR_UNAVAILABLE"
+    finally:
+        os.close(in_fd)
+        os.close(out_fd)
+
+
+def test_shim_falls_back_on_err_unavailable(shim_mod, tmp_path):
+    out_file = str(tmp_path / "out.png")
+    with mock.patch("sys.argv", ["shim", "-s", "256", "file:///tmp/vid.mp4", out_file]):
+        with mock.patch.object(shim_mod, "get_socket_path", return_value="/tmp/fake.sock"):
+            with mock.patch("socket.socket") as mock_sock_cls:
+                mock_sock = mock.MagicMock()
+                mock_sock.recv.return_value = b"ERR_UNAVAILABLE\n"
+                mock_sock_cls.return_value = mock_sock
+                with mock.patch("os.open", return_value=10):
+                    with mock.patch("os.close"):
+                        with mock.patch.object(shim_mod, "fallback_local_ffmpeg", return_value=True) as mock_fb:
+                            with pytest.raises(SystemExit) as exc:
+                                shim_mod.main()
+                            assert exc.value.code == 0
+                            assert mock_fb.called
+
+
+def test_quadlet_condition_complementarity():
+    # Verify that Alpine and NVIDIA quadlet conditions form a partition over (arch, nvidia_present)
+    import configparser
+    repo_root = Path(__file__).resolve().parent.parent
+    alpine_path = repo_root / "system_files/shared/usr/share/containers/systemd/users/ffmpeg-thumbnailer.container"
+    nvidia_path = repo_root / "system_files/shared/usr/share/containers/systemd/users/ffmpeg-thumbnailer-nvidia.container"
+
+    # Both must target the identical container name so the daemon config is invariant
+    alpine_cfg = configparser.ConfigParser(strict=False)
+    alpine_cfg.read(alpine_path)
+    nvidia_cfg = configparser.ConfigParser(strict=False)
+    nvidia_cfg.read(nvidia_path)
+
+    assert alpine_cfg["Container"]["ContainerName"] == "ffmpeg-thumbnailer"
+    assert nvidia_cfg["Container"]["ContainerName"] == "ffmpeg-thumbnailer"
+
+    # Verify quadlet options
+    assert alpine_cfg["Container"]["RunInit"] == "true"
+    assert nvidia_cfg["Container"]["RunInit"] == "true"
+    with open(nvidia_path) as nf:
+        nvidia_raw = nf.read()
+    assert "AddDevice=nvidia.com/gpu=all" in nvidia_raw

@@ -56,6 +56,8 @@ def fallback_local_ffmpeg(input_path: str, output_path: str, size: int) -> bool:
             "-i", input_path,
             "-vf", vf,
             "-vframes", "1",
+            "-f", "image2",
+            "-c:v", "png",
             "-update", "1",
             output_path,
         ]
