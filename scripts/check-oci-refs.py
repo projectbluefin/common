@@ -26,8 +26,9 @@ import urllib.request
 import urllib.error
 
 # HTTP statuses that indicate transient infrastructure failures or rate limits,
-# where retrying makes sense. 401 is excluded as authentication failure is non-transient.
-TRANSIENT_HTTP_STATUSES = {403, 429, 500, 502, 503, 504}
+# where retrying makes sense. 401 and non-rate-limit 403 are excluded as auth/permission
+# failures are non-transient.
+TRANSIENT_HTTP_STATUSES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
 
@@ -147,7 +148,15 @@ def tag_exists_in_ghcr(image: str, tag: str):
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     return False  # image doesn't exist at all
-                if e.code not in TRANSIENT_HTTP_STATUSES:
+                is_rate_limit_403 = False
+                if e.code == 403 and e.headers is not None:
+                    # Treat 403 as transient only if rate-limit headers confirm it
+                    rem = e.headers.get("x-ratelimit-remaining")
+                    retry_after = e.headers.get("retry-after")
+                    if (rem is not None and rem.strip() == "0") or retry_after is not None:
+                        is_rate_limit_403 = True
+
+                if e.code not in TRANSIENT_HTTP_STATUSES and not is_rate_limit_403:
                     raise
                 last_error = e
                 if attempt < MAX_RETRIES:
@@ -226,7 +235,13 @@ def main(root=None):
         )
         return 1
 
-    print(f"\n✓ All {len(refs)} image:tag refs validated against GHCR.")
+    if skipped:
+        print(
+            f"\n✓ Validated {len(refs) - len(skipped)} of {len(refs)} image:tag refs against GHCR "
+            f"({len(skipped)} skipped due to transient errors)."
+        )
+    else:
+        print(f"\n✓ All {len(refs)} image:tag refs validated against GHCR.")
     return 0
 
 

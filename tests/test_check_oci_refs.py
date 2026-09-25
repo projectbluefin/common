@@ -250,16 +250,17 @@ class TestTagExistsInGhcr:
             assert mock_urlopen.call_count == 4
             assert mock_sleep.call_count == 3
 
-    def test_transient_403_recovers_on_retry(self):
+    def test_transient_403_rate_limit_recovers_on_retry(self):
         mock_resp = MagicMock()
         mock_resp.read.return_value = b"[]"
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
+        hdrs = {"x-ratelimit-remaining": "0"}
         with patch(
             "urllib.request.urlopen",
             side_effect=[
                 urllib.error.HTTPError(
-                    url="", code=403, msg="Forbidden", hdrs=None, fp=None
+                    url="", code=403, msg="Forbidden", hdrs=hdrs, fp=None
                 ),
                 mock_resp,
             ],
@@ -267,6 +268,19 @@ class TestTagExistsInGhcr:
             assert tag_exists_in_ghcr("bluefin", "stable") is False
             assert mock_urlopen.call_count == 2
             assert mock_sleep.call_count == 1
+
+    def test_403_without_rate_limit_header_raises_http_error(self):
+        """403 without rate limit headers indicates missing scope/permission and must raise immediately."""
+        hdrs = {"x-ratelimit-remaining": "4676"}
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.HTTPError(
+                url="", code=403, msg="Forbidden", hdrs=hdrs, fp=None
+            ),
+        ) as mock_urlopen:
+            with pytest.raises(urllib.error.HTTPError):
+                tag_exists_in_ghcr("bluefin", "stable")
+            assert mock_urlopen.call_count == 1
 
     def test_returns_false_on_empty_versions_list(self):
         mock_resp = MagicMock()
