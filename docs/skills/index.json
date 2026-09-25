@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23",
+  "generated_at": "2026-09-24",
   "schema_version": "1.0",
   "skills": [
     {
@@ -296,6 +296,27 @@
       "version": "1.0",
       "last_updated": "2026-07-20",
       "doc_type": "runbook"
+    },
+    {
+      "id": "hidamari-wallpaper",
+      "name": "hidamari-wallpaper",
+      "one_line_purpose": "Regenerate and validate the Hidamari looping video-wallpaper asset.",
+      "entry_point": "docs/skills/hidamari-wallpaper.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "hidamari",
+        "wallpaper",
+        "video",
+        "vp9",
+        "webm",
+        "backgrounds",
+        "system_files"
+      ],
+      "description": "Regenerate, validate, or replace the Bluefin Hidamari video-wallpaper asset (bluefin-hidamari.webm) with scripts/render-hidamari-movie.py. Covers the seamless-loop invariants, size budget, and licensing constraint that the animation must stay original.",
+      "version": "1.0",
+      "last_updated": "2026-09-24",
+      "doc_type": "reference"
     },
     {
       "id": "hive",

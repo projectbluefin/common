@@ -58,6 +58,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Add or gate a GPU vendor toolkit (AMD, Intel) | [`gpu-toolkit-interface.md`](skills/gpu-toolkit-interface.md) |
 | Work with OEM first-boot hooks | [`oem-hardware-hooks/SKILL.md`](skills/oem-hardware-hooks/SKILL.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
+| Regenerate the Hidamari video-wallpaper asset | [`hidamari-wallpaper.md`](skills/hidamari-wallpaper.md) |
 | Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |
 | Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |
 | Author a new skill | [`write-a-skill.md`](skills/write-a-skill.md) |
