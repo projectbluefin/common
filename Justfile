@@ -11,6 +11,7 @@ test:
     bats tests/test_privileged_setup.bats
     bats tests/test_bling.bats
     bats tests/test_bling_sh.bats
+    bats tests/test_bluefin_countme.bats
     bats tests/test_bling_preexec_rearm.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
@@ -30,6 +31,7 @@ test:
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_ai_tools_brewfile.bats
     bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_bonedigger_report.bats
@@ -43,6 +45,8 @@ test:
     bats tests/test_image_repo.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats
+    bats tests/test_bluefin_countme.bats
+    bats tests/test_escl_fixture.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:

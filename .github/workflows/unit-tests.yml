@@ -56,6 +56,9 @@ jobs:
       - name: Run shellcheck — .sh scripts
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
+      - name: Run bats (suite registration drift gate)
+        run: bats tests/test_suite_registration.bats
+
       - name: Run pytest (hooks.py)
         run: python3 -m pytest tests/test_hooks.py tests/test_chairlift_config.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
 
@@ -136,6 +139,10 @@ jobs:
 
       - name: Run bats (apps.just — install-opentabletdriver, cncf)
         run: bats tests/test_apps_just.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |

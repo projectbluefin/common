@@ -49,6 +49,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Understand release / promotion | [`release-promotion/SKILL.md`](skills/release-promotion/SKILL.md) |
 | Understand QA coverage or run tests | [`qa.md`](skills/qa.md) |
 | Submit a hardware test report | [`hardware-testing.md`](skills/hardware-testing.md) |
+| Test driverless scanning without hardware | [`scanner-fixture/SKILL.md`](skills/scanner-fixture/SKILL.md) |
 | Lab-test a common PR on ghost | [`lab-testing/SKILL.md`](skills/lab-testing/SKILL.md) |
 | Write or test shell scripts | [`shell-scripts/SKILL.md`](skills/shell-scripts/SKILL.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle/SKILL.md`](skills/brew-lifecycle/SKILL.md) |
@@ -56,6 +57,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Work with bootc | [`bootc.md`](skills/bootc.md) |
 | Work with NVIDIA GPU support | [`nvidia/SKILL.md`](skills/nvidia/SKILL.md) |
 | Add or gate a GPU vendor toolkit (AMD, Intel) | [`gpu-toolkit-interface.md`](skills/gpu-toolkit-interface.md) |
+| Track PAPPL scanning API status or scanner ownership boundary | [`pappl-scanning-boundary.md`](skills/pappl-scanning-boundary.md) |
 | Work with OEM first-boot hooks | [`oem-hardware-hooks/SKILL.md`](skills/oem-hardware-hooks/SKILL.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
 | Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |

@@ -50,6 +50,7 @@ run_setup_hooks() {
 	fi
 
 	if [ -d "${HOOKS_DIRECTORY}" ]; then
+		shopt -s nullglob
 		for script in "${HOOKS_DIRECTORY}"/*; do
 			bash "$script"
 		done

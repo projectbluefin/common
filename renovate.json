@@ -52,6 +52,17 @@
       "platformAutomerge": true
     },
     {
+      "description": "Require human review for GitHub Actions minor/patch updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": false
+    },
+    {
       "description": "OpenTabletDriver bumps also require manual sha256 updates (OTD_TARBALL_SHA256/OTD_SERVICE_SHA256 in apps.just), so they must never automerge.",
       "matchDepNames": [
         "OpenTabletDriver/OpenTabletDriver"

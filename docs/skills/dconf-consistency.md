@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-09-23"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -72,6 +72,24 @@ Only step 1 above — do **not** add to the lock file.
 The numbered files in `system_files/bluefin/etc/dconf/db/distro.d/` set defaults and
 keybindings. They are merged in numeric order. Gaps in numbering are fine. Do not renumber
 existing files — it changes the merge order.
+
+## Custom keybindings and relocatable schemas
+
+Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot be defined directly as standard schemas in gschema override files, their configuration is split across two locations:
+
+1. **Path registration in gschema override**: In `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`, list each custom keybinding path in the `custom-keybindings` array under `[org.gnome.settings-daemon.plugins.media-keys]`:
+   ```ini
+   custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', ...]
+   ```
+2. **Keybinding definition in dconf distro.d**: In `system_files/bluefin/etc/dconf/db/distro.d/02-bluefin-keybindings`, define the `binding`, `command`, and `name` under each path header:
+   ```ini
+   [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
+   binding='<Super>e'
+   command='nautilus --new-window'
+   name='New File Manager Window'
+   ```
+
+When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
 
 ## Validation
 

@@ -39,10 +39,11 @@ setup() {
     sed "s|/usr/libexec/ensure-libvirt-session-config|${WORKDIR}/bin/ensure-libvirt-session-config|g" \
         "${ROOT}/system_files/bluefin/usr/share/ublue-os/just/system.just" > "${SYSTEM_JUST}"
     _extract_recipe "${SYSTEM_JUST}" setup-vms > "${WORKDIR}/setup-vms.sh"
+    _extract_recipe "${SYSTEM_JUST}" setup-lima > "${WORKDIR}/setup-lima.sh"
     export IMAGE_INFO_FILE="${WORKDIR}/image-info.json"
     printf '{"image-tag":"stable","image-ref":"ostree-image-signed:docker://ghcr.io/projectbluefin/bluefin"}' > "${IMAGE_INFO_FILE}"
 
-    for cmd in bootc brew ublue-bling ujust ensure-libvirt-session-config; do
+    for cmd in bootc brew ublue-bling ujust ensure-libvirt-session-config limactl; do
         printf '#!/bin/bash\necho "%s $*" >> "${COMMAND_LOG}"\n' "${cmd}" > "${WORKDIR}/bin/${cmd}"
     done
     for cmd in sudo pkexec; do
@@ -50,8 +51,14 @@ setup() {
     done
     cat > "${WORKDIR}/bin/just" <<'MOCK'
 #!/bin/bash
-[[ "$1" == "--justfile" && "$2" == "${SYSTEM_JUST}" && "$3" == "setup-vms" ]] || exit 99
-exec bash "${WORKDIR}/setup-vms.sh"
+if [[ "$1" == "--justfile" && "$2" == "${SYSTEM_JUST}" ]]; then
+    if [[ "$3" == "setup-vms" ]]; then
+        exec bash "${WORKDIR}/setup-vms.sh"
+    elif [[ "$3" == "setup-lima" ]]; then
+        exec bash "${WORKDIR}/setup-lima.sh"
+    fi
+fi
+exit 99
 MOCK
     cat > "${WORKDIR}/bin/bctl" <<'MOCK'
 #!/bin/bash
@@ -231,6 +238,53 @@ CHANNELS
     [ "${status}" -eq 0 ]
     grep -q '^gum confirm Remove the VM stack' "${COMMAND_LOG}"
     run ! grep -q '^flatpak uninstall ' "${COMMAND_LOG}"
+}
+
+@test "native setup-lima: fails when kvm device is absent" {
+    KVM_PATH="${WORKDIR}/missing_kvm" _run_recipe "${SYSTEM_JUST}" setup-lima
+    [ "${status}" -ne 0 ]
+    [[ "${output}" == *"Error:"*"not found"* ]]
+    run ! grep -q '^brew install lima' "${COMMAND_LOG}"
+}
+
+@test "native setup-lima: full setup installs lima, wires ssh config, starts vm, and enables autostart" {
+    local fake_kvm="${WORKDIR}/fake_kvm"
+    touch "${fake_kvm}"
+    chmod 666 "${fake_kvm}"
+    mkdir -p "${HOME}/.ssh"
+    printf 'Host myhost\n    HostName 1.2.3.4\nHost *\n    IdentityFile ~/.ssh/id_rsa\n' > "${HOME}/.ssh/config"
+    mkdir -p "${HOME}/.lima/ubuntu"
+    printf 'Host lima-ubuntu\n    Hostname 127.0.0.1\n    Port 60022\n' > "${HOME}/.lima/ubuntu/ssh.config"
+
+    KVM_PATH="${fake_kvm}" _run_recipe "${SYSTEM_JUST}" setup-lima
+    [ "${status}" -eq 0 ]
+
+    # Verify brew install
+    grep -qFx 'brew install lima' "${COMMAND_LOG}"
+
+    # Verify ssh config wired before the first Host block
+    grep -qF 'Include ~/.lima/*/ssh.config' "${HOME}/.ssh/config"
+    run python3 -c '
+with open("'"${HOME}"'/.ssh/config") as f:
+    content = f.read()
+idx_inc = content.find("Include ~/.lima/*/ssh.config")
+idx_first_host = content.find("Host myhost")
+idx_host_star = content.find("Host *")
+assert idx_inc != -1 and idx_first_host != -1 and idx_host_star != -1
+assert idx_inc < idx_first_host < idx_host_star
+'
+    [ "${status}" -eq 0 ]
+
+    # Verify ssh resolves lima-ubuntu correctly using the included configuration
+    run ssh -F "${HOME}/.ssh/config" -G lima-ubuntu
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"hostname 127.0.0.1"* ]]
+    [[ "${output}" == *"port 60022"* ]]
+
+    # Verify limactl commands
+    grep -q 'limactl start --name ubuntu --mount-writable --tty=false template:ubuntu-lts' "${COMMAND_LOG}"
+    grep -q 'limactl autostart enable ubuntu' "${COMMAND_LOG}"
+    grep -q 'limactl shell ubuntu true' "${COMMAND_LOG}"
 }
 
 @test "native install-system-flatpaks: confirmation is required by default" {

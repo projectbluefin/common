@@ -68,6 +68,17 @@ teardown() {
     [ "${status}" -eq 0 ]
 }
 
+@test "ublue-privileged-setup: exits cleanly when hooks directory is empty" {
+    export HOOKS_DIR="${WORKDIR}/empty-privileged-hooks"
+    mkdir -p "${HOOKS_DIR}"
+
+    export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
+    printf '{\"privileged-hooks-directory\": \"%s\"}' "${HOOKS_DIR}" > "${SETUP_CONFIG_FILE}"
+
+    run bash "${PRIVILEGED_SETUP}"
+    [ "${status}" -eq 0 ]
+}
+
 @test "ublue-privileged-setup: hook paths with spaces are handled safely" {
     export HOOKS_DIR="${WORKDIR}/privileged hooks dir"
     mkdir -p "${HOOKS_DIR}"
