@@ -38,7 +38,7 @@ jobs:
       - name: Install test deps
         run: |
           sudo apt-get install -y bats fish zsh
-          pip install pytest pytest-cov pyyaml
+          pip install pytest pytest-cov pyyaml numpy
 
       - name: Run shellcheck — extensionless scripts
         run: |
