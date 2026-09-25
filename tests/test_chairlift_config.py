@@ -565,7 +565,7 @@ def test_bundle_brewfiles_are_discoverable_by_chairlift():
             f"{bundle.name} must be an immediate child of {BUNDLES_DIR.name}/; "
             "ChairLift does not recurse"
         )
-        assert oct(bundle.stat().st_mode & 0o777) == "0o644", (
+        assert bundle.stat().st_mode & 0o444 == 0o444, (
             f"{bundle.name} must be world-readable so every user's ChairLift "
             "can read it"
         )
@@ -590,6 +590,9 @@ def test_bundle_names_do_not_collide_with_other_discovered_brewfiles():
     """A duplicate stem would render two identically-named bundles."""
     stems = [path.stem for path in BUNDLES_DIR.glob("*.Brewfile")]
     assert len(stems) == len(set(stems)), f"duplicate bundle names: {stems}"
+
+
+def test_help_links_point_at_bluefin():
     resources = _load_config()["help_page"]["help_resources_group"]
     for key in ("website", "issues", "chat"):
         assert resources[key].startswith("https://"), f"{key} must be https"

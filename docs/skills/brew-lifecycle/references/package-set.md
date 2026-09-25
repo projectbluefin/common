@@ -133,10 +133,9 @@ The bundle only covers **install**. Uninstall is ChairLift's
 for a bundle, and do not invent a group to express one — an unknown group key
 fails ChairLift's strict schema validation and disables the whole application.
 
-`flatpak "..."` lines are a Bluefin convention, not stock Homebrew Bundle. The
-`validate-brewfiles.sh` validator and `brew bundle` both ignore them, so a
-flatpak-only Brewfile passes CI with zero package checks. Unit tests, not the
-Brewfile validator, are what pin these app ids.
+CI's `scripts/validate-brewfiles.sh` validator skips `flatpak` lines (it only
+validates `brew` and `cask` lines), so the unit tests in `test_chairlift_config.py`
+are what pin these app ids.
 
 ---
 
