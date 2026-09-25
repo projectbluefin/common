@@ -1,6 +1,5 @@
 [Unit]
 Description=Send daily active-system ping to Project Bluefin
-Wants=network.target
 
 [Timer]
 OnActiveSec=0

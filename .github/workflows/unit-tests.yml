@@ -160,6 +160,9 @@ jobs:
       - name: Run bats (bonedigger report)
         run: bats tests/test_bonedigger_report.bats
 
+      - name: Run bats (projectbluefin-countme)
+        run: bats tests/test_projectbluefin_countme.bats
+
       - name: Run bats (apps.just — install-opentabletdriver, cncf)
         run: bats tests/test_apps_just.bats
       - name: Run bats (escl-fixture)
