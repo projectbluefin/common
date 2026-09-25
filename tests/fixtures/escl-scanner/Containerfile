@@ -6,7 +6,7 @@
 # pairs it with the real sane-airscan client, so CI can exercise an eSCL
 # scanner end to end without physical hardware.
 #
-#   docker build -t escl-fixture tests/fixtures/escl-scanner
+#   docker build -f tests/fixtures/escl-scanner/Containerfile -t escl-fixture tests/fixtures/escl-scanner
 #   docker run --rm escl-fixture --mode capture
 #   docker run --rm escl-fixture --mode dnssd
 #

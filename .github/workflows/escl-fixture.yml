@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Build fixture image
-        run: docker build --tag escl-fixture tests/fixtures/escl-scanner
+        run: docker build -f tests/fixtures/escl-scanner/Containerfile --tag escl-fixture tests/fixtures/escl-scanner
 
       # The acceptance gate: a real sane-airscan client detects the simulator
       # and captures a byte-deterministic synthetic page.

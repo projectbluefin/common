@@ -23,7 +23,7 @@ reach an image.
 ## Running it
 
 ```bash
-docker build --tag escl-fixture tests/fixtures/escl-scanner
+docker build -f tests/fixtures/escl-scanner/Containerfile --tag escl-fixture tests/fixtures/escl-scanner
 
 # Acceptance gate: detect the scanner, capture the page twice, compare.
 docker run --rm escl-fixture --mode capture
