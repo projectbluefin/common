@@ -70,6 +70,70 @@ _extract_script() {
 }
 ```
 
+### Extract by recipe name, not just the first shebang
+
+A file with several recipes needs the name-anchored form. Match the recipe
+header as a regex so parameterised recipes are covered too, and stop at the
+first line that returns to column zero:
+
+```bash
+_extract_recipe() {
+    awk -v name="$1" '
+        $0 ~ ("^" name "([[:space:]].*)?:$") { in_recipe = 1; next }
+        in_recipe && $0 ~ /^[^[:space:]]/ { exit }
+        in_recipe && $0 ~ /^    / { sub(/^    /, ""); print }
+    ' "${JUSTFILE}"
+}
+```
+
+`tests/test_shared_just.bats` and `tests/test_update_just.bats` both use this
+shape; the trailing `([[:space:]].*)?` is what makes
+`toggle-ffmpeg-thumbnailer ACTION="prompt":` extractable.
+
+### Substitute `{{ ... }}` before running the body
+
+The extracted text is not yet valid bash — `just` replaces `{{ NAME }}` before
+the shell runs, so a test that executes the raw body runs a literal
+`{{ NAME }}` and fails in a way that looks like a recipe bug. Pipe the
+extraction through `sed`, mirroring the recipe's own default:
+
+```bash
+_extract_toggle_recipe() {
+    _extract_recipe toggle-ffmpeg-thumbnailer \
+        | sed 's/{{ ACTION }}/${ACTION:-prompt}/g'
+}
+```
+
+### Never write `{{` in a recipe body
+
+`just` interpolates recipe bodies, shebang recipes included, so a literal
+`{{` aborts parsing of the whole file. This bites when a recipe shells out to
+something that takes its own templating syntax:
+
+```
+error: unknown start of token '.'
+ ——▶ util.just:3:22
+  │     podman ps --format '{{.Status}}'
+```
+
+Avoid the argument (drop `--format`, or use JSON plus `jq`), or escape the
+opening braces as `{{{{` — `{{{{.Status}}` reaches the shell as `{{.Status}}`.
+The closing braces need no escaping.
+
+### Assert the full command line
+
+Stub the binary to append `"$*"` to a call log, then assert the whole logical
+call with a fixed-string line match rather than a substring, so a test cannot
+pass on a partial match:
+
+```bash
+run grep -Fqx "systemctl --user mask ffmpeg-thumbnailer-daemon.service" <<< "$(_calls)"
+[ "${status}" -eq 0 ]
+```
+
+For ordering guarantees (stop before mask, prompt before mutation), compare
+`grep -n` line numbers from the same log.
+
 Then run: `bash "${extracted_script}"` with mocked PATH binaries.
 
 ## Pitfall: literal `*` in bats grep assertions
