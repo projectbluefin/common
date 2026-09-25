@@ -50,7 +50,7 @@ python3 scripts/render-hidamari-movie.py --preview-frame 0.5 # one PNG frame
 
 Tunables: `--width/--height/--fps/--seconds/--crf/--dither`. Defaults are the
 shipped values (1080p, 24 fps, 12 s, crf 24, dither 1.4). Deterministic: the
-same script version always produces a byte-identical render.
+same script and ffmpeg/libvpx version produces a byte-identical render.
 
 ## Invariants the tests enforce
 
@@ -63,7 +63,7 @@ unit-tests workflow) pins:
 - **Determinism** — palette LUT and bubble seed table derive from
   `Config.seed`; changing the seed forks the animation.
 - **Size budget** — shipped WebM stays under 4 MiB (OCI layer cost).
-- **Format** — EBML magic, VP9, 288 frames.
+- **Format** — EBML magic and size budget.
 
 When editing the generator, keep every temporal term an integer number of
 cycles per loop or the wrap seam will drift and `test_loop_wrap_is_seamless`
@@ -80,5 +80,5 @@ ffmpeg -v error -i bluefin-hidamari.webm -f null -   # must decode clean
 
 - Epic: Wallpaper Enhancements (Damask, Hidamari, ChairLift bundles)
 - ChairLift bundle for the engine lands via `video-wallpaper.Brewfile`
-  (separate sub-issue; see `docs/skills/bazaar.md` for the bundle-file
+  (separate sub-issue; see `docs/skills/brew-lifecycle/` for the bundle-file
   conventions).

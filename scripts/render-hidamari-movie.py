@@ -18,7 +18,7 @@ seamless. Only per-frame dither grain differs; it reads as film grain.
 Usage:
     python3 scripts/render-hidamari-movie.py --output <path.webm> \
         [--width 1920] [--height 1080] [--fps 24] [--seconds 12] \
-        [--crf 34] [--dither 1.4]
+        [--crf 24] [--dither 1.4]
 
 Requires: python3 with numpy, and an ffmpeg binary with libvpx-vp9 on
 PATH (or pointed at via the FFMPEG env var). Pillow is used to write a
@@ -62,7 +62,7 @@ class Config:
     height: int = 1080
     fps: int = 24
     seconds: int = 12
-    crf: int = 34
+    crf: int = 24
     dither: float = 1.4
     seed: int = 1158  # tracking issue number
 
