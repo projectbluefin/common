@@ -65,7 +65,7 @@ teardown() {
 
     # Verify slideshow plugin source section
     grep -qx "\[app/drey/Damask/sources/slideshow\]" "${keyfile}"
-    grep -qx "folder-uri='file:///usr/share/backgrounds/bluefin'" "${keyfile}"
+    grep -qx "folder-uri='file:///run/host/usr/share/backgrounds/bluefin'" "${keyfile}"
     grep -qx "sort-by='random'" "${keyfile}"
 }
 
