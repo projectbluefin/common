@@ -117,7 +117,8 @@ EXISTING
 
     # Existing content preserved
     grep -qx "active-source='wallhaven'" "${keyfile_dir}/keyfile"
-    ! grep -qx "active-source='none'" "${keyfile_dir}/keyfile"
+    run grep -qx "active-source='none'" "${keyfile_dir}/keyfile"
+    [ "${status}" -ne 0 ]
 
     # systemctl was still called
     grep -qx -- "--user enable damask.service" "${WORKDIR}/systemctl.log"
