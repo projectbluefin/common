@@ -6,19 +6,19 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Trivy scan-i
 
 ## Renovate OCI digest tracking
 
-`Containerfile` has two OCI image pins tracked by Renovate:
+`Containerfile` has OCI image pins tracked by Renovate:
 
-1. `docker.io/library/alpine:latest@sha256:...` via Renovate's built-in `dockerfile` manager
+1. `docker.io/library/alpine:latest@sha256:...` (along with `golang:alpine`) via Renovate's built-in `dockerfile` manager
 2. `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` via a custom regex manager in `.github/renovate.json5`
 
-### Why both managers exist
+### Built-in parser vs. custom regex manager
 
-- `FROM docker.io/library/alpine:latest@sha256:...` is a standard Dockerfile dependency — the built-in `dockerfile` manager handles it
-- `COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` is not covered by the default parser — a custom regex manager tracks it
+- `FROM <image>` and `COPY --from=<image>`: Renovate's built-in `dockerfile` manager natively extracts external image references from both instructions (as long as `--from` refers to an external image rather than an earlier build stage alias).
+- The custom regex manager in `.github/renovate.json5` for `ghcr.io/ublue-os/bluefin-wallpapers-gnome` was originally introduced under the assumption that `COPY --from` references were not covered by the default parser; in practice, it duplicates the built-in `dockerfile` manager's extraction.
 
 ### Rule when adding OCI pins
 
-If you add new OCI image pins to `Containerfile`, also update `.github/renovate.json5` so Renovate can keep them current. Applies to both `FROM` and `COPY --from=` references. An untracked pin silently goes stale.
+Standard `FROM` and `COPY --from=<image>` image pins in `Containerfile` are parsed automatically by Renovate's built-in `dockerfile` manager without requiring additional regex entries. Custom regex managers in `.github/renovate.json5` are only required for tracking versioned binaries or image references in non-Dockerfile files (such as Justfiles or shell scripts).
 
 ### Org-wide Renovate runner
 
