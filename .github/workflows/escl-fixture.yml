@@ -1,0 +1,55 @@
+name: eSCL Scanner Fixture
+
+# Hardware-free eSCL scanner coverage (projectbluefin/common#1212).
+#
+# Builds the fixture image from tests/fixtures/escl-scanner and drives it with
+# a real sane-airscan client. No physical scanner is involved; hardware
+# behaviour is explicitly out of scope.
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tests/fixtures/escl-scanner/**"
+      - ".github/workflows/escl-fixture.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "tests/fixtures/escl-scanner/**"
+      - ".github/workflows/escl-fixture.yml"
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  escl-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Build fixture image
+        run: docker build --tag escl-fixture tests/fixtures/escl-scanner
+
+      # The acceptance gate: a real sane-airscan client detects the simulator
+      # and captures a byte-deterministic synthetic page.
+      - name: eSCL capture
+        run: docker run --rm escl-fixture --mode capture
+
+      # Discovery is exercised through DNS-SD rather than a pinned device URL.
+      # This is non-gating for now: it depends on dbus and avahi-daemon coming
+      # up inside the container, which is the one part of the fixture that has
+      # not been validated outside CI. Remove continue-on-error once a green
+      # run confirms it, so a regression here fails the job like any other.
+      - name: DNS-SD discovery
+        continue-on-error: true
+        run: docker run --rm escl-fixture --mode dnssd

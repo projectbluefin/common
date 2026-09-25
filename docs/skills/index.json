@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23",
+  "generated_at": "2026-09-25",
   "schema_version": "1.0",
   "skills": [
     {
@@ -613,6 +613,25 @@
       "description": "Promotion criteria, monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release, understanding the promotion pipeline, or verifying release artifacts.",
       "version": "1.1",
       "last_updated": "2026-08-08",
+      "doc_type": "reference"
+    },
+    {
+      "id": "scanner-fixture",
+      "name": "scanner-fixture",
+      "one_line_purpose": "Test driverless scanning in CI without a physical scanner.",
+      "entry_point": "docs/skills/scanner-fixture/SKILL.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "testing",
+        "scanner",
+        "escl",
+        "airscan",
+        "container"
+      ],
+      "description": "Hardware-free eSCL scanner fixture for common. Use when testing driverless scanning, sane-airscan, or eSCL/DNS-SD discovery without a physical scanner.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
       "doc_type": "reference"
     },
     {

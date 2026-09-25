@@ -103,6 +103,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_apps_just.bats` | `apps.just` — `install-opentabletdriver` pinned-download + sha256 gates (tampered payload, HTTP error, unit-before-enable ordering), install/uninstall branches, and `cncf` |
 | `tests/test_image_repo.bats` | `usr/libexec/ublue-image-repo` — image-name/tag routing to upstream GitHub repos |
 | `tests/test_shared_just.bats` | `shared.just` — `powerwash` (double confirmation) and `toggle-tpm2` recipes |
+| `tests/test_escl_fixture.bats` | `tests/fixtures/escl-scanner/run-fixture.sh` — eSCL readiness probing, device detection, capture determinism/geometry/size assertions, DNS-SD discovery, with the simulator and client stubbed |
 
 ## Quality Epic
 
