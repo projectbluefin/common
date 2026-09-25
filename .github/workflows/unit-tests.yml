@@ -136,6 +136,10 @@ jobs:
 
       - name: Run bats (apps.just — install-opentabletdriver, cncf)
         run: bats tests/test_apps_just.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |

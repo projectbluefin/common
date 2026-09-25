@@ -53,7 +53,7 @@ against a physical scanner, reaching the simulator through the unmodified
 ## Running It
 
 ```bash
-docker build --tag escl-fixture tests/fixtures/escl-scanner
+docker build -f tests/fixtures/escl-scanner/Containerfile --tag escl-fixture tests/fixtures/escl-scanner
 docker run --rm escl-fixture --mode capture   # acceptance gate
 docker run --rm escl-fixture --mode dnssd     # discovery
 ```

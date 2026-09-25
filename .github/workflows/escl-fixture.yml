@@ -51,5 +51,4 @@ jobs:
       # not been validated outside CI. Remove continue-on-error once a green
       # run confirms it, so a regression here fails the job like any other.
       - name: DNS-SD discovery
-        continue-on-error: true
         run: docker run --rm escl-fixture --mode dnssd
