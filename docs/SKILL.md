@@ -39,6 +39,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
 | Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |
 | Edit `system_files/shared/`, `bluefin/`, or `nvidia/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
+| Add a systemd user unit or quadlet, or write a ujust toggle for one | [`systemd-user-units.md`](skills/systemd-user-units.md) |
 | Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
 | Add an image variant or write `image-info.json` | [`image-identity.md`](skills/image-identity.md) |
 | Modify the `Containerfile` or add a binary | [`containerfile/SKILL.md`](skills/containerfile/SKILL.md) |

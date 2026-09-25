@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23",
+  "generated_at": "2026-09-25",
   "schema_version": "1.0",
   "skills": [
     {
@@ -647,8 +647,8 @@
         "shellcheck"
       ],
       "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-25",
       "doc_type": "reference"
     },
     {
@@ -700,6 +700,25 @@
       "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, nvidia/, or deciding where a system file change belongs.",
       "version": "1.0",
       "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "systemd-user-units",
+      "name": "systemd-user-units",
+      "one_line_purpose": "Ship systemd user units and rootless quadlets from common, and toggle them per user.",
+      "entry_point": "docs/skills/systemd-user-units.md",
+      "category": "platform",
+      "status": "active",
+      "tags": [
+        "systemd",
+        "quadlet",
+        "user-units",
+        "ujust",
+        "system_files"
+      ],
+      "description": "systemd user services, presets, and rootless quadlet containers shipped by common. Use when adding or editing a unit under system_files/shared/, writing a ujust enable/disable toggle for one, or debugging why a unit starts anyway.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
       "doc_type": "reference"
     },
     {

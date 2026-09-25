@@ -102,6 +102,9 @@ jobs:
       - name: Run bats (update.just and native recipes)
         run: bats tests/test_update_just.bats tests/test_native_recipes.bats
 
+      - name: Run bats (shared.just — powerwash + thumbnailer toggle)
+        run: bats tests/test_shared_just.bats
+
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
 
