@@ -198,3 +198,43 @@ def test_opentabletdriver_custom_regex_manager():
             break
 
     assert match_found, "OpenTabletDriver regex pattern did not match apps.just content"
+
+
+def test_opentabletdriver_updates_do_not_automerge():
+    """OTD bumps need manual sha256 updates, so they must be excluded from automerge.
+
+    ``OTD_TARBALL_SHA256``/``OTD_SERVICE_SHA256`` in apps.just are not Renovate-managed; a
+    Renovate-only bump of ``OTD_RELEASE`` produces a recipe that fails its ``sha256sum -c``
+    gate. The repo-wide patch/minor automerge rule must therefore be overridden for this
+    dependency.
+    """
+    config = _load_config()
+    package_rules = config.get("packageRules", [])
+
+    disable_rules = [
+        rule
+        for rule in package_rules
+        if rule.get("automerge") is False
+        and "OpenTabletDriver/OpenTabletDriver" in rule.get("matchDepNames", [])
+    ]
+    assert disable_rules, (
+        "renovate.json must contain a packageRule with matchDepNames "
+        "['OpenTabletDriver/OpenTabletDriver'] and automerge: false, because the sha256 pins "
+        "beside OTD_RELEASE in apps.just have to be updated by hand."
+    )
+
+    for rule in disable_rules:
+        assert "matchUpdateTypes" not in rule, (
+            "The OpenTabletDriver automerge exclusion must cover every update type; the "
+            "manual sha256 requirement applies to patch bumps too."
+        )
+
+    # The exclusion must be ordered after the repo-wide automerge rule, since later
+    # packageRules win in Renovate.
+    automerge_index = next(
+        i for i, rule in enumerate(package_rules) if rule.get("automerge") is True
+    )
+    assert package_rules.index(disable_rules[0]) > automerge_index, (
+        "The OpenTabletDriver automerge: false rule must come after the repo-wide automerge "
+        "rule; Renovate applies later packageRules last."
+    )
