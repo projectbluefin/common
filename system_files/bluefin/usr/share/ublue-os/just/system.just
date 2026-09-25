@@ -83,12 +83,9 @@ toggle-devmode:
         --selected "  Docker,  Podman Desktop" \
         "── Docker ───────────────────────────────────" \
         "  Docker" \
-        "── Podman ───────────────────────────────────" \
-        "  Podman Desktop" \
         "── Virtualization ───────────────────────────" \
-        "  Virtual Machines (virt-manager + QEMU)" \
-        "  Lima (lightweight VMs via KVM)" \
-        "  incus (system containers)" \
+        "  Podman Desktop" \
+        "  Lima (lightweight Linux VM, WSL/container machine equivalent)" \
         "── IDE ──────────────────────────────────────" \
         "  VS Code" \
         "  VSCodium" \
@@ -108,9 +105,7 @@ toggle-devmode:
     WILL_INSTALL=("devcontainer CLI")
     _dx_wants -F "  Docker"       && WILL_INSTALL+=("docker + compose + lazydocker + dive")
     _dx_wants    "Podman Desktop" && WILL_INSTALL+=("Podman Desktop")
-    _dx_wants    "Virtual Machines" && WILL_INSTALL+=("virt-manager + QEMU")
     _dx_wants -F "  Lima"         && WILL_INSTALL+=("Lima")
-    _dx_wants    "incus"          && WILL_INSTALL+=("incus")
     _dx_wants -F "  VS Code"      && WILL_INSTALL+=("VS Code")
     _dx_wants    "VSCodium"       && WILL_INSTALL+=("VSCodium")
     _dx_wants    "Antigravity"    && WILL_INSTALL+=("Antigravity")
@@ -137,14 +132,10 @@ toggle-devmode:
     gum confirm "Install now?" || exit 0
     echo ""
 
-    INSTALL_LIBVIRT=0
     INSTALL_LIMA=0
-    INSTALL_INCUS=0
     INSTALL_DOCKER=0
     _dx_wants -F "  Docker"       && INSTALL_DOCKER=1
-    _dx_wants    "Virtual Machines" && INSTALL_LIBVIRT=1
     _dx_wants -F "  Lima"         && INSTALL_LIMA=1
-    _dx_wants    "incus"          && INSTALL_INCUS=1
 
     # Taps are silent/fast — run before the progress bar
     if _dx_wants -E "VS Code|VSCodium|Antigravity|Zed|JetBrains"; then
@@ -159,9 +150,7 @@ toggle-devmode:
     DX_CMDS=("brew install devcontainer")
     [ "${INSTALL_DOCKER}"  -eq 1 ] && _dx_add "Docker"           "brew install docker docker-compose lazydocker dive"
     _dx_wants    "Podman Desktop" && _dx_add "Podman Desktop"     "flatpak install --system --noninteractive flathub io.podman_desktop.PodmanDesktop"
-    [ "${INSTALL_LIBVIRT}" -eq 1 ] && _dx_add "Virtual Machines" "flatpak install --system --noninteractive flathub org.virt_manager.virt-manager org.virt_manager.virt_manager.Extension.Qemu"
     [ "${INSTALL_LIMA}"    -eq 1 ] && _dx_add "Lima"             "brew install lima"
-    [ "${INSTALL_INCUS}"   -eq 1 ] && _dx_add "incus"            "brew install incus"
     _dx_wants -F "  VS Code"      && _dx_add "VS Code"           "brew install --cask ublue-os/tap/visual-studio-code-linux"
     _dx_wants    "VSCodium"       && _dx_add "VSCodium"          "brew install --cask ublue-os/tap/vscodium-linux"
     _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-linux"
@@ -204,16 +193,9 @@ toggle-devmode:
             bash -c "${DX_CMDS[${i}]}" || exit 1
     done
 
-    # Post-install: configure libvirt session URI (instant — no spinner needed)
-    if [ "${INSTALL_LIBVIRT}" -eq 1 ]; then
-        /usr/libexec/ensure-libvirt-session-config
-    fi
-
     CURRENT_USER="$(id -un)"
     GROUPS_TO_ADD="dialout"
     [ "${INSTALL_DOCKER}" -eq 1 ]  && GROUPS_TO_ADD="${GROUPS_TO_ADD} docker"
-    [ "${INSTALL_LIBVIRT}" -eq 1 ] && GROUPS_TO_ADD="${GROUPS_TO_ADD} libvirt"
-    [ "${INSTALL_INCUS}" -eq 1 ]   && GROUPS_TO_ADD="${GROUPS_TO_ADD} incus-admin"
     pkexec bash -c "
         append_group() {
             local g=\"\$1\"
@@ -226,6 +208,11 @@ toggle-devmode:
             usermod -aG \"\${g}\" ${CURRENT_USER} 2>/dev/null || true
         done
     "
+
+    # Post-install: set up Lima VM if selected
+    if [ "${INSTALL_LIMA}" -eq 1 ]; then
+        just --justfile "${JUSTFILE}" setup-lima
+    fi
 
     mkdir -p "${HOME}/.config/bluefin"
     touch "${DEVMODE_MARKER}"
@@ -295,6 +282,94 @@ toggle-vms:
         gum confirm "Install the VM stack (virt-manager + QEMU)?" || exit 0
         just --justfile "{{ justfile() }}" setup-vms
     fi
+
+# Set up Lima Ubuntu VM (WSL/container machine equivalent)
+[group('System')]
+setup-lima:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # 1. KVM preflight — check /dev/kvm access, add user to kvm group if needed, prompt reboot if group was just added
+    KVM_PATH="${KVM_PATH:-/dev/kvm}"
+    if [ ! -e "${KVM_PATH}" ]; then
+        echo "Error: ${KVM_PATH} not found. Enable hardware virtualization in your BIOS/UEFI settings." >&2
+        exit 1
+    fi
+
+    if [ ! -r "${KVM_PATH}" ] || [ ! -w "${KVM_PATH}" ]; then
+        CURRENT_USER="$(id -un)"
+        if ! id -nG "${CURRENT_USER}" 2>/dev/null | grep -qw kvm; then
+            echo "Adding ${CURRENT_USER} to the kvm group..."
+            pkexec bash -c "
+                if ! grep -q '^kvm:' /etc/group 2>/dev/null; then
+                    grep '^kvm:' /usr/lib/group 2>/dev/null | tee -a /etc/group > /dev/null || true
+                fi
+                usermod -aG kvm ${CURRENT_USER} 2>/dev/null || true
+            "
+            if gum confirm "Added to kvm group. A reboot is required for group changes to take effect. Reboot now?"; then
+                systemctl reboot
+            else
+                echo "Please reboot your system and re-run 'ujust setup-lima'."
+            fi
+            exit 0
+        else
+            echo "Error: Cannot access ${KVM_PATH} despite membership in the kvm group. Check ${KVM_PATH} permissions." >&2
+            exit 1
+        fi
+    fi
+
+    # 2. brew install lima (pulls qemu automatically as a dependency)
+    brew install lima
+
+    # 3. Wire ~/.ssh/config — prepend "Include ~/.lima/*/ssh.config" before any Host or Match blocks; chmod 700 ~/.ssh, chmod 600 ~/.ssh/config
+    mkdir -p "${HOME}/.ssh"
+    chmod 700 "${HOME}/.ssh"
+    SSH_CONFIG="${HOME}/.ssh/config"
+    touch "${SSH_CONFIG}"
+    chmod 600 "${SSH_CONFIG}"
+
+    if ! grep -qF "Include ~/.lima/*/ssh.config" "${SSH_CONFIG}"; then
+        FIRST_MATCH_LINE="$(grep -nE '^[[:space:]]*(Host|Match)[[:space:]]+' "${SSH_CONFIG}" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
+        if [ -n "${FIRST_MATCH_LINE}" ]; then
+            sed -i "${FIRST_MATCH_LINE}i Include ~/.lima/*/ssh.config\n" "${SSH_CONFIG}"
+        else
+            TMP_SSH="$(mktemp)"
+            printf 'Include ~/.lima/*/ssh.config\n\n' > "${TMP_SSH}"
+            cat "${SSH_CONFIG}" >> "${TMP_SSH}"
+            cat "${TMP_SSH}" > "${SSH_CONFIG}"
+            rm -f "${TMP_SSH}"
+        fi
+    fi
+
+    # 4. limactl start --name ubuntu --mount-writable --tty=false template:ubuntu-lts
+    # Warn user about ~600MB first-run download before starting
+    if ! limactl ls -q 2>/dev/null | grep -qx "ubuntu"; then
+        echo "Notice: Downloading Ubuntu LTS cloud image (~600MB) for first-run setup..."
+        limactl start --name ubuntu --mount-writable --tty=false template:ubuntu-lts
+    else
+        if ! limactl ls 2>/dev/null | grep -E '^ubuntu[[:space:]]+Running' >/dev/null; then
+            limactl start ubuntu
+        fi
+    fi
+
+    # 5. limactl autostart enable ubuntu (persistent across reboots)
+    limactl autostart enable ubuntu
+
+    # 6. Verify SSH is working: limactl shell ubuntu true
+    limactl shell ubuntu true
+
+    # 7. Print VSCode connection instructions
+    echo ""
+    gum style \
+        --foreground 2 --border-foreground 2 --border rounded \
+        --align center --width 65 --padding "1 2" \
+        "Lima Ubuntu environment is ready!"
+    echo ""
+    echo "To connect from VS Code:"
+    echo "  1. Ensure the 'Remote - SSH' extension is installed in VS Code."
+    echo "  2. Press Ctrl+Shift+P -> 'Remote-SSH: Connect to Host...' -> 'lima-ubuntu'"
+    echo "  3. Open your project folder (\$HOME is mounted writable inside the VM)."
+    echo "  4. In projects with devcontainers, VS Code will offer 'Reopen in Container'."
 
 # Install system flatpaks
 [group('System')]

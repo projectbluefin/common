@@ -8,6 +8,18 @@ confirms that it is the same work and names the survivor.
 
 Resolve a confirmed cluster as a unit, halting on the first failure.
 
+## Prevention — the author-time check
+
+Everything below resolves a collision a reviewer has already paid for. The
+cheaper fix is one step earlier: before opening a PR, a lane intersects the
+files it intends to change against the open PRs it *already holds* on that
+repository, and either comments on the existing PR or names the overlap in the
+new PR body. That step is drafted, not yet adopted, in
+[`self-collision-preflight.md`](../../../contributing/self-collision-preflight.md)
+([common#1060](https://github.com/projectbluefin/common/issues/1060)); the
+prohibition it replaces was rejected because a shared file is not proof of
+duplication. Nothing in this section changes the human gate on this page.
+
 ## Procedure
 
 **1. The human confirms the duplicate and names the survivor.**

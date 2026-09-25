@@ -70,3 +70,6 @@ Full layer validation (the `common` behave suite from
 - [`docs/contributing/agent-lane-throttle.md`](docs/contributing/agent-lane-throttle.md) —
   draft proposal for demand-side throttling of agent-filed PRs under review
   backlog; unadopted until a maintainer decision.
+- [`docs/contributing/self-collision-preflight.md`](docs/contributing/self-collision-preflight.md) —
+  draft proposal for a preflight step that checks a lane's own open PRs for file
+  cluster overlap before it opens another; unadopted until a maintainer decision.

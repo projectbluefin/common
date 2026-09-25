@@ -38,6 +38,7 @@ Generated: 2026-09-25 · schema 1.0 · 43 skills
 | [nvidia](nvidia/SKILL.md) | test-authoring | active | Maintain NVIDIA GPU support architecture and update procedures. |
 | [oem-hardware-hooks](oem-hardware-hooks/SKILL.md) | test-authoring | active | Add OEM hardware first-boot setup hooks safely. |
 | [onboarding](onboarding.md) | meta | active | Set up a verified dev environment for projectbluefin repos. |
+| [pappl-scanning-boundary](pappl-scanning-boundary.md) | meta | active | Track upstream PAPPL scanning API status and the ownership boundary between PAPPL, SANE, and eSCL scanner tooling. |
 | [pr-review](pr-review/SKILL.md) | ci-ops | active | Run human-decides, agent-lands backlog review one card at a time. |
 | [qa](qa.md) | test-authoring | active | Run and understand the projectbluefin QA test coverage model. |
 | [queue-feed](queue-feed.md) | ci-ops | active | Read and validate the Project Bluefin static pull-request queue feed. |
