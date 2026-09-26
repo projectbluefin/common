@@ -54,8 +54,8 @@ set.
 
 | Secret | Referenced by | Status |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned 2026-09-24; worker deploy green since then after failing every run from 2026-07-21 (#1091). Workflow still lacks the Rule 6 preflight; security review pending |
-| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned 2026-09-24 (#1091); security review pending |
+| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (first green deploy, [run 34163377120](https://github.com/projectbluefin/documentation/actions/runs/34163377120)); last missing-token failure 2026-08-09. Deploy green since, one D1-migration failure on 2026-09-24 ([run 36028476654](https://github.com/projectbluefin/documentation/actions/runs/36028476654)) — see #1091. Workflow still lacks the Rule 6 preflight; security review pending |
+| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (#1091); security review pending |
 | `BLUEFINBOT_TOKEN` | `projectbluefin/actions` | In use; security review pending |
 | `SYSUPDATE_SIGNING_KEY` | `projectbluefin/server` | In use; security review pending |
 
