@@ -1,6 +1,6 @@
 # Renovate, Trivy, Build Matrix, and Shellcheck
 
-Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, and Renovate versioned-binary tracking.
+Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Renovate fork processing in the org runner, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, and Renovate versioned-binary tracking.
 
 ---
 
@@ -26,6 +26,120 @@ gh workflow run renovate.yml --repo projectbluefin/renovate-config
 ```
 
 Image repos do **not** have their own `renovate.yml` caller workflow — Renovate runs org-wide from the central config repo using `RENOVATE_APP_ID` + `RENOVATE_PRIVATE_KEY` secrets (separate from `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY`).
+
+### Fork processing in the org runner
+
+Renovate's [documented default](https://docs.renovatebot.com/configuration-options/#forkprocessing) is to
+skip forks: "By default, Renovate skips any forked repositories when in
+`autodiscover` mode. It even skips a forked repository that has a Renovate
+configuration file, because Renovate doesn't know if that file was added by the
+forked repository." A fork is processed only when its **own `renovate.json`**
+sets `"forkProcessing": "enabled"`; only the `onboardingConfigFileName`
+(default `renovate.json`) is consulted, so a renamed or `.json5` config cannot
+opt in.
+
+The org runner relies on that default. `projectbluefin/renovate-config` sets
+`autodiscover: true`, `requireConfig: "required"` and `inheritConfig` from
+`org-inherited-config.json` in `renovate-config.json`, and none of its files
+set `forkProcessing`. **Every `projectbluefin` repo that is a GitHub fork
+therefore needs its own opt-in**, or it is discovered, silently skipped, and
+never appears in a run log as processed.
+
+The three printer application forks ([common#1242](https://github.com/projectbluefin/common/issues/1242))
+now carry it:
+
+| Fork | Config on `testing` | Opt-in | Manager scope in that config |
+|---|---|---|---|
+| [`ps-printer-app`](https://github.com/projectbluefin/ps-printer-app) | `renovate.json` (added) | [#33](https://github.com/projectbluefin/ps-printer-app/pull/33) | `enabledManagers: ["github-actions"]` |
+| [`hplip-printer-app`](https://github.com/projectbluefin/hplip-printer-app) | `renovate.json` (existing) | [#36](https://github.com/projectbluefin/hplip-printer-app/pull/36) | `enabledManagers: ["custom.regex"]` |
+| [`gutenprint-printer-app`](https://github.com/projectbluefin/gutenprint-printer-app) | `renovate.json` (existing) | [#38](https://github.com/projectbluefin/gutenprint-printer-app/pull/38) | none — inherits all managers |
+
+Each also sets `baseBranchPatterns: ["testing"]` — the bot proposes into
+`testing`, never `stable` — and turns automerge off for the pins it owns:
+repo-wide in `hplip`, all `github-actions` updates in `ps`, and only the
+`git-tags` source pin in `gutenprint`. The org preset still automerges grouped
+non-major action pins elsewhere, and it applies its `automerge` label at the org
+level regardless, so a labelled PR is **not** proof that automerge is enabled
+for that repo — read the repo's own `packageRules`.
+
+#### Verify by extraction, not by config syntax
+
+A well-formed `renovate.json` proves nothing — a skipped fork logs no error and
+opens no PR. Confirm the run actually reached the repo:
+
+```bash
+gh workflow run renovate.yml --repo projectbluefin/renovate-config
+gh run list --repo projectbluefin/renovate-config --workflow renovate.yml --limit 1
+gh run view <run-id> --repo projectbluefin/renovate-config --log \
+  | grep -E 'repository=projectbluefin/(ps|hplip|gutenprint)-printer-app'
+```
+
+A processed repo logs `Repository started` → `Dependency extraction complete
+(... baseBranch=testing)` → `Repository finished`. A fork without the opt-in
+logs instead:
+
+```text
+INFO: Repository is a fork and not manually configured - skipping - did you
+want to run with --fork-processing=enabled? (repository=projectbluefin/<repo>)
+```
+
+On run `36190076329` (2026-09-25T21:10Z) all three printer forks appear in the
+autodiscovered list and are processed: `ps-printer-app` (21:20:32Z,
+`github-actions`, 40 deps) and `gutenprint-printer-app` (21:21:07Z,
+`github-actions` + `renovate-config` + `regex`, 35 deps) each created PRs in
+that run; `hplip-printer-app` (21:20:56Z, `regex`, 3 deps) had no pending
+update. The same run shows the skip line for twelve other org repos that are
+forks, including `ghostscript-printer-app` and `chairlift`.
+
+#### One writer per pin
+
+Renovate has **no BuildStream manager** — `.bst` files are invisible to it. In
+the printer forks each `elements/**/*.bst` pin therefore has exactly one
+writer:
+
+- the fork's own `customManagers` entry, for driver sources (`hplip.bst`,
+  `net-snmp.bst`, `include/source-pins.yml`)
+- that fork's scheduled `update-base.yml` (`just bst source track
+  fsdk-containers.bst`), for the FSDK junction
+
+No Renovate PR has ever targeted `elements/fsdk-containers.bst` in any of the
+three repos, so the FSDK bump has no competing writer to remove. Keep this
+property when adding pins: scope `enabledManagers` as `ps` and `hplip` do, and
+never add a Renovate manager for a pin that `update-base.yml` already tracks.
+
+`ps-printer-app` has **no** `custom.regex` source-pin manager yet — its config
+is scoped to `github-actions`, so nothing in that repo's printing graph is
+Renovate-tracked while the graph is still being built
+([ps-printer-app#2](https://github.com/projectbluefin/ps-printer-app/issues/2)).
+
+#### Bot identity
+
+Renovate PRs are authored by the **Mergeraptor GitHub App**. GitHub reports the
+PR author as `app/mergeraptor`, while the app's bot *user* — the identity the
+in-repo `update-base.yml` commits as — is `mergeraptor[bot]` (user id
+`267480593`). An author filter must match the surface it reads: `app/<slug>` on
+a PR object, `mergeraptor[bot]` on a commit. The runner authenticates with
+`RENOVATE_APP_ID`/`RENOVATE_PRIVATE_KEY`; `update-base.yml` uses
+`MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY`. Minting an app token *from a
+fork* additionally needs `owner:` set to the repository owner — a fork's
+per-repo installation lookup 404s (fsdk-containers#331).
+
+#### Known gap: the HPLIP source pin has no resolvable digest
+
+In the same run, `hplip-printer-app` logged `WARN: Package lookup failures` —
+`Could not determine new digest for update (gitlab-tags package
+printing-team/hplip.v2)`, `files: ["elements/printer-app/hplip.bst"]`. That
+manager's `autoReplaceStringTemplate` emits `{{{newDigest}}}`, and the
+`gitlab-tags` datasource supplies none, so Renovate can never propose the
+coherent tag + dereferenced ref + version update for that pin.
+`gutenprint-printer-app`'s equivalent manager uses `git-tags` against the salsa
+git URL and resolves without a lookup failure. Fixing the HPLIP manager belongs
+to [hplip-printer-app#8](https://github.com/projectbluefin/hplip-printer-app/issues/8).
+
+> **Unrelated org-wide warning:** `Could not ensure issue ... integration-unauthorized`
+> (dependency dashboard) appears for ~20 org repos in the same run, forks and
+> non-forks alike. It is a runner app-permission condition, not a fork
+> installation gap, and does not block PR creation.
 
 ---
 
