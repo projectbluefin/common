@@ -151,6 +151,22 @@ def test_github_actions_minor_patch_updates_require_review():
     assert review_rule["automerge"] is False
 
 
+def test_github_actions_pin_digests_rule():
+    """Verify packageRule pinning GitHub Actions digests to full SHAs."""
+    config = _load_config()
+    rules = config.get("packageRules", [])
+    pin_rule = next(
+        (
+            rule
+            for rule in rules
+            if rule.get("matchManagers") == ["github-actions"]
+            and rule.get("matchDepTypes") == ["action"]
+            and rule.get("pinDigests") is True
+        ),
+        None,
+    )
+    assert pin_rule is not None, "Missing packageRule with pinDigests for github-actions"
+
 def test_opentabletdriver_custom_regex_manager():
     """Verify the custom regex manager for OTD_RELEASE in apps.just."""
     config = _load_config()

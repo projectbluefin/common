@@ -52,6 +52,16 @@
       "platformAutomerge": true
     },
     {
+      "description": "Pin GitHub Actions digests to full SHAs",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepTypes": [
+        "action"
+      ],
+      "pinDigests": true
+    },
+    {
       "description": "Require human review for GitHub Actions minor/patch updates",
       "matchManagers": [
         "github-actions"

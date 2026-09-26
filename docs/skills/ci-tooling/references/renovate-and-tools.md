@@ -6,20 +6,13 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Trivy scan-i
 
 ## Renovate OCI digest tracking
 
-`Containerfile` has two OCI image pins tracked by Renovate:
+`Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest`).
 
-1. `docker.io/library/alpine:latest@sha256:...` via Renovate's built-in `dockerfile` manager
-2. `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` via a custom regex manager in `renovate.json`
-
-### Why both managers exist
-
-- `FROM docker.io/library/alpine:latest@sha256:...` is a standard Dockerfile dependency — the built-in `dockerfile` manager handles it
-- `COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` is not covered by the default parser — a custom regex manager tracks it
+Renovate's built-in `dockerfile` manager natively parses `FROM` directives and directly-referenced `COPY --from=<image>` lines. The custom regex manager for `bluefin-wallpapers-gnome` in `renovate.json` explicitly pins and tracks wallpaper digest updates.
 
 ### Rule when adding OCI pins
 
-If you add new OCI image pins to `Containerfile`, also update `renovate.json` so Renovate can keep them current. Applies to both `FROM` and `COPY --from=` references. An untracked pin silently goes stale.
-
+When adding new OCI image pins to `Containerfile`, ensure Renovate can track them: standard `FROM` image pins are picked up by the built-in `dockerfile` manager, while non-standard or custom-referenced images can use a custom regex manager in `renovate.json`. An untracked pin silently goes stale.
 ### Org-wide Renovate runner
 
 The factory runs self-hosted Renovate from `projectbluefin/renovate-config` (not from each image repo). It runs every 3 hours. To trigger immediately:
