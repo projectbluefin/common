@@ -51,12 +51,15 @@ now carry it:
 | [`gutenprint-printer-app`](https://github.com/projectbluefin/gutenprint-printer-app) | `renovate.json` (existing) | [#38](https://github.com/projectbluefin/gutenprint-printer-app/pull/38) | none — inherits all managers |
 
 Each also sets `baseBranchPatterns: ["testing"]` — the bot proposes into
-`testing`, never `stable` — and turns automerge off for the pins it owns:
-repo-wide in `hplip`, all `github-actions` updates in `ps`, and only the
-`git-tags` source pin in `gutenprint`. The org preset still automerges grouped
-non-major action pins elsewhere, and it applies its `automerge` label at the org
-level regardless, so a labelled PR is **not** proof that automerge is enabled
-for that repo — read the repo's own `packageRules`.
+`testing`, never `stable`. Automerge is disabled by a repo `packageRules` entry
+for all `github-actions` updates in `ps` and for the `git-tags` source pin in
+`gutenprint`. `hplip` sets only a top-level `"automerge": false`, which does
+**not** take effect for non-major updates: the org-inherited rule "Automerge
+chore dep updates (digest, pin, patch, minor)" is a package rule and overrides
+top-level config (hplip#41 reports `Automerge: Enabled`). The `automerge` label
+comes only from the org's grouped `github-actions` rules, so neither a label nor
+a top-level key proves the repo's automerge state — read the repo's own
+`packageRules`, or the `Automerge:` line in the Renovate PR body.
 
 #### Verify by extraction, not by config syntax
 

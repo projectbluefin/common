@@ -64,6 +64,18 @@ metadata:
 
 ---
 
+## Required-check reachability
+
+A workflow that provides a ruleset-required status check must not use
+`pull_request` `paths` or `paths-ignore`: excluded PRs never schedule the
+workflow, leaving the required check pending. Keep `merge_group` enabled for
+merge-queue refs. To avoid expensive builds on documentation-only changes,
+detect changed inputs in a preceding job and skip build steps rather than the
+required jobs themselves. If change detection fails, default to running the
+build.
+
+---
+
 ## SHA pinning policy
 
 **All third-party `uses:` references must be pinned to a full commit SHA with a version comment.** Floating tags (`@v4`, `@main`, `@latest`) are rejected by the pre-commit hook.
