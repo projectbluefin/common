@@ -30,6 +30,46 @@ permissions:
 
 Do **not** add `SIGNING_SECRET` to new workflows — keyless OIDC has replaced it.
 
+## Enforcing signatures at pull time — containers policy.json
+
+Signing only matters if the pull path rejects unsigned images. The base image
+pull is enforced by
+`system_files/shared/etc/containers/policy.json`, consumed by the
+`containers/image` library at `bootc switch` / `bootc install` time.
+
+- The `"default"` scope is `reject`, so any registry without an explicit entry
+  falls through to the `""` docker catch-all.
+- `quay.io/toolbx-images` and `ghcr.io/ublue-os` are enforced with
+  `sigstoreSigned` (`keyPath`/`keyPaths` + `matchRepository`).
+- `ghcr.io/projectbluefin` (the base image every consumer pulls) is enforced
+  with a keyless `sigstoreSigned` entry: Fulcio CA (`fulcio_v1.crt.pem`),
+  Rekor public key (`rekor.pub`), and `subjectRegExp` scoped to
+  `^https://github\.com/projectbluefin/[^/]+/\.github/workflows/` — the same
+  certificate identity the `sign-and-publish` action emits
+  (`.github/workflows/build.yml`).
+
+The `fulcio` block uses `oidcIssuer` + `subjectRegExp` (or `subjectEmail`),
+**not** a top-level `fulcioIssuer`: `containers/image` policy parsing only
+recognises those fields inside the `fulcio` object, so a `fulcioIssuer`
+key is silently ignored and the scope falls back to the catch-all.
+
+> The `insecureAcceptAnything` catch-all on the `""` docker scope is left in
+> place on purpose. Removing it would reject every registry without an explicit
+> entry (Fedora base, rpm-ostree layers, third-party COPRs) and requires
+> validating the entire consumed-registry surface before it is safe. Narrowing
+> it is a follow-up, not this change.
+
+### Verifying the policy
+
+```bash
+# The projectbluefin entry references these trust roots — they must exist:
+ls -1 system_files/shared/usr/lib/pki/containers/fulcio_v1.crt.pem \
+      system_files/shared/usr/lib/pki/containers/rekor.pub
+
+# The policy must be valid JSON:
+python3 -c "import json;json.load(open('system_files/shared/etc/containers/policy.json'))"
+```
+
 ---
 
 ## Verifying a published artifact
