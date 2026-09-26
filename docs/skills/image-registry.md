@@ -120,9 +120,9 @@ from `bootc status` (`stable`, `testing`, else `unknown`), never the baked
 the next timer run retries.
 
 Opt out with `systemctl mask --now projectbluefin-countme.timer`. The previous
-opt-out files (`/etc/projectbluefin/countme/disabled`,
-`/etc/bluefin-countme-opt-out`, `/etc/dakota-countme/disabled`) still block
-the service.
+opt-outs still block the service: the files `/etc/projectbluefin/countme/disabled`,
+`/etc/bluefin-countme-opt-out`, `/etc/dakota-countme/disabled`, and a
+`systemctl mask` of `bluefin-countme.timer` or `bluefin-countme.service`.
 
 `countme.projectbluefin.io/v1/daily.json` lists systems active per UTC day
 and image. These are anonymous check-ins without a machine identifier, not a

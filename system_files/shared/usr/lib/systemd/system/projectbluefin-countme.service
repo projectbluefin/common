@@ -9,6 +9,9 @@ ConditionDirectoryNotEmpty=/home
 ConditionPathExists=!/etc/projectbluefin/countme/disabled
 ConditionPathExists=!/etc/bluefin-countme-opt-out
 ConditionPathExists=!/etc/dakota-countme/disabled
+# `systemctl mask` of the previous units, the opt-out documented for them.
+ConditionPathExists=!/etc/systemd/system/bluefin-countme.timer
+ConditionPathExists=!/etc/systemd/system/bluefin-countme.service
 
 [Service]
 Type=simple
