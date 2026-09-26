@@ -1,6 +1,6 @@
 # SHA Pinning Policy and Floating-Tag Guard
 
-Part of [ci-tooling](../SKILL.md) — Full SHA pinning rules, how to look up and update SHAs, internal `projectbluefin/` ref policy, and the floating-tag guard pre-commit hook.
+Part of [ci-tooling](../SKILL.md) and [`ACTIONS-SECURITY.md`](../../../../ACTIONS-SECURITY.md) — Full SHA pinning rules, how to look up and update SHAs, internal `projectbluefin/` ref policy, and the floating-tag guard pre-commit hook.
 
 ---
 

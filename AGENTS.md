@@ -163,6 +163,7 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 | PR review checklist | `docs/skills/pr-review/SKILL.md` |
 | Testing contract | `docs/TESTING.md` |
 | Coding / config style guide | `docs/contributing/style-guide.md` |
+| Actions security baseline | [`ACTIONS-SECURITY.md`](ACTIONS-SECURITY.md) |
 
 ## See also
 

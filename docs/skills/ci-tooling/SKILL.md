@@ -77,7 +77,7 @@ uses: actions/checkout@v4
 uses: actions/checkout@main
 ```
 
-**Internal `projectbluefin/` refs use managed floating tags (`@main` or `@v1`), not SHA pins.** The `no-floating-action-tags` hook exempts all `projectbluefin/` refs. See [sha-pinning.md](references/sha-pinning.md) for the full policy and Floating-tag guard details.
+**Internal `projectbluefin/` refs use managed floating tags (`@main` or `@v1`), not SHA pins.** The `no-floating-action-tags` hook exempts all `projectbluefin/` refs. See [sha-pinning.md](references/sha-pinning.md) for the full policy and Floating-tag guard details, and [`ACTIONS-SECURITY.md`](../../../ACTIONS-SECURITY.md) for the normative organization baseline.
 
 ---
 
@@ -135,6 +135,7 @@ These are **hygiene gates**, not blocking CI workflow gates. The front-matter si
 
 | File | Description |
 |---|---|
+| [ACTIONS-SECURITY.md](../../../ACTIONS-SECURITY.md) | Organization GitHub Actions security baseline (top-level `permissions: {}`, SHA pinning, `pull_request_target` scoping, checksum verification). |
 | [references/sha-pinning.md](references/sha-pinning.md) | Full SHA pinning policy, how to find/update SHAs, internal refs, Floating-tag guard regex and exemptions, Renovate vs pre-commit. |
 | [references/pre-commit-conventions.md](references/pre-commit-conventions.md) | Pre-commit auto-fix loop, AI commit attribution, release-state.yaml schema validation, Skill drift detection, Docs hygiene hooks. |
 | [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |

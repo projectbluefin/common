@@ -94,6 +94,7 @@ set.
 
 ## Enforcement
 
+- **Actions security baseline:** [`ACTIONS-SECURITY.md`](../../ACTIONS-SECURITY.md) defines token permissions and credential scoping across workflows.
 - **CI gate:** `pat-ban.yml` in `projectbluefin/actions` blocks any PR that introduces a `secrets.XXX` reference not in the approved list above.
 - **Human gate:** Any new secret addition is a Design gate — stop and request maintainer approval.
 - **Not automated in this repo:** there is no pre-commit hook that scans for new

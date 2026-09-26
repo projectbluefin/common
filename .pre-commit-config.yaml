@@ -72,3 +72,9 @@ repos:
         entry: python3 scripts/generate_skill_index.py --check
         pass_filenames: false
         always_run: true
+      - id: check-actions-security
+        name: Validate GitHub Actions security baseline conformance
+        language: system
+        entry: python3 scripts/check-actions-security.py
+        pass_filenames: false
+        always_run: true
