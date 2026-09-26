@@ -101,19 +101,21 @@ teardown() {
     [ ! -e "${WORKDIR}/wallpaper.log" ]
 }
 
-# Characterization test, not an endorsement: version-script stamps the version
-# before the hook body runs, so a run that dies at `systemctl enable` still
-# burns version 1 and no later run ever retries. Asserted here so the current
-# behaviour is visible and a fix has to update this test deliberately.
-@test "20-dynamic-wallpaper: a failed run still burns the version and never retries" {
+# Regression guard for projectbluefin/common#1137: version-script is now a pure
+# read gate and the version is only committed by version-script-commit at the
+# end of the body. A run that dies at `systemctl enable` must NOT burn the
+# version, so a later healthy run retries instead of being permanently skipped.
+@test "20-dynamic-wallpaper: a failed run retries instead of burning the version" {
     echo 1 > "${WORKDIR}/systemctl.rc"
     run bash "${PATCHED_HOOK}"
     [ "${status}" -ne 0 ]
-    [ "$(jq -r '.version.user."dynamic-wallpaper"' "${SETUP_CHECKER_FILE}")" = "1" ]
+    # the body failed before version-script-commit, so nothing is recorded
+    [ "$(jq -r '.version.user."dynamic-wallpaper"' "${SETUP_CHECKER_FILE}" 2>/dev/null)" = "null" ]
 
     echo 0 > "${WORKDIR}/systemctl.rc"
     run bash "${PATCHED_HOOK}"
     [ "${status}" -eq 0 ]
-    [ ! -e "${WORKDIR}/wallpaper.log" ]
-    [ "$(wc -l < "${WORKDIR}/systemctl.log")" -eq 1 ]
+    # it retried: the wallpaper runs again and the version is now recorded
+    [ "$(wc -l < "${WORKDIR}/wallpaper.log")" -eq 1 ]
+    [ "$(jq -r '.version.user."dynamic-wallpaper"' "${SETUP_CHECKER_FILE}")" = "1" ]
 }

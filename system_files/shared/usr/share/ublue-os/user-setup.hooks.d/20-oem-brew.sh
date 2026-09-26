@@ -22,7 +22,7 @@ esac
 [[ -d "${OEM_DIR}/${VENDOR}" ]] || exit 0
 
 # Check brew before version-script: if brew is absent on first login we must
-# not record completion — version-script cannot be undone once it writes.
+# not record completion — the version is only committed once the body succeeds.
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "oem-brew: brew not found, will retry on next login"
     exit 0
@@ -43,6 +43,10 @@ if version-script "oem-${VENDOR}" user 2; then
         dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
             "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
     fi
+
+    # Record success only after brew bundle ran, so a failed install retries on
+    # the next login instead of being permanently skipped.
+    version-script-commit "oem-${VENDOR}" user 2
 fi
 
 if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \

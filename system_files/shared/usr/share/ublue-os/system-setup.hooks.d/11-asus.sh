@@ -22,7 +22,7 @@ fi
 
 version-script asus system 1 || exit 0
 
-set -x
+set -xe
 
 echo "ASUS hardware detected, enabling system services..."
 
@@ -31,3 +31,7 @@ udevadm control --reload
 udevadm trigger
 
 echo "ASUS system setup complete"
+
+# Record success only after the body ran, so a failing first-boot hook retries
+# next boot instead of being permanently skipped.
+version-script-commit asus system 1

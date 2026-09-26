@@ -6,37 +6,47 @@ Part of [oem-hardware-hooks](../SKILL.md) — version-script safe/anti-patterns;
 
 ## The version-script contract — safe and anti-patterns
 
-### Canonical safe pattern (from `11-asus.sh`)
+### Canonical safe pattern (from `11-asus.sh` and `20-oem-brew.sh`)
 
-`version-script` writes a stamp file on first call. **The stamp is written before your hook
-logic runs.** If anything after the stamp call exits 1, the hook is permanently burned — it
-will never retry on future logins.
+`version-script` is a **read-only gate** — it tells you whether the hook has
+already run at this version, but it writes nothing. `version-script-commit`
+**writes the stamp**, and it is only reached if the hook body got there
+without failing. Split the two so a failing body never records and retries
+next boot (this is projectbluefin/common#1137):
 
 ```bash
-# Check ALL transient preconditions before calling version-script
-BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
+set -euo pipefail
+source /usr/lib/ublue/setup-services/libsetup.sh
+
+# Check ALL transient preconditions first.
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "hook: brew not found, will retry on next login"
-    exit 0   # ← exit 0 to retry; version-script not yet called
+    exit 0   # ← exit 0 to retry; version-script not yet committed
 fi
 
-# Only stamp once all preconditions pass
+# Read-only gate at the top: `|| exit 0` retries if already at this version.
 version-script myfeature user 1 || exit 0
+
+# ... your setup work ...
+
+# Record success ONLY at the end, after the body ran. With `set -e` a failing
+# step aborts here, so the version is never committed and the hook retries.
+version-script-commit myfeature user 1
 ```
 
 ### Anti-pattern to avoid
 
 ```bash
-version-script myfeature user 1 || exit 0  # stamp fires here
-
-# These exit 1 paths permanently skip the hook with no recovery:
-if [[ -z "$DEVICE_ID" ]]; then
-    exit 1   # ← BAD: hook burned, never retries
-fi
+# A body that fails before version-script-commit still must not record.
+version-script myfeature user 1 || exit 0   # gate only — this does NOT stamp
+# ... work that exits 1 with no recovery, before version-script-commit ...
 ```
 
-For transient failures (service not ready, file not yet present), use
-`exit 0` — not `exit 1` — so the hook retries on the next login.
+The old failure mode — stamping and then hitting an `exit 1` path — can no longer
+permanently burn a hook, because `version-script` no longer writes. But a body
+that fails *before* `version-script-commit` still must not record: keep
+transient failures on `exit 0`, and add `set -e` so hard failures abort before
+the commit.
 
 ---
 

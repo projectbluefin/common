@@ -11,3 +11,8 @@ systemctl --user enable --now bluefin-dynamic-wallpaper.timer
 
 echo "Setting initial dynamic wallpaper"
 /usr/libexec/bluefin-dynamic-wallpaper || true
+
+# Only record success once the body has run without failing, so an offline
+# machine (or a failing enable) retries on the next boot instead of being
+# permanently skipped.
+version-script-commit dynamic-wallpaper user 1
