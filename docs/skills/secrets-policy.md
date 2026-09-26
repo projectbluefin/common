@@ -1,7 +1,7 @@
 ---
 name: secrets-policy
 version: "1.0"
-last_updated: "2026-09-23"
+last_updated: "2026-09-26"
 id: secrets-policy
 one_line_purpose: Verify secrets and credentials against the approved inventory.
 entry_point: docs/skills/secrets-policy.md
@@ -54,8 +54,8 @@ set.
 
 | Secret | Referenced by | Status |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Not provisioned org-wide; worker deploy has failed every run since 2026-07-21 — see #1091 |
-| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Not provisioned org-wide — see #1091 |
+| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned 2026-09-24; worker deploy green since then after failing every run from 2026-07-21 (#1091). Workflow still lacks the Rule 6 preflight; security review pending |
+| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned 2026-09-24 (#1091); security review pending |
 | `BLUEFINBOT_TOKEN` | `projectbluefin/actions` | In use; security review pending |
 | `SYSUPDATE_SIGNING_KEY` | `projectbluefin/server` | In use; security review pending |
 
