@@ -17,6 +17,13 @@ WORKDIR=""
 
 setup() {
     WORKDIR="$(mktemp -d)"
+    SHELL_BIN_DIRS=""
+    for sh_bin in bash zsh fish; do
+        if p="$(command -v "$sh_bin" 2>/dev/null)"; then
+            d="$(dirname "$p")"
+            [[ ":$SHELL_BIN_DIRS:" != *":$d:"* ]] && SHELL_BIN_DIRS="${SHELL_BIN_DIRS:+${SHELL_BIN_DIRS}:}$d"
+        fi
+    done
     mkdir -p "${WORKDIR}/bin"
     : > "${WORKDIR}/calls.log"
     # Sandbox justfile and flags file: functional tests point the
@@ -140,7 +147,7 @@ teardown() {
 # ---------------------------------------------------------------------------
 
 @test "bash completion offers matching recipes for a prefix" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust up)
@@ -159,7 +166,7 @@ teardown() {
 }
 
 @test "bash completion lists all recipes on an empty word" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust "")
@@ -178,7 +185,7 @@ teardown() {
 }
 
 @test "bash completion offers flags for a dash-prefixed word" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust --l)
@@ -195,7 +202,7 @@ teardown() {
 }
 
 @test "bash completion finds flags next to the entry justfile by default" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust --l)
@@ -212,7 +219,7 @@ teardown() {
 }
 
 @test "bash completion offers -V (version), distinct from -v (verbose)" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust -V)
@@ -229,7 +236,7 @@ teardown() {
 }
 
 @test "bash completion queries recipes from the entry justfile" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" CALLS="${WORKDIR}/calls.log" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" CALLS="${WORKDIR}/calls.log" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust "")
@@ -245,7 +252,7 @@ teardown() {
 }
 
 @test "bash completion offers nothing when the justfile is missing" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/no-such.just" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/no-such.just" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust "")
@@ -262,7 +269,7 @@ teardown() {
 }
 
 @test "bash completion offers no flags when the flags file is missing" {
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/no-such-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/no-such-flags" BASH_COMPLETION="${BASH_COMPLETION}" \
         bash -c '
             source "${BASH_COMPLETION}"
             COMP_WORDS=(ujust --l)
@@ -282,7 +289,7 @@ teardown() {
     [ -n "$(command -v zsh)" ] || skip "zsh not installed"
     local out="${WORKDIR}/zsh-recipes.txt"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
         zsh -c '
             _call_program() { local _tag=$1; shift; "$@" }
             _describe() { print -r -- "${(P)${@[-1]}}" > "$OUT" }
@@ -301,7 +308,7 @@ teardown() {
     [ -n "$(command -v zsh)" ] || skip "zsh not installed"
     local out="${WORKDIR}/zsh-flags.txt"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
         zsh -c '
             _call_program() { local _tag=$1; shift; "$@" }
             _describe() { print -r -- "${(P)${@[-1]}}" > "$OUT" }
@@ -320,7 +327,7 @@ teardown() {
     [ -n "$(command -v zsh)" ] || skip "zsh not installed"
     local out="${WORKDIR}/zsh-flags-default.txt"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" ZSH_COMPLETION="${ZSH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" ZSH_COMPLETION="${ZSH_COMPLETION}" \
         zsh -c '
             _call_program() { local _tag=$1; shift; "$@" }
             _describe() { print -r -- "${(P)${@[-1]}}" > "$OUT" }
@@ -337,7 +344,7 @@ teardown() {
     [ -n "$(command -v zsh)" ] || skip "zsh not installed"
     local out="${WORKDIR}/zsh-flags-missing.txt"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/no-such-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" OUT="${out}" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/no-such-flags" ZSH_COMPLETION="${ZSH_COMPLETION}" \
         zsh -c '
             _call_program() { local _tag=$1; shift; "$@" }
             _describe() { print -r -- "${(P)${@[-1]}}" > "$OUT" }
@@ -353,7 +360,7 @@ teardown() {
 @test "fish completion offers matching recipes for a prefix" {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust up"'
 
     [ "${status}" -eq 0 ]
@@ -365,7 +372,7 @@ teardown() {
 @test "fish completion lists all recipes on an empty word" {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust "'
 
     [ "${status}" -eq 0 ]
@@ -377,7 +384,7 @@ teardown() {
 @test "fish completion offers flags for a dash-prefixed word" {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust --l"'
 
     [ "${status}" -eq 0 ]
@@ -387,7 +394,7 @@ teardown() {
 @test "fish completion finds flags next to the entry justfile by default" {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" FISH_COMPLETION="${FISH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust --l"'
 
     [ "${status}" -eq 0 ]
@@ -397,7 +404,7 @@ teardown() {
 @test "fish completion offers -V (version)" {
     [ -n "$(command -v fish)" ] || skip "fish not installed"
 
-    run env PATH="${WORKDIR}/bin:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
+    run env PATH="${WORKDIR}/bin:${SHELL_BIN_DIRS}:/usr/bin:/bin" UJUST_JUSTFILE="${WORKDIR}/00-entry.just" UJUST_FLAGS_FILE="${WORKDIR}/ujust-flags" FISH_COMPLETION="${FISH_COMPLETION}" \
         fish --private -c 'set -g fish_complete_path; source "$FISH_COMPLETION"; complete -C"ujust -V"'
 
     [ "${status}" -eq 0 ]

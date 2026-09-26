@@ -50,7 +50,7 @@ whoever remembers to add it.
   which runs in
   [`.github/workflows/unit-tests.yml`](../.github/workflows/unit-tests.yml) on
   pull requests that touch `tests/`, `system_files/`,
-  `scripts/validate-brewfiles.sh`, or the `Justfile` (that workflow's `paths`
+  `scripts/`, the `Justfile`, or the workflow itself (that workflow's `paths`
   filter). Adding or renaming a suite means editing the runner and the gate
   together — the gate failing is the signal that you forgot one of them.
 - **Never reference a suite that does not exist.** A dangling runner line makes
@@ -132,6 +132,8 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_apps_just.bats` | `apps.just` — `install-opentabletdriver` pinned-download + sha256 gates (tampered payload, HTTP error, unit-before-enable ordering), install/uninstall branches, and `cncf` |
 | `tests/test_image_repo.bats` | `usr/libexec/ublue-image-repo` — image-name/tag routing to upstream GitHub repos |
 | `tests/test_shared_just.bats` | `shared.just` — `powerwash` (double confirmation) and `toggle-tpm2` recipes |
+| `tests/test_escl_fixture.bats` | `tests/fixtures/escl-scanner/run-fixture.sh` — eSCL readiness probing, device detection, capture determinism/geometry/size assertions, DNS-SD discovery, with the simulator and client stubbed |
+| `tests/test_damask_service.bats` | `damask.service`, Flatpak sandbox overrides, and tmpfiles symlink configuration |
 
 ## Quality Epic
 

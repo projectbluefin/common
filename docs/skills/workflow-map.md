@@ -31,7 +31,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
 | `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
 | `validate-chairlift-config.yaml` | Checks `/usr/share/chairlift/config.yml` against the schema of the pinned ChairLift release (`CHAIRLIFT_SCHEMA_REF`, currently `v0.12.2`); path-filtered plus a weekly cron | Changing the ChairLift maintainer config, cask pin, or upstream schema assumptions |
-| `unit-tests.yml` | Runs `pytest` + `bats` on `system_files/**`, `tests/**`, and the `Justfile`. Triggers on PR, push to `main`, and `merge_group`. | Adding or changing unit tests, or changing the paths they cover |
+| `unit-tests.yml` | Runs `pytest` + `bats` on `system_files/**`, `tests/**`, `scripts/**`, the `Justfile`, and the workflow itself. Triggers on PR, push to `main`, and `merge_group`. | Adding or changing unit tests, or changing the paths they cover |
 | `build.yml` | Builds and publishes the `common` OCI layer on merge. Runs parallel per-arch jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`). Build uses rootless `buildah-build`; after build, `sudo skopeo copy` promotes the image into root storage so `push-image` (which uses `sudo podman push`) can find it. Then a `manifest` job assembles the multi-arch manifest, logs into GHCR, signs with keyless OIDC, generates SBOM, and attests SLSA L2. Downstream propagation is handled by Renovate (bluefin/bluefin-lts, ~3h) and dakota's daily cron — there is no direct dispatch from this workflow. | Changing how the shared layer is built or pushed |
 | `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer (composes + runs common suite via `run-testsuite.yml`) | Changing how PR-time downstream composition is tested |
 | `e2e.yml` | Post-merge, **advisory** common-suite validation. Tests the downstream `*-testing` images (`bluefin:testing`, `dakota:testing`) — not the layer just built. Triggers on `push: main` in parallel with `build.yml`, is **not** a required check, and does **not** gate publication: `common:latest` is pushed regardless of the result. On failure it opens or updates a single tracking issue. **Bluefin LTS is deliberately excluded** while [bluefin-lts#492](https://github.com/projectbluefin/bluefin-lts/issues/492) is open — it failed every run, and GitHub does not allow `continue-on-error` on a reusable-workflow call, so it could not be soft-failed in place. LTS is still covered weekly by `promotion-candidate-e2e.yml`. | Changing shipped-layer validation after merge |
@@ -49,6 +49,16 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 > - `sync-codeowners.yml` — does not exist in any factory repo. Do not document or re-add it.
 
 ## Mental model
+
+### Unit suite registration
+
+Register maintained suites in both the `Justfile` test recipe and
+`unit-tests.yml`; the registration drift gate currently checks only the
+Justfile. Install suite dependencies in CI (`jsonschema` for skill docs and
+`just` for recipe execution). Keep script/config pytest suites in a separate
+step from the Bazaar coverage command so unrelated imports do not change its
+coverage denominator. When adding covered source paths, update both PR and
+push filters.
 
 ### Validation and policy
 

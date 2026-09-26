@@ -49,6 +49,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Understand release / promotion | [`release-promotion/SKILL.md`](skills/release-promotion/SKILL.md) |
 | Understand QA coverage or run tests | [`qa.md`](skills/qa.md) |
 | Submit a hardware test report | [`hardware-testing.md`](skills/hardware-testing.md) |
+| Test driverless scanning without hardware | [`scanner-fixture/SKILL.md`](skills/scanner-fixture/SKILL.md) |
 | Lab-test a common PR on ghost | [`lab-testing/SKILL.md`](skills/lab-testing/SKILL.md) |
 | Write or test shell scripts | [`shell-scripts/SKILL.md`](skills/shell-scripts/SKILL.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle/SKILL.md`](skills/brew-lifecycle/SKILL.md) |

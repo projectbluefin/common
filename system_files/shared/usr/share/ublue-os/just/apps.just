@@ -17,12 +17,13 @@ install-jetbrains-toolbox:
 #
 # Supply-chain pins (projectbluefin/common#1170) — update together on a bump:
 # - OTD_RELEASE: the upstream release tag; Renovate keeps it current via a
-#   custom regex manager in .github/renovate.json5. The tarball filename is
+#   custom regex manager in renovate.json. The tarball filename is
 #   derived from it, so the URL stays consistent.
 # - OTD_TARBALL_SHA256 / OTD_SERVICE_SHA256: sha256 of the release tarball
 #   (GitHub shows it on the release asset as the "sha256:" digest) and of the
 #   pinned systemd unit. Renovate does NOT manage these — update them
-#   manually in the same PR (sha256sum the new asset and raw unit file).
+#   manually in the same PR (sha256sum the new asset and raw unit file). Because
+#   of that, renovate.json disables automerge for OpenTabletDriver/OpenTabletDriver.
 # - the systemd unit URL is pinned to a fixed flathub packaging commit.
 [group('Apps')]
 install-opentabletdriver:

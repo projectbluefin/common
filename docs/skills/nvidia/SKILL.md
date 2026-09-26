@@ -1,7 +1,7 @@
 ---
 name: nvidia
-version: "1.2"
-last_updated: "2026-09-15"
+version: "1.3"
+last_updated: "2026-09-23"
 id: nvidia
 one_line_purpose: Maintain NVIDIA GPU support architecture and update procedures.
 entry_point: docs/skills/nvidia/SKILL.md
@@ -64,6 +64,24 @@ no preset for it. Editing `system_files/nvidia/` therefore changes no image toda
 does not inherit a CDI preset from here either. Tracked in common#1124 — do not treat
 `system_files/nvidia/` as a live delivery path until that issue is resolved.
 
+### The suspend quirk lives in `shared/`, not the overlay
+
+`system_files/shared/usr/lib/modprobe.d/zz-nvidia-suspend.conf` pins
+
+- `NVreg_UseKernelSuspendNotifiers=1` — without notifiers (or the
+  `nvidia-suspend.service` procfs handshake), the driver vetoes system PM
+  (`nv_pmops_suspend` → `NV_ERR_NOT_SUPPORTED`), systemd-suspend aborts, and
+  the machine wakes seconds after sleep starts (common#803, same failure class
+  as dakota#1118).
+- `NVreg_TemporaryFilePath=/var/tmp` — the default `/tmp` is tmpfs; a failed
+  VRAM save there aborts suspend through the notifier path too.
+
+Both options are inert on systems without the nvidia module and ignored as
+unknown parameters by drivers that predate them. The `zz-` prefix keeps the
+file sorted after the driver packages' `nvidia.conf` so these assignments win
+duplicates. Because the overlay ships to nobody (common#1124), this quirk must
+stay in `shared/` until that is fixed.
+
 ---
 
 ## CDI is the architecture — not OCI hooks
@@ -97,6 +115,7 @@ Do **not** install `nvidia-container-runtime`, `libnvidia-container1`, `libnvidi
 
 ## Red Flags
 
+- Removing `system_files/shared/usr/lib/modprobe.d/zz-nvidia-suspend.conf` or either of its options — sleep regresses to the common#803 "wakes seconds after suspend" veto on images whose driver package does not pin them
 - Removing the `80-nvidia-container-toolkit.preset` CDI preset
 - Removing the `golang-github-nvidia-container-toolkit` exclusion from the bluefin build script
 - Installing `nvidia-container-runtime` or the full `nvidia-container-toolkit` package
@@ -109,6 +128,7 @@ Do **not** install `nvidia-container-runtime`, `libnvidia-container1`, `libnvidi
 Before closing any nvidia-related PR:
 
 - [ ] Changes to `system_files/nvidia/` tested to not break non-nvidia builds (shared layer affects all variants)
+- [ ] `zz-nvidia-suspend.conf` still carries `NVreg_UseKernelSuspendNotifiers=1` and `NVreg_TemporaryFilePath=/var/tmp` (common#803)
 - [ ] No `ublue-os/*` repos were written to
 - [ ] CDI preset not accidentally removed — `80-nvidia-container-toolkit.preset` still enables `nvidia-cdi-refresh.{path,service}`
 - [ ] If editing `ublue-nvidia-flatpak-runtime-sync`: both `check` and `sync` branches are consistent

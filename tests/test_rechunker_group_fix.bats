@@ -155,7 +155,15 @@ UNIT="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system/rechunker
     # boot-time ordering graph offline, so this does not by itself prove the
     # cycle is gone. See tests/README or the PR discussion for VM evidence.
     command -v systemd-analyze >/dev/null 2>&1 || skip "systemd-analyze not available"
-    run systemd-analyze verify --recursive-errors=no "${UNIT}"
+    local root_dir="${BATS_TEST_TMPDIR}/systemd-root"
+    mkdir -p "${root_dir}/usr/bin" "${root_dir}/usr/lib/systemd/system" "${root_dir}/etc"
+    cp "$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/rechunker-group-fix" "${root_dir}/usr/bin/"
+    for cmd in bash systemd-sysusers systemd-tmpfiles; do
+        touch "${root_dir}/usr/bin/${cmd}"
+        chmod +x "${root_dir}/usr/bin/${cmd}"
+    done
+    cp "${UNIT}" "${root_dir}/usr/lib/systemd/system/"
+    run systemd-analyze verify --root="${root_dir}" --recursive-errors=no "${root_dir}/usr/lib/systemd/system/rechunker-group-fix.service"
     [ "${status}" -eq 0 ]
 }
 
