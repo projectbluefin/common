@@ -49,7 +49,6 @@ DESKTOP_FILE = (
 ICON_ROOT = ROOT / "system_files/shared/usr/share/icons/hicolor"
 ICONS = (
     ICON_ROOT / "scalable/apps/io.projectbluefin.chairlift.svg",
-    ICON_ROOT / "scalable/apps/io.projectbluefin.chairlift-flower.svg",
     ICON_ROOT / "symbolic/apps/io.projectbluefin.chairlift-symbolic.svg",
 )
 #: Homebrew's shared prefix on Bluefin. The cask links chairlift-wrapper here.
@@ -650,7 +649,7 @@ def test_chairlift_desktop_entry_ships_system_wide():
         "user to run brew bundle gets a ChairLift launcher"
     )
     entry = _desktop_entry()
-    assert entry.get("Name") == "ChairLift"
+    assert entry.get("Name") == "Control Center"
     assert entry.get("Type") == "Application"
     assert entry.get("Icon") == "io.projectbluefin.chairlift"
     assert entry.get("NoDisplay") == "false", (
@@ -675,8 +674,8 @@ def test_chairlift_desktop_entry_execs_the_homebrew_wrapper():
 
 def test_chairlift_icons_ship_system_wide():
     """Icon=io.projectbluefin.chairlift only resolves if the theme icon exists
-    in a system search path; the flower and symbolic variants are referenced
-    by the app itself."""
+    in a system search path; the symbolic variant is referenced by the app
+    itself."""
     for icon in ICONS:
         assert icon.is_file(), f"missing icon: {icon.relative_to(ROOT)}"
         assert icon.stat().st_size > 0, f"empty icon: {icon.relative_to(ROOT)}"
@@ -690,5 +689,5 @@ def test_chairlift_desktop_entry_records_upstream_provenance():
     the version next to them so a cask bump has an obvious place to look."""
     header = DESKTOP_FILE.read_text(encoding="utf-8")
     assert "projectbluefin/chairlift" in header
-    assert "v0.12.2" in header
+    assert "v26.09.0-alpha.2" in header
     assert "GPL-3.0" in header

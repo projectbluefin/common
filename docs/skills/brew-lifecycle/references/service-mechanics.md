@@ -163,7 +163,7 @@ streams its merged stdout+stderr) or forward caller arguments into bootc.
 
 ### System-wide desktop integration
 
-The cask installs the desktop entry and the three icons under the *installing*
+The cask installs the desktop entry and the two icons under the *installing*
 user's `~/.local/share`. Homebrew uses a single shared prefix on Bluefin, so
 for every subsequent user `brew bundle` sees the cask already installed, skips
 it, and those users never get a launcher or an icon — managed casks with
@@ -175,28 +175,26 @@ user-scope artifacts are first-user-wins.
 |---|---|
 | `/usr/share/applications/io.projectbluefin.chairlift.desktop` | upstream `data/io.projectbluefin.chairlift.desktop`, `Exec=` rewritten to the absolute wrapper path |
 | `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift.svg` | upstream, verbatim |
-| `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift-flower.svg` | upstream, verbatim |
 | `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.chairlift-symbolic.svg` | upstream, verbatim |
 
-All four are vendored from ChairLift v0.12.2 (GPL-3.0,
+All three are vendored from ChairLift v26.09.0-alpha.2 (GPL-3.0,
 `projectbluefin/chairlift`) and must be refreshed from the tag the cask pins
-whenever it is bumped. The three icons are byte-identical to upstream, so the
+whenever it is bumped. The two icons are byte-identical to upstream, so the
 claim is checkable:
 
 ```bash
-BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v0.12.2/data/icons/hicolor
+BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v26.09.0-alpha.2/data/icons/hicolor
 cd system_files/shared/usr/share/icons/hicolor
 for icon in scalable/apps/io.projectbluefin.chairlift.svg \
-            scalable/apps/io.projectbluefin.chairlift-flower.svg \
             symbolic/apps/io.projectbluefin.chairlift-symbolic.svg; do
   diff <(curl -fsSL "$BASE/$icon") "$icon" && echo "ok $icon"
 done
 ```
 
 To keep them that way they are excluded from `end-of-file-fixer` and
-`check-added-large-files` in `.pre-commit-config.yaml`; upstream's two scalable
-icons carry no trailing newline and exceed the 500 KiB default, and vendored
-assets are not re-encoded. `Exec` points at
+`check-added-large-files` in `.pre-commit-config.yaml`: vendored assets are
+not re-encoded, and earlier releases shipped scalable icons without a trailing
+newline and over the 500 KiB default. `Exec` points at
 `/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`: the wrapper sets up the
 Homebrew environment that a GDM-launched session PATH lacks, and `/var/home` is
 the real path (`/home` is a symlink on bootc systems). The per-user copies the
