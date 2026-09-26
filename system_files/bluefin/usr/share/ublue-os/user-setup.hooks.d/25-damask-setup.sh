@@ -4,6 +4,8 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source /usr/lib/ublue/setup-services/libsetup.sh
 
+flatpak info app.drey.Damask &>/dev/null || exit 0
+
 version-script damask-setup user 1 || exit 0
 
 SETTINGS_DIR="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings"

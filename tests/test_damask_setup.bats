@@ -26,6 +26,13 @@ fi
 exit "\$(cat "${WORKDIR}/systemctl.rc")"
 MOCK
     chmod +x "${WORKDIR}/bin/systemctl"
+    echo 0 > "${WORKDIR}/flatpak.rc"
+    cat > "${WORKDIR}/bin/flatpak" << MOCK
+#!/bin/bash
+echo "\$*" >> "${WORKDIR}/flatpak.log"
+exit "\$(cat "${WORKDIR}/flatpak.rc")"
+MOCK
+    chmod +x "${WORKDIR}/bin/flatpak"
 
     # Patch the absolute source path so hook runs against the real libsetup.sh in the repo.
     PATCHED_HOOK="${WORKDIR}/25-damask-setup.sh"
@@ -139,4 +146,15 @@ EXISTING
 
     grep -q -- "list-unit-files damask.service" "${WORKDIR}/systemctl.log"
     ! grep -q -- "--user enable damask.service" "${WORKDIR}/systemctl.log"
+}
+
+@test "25-damask-setup: exits cleanly without creating keyfile or stamping when Damask is not installed" {
+    echo 1 > "${WORKDIR}/flatpak.rc"
+
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+
+    local keyfile="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile"
+    [ ! -f "${keyfile}" ]
+    [ ! -f "${SETUP_CHECKER_FILE}" ]
 }
