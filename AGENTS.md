@@ -97,7 +97,6 @@ Before marking work done:
 
 - `system_files/shared/` — global config (also consumed by Aurora).
 - `system_files/bluefin/` — GNOME/Bluefin-specific config only.
-- `system_files/nvidia/` — NVIDIA overlay.
 - `Justfile`, `Containerfile`, tests, `docs/`, `AGENTS.md`, and
   `.github/workflows/`.
 

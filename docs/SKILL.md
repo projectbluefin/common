@@ -38,7 +38,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Onboard a new repo into the factory | [`factory-onboarding.md`](skills/factory-onboarding.md) |
 | Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
 | Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |
-| Edit `system_files/shared/`, `bluefin/`, or `nvidia/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
+| Edit `system_files/shared/` or `bluefin/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
 | Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
 | Add an image variant or write `image-info.json` | [`image-identity.md`](skills/image-identity.md) |
 | Modify the `Containerfile` or add a binary | [`containerfile/SKILL.md`](skills/containerfile/SKILL.md) |

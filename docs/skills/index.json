@@ -504,7 +504,7 @@
         "drivers",
         "akmods"
       ],
-      "description": "NVIDIA GPU support architecture and update procedures. Use when editing nvidia files in system_files/nvidia/, bluefin scripts, or dakota elements.",
+      "description": "NVIDIA GPU support architecture and update procedures. Use when editing bluefin scripts, or dakota elements.",
       "version": "1.2",
       "last_updated": "2026-09-15",
       "doc_type": "reference"
@@ -736,7 +736,7 @@
         "git",
         "architecture"
       ],
-      "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, nvidia/, or deciding where a system file change belongs.",
+      "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, or deciding where a system file change belongs.",
       "version": "1.0",
       "last_updated": "2026-06-23",
       "doc_type": "reference"

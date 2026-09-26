@@ -31,7 +31,6 @@ does not change the verdict vocabulary above until adopted.
 |---|---|---|
 | `system_files/shared/` | bluefin + bluefin-lts + dakota | **Never** |
 | `system_files/bluefin/` | GNOME / Bluefin only | No |
-| `system_files/nvidia/` | NVIDIA overlay | No |
 | `.github/workflows/` | CI pipeline | No |
 | `Containerfile` | ALL variants | No |
 | `docs/**`, `AGENTS.md` | Documentation only | N/A (doc-only push) |
