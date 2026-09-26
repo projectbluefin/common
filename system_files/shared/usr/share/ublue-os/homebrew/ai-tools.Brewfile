@@ -3,7 +3,7 @@ tap "charmbracelet/tap"
 tap "llmmanorg/tap"
 tap "ublue-os/tap", trusted: true
 tap "ublue-os/experimental-tap", trusted: true
-brew "anomalyco/tap/opencode"
+brew "anomalyco/tap/opencode-v2"
 brew "block-goose-cli"
 brew "charmbracelet/tap/crush"
 brew "kimi-code"
