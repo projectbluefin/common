@@ -21,6 +21,25 @@
       "doc_type": "procedure"
     },
     {
+      "id": "bluefin-review",
+      "name": "bluefin-review",
+      "one_line_purpose": "Land the projectbluefin PR backlog under each repo's policy while a maintainer watches.",
+      "entry_point": "docs/skills/bluefin-review/SKILL.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "review",
+        "merge",
+        "backlog",
+        "prewalk",
+        "agents"
+      ],
+      "description": "Monitored, semi-automatic PR backlog review for projectbluefin repos: the agent lands PRs within each repo's policy while a maintainer watches, planning on a strong model and executing on a fast one. Use when running /bluefin-review.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
+      "doc_type": "procedure"
+    },
+    {
       "id": "bonedigger",
       "name": "bonedigger",
       "one_line_purpose": "Operate bonedigger and kubestellar-bot issue/report automation.",

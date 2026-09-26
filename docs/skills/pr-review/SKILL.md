@@ -38,6 +38,9 @@ approval, merge, close, and label decision. No exceptions.
 - Any repository outside `projectbluefin/*`. Never for `ublue-os/*`.
 - Automated/unattended review. This skill requires a human in the loop by
   design; if no human is present, stop rather than substituting your judgment.
+- A maintainer-run `/bluefin-review` sweep, where the agent lands PRs within
+  repo policy while the maintainer watches — use
+  [`bluefin-review/SKILL.md`](../bluefin-review/SKILL.md).
 
 ## Core Process
 
