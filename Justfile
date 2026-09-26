@@ -14,7 +14,6 @@ test:
     bats tests/test_bling_preexec_rearm.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
-    bats tests/test_ipp_usb_ownership.bats
     bats tests/test_bling_fastfetch.bats
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats

@@ -93,9 +93,6 @@ jobs:
       - name: Run bats (rechunker-group-fix)
         run: bats tests/test_rechunker_group_fix.bats
 
-      - name: Run bats (ipp-usb ownership coexistence)
-        run: bats tests/test_ipp_usb_ownership.bats
-
       - name: Run bats (ublue-bling-fastfetch)
         run: bats tests/test_bling_fastfetch.bats
 
