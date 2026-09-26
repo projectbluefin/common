@@ -1,0 +1,31 @@
+[Unit]
+Description=FFmpeg Video Thumbnailer Container (NVIDIA CUDA / NVDEC)
+Documentation=https://github.com/projectbluefin/common
+# Select NVIDIA CUDA image on x86-64 hosts with active NVIDIA driver module
+ConditionArchitecture=x86-64
+ConditionPathExists=/sys/module/nvidia/version
+
+[Container]
+ContainerName=ffmpeg-thumbnailer
+Image=docker.io/jrottenberg/ffmpeg:9.0-nvidia2404@sha256:76b1f3212f453945580853cda19f09c61fc08d17502c1cf67473e070c017165d
+Entrypoint=/bin/sleep
+Exec=infinity
+UserNS=keep-id
+RunInit=true
+Network=none
+ReadOnly=true
+AddDevice=nvidia.com/gpu=all
+AddDevice=-/dev/dri
+
+[Service]
+Slice=background.slice
+TimeoutStartSec=900
+CPUWeight=20
+IOWeight=20
+MemoryHigh=512M
+MemoryMax=1024M
+TasksMax=64
+ManagedOOMMemory=kill
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,23 @@
+[Unit]
+Description=FFmpeg Video Thumbnailer Host Daemon
+Documentation=https://github.com/projectbluefin/common
+After=graphical-session.target ffmpeg-thumbnailer.service ffmpeg-thumbnailer-nvidia.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/ffmpeg-thumbnailer/ffmpeg-thumbnailer-daemon
+Restart=always
+RestartSec=3s
+Slice=background.slice
+CPUWeight=20
+IOWeight=20
+MemoryHigh=512M
+MemoryMax=1024M
+TasksMax=512
+ManagedOOMMemory=kill
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=graphical-session.target default.target

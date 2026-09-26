@@ -1,0 +1,30 @@
+[Unit]
+Description=FFmpeg Video Thumbnailer Container (Alpine / Software / AMD / Intel)
+Documentation=https://github.com/projectbluefin/common
+# Select Alpine image on all non-NVIDIA hosts, and on aarch64 NVIDIA hosts (where CUDA image is unavailable)
+ConditionPathExists=|!/sys/module/nvidia/version
+ConditionArchitecture=|!x86-64
+
+[Container]
+ContainerName=ffmpeg-thumbnailer
+Image=docker.io/jrottenberg/ffmpeg:9.0-alpine320@sha256:2c3d71587b80173373ff52f2573ec5be9f527f2ba4fe601de6641299b1d68211
+Entrypoint=/bin/sleep
+Exec=infinity
+UserNS=keep-id
+RunInit=true
+Network=none
+ReadOnly=true
+AddDevice=-/dev/dri
+
+[Service]
+Slice=background.slice
+TimeoutStartSec=900
+CPUWeight=20
+IOWeight=20
+MemoryHigh=512M
+MemoryMax=1024M
+TasksMax=64
+ManagedOOMMemory=kill
+
+[Install]
+WantedBy=default.target

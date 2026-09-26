@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""
+Host-side daemon for ffmpeg-thumbnailer.
+
+Listens on a UNIX domain socket inside the GStreamer plugin cache directory
+(~/.cache/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer.sock),
+which is the one writable host path that GNOME's thumbnailer bubblewrap sandbox
+binds through at its real host location.
+
+The in-sandbox shim opens the input file and output thumbnail and passes their
+file descriptors over SCM_RIGHTS. This daemon invokes:
+    podman exec --preserve-fd=N,M <container_name> timeout -s KILL <sec> ffmpeg -threads 1 ...
+passing the descriptors directly to the container process.
+
+Resource-managed by systemd under background.slice with CPUWeight, IOWeight,
+MemoryHigh, MemoryMax, and TasksMax constraints.
+"""
+
+import os
+import selectors
+import signal
+import socket
+import socketserver
+import subprocess
+import sys
+import threading
+import time
+
+CONTAINER_NAME = os.environ.get("FFT_CONTAINER", "ffmpeg-thumbnailer")
+
+GST_CACHE_DIR = os.path.join(
+    os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"),
+    "gnome-desktop-thumbnailer",
+    "gstreamer-1.0",
+)
+
+SOCK_PATH = os.environ.get(
+    "FFT_SOCKET", os.path.join(GST_CACHE_DIR, "ffmpeg-thumbnailer.sock")
+)
+
+_default_inflight = max(1, min(4, (os.cpu_count() or 2) // 2))
+MAX_INFLIGHT = int(os.environ.get("FFT_MAX_INFLIGHT", str(_default_inflight)))
+FFMPEG_TIMEOUT = int(os.environ.get("FFT_TIMEOUT", "15"))
+HWACCEL = os.environ.get("FFT_HWACCEL", "none").strip().lower()
+
+_slots = threading.Semaphore(MAX_INFLIGHT)
+
+
+def log(msg: str) -> None:
+    sys.stderr.write(f"ffmpeg-thumbnailer-daemon: {msg}\n")
+    sys.stderr.flush()
+
+
+def run_container_ffmpeg(seek: str, size: int, in_fd: int, out_fd: int) -> bool:
+    vf = (
+        f"scale=min({size}\\,iw):min({size}\\,ih)"
+        ":force_original_aspect_ratio=decrease"
+    )
+    hwaccel_opts = []
+    if HWACCEL in ("vaapi", "cuda", "auto"):
+        hwaccel_opts = ["-hwaccel", HWACCEL]
+
+    # Enforce deadline inside the container with timeout(1), and pin threads to 1
+    # so concurrent decodes do not multiply core saturation.
+    cmd = [
+        "podman", "exec",
+        f"--preserve-fd={in_fd},{out_fd}",
+        CONTAINER_NAME,
+        "timeout", "-s", "KILL", str(FFMPEG_TIMEOUT),
+        "ffmpeg", "-y", "-loglevel", "error",
+        "-threads", "1",
+        *hwaccel_opts,
+        "-ss", seek,
+        "-i", f"/proc/self/fd/{in_fd}",
+        "-vf", vf,
+        "-frames:v", "1",
+        "-f", "image2",
+        "-c:v", "png",
+        "-update", "1",
+        f"/proc/self/fd/{out_fd}",
+    ]
+
+    try:
+        res = subprocess.run(
+            cmd,
+            timeout=FFMPEG_TIMEOUT + 5,
+            pass_fds=(in_fd, out_fd),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        if res.returncode == 125:
+            # Podman exit 125 = container does not exist or not running
+            return "UNAVAILABLE"
+        return res.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as exc:
+        log(f"podman exec failed ({exc})")
+        return False
+
+
+def make_thumbnail(size: int, in_fd: int, out_fd: int) -> str:
+    # Security: validate that in_fd and out_fd are regular files and out_fd is owned by the current user
+    try:
+        in_st = os.fstat(in_fd)
+        out_st = os.fstat(out_fd)
+        import stat
+        if not (stat.S_ISREG(in_st.st_mode) and stat.S_ISREG(out_st.st_mode)):
+            return "ERR: invalid file descriptor type"
+        if out_st.st_uid != os.getuid():
+            return "ERR: output file owner mismatch"
+    except OSError as err:
+        return f"ERR: fd fstat failed ({err})"
+
+    with _slots:
+        for seek in ("00:00:03", "00:00:00"):
+            try:
+                os.lseek(in_fd, 0, os.SEEK_SET)
+                os.ftruncate(out_fd, 0)
+                os.lseek(out_fd, 0, os.SEEK_SET)
+            except OSError as err:
+                return f"ERR: seek/truncate failed ({err})"
+
+            ret = run_container_ffmpeg(seek, size, in_fd, out_fd)
+            if ret == "UNAVAILABLE":
+                return "ERR_UNAVAILABLE"
+            if ret is True:
+                try:
+                    if os.fstat(out_fd).st_size > 0:
+                        return "OK"
+                except OSError:
+                    pass
+    return "ERR: ffmpeg produced no frame"
+
+
+def handle_request(data: bytes, fds: list[int]) -> str:
+    parts = data.decode("utf-8", errors="replace").strip().split("\t")
+    verb = parts[0]
+
+    if verb == "PING":
+        return "OK"
+
+    if verb != "THUMB" or len(parts) != 2:
+        return "ERR: invalid request"
+    if len(fds) != 2:
+        return "ERR: expected input and output descriptors"
+
+    try:
+        size = int(parts[1])
+    except ValueError:
+        size = 256
+    if size <= 0:
+        size = 256
+
+    return make_thumbnail(size, fds[0], fds[1])
+
+
+class Handler(socketserver.BaseRequestHandler):
+    def handle(self):
+        conn = self.request
+        conn.settimeout(FFMPEG_TIMEOUT * 2 + 5)
+        fds = []
+        try:
+            data, fds, _flags, _addr = socket.recv_fds(conn, 4096, 2)
+            if not data:
+                return
+            try:
+                status = handle_request(data, fds)
+            except Exception as exc:
+                log(f"request handler error: {exc!r}")
+                status = f"ERR: {exc}"
+            try:
+                conn.sendall(f"{status}\n".encode("utf-8"))
+            except OSError:
+                pass
+        finally:
+            for fd in fds:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+
+
+class DaemonServer(socketserver.ThreadingUnixStreamServer):
+    daemon_threads = True
+    request_queue_size = 64
+
+    def handle_error(self, request, client_address):
+        log(f"connection error: {sys.exc_info()[1]!r}")
+
+
+def serve_recovering(sock_path, handler, stop, poll_interval=0.5):
+    """Serve requests at sock_path, rebinding if the path is removed.
+
+    GNOME's gstreamer clean_gst_registry_dir() periodically deletes the
+    contents of ~/.cache/gnome-desktop-thumbnailer, including the socket
+    path. When that removes the socket the old listener keeps serving on a
+    now-dead path and every new connection fails. Detect the missing path
+    and rebind at the same path so the next connection succeeds without a
+    full daemon restart. Request handling runs in per-request threads
+    (ThreadingUnixStreamServer), so this poll loop never blocks on a long
+    request.
+    """
+    state = {"server": None}
+
+    def make_server():
+        # Remove any stale socket at the path before rebinding so the new
+        # listener owns a fresh inode.
+        if os.path.exists(sock_path):
+            try:
+                os.unlink(sock_path)
+            except OSError:
+                pass
+        server = DaemonServer(sock_path, handler)
+        os.chmod(sock_path, 0o600)
+        state["server"] = server
+
+    try:
+        while not stop.is_set():
+            if state["server"] is None or not os.path.exists(sock_path):
+                if state["server"] is not None:
+                    state["server"].server_close()
+                make_server()
+            sel = selectors.DefaultSelector()
+            sel.register(state["server"].socket, selectors.EVENT_READ)
+            if sel.select(poll_interval):
+                state["server"]._handle_request_noblock()
+    finally:
+        if state["server"] is not None:
+            state["server"].server_close()
+
+
+def main():
+    rundir = os.path.dirname(SOCK_PATH)
+    os.makedirs(rundir, exist_ok=True)
+
+    stop = threading.Event()
+
+    def on_term(signum, frame):
+        stop.set()
+        try:
+            os.unlink(SOCK_PATH)
+        except OSError:
+            pass
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, on_term)
+    signal.signal(signal.SIGINT, on_term)
+
+    log(
+        f"listening on {SOCK_PATH} "
+        f"(container={CONTAINER_NAME}, max_inflight={MAX_INFLIGHT})"
+    )
+
+    try:
+        serve_recovering(SOCK_PATH, Handler, stop)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        try:
+            os.unlink(SOCK_PATH)
+        except OSError:
+            pass
+
+
+if __name__ == "__main__":
+    main()
