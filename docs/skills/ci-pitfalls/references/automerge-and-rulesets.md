@@ -45,10 +45,13 @@ SKIPPED. Org admin can force-merge via:
 gh api repos/projectbluefin/common/pulls/<N>/merge -X PUT -f merge_method=squash
 ```
 
-**`build.yml` paths-ignore and workflow-only Renovate PRs:** Renovate bumps GitHub Actions SHAs
-via digest PRs that only change `.github/workflows/**`. The `pull_request` trigger in `build.yml`
-intentionally does NOT ignore `.github/workflows/**` so required Build checks always run on these
-PRs and the merge queue can satisfy them. The `push` trigger DOES ignore `.github/workflows/**`
+**`build.yml` change detection and workflow-only Renovate PRs:** The `pull_request` trigger in
+`build.yml` has no `paths-ignore` at all, so the required Build checks always report on every PR
+(including documentation-only ones). Whether the image is actually rebuilt is decided by the
+`image_changes` job, which diffs base against head with an exclude pathspec. Renovate bumps
+GitHub Actions SHAs via digest PRs that only change `.github/workflows/**`; that path is
+intentionally NOT in the `image_changes` exclude list, so those PRs still build and the merge
+queue can satisfy the required checks. The `push` trigger DOES ignore `.github/workflows/**`
 to avoid redundant post-merge rebuilds.
 
 ---

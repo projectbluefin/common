@@ -1,7 +1,7 @@
 ---
 name: ci-tooling
-version: "2.3"
-last_updated: "2026-08-09"
+version: "2.4"
+last_updated: "2026-09-23"
 id: ci-tooling
 one_line_purpose: Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.
 entry_point: docs/skills/ci-tooling/SKILL.md
@@ -61,6 +61,18 @@ metadata:
 5. Apply the policy in this order: artifact-protecting CI gates first, agent-enforced process conventions second.
 6. Run the lightest verification that matches the change (`pre-commit`, `actionlint`, or direct source inspection).
 7. If the session uncovered a non-obvious CI trap, write it to [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) in the same change. If it's a shell authoring/testability pattern, write it to [`shell-scripts.md`](../shell-scripts/SKILL.md).
+
+---
+
+## Required-check reachability
+
+A workflow that provides a ruleset-required status check must not use
+`pull_request` `paths` or `paths-ignore`: excluded PRs never schedule the
+workflow, leaving the required check pending. Keep `merge_group` enabled for
+merge-queue refs. To avoid expensive builds on documentation-only changes,
+detect changed inputs in a preceding job and skip build steps rather than the
+required jobs themselves. If change detection fails, default to running the
+build.
 
 ---
 
