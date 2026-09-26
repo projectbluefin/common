@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1
+#
+# Hardware-free eSCL scanner fixture (projectbluefin/common#1212).
+#
+# Builds the OpenPrinting go-mfp virtual MFP simulator from pinned source and
+# pairs it with the real sane-airscan client, so CI can exercise an eSCL
+# scanner end to end without physical hardware.
+#
+#   docker build -f tests/fixtures/escl-scanner/Containerfile -t escl-fixture tests/fixtures/escl-scanner
+#   docker run --rm escl-fixture --mode capture
+#   docker run --rm escl-fixture --mode dnssd
+#
+# Both base images are pinned by digest and the go-mfp checkout by commit SHA.
+# None of these are Renovate-managed — .github/renovate.json5 enables only the
+# github-actions manager plus Containerfile custom.regex patterns that do not
+# match this file — so bump them by hand.
+
+FROM docker.io/library/golang:1.24-trixie@sha256:5835f052b784aa39f2fe9070def3568605c8bc3fcd810f10402066348b61e716 AS builder
+
+# Build dependencies for cmd/mfp-virtual: the minimal set documented in the
+# go-mfp README's WSL2 section, which is also the set that avoids libppd.
+# cgo needs avahi for DNS-SD, libjpeg/libpng for image conversion, libusb for
+# USB/IP, and libpython for the embedded model interpreter.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        git \
+        libavahi-client-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libusb-1.0-0-dev \
+        make \
+        pkg-config \
+        python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pinned to the commit this fixture was written and reviewed against.
+# --filter=blob:none keeps the clone small while still allowing an arbitrary
+# reachable SHA to be checked out.
+ARG GO_MFP_SHA=e8bcc92c95bb4dc5cfa6532d12f78a0d2ee46a11
+RUN git clone --filter=blob:none --no-checkout \
+        https://github.com/OpenPrinting/go-mfp.git /src/go-mfp && \
+    git -C /src/go-mfp checkout "${GO_MFP_SHA}"
+
+RUN cd /src/go-mfp && \
+    go build -trimpath -o /out/mfp-virtual ./cmd/mfp-virtual
+
+FROM docker.io/library/debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a
+
+# Runtime libraries for the cgo-linked simulator, the real sane-airscan client
+# (which also ships airscan-discover), and the dbus/avahi pair the DNS-SD mode
+# needs. python3 is required in full rather than just libpython3.13, because
+# the embedded interpreter imports the model file's stdlib dependencies —
+# `os` and `uuid` — at runtime.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        avahi-daemon \
+        avahi-utils \
+        ca-certificates \
+        curl \
+        dbus \
+        libavahi-client3 \
+        libjpeg62-turbo \
+        libpng16-16 \
+        libpython3.13 \
+        libusb-1.0-0 \
+        python3 \
+        sane-airscan \
+        sane-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /out/mfp-virtual /usr/local/bin/mfp-virtual
+
+COPY models/ /opt/escl-fixture/models/
+COPY run-fixture.sh /usr/local/bin/run-fixture.sh
+RUN chmod 0755 /usr/local/bin/run-fixture.sh
+
+ENTRYPOINT ["/usr/local/bin/run-fixture.sh"]
+CMD ["--mode", "capture"]

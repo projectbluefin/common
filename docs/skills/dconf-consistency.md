@@ -144,3 +144,13 @@ This means any `gsettings get org.gnome.shell enabled-extensions` call in a test
 `enabled-extensions` for `org.gnome.shell` is set in `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` — this sets the schema DEFAULT. It is NOT in `distro.d/` and is not a locked key, so users can override it.
 
 The CI's `local.d/00-ci-testing` write overrides it in every test VM. Tests must use `get_default_value()` to validate this config, not `gsettings get`.
+
+## Flatpak application defaults via GKeyfileSettingsBackend
+
+Flatpak applications run sandboxed and typically use `GKeyfileSettingsBackend` rather than the host system's dconf database.
+
+Key differences from host GSettings:
+- Config is stored in a keyfile at `~/.var/app/<app-id>/config/glib-2.0/settings/keyfile`.
+- Schema separation: root application preferences are separated from plugin sources (e.g., `[app/drey/Damask]` vs `[app/drey/Damask/sources/slideshow]`).
+- Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` using the `version-script` contract.
+- Non-destructive activation: check `[[ ! -f "${KEYFILE}" ]]` before writing so existing user configurations are never overwritten, and set inactive or dormant defaults (e.g., `active-source='none'`) when activating by default would override host user desktop settings or timed wallpaper slideshows.

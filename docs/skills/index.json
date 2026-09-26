@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23",
+  "generated_at": "2026-09-25",
   "schema_version": "1.0",
   "skills": [
     {
@@ -68,7 +68,7 @@
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
       "version": "1.5",
-      "last_updated": "2026-09-12",
+      "last_updated": "2026-09-23",
       "doc_type": "procedure"
     },
     {
@@ -172,7 +172,7 @@
       ],
       "description": "Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX, tool selection, or the canonical ujust devmode command.",
       "version": "1.0",
-      "last_updated": "2026-06-23",
+      "last_updated": "2026-09-23",
       "doc_type": "procedure"
     },
     {
@@ -293,8 +293,8 @@
         "promotion"
       ],
       "description": "Hardware test report format and promotion policy. Use when filing a hardware test report, triaging hardware blockers, or deciding whether a candidate is safe to promote.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-09-25",
       "doc_type": "runbook"
     },
     {
@@ -546,6 +546,26 @@
       "doc_type": "reference"
     },
     {
+      "id": "pappl-scanning-boundary",
+      "name": "pappl-scanning-boundary",
+      "one_line_purpose": "Track upstream PAPPL scanning API status and the ownership boundary between PAPPL, SANE, and eSCL scanner tooling.",
+      "entry_point": "docs/skills/pappl-scanning-boundary.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "scanner",
+        "pappl",
+        "sane",
+        "escl",
+        "upstream",
+        "architecture"
+      ],
+      "description": "Upstream tracking for michaelrsweet/pappl's scanning API (PR #425): merge/tag status, the maintainer-stated PAPPL vs. SANE ownership boundary, scanApp POC licensing posture, and the compatibility gate before a Scanner Application ships.",
+      "version": "0.1",
+      "last_updated": "2026-09-25",
+      "doc_type": "reference"
+    },
+    {
       "id": "pr-review",
       "name": "pr-review",
       "one_line_purpose": "Run human-decides, agent-lands backlog review one card at a time.",
@@ -559,8 +579,8 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.6",
-      "last_updated": "2026-09-06",
+      "version": "3.7",
+      "last_updated": "2026-09-25",
       "doc_type": "procedure"
     },
     {
@@ -616,6 +636,25 @@
       "doc_type": "reference"
     },
     {
+      "id": "scanner-fixture",
+      "name": "scanner-fixture",
+      "one_line_purpose": "Test driverless scanning in CI without a physical scanner.",
+      "entry_point": "docs/skills/scanner-fixture/SKILL.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "testing",
+        "scanner",
+        "escl",
+        "airscan",
+        "container"
+      ],
+      "description": "Hardware-free eSCL scanner fixture for common. Use when testing driverless scanning, sane-airscan, or eSCL/DNS-SD discovery without a physical scanner.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
+      "doc_type": "reference"
+    },
+    {
       "id": "secrets-policy",
       "name": "secrets-policy",
       "one_line_purpose": "Verify secrets and credentials against the approved inventory.",
@@ -647,8 +686,8 @@
         "shellcheck"
       ],
       "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-23",
       "doc_type": "reference"
     },
     {

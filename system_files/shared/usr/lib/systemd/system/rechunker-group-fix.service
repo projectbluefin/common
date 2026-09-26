@@ -16,8 +16,22 @@
 Description=Fix groups for Legacy rechunker
 ConditionPathExists=/run/ostree-booted
 DefaultDependencies=no
-Wants=local-fs.target
-After=local-fs.target
+# No local-fs.target ordering. Pulling in Wants=local-fs.target /
+# After=local-fs.target created an ordering cycle
+# (local-fs.target -> this unit -> systemd-sysusers.service ->
+# systemd-tmpfiles-setup-dev.service -> local-fs-pre.target -> local-fs.target)
+# that systemd broke by dropping local-fs-pre.target, leaving /var and other
+# fstab mounts unmounted and hanging the boot (common#918, bluefin-lts#391).
+#
+# /etc must be writable before the ExecStart= lines below touch it. Order
+# directly after systemd-remount-fs.service (remounts / read-write) and
+# systemd-tmpfiles-setup-dev-early.service, exactly as systemd-sysusers.service
+# does. Both are Before=local-fs-pre.target, so these edges add no cycle.
+# Do NOT rely on bootc-sysusers-shadow-sync.service for that ordering: it is
+# absent on rpm-ostree images and on bootc < 1.16, where After= silently
+# becomes a no-op.
+After=systemd-remount-fs.service
+After=systemd-tmpfiles-setup-dev-early.service
 After=bootc-sysusers-shadow-sync.service
 Before=systemd-sysusers.service
 
@@ -27,7 +41,10 @@ ExecStart=bash -c 'touch /etc/gshadow && chmod 600 /etc/gshadow'
 ExecStart=bash -c 'rm /etc/gshadow'
 ExecStart=systemd-sysusers
 ExecStart=rechunker-group-fix
-ExecStart=systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
+# Scoped to /etc: this unit is ordered before local-fs-pre.target (via
+# Before=systemd-sysusers.service), so /var is not mounted yet and a full
+# --create --remove pass would hit EROFS and fail the unit on every boot.
+ExecStart=systemd-tmpfiles --create --remove --boot --prefix=/etc
 
 [Install]
 WantedBy=default.target multi-user.target

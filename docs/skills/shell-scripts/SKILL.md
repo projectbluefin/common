@@ -1,7 +1,7 @@
 ---
 name: shell-scripts
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-23"
 id: shell-scripts
 one_line_purpose: Write and test shell scripts under system_files/.
 entry_point: docs/skills/shell-scripts/SKILL.md
@@ -80,6 +80,7 @@ Quick reference — full patterns with WRONG/CORRECT examples in
 | stdin redirect override | Use `${IMAGE_INFO_FILE:-/path}` so bats can inject a fixture |
 | Subshell export check | Instrument the `$(...)` call, not the exec'd process |
 | Guard optional commands | `command -v foo >/dev/null` before doing work |
+| `NO_COLOR` propagation | Disable ANSI from both the script and subprocesses; assert captured output has no ESC bytes |
 
 ## Bats Test Structure
 

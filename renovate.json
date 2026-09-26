@@ -3,6 +3,42 @@
   "extends": [
     "local>projectbluefin/renovate-config"
   ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Containerfile$/"
+      ],
+      "matchStrings": [
+        "COPY --from=(?<depName>ghcr\\.io/ublue-os/bluefin-wallpapers-gnome):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^system_files/bluefin/usr/share/ublue-os/just/60-bonedigger\\.just$/"
+      ],
+      "matchStrings": [
+        "BONEDIGGER_VERSION\\s*:=\\s*\"(?<currentValue>v?[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "projectbluefin/bonedigger"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the OpenTabletDriver release tag in apps.just. OTD_TARBALL_SHA256 and OTD_SERVICE_SHA256 next to it are NOT Renovate-managed: a bump must be completed by hand (recompute both hashes) or the recipe fails its sha256sum -c gate, so these PRs are never automerged.",
+      "managerFilePatterns": [
+        "/^system_files/shared/usr/share/ublue-os/just/apps\\.just$/"
+      ],
+      "matchStrings": [
+        "OTD_RELEASE\\s*=\\s*\"(?<currentValue>v[0-9.]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "OpenTabletDriver/OpenTabletDriver"
+    }
+  ],
   "packageRules": [
     {
       "description": "Automerge digest/pin/patch/minor via GitHub native auto-merge (merge queue handles squash)",
@@ -14,6 +50,34 @@
       ],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "Pin GitHub Actions digests to full SHAs",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepTypes": [
+        "action"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "Require human review for GitHub Actions minor/patch updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "OpenTabletDriver bumps also require manual sha256 updates (OTD_TARBALL_SHA256/OTD_SERVICE_SHA256 in apps.just), so they must never automerge.",
+      "matchDepNames": [
+        "OpenTabletDriver/OpenTabletDriver"
+      ],
+      "automerge": false
     }
   ]
 }
