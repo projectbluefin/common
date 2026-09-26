@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+# /usr/libexec/projectbluefin-countme
+# Anonymous daily active-system count for Dakota and Utah images. Sends only
+# "<image-name>/<image-flavor>:<stream>", at most once per day, to
+# countme.projectbluefin.io (docs.projectbluefin.io/analytics).
+# Opt out: systemctl mask --now projectbluefin-countme.timer
+set -uo pipefail
+
+info="${IMAGE_INFO:-/usr/share/ublue-os/image-info.json}"
+last="${STATE_DIRECTORY:-/var/lib/projectbluefin-countme}/last"
+
+# Only images the service counts; everything else never touches the network.
+name=$(jq -r '."image-name" // empty' "$info" 2>/dev/null)
+[[ $name == dakota* || $name == utah* ]] || exit 0
+
+[[ -e $last ]] && (( $(date +%s) - $(stat -c %Y "$last") < 86400 )) && exit 0
+
+# No booted bootc image (live ISO, installer, container): nothing to count.
+ref=$(bootc status --json 2>/dev/null | jq -r '.status.booted.image.image.image // empty' 2>/dev/null)
+[[ -n $ref ]] || exit 0
+ref=${ref%%@*}
+tag=${ref##*:}
+[[ $tag == stable || $tag == testing ]] || tag=unknown
+image="$name/$(jq -r '."image-flavor" // "main"' "$info"):$tag"
+
+# Like eos-phone-home, a failed send exits 0; the timer tries again later.
+curl -fsS --max-time 30 -X PUT --json "$(jq -nc --arg i "$image" '{image: $i}')" \
+    "${COUNTME_HOST:-https://countme.projectbluefin.io}/v1/ping" >/dev/null && touch "$last"
+exit 0

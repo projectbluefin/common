@@ -1,0 +1,10 @@
+[Unit]
+Description=Send daily active-system ping to Project Bluefin
+
+[Timer]
+OnActiveSec=0
+OnUnitInactiveSec=3h
+AccuracySec=30m
+
+[Install]
+WantedBy=timers.target

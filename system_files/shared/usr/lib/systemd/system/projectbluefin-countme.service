@@ -1,20 +1,21 @@
 [Unit]
-Description=Project Bluefin anonymous weekly telemetry report
+Description=Send daily active-system ping to Project Bluefin
 Documentation=https://docs.projectbluefin.io/analytics
-ConditionOSRelease=ID=bluefin-dakota
-After=network-online.target ublue-booted-image.service
 Wants=network-online.target
+After=network-online.target
 ConditionPathExists=/run/ostree-booted
+ConditionDirectoryNotEmpty=/home
+# Opt-out files honored by the previous bluefin-countme units.
 ConditionPathExists=!/etc/projectbluefin/countme/disabled
 ConditionPathExists=!/etc/bluefin-countme-opt-out
 ConditionPathExists=!/etc/dakota-countme/disabled
 
 [Service]
-Type=oneshot
-ExecStart=/usr/libexec/bluefin-countme
-StateDirectory=bluefin-countme
+Type=simple
+ExecStart=/usr/libexec/projectbluefin-countme
+StateDirectory=projectbluefin-countme
 
-# Run as root (no DynamicUser) so bootc status fallback can query status if needed.
+# Run as root (no DynamicUser) so bootc status can query status.
 # Hardened sandbox:
 PrivateTmp=yes
 ProtectSystem=strict
