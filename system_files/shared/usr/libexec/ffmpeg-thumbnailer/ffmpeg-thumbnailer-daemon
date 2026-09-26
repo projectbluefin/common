@@ -17,6 +17,7 @@ MemoryHigh, MemoryMax, and TasksMax constraints.
 """
 
 import os
+import selectors
 import signal
 import socket
 import socketserver
@@ -186,24 +187,55 @@ class DaemonServer(socketserver.ThreadingUnixStreamServer):
         log(f"connection error: {sys.exc_info()[1]!r}")
 
 
+def serve_recovering(sock_path, handler, stop, poll_interval=0.5):
+    """Serve requests at sock_path, rebinding if the path is removed.
+
+    GNOME's gstreamer clean_gst_registry_dir() periodically deletes the
+    contents of ~/.cache/gnome-desktop-thumbnailer, including the socket
+    path. When that removes the socket the old listener keeps serving on a
+    now-dead path and every new connection fails. Detect the missing path
+    and rebind at the same path so the next connection succeeds without a
+    full daemon restart. Request handling runs in per-request threads
+    (ThreadingUnixStreamServer), so this poll loop never blocks on a long
+    request.
+    """
+    state = {"server": None}
+
+    def make_server():
+        # Remove any stale socket at the path before rebinding so the new
+        # listener owns a fresh inode.
+        if os.path.exists(sock_path):
+            try:
+                os.unlink(sock_path)
+            except OSError:
+                pass
+        server = DaemonServer(sock_path, handler)
+        os.chmod(sock_path, 0o600)
+        state["server"] = server
+
+    try:
+        while not stop.is_set():
+            if state["server"] is None or not os.path.exists(sock_path):
+                if state["server"] is not None:
+                    state["server"].server_close()
+                make_server()
+            sel = selectors.DefaultSelector()
+            sel.register(state["server"].socket, selectors.EVENT_READ)
+            if sel.select(poll_interval):
+                state["server"]._handle_request_noblock()
+    finally:
+        if state["server"] is not None:
+            state["server"].server_close()
+
+
 def main():
     rundir = os.path.dirname(SOCK_PATH)
     os.makedirs(rundir, exist_ok=True)
-    if os.path.exists(SOCK_PATH):
-        try:
-            os.unlink(SOCK_PATH)
-        except OSError:
-            pass
 
-    server = DaemonServer(SOCK_PATH, Handler)
-    os.chmod(SOCK_PATH, 0o600)
-
-    log(
-        f"listening on {SOCK_PATH} "
-        f"(container={CONTAINER_NAME}, max_inflight={MAX_INFLIGHT})"
-    )
+    stop = threading.Event()
 
     def on_term(signum, frame):
+        stop.set()
         try:
             os.unlink(SOCK_PATH)
         except OSError:
@@ -213,12 +245,16 @@ def main():
     signal.signal(signal.SIGTERM, on_term)
     signal.signal(signal.SIGINT, on_term)
 
+    log(
+        f"listening on {SOCK_PATH} "
+        f"(container={CONTAINER_NAME}, max_inflight={MAX_INFLIGHT})"
+    )
+
     try:
-        server.serve_forever()
+        serve_recovering(SOCK_PATH, Handler, stop)
     except KeyboardInterrupt:
         pass
     finally:
-        server.server_close()
         try:
             os.unlink(SOCK_PATH)
         except OSError:

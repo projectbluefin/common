@@ -7,6 +7,8 @@ import importlib.util
 import os
 from pathlib import Path
 import socket
+import threading
+import time
 from unittest import mock
 
 import pytest
@@ -160,3 +162,50 @@ def test_quadlet_condition_complementarity():
     with open(nvidia_path) as nf:
         nvidia_raw = nf.read()
     assert "AddDevice=nvidia.com/gpu=all" in nvidia_raw
+
+
+def test_serve_recovering_rebinds_after_socket_deleted(daemon_mod, tmp_path):
+    # GNOME's clean_gst_registry_dir() deletes the socket path out from under
+    # the running daemon. serve_recovering must rebind at the same path so
+    # subsequent connections succeed without a full daemon restart.
+    sock_path = str(tmp_path / "rebind.sock")
+    stop = threading.Event()
+
+    thread = threading.Thread(
+        target=daemon_mod.serve_recovering,
+        args=(sock_path, daemon_mod.Handler, stop),
+        daemon=True,
+    )
+    thread.start()
+
+    # Wait for the daemon to bind before connecting (avoid a startup race).
+    deadline = time.monotonic() + 5
+    while not os.path.exists(sock_path) and time.monotonic() < deadline:
+        time.sleep(0.05)
+
+    def ping_ok():
+        try:
+            conn = socket.socket(socket.AF_UNIX)
+            conn.settimeout(2)
+            conn.connect(sock_path)
+            conn.sendall(b"PING\n")
+            return conn.recv(64) == b"OK\n"
+        except OSError:
+            return False
+
+    assert ping_ok(), "daemon should answer PING before the socket is deleted"
+
+    # Simulate gnome-desktop-thumbnailer removing the socket path.
+    os.unlink(sock_path)
+    assert not os.path.exists(sock_path)
+
+    # The loop polls every ~0.5s; wait for it to notice and rebind.
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and not os.path.exists(sock_path):
+        time.sleep(0.05)
+    assert os.path.exists(sock_path), "socket path should be recreated"
+    assert ping_ok(), "daemon should answer PING after rebinding"
+
+    stop.set()
+    thread.join(timeout=5)
+    assert not thread.is_alive(), "serve_recovering should stop when signaled"

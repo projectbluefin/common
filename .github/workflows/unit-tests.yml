@@ -77,6 +77,7 @@ jobs:
             tests/test_curated_config.py \
             tests/test_check_oci_refs.py \
             tests/test_skill_docs.py \
+            tests/test_ffmpeg_thumbnailer.py \
             -v
 
       - name: Upload coverage report
