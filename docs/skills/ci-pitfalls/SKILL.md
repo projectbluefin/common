@@ -1,7 +1,7 @@
 ---
 name: ci-pitfalls
 version: "1.1"
-last_updated: "2026-08-08"
+last_updated: "2026-09-26"
 id: ci-pitfalls
 one_line_purpose: Diagnose CI gotchas and silent workflow failures across repos.
 entry_point: docs/skills/ci-pitfalls/SKILL.md
@@ -80,7 +80,6 @@ and retain real Homebrew validation in CI.
 - A `workflow_run`-triggered gate silently never fires (name mismatch)
 - A Renovate PR passes all checks but never merges (check `autoMergeRequest`)
 - A merge queue PR is stuck with no matching check name (ruleset check name drift)
-- `create-github-app-token` fails with `Invalid keyData` (owner + repositories scoping)
 
 ---
 

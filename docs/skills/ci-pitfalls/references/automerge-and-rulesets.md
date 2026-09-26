@@ -1,6 +1,6 @@
 # Automerge and Rulesets — ci-pitfalls
 
-Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the merge-queue-aware renovate-automerge.yml, ruleset required status check names, and create-github-app-token cross-repo scoping failure.
+Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the merge-queue-aware renovate-automerge.yml, ruleset required status check names, and create-github-app-token `owner`/`repositories` scoping.
 
 ---
 
@@ -95,21 +95,32 @@ gh api --method PUT repos/projectbluefin/common/rulesets/17513003 --input rulese
 
 ---
 
-## create-github-app-token — do not use `owner` + `repositories` for cross-repo scoping
+## create-github-app-token — scope the token with `owner` (and `repositories` when needed)
 
-<!-- TODO(context7): verify create-github-app-token owner + repositories failure mode and cross-installation token creation against the action's docs -->
+`actions/create-github-app-token@v3` takes `owner` and `repositories` as **optional** inputs, and the org's workflows use them to scope the token deliberately. Leaving both empty scopes the token to only the current repository; `owner: projectbluefin` scopes it to every repository the mergeraptor app is installed on. The action's own README documents all of these patterns as supported — `owner` + `repositories` is not a failure mode.
 
-`create-github-app-token@v3` fails with `Invalid keyData` when `owner: <org>` + `repositories: <other-repos>` are specified. The action attempts cross-installation token creation which does not work reliably with this key format.
-
-**Pattern to avoid:**
+**Org-wide access (the common case):** the mergeraptor app is installed on the `projectbluefin` organization, so `owner: projectbluefin` grants access to all of its repositories. `factory-drift.yml` mints a token this way to read workflow files across consumers:
 ```yaml
-uses: actions/create-github-app-token@...
+uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
 with:
+  client-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+  private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
   owner: projectbluefin
-  repositories: bluefin,bluefin-lts,dakota  # breaks
+  permission-contents: read
 ```
 
-Use the token without `owner`/`repositories` restrictions — the mergeraptor app is installed org-wide and the default token already has access.
+**Scope to specific repos:** add `repositories` (comma- or newline-separated). `factory-health.yml` watches a single consumer repo:
+```yaml
+uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+with:
+  client-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+  private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+  owner: projectbluefin
+  repositories: common
+  permission-issues: write
+```
+
+`owner:` is also required when a workflow runs from a fork: the per-repo installation lookup (`GET /repos/{owner}/{repo}/installation`) 404s, and `owner:` switches to the owner-level lookup (ghostscript-printer-app `update-base.yml`, fsdk-containers#331).
 
 ### notify-downstream token in common/build.yml
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25",
+  "generated_at": "2026-09-26",
   "schema_version": "1.0",
   "skills": [
     {
@@ -86,7 +86,7 @@
       ],
       "description": "Incident log of CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
+      "last_updated": "2026-09-26",
       "doc_type": "reference"
     },
     {
