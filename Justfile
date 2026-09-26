@@ -40,6 +40,7 @@ test:
     bats tests/test_dynamic_wallpaper_hook.bats
     bats tests/test_damask_setup.bats
     bats tests/test_nvidia_flatpak_sync.bats
+    bats tests/test_hibernation.bats
     bats tests/test_system_just.bats
     bats tests/test_brew_tap_trust.bats
     bats tests/test_apps_just.bats
