@@ -33,6 +33,11 @@ cross-repository breakage, merge, or production human gates.
 - **Check for existing PRs before opening.** Before creating a branch for any issue, run:
   `gh pr list --repo projectbluefin/<repo> --state open --search "<topic>"`
   If an open PR already covers the work, comment on it rather than opening a duplicate.
+  The topic search does not cover the lane's *own* open PRs — for the proposed
+  self-collision preflight that intersects this lane's file clusters before it
+  files again, see the draft
+  [`self-collision-preflight.md`](../contributing/self-collision-preflight.md)
+  ([common#1060](https://github.com/projectbluefin/common/issues/1060)).
 - **Ask before opening PRs.** Do not open PRs autonomously. Present the plan and the diff, get explicit human approval, then open. Exception: Renovate bot PRs are pre-approved.
 - **`just check` before every commit** in repos that have a Justfile.
 - **`pre-commit run --all-files` before every commit** in repos with `.pre-commit-config.yaml`.

@@ -7,16 +7,18 @@ on:
     paths:
       - "system_files/**"
       - "tests/**"
-      - "scripts/validate-brewfiles.sh"
+      - "scripts/**"
       - "Justfile"
+      - ".github/workflows/unit-tests.yml"
   push:
     branches:
       - main
     paths:
       - "system_files/**"
       - "tests/**"
-      - "scripts/validate-brewfiles.sh"
+      - "scripts/**"
       - "Justfile"
+      - ".github/workflows/unit-tests.yml"
   merge_group:
   workflow_dispatch:
 
@@ -29,16 +31,23 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install test deps
+      - name: Set up Homebrew environment and test dependencies
         run: |
-          sudo apt-get install -y bats fish zsh
-          pip install pytest pytest-cov pyyaml
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "$(/home/linuxbrew/.linuxbrew/bin/brew --prefix)/bin" >> "$GITHUB_PATH"
+          brew install bats-core fish zsh
+          pip install pytest pytest-cov pyyaml jsonschema
+
+      - name: Install just
+        uses: taiki-e/install-action@1a85bbbe6e8628d43d225ac830981df21a8567d2 # just
+        with:
+          tool: just
 
       - name: Run shellcheck — extensionless scripts
         run: |
@@ -56,8 +65,19 @@ jobs:
       - name: Run shellcheck — .sh scripts
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
+      - name: Run bats (suite registration drift gate)
+        run: bats tests/test_suite_registration.bats
+
       - name: Run pytest (hooks.py)
         run: python3 -m pytest tests/test_hooks.py tests/test_chairlift_config.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+
+      - name: Run pytest (scripts and config validators)
+        run: |
+          python3 -m pytest \
+            tests/test_curated_config.py \
+            tests/test_check_oci_refs.py \
+            tests/test_skill_docs.py \
+            -v
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -123,6 +143,9 @@ jobs:
       - name: Run bats (brew-preinstall)
         run: bats tests/test_brew_preinstall.bats
 
+      - name: Run bats (damask service and flatpak overrides)
+        run: bats tests/test_damask_service.bats
+
       - name: Test Brewfile validator
         run: |
           shellcheck scripts/validate-brewfiles.sh tests/test_validate_brewfiles.bats
@@ -131,11 +154,63 @@ jobs:
       - name: Run bats (oem-brew hook)
         run: bats tests/test_oem_brew.bats
 
+      - name: Run bats (damask-setup hook)
+        run: bats tests/test_damask_setup.bats
+
       - name: Run bats (bonedigger report)
         run: bats tests/test_bonedigger_report.bats
 
       - name: Run bats (apps.just — install-opentabletdriver, cncf)
         run: bats tests/test_apps_just.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
+      - name: Run bats (escl-fixture)
+        run: bats tests/test_escl_fixture.bats
+
+      - name: Run bats (bling preexec re-arm)
+        run: bats tests/test_bling_preexec_rearm.bats
+
+      - name: Run bats (bluefin-countme)
+        run: bats tests/test_bluefin_countme.bats
+
+      - name: Run bats (brew tap trust)
+        run: bats tests/test_brew_tap_trust.bats
+
+      - name: Run bats (clean-system podman path)
+        run: bats tests/test_clean_system_podman_path.bats
+
+      - name: Run bats (default.just)
+        run: bats tests/test_default_just.bats
+
+      - name: Run bats (dynamic wallpaper hook)
+        run: bats tests/test_dynamic_wallpaper_hook.bats
+
+      - name: Run bats (hardware hooks)
+        run: bats tests/test_hardware_hooks.bats
+
+      - name: Run bats (ublue-image-repo)
+        run: bats tests/test_image_repo.bats
+
+      - name: Run bats (libvirt helper)
+        run: bats tests/test_libvirt_helper.bats
+
+      - name: Run bats (nvidia flatpak sync)
+        run: bats tests/test_nvidia_flatpak_sync.bats
+
+      - name: Run bats (shared.just)
+        run: bats tests/test_shared_just.bats
+
+      - name: Run bats (system.just)
+        run: bats tests/test_system_just.bats
+
+      - name: Run bats (theming hook)
+        run: bats tests/test_theming_hook.bats
+
+      - name: Run bats (ujust)
+        run: bats tests/test_ujust.bats
+
+      - name: Run bats (uwelcome profile)
+        run: bats tests/test_uwelcome_profile.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |

@@ -21,6 +21,11 @@ binding='<Control><Alt>BackSpace'
 command="flatpak run com.jeffser.Alpaca"
 name='Launch Alpaca'
 
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
+binding='<Super>e'
+command='nautilus --new-window'
+name='New File Manager Window'
+
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5]
 binding='<Control><Alt>space'
 command="flatpak run it.mijorus.smile"

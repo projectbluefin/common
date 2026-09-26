@@ -91,7 +91,10 @@ check-local-overrides:
         BLUE_COLOR=""
         GREEN_COLOR=""
         YELLOW_COLOR=""
+        RESET=""
+        DIFF_COLOR="never"
     else
+        DIFF_COLOR="always"
         BLUE_COLOR="${BLUE_COLOR:-\x1b[38;5;117m}"
         GREEN_COLOR="${GREEN_COLOR:-\x1b[38;5;85m}"
         YELLOW_COLOR="${YELLOW_COLOR:-\x1b[93m}"
@@ -99,7 +102,7 @@ check-local-overrides:
 
     diff -qr \
       --suppress-common-lines \
-      --color="always" \
+      --color="${DIFF_COLOR}" \
       --exclude "passwd*" \
       --exclude "group*" \
       --exclude="subgid*" \

@@ -76,6 +76,17 @@ teardown() {
   [ "${status}" -eq 0 ]
 }
 
+@test "ublue-system-setup: exits cleanly when hooks directory is empty" {
+  export HOOKS_DIR="${WORKDIR}/empty-system-hooks"
+  mkdir -p "${HOOKS_DIR}"
+
+  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
+  echo "{\"system-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
+
+  run bash "${SYSTEM_SETUP}"
+  [ "${status}" -eq 0 ]
+}
+
 # ---------------------------------------------------------------------------
 # ublue-user-setup
 # ---------------------------------------------------------------------------
@@ -116,6 +127,17 @@ teardown() {
 @test "ublue-user-setup: exits cleanly when hooks directory missing" {
   export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
   echo '{"user-hooks-directory": "/nonexistent/user/hooks"}' > "${SETUP_CONFIG_FILE}"
+  run bash "${USER_SETUP}"
+  [ "${status}" -eq 0 ]
+}
+
+@test "ublue-user-setup: exits cleanly when hooks directory is empty" {
+  export HOOKS_DIR="${WORKDIR}/empty-user-hooks"
+  mkdir -p "${HOOKS_DIR}"
+
+  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
+  echo "{\"user-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
+
   run bash "${USER_SETUP}"
   [ "${status}" -eq 0 ]
 }

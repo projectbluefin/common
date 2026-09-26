@@ -56,10 +56,15 @@ state by hand or invent transitions that are not implemented in the checkout.
   CODEOWNERS is owned here and synced to downstream factory repositories; edit
   downstream copies only when the repository-specific section is explicitly in
   scope. Never write to `ublue-os/*`.
-- **Reusable lifecycle automation** belongs to `projectbluefin/actions`;
-  bonedigger owns report intake and report-specific automation. `common`
-  documents and consumes these contracts; it does not own their
-  implementations.
+- **Reusable lifecycle automation** belongs to `projectbluefin/bonedigger`
+  (`.github/workflows/lifecycle.yml`, called as a pinned reusable workflow —
+  see `bluefin`, `bluefin-lts`, and `dakota`'s `.github/workflows/bonedigger.yml`
+  callers). It now scopes to `ujust report` intake, confirm-based priority
+  escalation, and the agent-donation fast track — it does not run the general
+  `1-triage` -> `3-human-queue`/`3-clanker-queue` admission for ordinary
+  issues; that step is a human triage decision. `projectbluefin/actions` does
+  not currently contain a lifecycle workflow. `common` documents and consumes
+  these contracts; it does not own their implementations.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).

@@ -1,7 +1,7 @@
 ---
 name: hardware-testing
-version: "1.0"
-last_updated: "2026-07-20"
+version: "1.1"
+last_updated: "2026-09-25"
 id: hardware-testing
 one_line_purpose: File hardware test reports and apply promotion policy.
 entry_point: docs/skills/hardware-testing.md
@@ -81,3 +81,19 @@ Hardware test reports enter the factory lifecycle queue and become promotion inp
 - Lifecycle background: [`docs/skills/governance.md`](./governance.md)
 
 Real hardware testing does not replace CI. It closes the visibility gap for bug classes that CI running in VMs cannot see.
+
+## Printer and scanner inventory evidence
+
+Before proposing driver images, consult the
+[printer and scanner source inventory](../printer-scanner-inventory.md). Record
+the inspected release or commit, upstream owner, source license, and whether
+the code is a driver, bridge, framework, demo, or virtual fixture. A maintained
+wrapper does not establish maintenance of every bundled legacy driver.
+
+Keep source readiness, container smoke tests, synthetic protocol tests, and
+physical device results separate. In particular, a print application or a
+successful virtual scan does not establish scanner hardware support. Mark
+untested USB ownership, hotplug, platen, ADF and duplex behavior explicitly;
+record the backend, model, transport and firmware/plugin requirements when
+hardware becomes available. Recheck open upstream scanning work before changing
+its status from experimental to supported.

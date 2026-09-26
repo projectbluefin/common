@@ -184,9 +184,9 @@ teardown() {
 
 @test "uwelcome config: command descriptions use known translation keys" {
     # Unknown keys render as the raw identifier in the banner. Upstream
-    # v0.3.4 docs/configuration.md lists the valid set.
+    # v0.3.5 docs/configuration.md lists the valid set.
     local known
-    known='["cmd_list","cli_pkg","term_bling","banner_toggle","sys_info","man_upd"]'
+    known='["cmd_list","cli_pkg","term_bling","banner_toggle","sys_info","man_upd","cmd_report"]'
     run jq -e --argjson known "${known}" \
         'all(.commands[].desc; . as $d | $known | index($d) != null)' \
         "${UWELCOME_CONFIG}"
@@ -207,7 +207,7 @@ teardown() {
 @test "umotd tags: is valid JSON with only known tags" {
     run jq empty "${TAGS_CONFIG}"
     [ "${status}" -eq 0 ]
-    # Upstream umotd v0.3.1 docs/configuration.md defines the available tags.
+    # Upstream umotd v0.3.2 docs/configuration.md defines the available tags.
     local known
     known='["aurora","bazzite","bazzite-deck","bluefin","gnome","kde","vscode","containers"]'
     run jq -e --argjson known "${known}" \

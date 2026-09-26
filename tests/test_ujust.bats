@@ -160,6 +160,7 @@ _extract_apps_recipe() {
         PATH="${WORKDIR}/bin:${PATH}" \
         CALLS="${WORKDIR}/calls.log" \
         HOME="${test_home}" \
+        XDG_CONFIG_HOME="" \
         GOOSE_TEMPLATE="${mock_template}" \
         bash "${script}"
 
@@ -210,6 +211,7 @@ _extract_apps_recipe() {
         PATH="${WORKDIR}/bin:${PATH}" \
         CALLS="${WORKDIR}/calls.log" \
         HOME="${test_home}" \
+        XDG_CONFIG_HOME="" \
         GOOSE_TEMPLATE="${mock_template}" \
         bash "${script}"
 

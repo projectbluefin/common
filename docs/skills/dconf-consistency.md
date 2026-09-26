@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-09-23"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -73,6 +73,24 @@ The numbered files in `system_files/bluefin/etc/dconf/db/distro.d/` set defaults
 keybindings. They are merged in numeric order. Gaps in numbering are fine. Do not renumber
 existing files — it changes the merge order.
 
+## Custom keybindings and relocatable schemas
+
+Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot be defined directly as standard schemas in gschema override files, their configuration is split across two locations:
+
+1. **Path registration in gschema override**: In `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`, list each custom keybinding path in the `custom-keybindings` array under `[org.gnome.settings-daemon.plugins.media-keys]`:
+   ```ini
+   custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', ...]
+   ```
+2. **Keybinding definition in dconf distro.d**: In `system_files/bluefin/etc/dconf/db/distro.d/02-bluefin-keybindings`, define the `binding`, `command`, and `name` under each path header:
+   ```ini
+   [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
+   binding='<Super>e'
+   command='nautilus --new-window'
+   name='New File Manager Window'
+   ```
+
+When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
+
 ## Validation
 
 `validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
@@ -126,3 +144,13 @@ This means any `gsettings get org.gnome.shell enabled-extensions` call in a test
 `enabled-extensions` for `org.gnome.shell` is set in `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` — this sets the schema DEFAULT. It is NOT in `distro.d/` and is not a locked key, so users can override it.
 
 The CI's `local.d/00-ci-testing` write overrides it in every test VM. Tests must use `get_default_value()` to validate this config, not `gsettings get`.
+
+## Flatpak application defaults via GKeyfileSettingsBackend
+
+Flatpak applications run sandboxed and typically use `GKeyfileSettingsBackend` rather than the host system's dconf database.
+
+Key differences from host GSettings:
+- Config is stored in a keyfile at `~/.var/app/<app-id>/config/glib-2.0/settings/keyfile`.
+- Schema separation: root application preferences are separated from plugin sources (e.g., `[app/drey/Damask]` vs `[app/drey/Damask/sources/slideshow]`).
+- Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` using the `version-script` contract.
+- Non-destructive activation: check `[[ ! -f "${KEYFILE}" ]]` before writing so existing user configurations are never overwritten, and set inactive or dormant defaults (e.g., `active-source='none'`) when activating by default would override host user desktop settings or timed wallpaper slideshows.

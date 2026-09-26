@@ -38,6 +38,11 @@ repos:
         entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'
         types: [yaml]
         files: '\.github/workflows/'
+      - id: no-floating-source-checkout
+        name: Block unpinned git checkouts (tags, branches) in build stages
+        language: pygrep
+        entry: 'checkout\s+(tags/|v[0-9]|main\b|master\b)|--branch'
+        files: '^Containerfile$'
       - id: no-discord-token
         name: Block Discord bot tokens
         language: pygrep

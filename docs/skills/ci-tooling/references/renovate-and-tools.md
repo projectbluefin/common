@@ -6,20 +6,13 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Trivy scan-i
 
 ## Renovate OCI digest tracking
 
-`Containerfile` has two OCI image pins tracked by Renovate:
+`Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest`).
 
-1. `docker.io/library/alpine:latest@sha256:...` via Renovate's built-in `dockerfile` manager
-2. `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` via a custom regex manager in `.github/renovate.json5`
-
-### Why both managers exist
-
-- `FROM docker.io/library/alpine:latest@sha256:...` is a standard Dockerfile dependency — the built-in `dockerfile` manager handles it
-- `COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` is not covered by the default parser — a custom regex manager tracks it
+Renovate's built-in `dockerfile` manager natively parses `FROM` directives and directly-referenced `COPY --from=<image>` lines. The custom regex manager for `bluefin-wallpapers-gnome` in `renovate.json` explicitly pins and tracks wallpaper digest updates.
 
 ### Rule when adding OCI pins
 
-If you add new OCI image pins to `Containerfile`, also update `.github/renovate.json5` so Renovate can keep them current. Applies to both `FROM` and `COPY --from=` references. An untracked pin silently goes stale.
-
+When adding new OCI image pins to `Containerfile`, ensure Renovate can track them: standard `FROM` image pins are picked up by the built-in `dockerfile` manager, while non-standard or custom-referenced images can use a custom regex manager in `renovate.json`. An untracked pin silently goes stale.
 ### Org-wide Renovate runner
 
 The factory runs self-hosted Renovate from `projectbluefin/renovate-config` (not from each image repo). It runs every 3 hours. To trigger immediately:
@@ -131,14 +124,14 @@ SC2207 (arrays from command output) is suppressed globally in the shellcheck ste
 
 ## Renovate versioned-binary tracking
 
-`.github/renovate.json5` tracks versioned binaries downloaded in the build stage via custom regex managers:
+`renovate.json` tracks versioned dependencies pinned as literals in scripts and just files via custom regex managers (they are fetched or consumed at runtime, not downloaded in the Containerfile build stage):
 
 | Binary | Source | Renovate pattern |
 |---|---|---|
 | `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
 | `opentabletdriver` | `OpenTabletDriver/OpenTabletDriver` GitHub releases | `OTD_RELEASE="v…"` in `system_files/shared/usr/share/ublue-os/just/apps.just` |
 
-When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json5` so the version stays current automatically.
+When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json` so the version stays current automatically.
 
 ### Pinned release fetches with sha256 verification (projectbluefin/common#1170)
 
@@ -147,4 +140,4 @@ When adding a new binary pinned to a specific version in a script or just file, 
 - the release tarball: pinned tag in `OTD_RELEASE` (Renovate-tracked above) plus a `sha256:` digest for the exact asset;
 - the flathub `opentabletdriver.service` unit: pinned to a full commit SHA plus its own sha256 — never fetch a moving branch ref (`refs/heads/…`) for something that gets installed.
 
-**Coupling to know:** Renovate PRs update `OTD_RELEASE` only. The two hashes are not managed by Renovate — a version bump fails the recipe's checksum gate (fail-closed, never fail-open) until the hashes are updated manually in the same PR. Compute them with `sha256sum` against the new release asset and the raw file at the pinned ref. Tests in `tests/test_apps_just.bats` mirror these pins as constants and must move with them.
+**Coupling to know:** Renovate PRs update `OTD_RELEASE` only. The two hashes are not managed by Renovate — a version bump fails the recipe's checksum gate (fail-closed, never fail-open) until the hashes are updated manually in the same PR. Because of that, `renovate.json` carries an `automerge: false` rule for `OpenTabletDriver/OpenTabletDriver`, so those PRs always wait for a human to add the new hashes. Compute them with `sha256sum` against the new release asset and the raw file at the pinned ref. Tests in `tests/test_apps_just.bats` mirror these pins as constants and must move with them.
