@@ -49,35 +49,55 @@ jobs:
         with:
           tool: just
 
-      - name: Run shellcheck — extensionless scripts
+      - name: shellcheck — extensionless scripts (derived from shebangs)
         run: |
-          shellcheck \
-            system_files/shared/usr/bin/ublue-system-setup \
-            system_files/shared/usr/bin/ublue-user-setup \
-            system_files/shared/usr/bin/ublue-privileged-setup \
-            system_files/shared/usr/bin/ublue-bling \
-            system_files/shared/usr/bin/luks-tpm2-autounlock \
-            system_files/shared/usr/bin/ublue-fastfetch \
-            system_files/shared/usr/lib/ublue/setup-services/libsetup.sh \
-            system_files/bluefin/usr/libexec/bluefin-dynamic-wallpaper \
-            system_files/bluefin/usr/libexec/get-geoclue-latitude
+          # Derive the extensionless set from shebangs instead of a hardcoded
+          # path list. .sh/.py/.fish are covered elsewhere; this targets only
+          # extensionless shell scripts (bash/sh, NOT zsh). The first line is
+          # read with the `read` builtin (not command substitution) so binary
+          # files in system_files (images, udev rules) never trip bash. The
+          # `|| true` keeps read's non-zero exit (EOF without a trailing
+          # newline, as every binary file has) from aborting the step under
+          # the runner's `bash -e` errexit.
+          scripts=()
+          while IFS= read -r -d '' f; do
+            IFS= read -r first < "$f" || true
+            case "$first" in
+              '#!'*) case "$first" in *bash*|*/sh) scripts+=("$f") ;; esac ;;
+            esac
+          done < <(find system_files -type f ! -name '*.sh' ! -name '*.py' ! -name '*.fish' ! -path '*pixmaps/*' -print0)
+          if [ "${#scripts[@]}" -gt 0 ]; then
+            shellcheck "${scripts[@]}"
+          fi
 
-      - name: Run shellcheck — .sh scripts
+      - name: shellcheck — .sh scripts
         run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
 
-      - name: Run bats (suite registration drift gate)
-        run: bats tests/test_suite_registration.bats
+      - name: shellcheck the Brewfile validator
+        run: shellcheck scripts/validate-brewfiles.sh
 
-      - name: Run pytest (hooks.py)
-        run: python3 -m pytest tests/test_hooks.py tests/test_chairlift_config.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
-
-      - name: Run pytest (scripts and config validators)
+      - name: Run bats (all suites, catalog derived from disk)
         run: |
-          python3 -m pytest \
-            tests/test_curated_config.py \
-            tests/test_check_oci_refs.py \
-            tests/test_skill_docs.py \
-            -v
+          # Derive the bats catalog from disk: every tests/*.bats runs unless
+          # it is in the skip list below. This replaces the old per-suite list
+          # that had silently drifted — suites were on disk but never ran in
+          # CI. A suite that never executes is exactly the drift this gate
+          # eliminates.
+          #
+          # Skip list (reason inline):
+          #   test_libvirt_helper.bats — requires a running libvirtd session
+          skip_tests="tests/test_libvirt_helper.bats"
+
+          suites=()
+          for f in tests/*.bats; do
+            [ "$f" = "$skip_tests" ] && continue
+            suites+=("$f")
+          done
+
+          bats "${suites[@]}"
+
+      - name: Run pytest (all modules, catalog derived from disk)
+        run: python3 -m pytest tests/test_*.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -88,129 +108,6 @@ jobs:
             coverage.xml
             coverage-html/
           retention-days: 7
-
-      - name: Run bats (libsetup.sh)
-        run: bats tests/test_libsetup.bats
-
-      - name: Run bats (setup scripts)
-        run: bats tests/test_setup_scripts.bats
-
-      - name: Run bats (privileged setup)
-        run: bats tests/test_privileged_setup.bats
-
-      - name: Run bats (ublue-bling)
-        run: bats tests/test_bling.bats
-
-      - name: Run bats (ujust completion)
-        run: bats tests/test_ujust_completion.bats
-
-      - name: Run bats (bling.sh)
-        run: bats tests/test_bling_sh.bats
-
-      - name: Run bats (luks-tpm2-autounlock)
-        run: bats tests/test_luks_tpm2.bats
-
-      - name: Run bats (rechunker-group-fix)
-        run: bats tests/test_rechunker_group_fix.bats
-
-      - name: Run bats (ublue-bling-fastfetch)
-        run: bats tests/test_bling_fastfetch.bats
-
-      - name: Run bats (changelog.just)
-        run: bats tests/test_changelog.bats
-
-      - name: Run bats (update.just and native recipes)
-        run: bats tests/test_update_just.bats tests/test_native_recipes.bats
-
-      - name: Run bats (ublue-fastfetch)
-        run: bats tests/test_ublue_fastfetch.bats
-
-      - name: Run bats (motd integration)
-        run: bats tests/test_motd_integration.bats
-
-      - name: Run bats (ublue-image-info.sh)
-        run: bats tests/test_ublue_image_info.bats
-
-      - name: Run bats (profile.d — caffeinate.sh + uutils.sh)
-        run: bats tests/test_profile_d.bats
-
-      - name: Run bats (bluefin-dynamic-wallpaper)
-        run: bats tests/test_dynamic_wallpaper.bats
-
-      - name: Run bats (get-geoclue-latitude)
-        run: bats tests/test_geoclue_latitude.bats
-
-      - name: Run bats (brew-preinstall)
-        run: bats tests/test_brew_preinstall.bats
-
-      - name: Run bats (damask service and flatpak overrides)
-        run: bats tests/test_damask_service.bats
-
-      - name: Test Brewfile validator
-        run: |
-          shellcheck scripts/validate-brewfiles.sh tests/test_validate_brewfiles.bats
-          bats tests/test_validate_brewfiles.bats
-
-      - name: Run bats (oem-brew hook)
-        run: bats tests/test_oem_brew.bats
-
-      - name: Run bats (damask-setup hook)
-        run: bats tests/test_damask_setup.bats
-
-      - name: Run bats (bonedigger report)
-        run: bats tests/test_bonedigger_report.bats
-
-      - name: Run bats (apps.just — install-opentabletdriver, cncf)
-        run: bats tests/test_apps_just.bats
-      - name: Run bats (escl-fixture)
-        run: bats tests/test_escl_fixture.bats
-      - name: Run bats (escl-fixture)
-        run: bats tests/test_escl_fixture.bats
-
-      - name: Run bats (bling preexec re-arm)
-        run: bats tests/test_bling_preexec_rearm.bats
-
-      - name: Run bats (bluefin-countme)
-        run: bats tests/test_bluefin_countme.bats
-
-      - name: Run bats (brew tap trust)
-        run: bats tests/test_brew_tap_trust.bats
-
-      - name: Run bats (clean-system podman path)
-        run: bats tests/test_clean_system_podman_path.bats
-
-      - name: Run bats (default.just)
-        run: bats tests/test_default_just.bats
-
-      - name: Run bats (dynamic wallpaper hook)
-        run: bats tests/test_dynamic_wallpaper_hook.bats
-
-      - name: Run bats (hardware hooks)
-        run: bats tests/test_hardware_hooks.bats
-
-      - name: Run bats (ublue-image-repo)
-        run: bats tests/test_image_repo.bats
-
-      - name: Run bats (libvirt helper)
-        run: bats tests/test_libvirt_helper.bats
-
-      - name: Run bats (nvidia flatpak sync)
-        run: bats tests/test_nvidia_flatpak_sync.bats
-
-      - name: Run bats (shared.just)
-        run: bats tests/test_shared_just.bats
-
-      - name: Run bats (system.just)
-        run: bats tests/test_system_just.bats
-
-      - name: Run bats (theming hook)
-        run: bats tests/test_theming_hook.bats
-
-      - name: Run bats (ujust)
-        run: bats tests/test_ujust.bats
-
-      - name: Run bats (uwelcome profile)
-        run: bats tests/test_uwelcome_profile.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |
