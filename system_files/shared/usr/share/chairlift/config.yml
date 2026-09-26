@@ -37,7 +37,7 @@ updates_page:
   # "stage now" action only, so nothing competes with uupd.
   # Do NOT invent a group to express this policy — an unknown group key
   # fails ChairLift's strict schema validation and disables the entire
-  # app (see docs/skills/brew-lifecycle.md).
+  # app (see docs/skills/brew-lifecycle/SKILL.md).
 
 applications_page:
   applications_installed_group:
