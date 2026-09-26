@@ -13,7 +13,7 @@ dependencies: []
 tags: [submodules, git, architecture]
 description: >-
   system_files scope boundary. Use when editing system_files/shared/,
-  bluefin/, nvidia/, or deciding where a system file change belongs.
+  bluefin/, or deciding where a system file change belongs.
 metadata:
   type: reference
 ---
@@ -25,7 +25,6 @@ metadata:
 `system_files/shared/` is now a **directly tracked directory** in this repo. It was previously a read-only bind from the `aurorafin-shared` submodule, but that dependency has been severed. You can now edit files in `system_files/shared/` directly in PRs to this repo.
 
 `system_files/bluefin/` remains the editable path for Bluefin-specific config.
-`system_files/nvidia/` contains NVIDIA-specific overlays and is also directly tracked here.
 
 ## Editable paths
 
@@ -33,7 +32,6 @@ metadata:
 |---|---|---|
 | `system_files/shared/**` | ✅ Yes | Directly tracked — edit here |
 | `system_files/bluefin/**` | ✅ Yes | Bluefin-specific config |
-| `system_files/nvidia/**` | ✅ Yes | NVIDIA overlay |
 | `bluefin-branding/**` | ❌ No | Submodule — `projectbluefin/branding` |
 
 ## What changed

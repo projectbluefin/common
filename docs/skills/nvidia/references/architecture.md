@@ -44,30 +44,6 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
 
 ## Per-repo: where nvidia code lives
 
-### `projectbluefin/common`
-
-- `system_files/nvidia/usr/libexec/ublue-nvidia-flatpak-runtime-sync` — syncs the correct
-  `org.freedesktop.Platform.GL.nvidia-<version>` Flatpak runtime when a new driver version
-  is detected on boot. Also runs `flatpak update --system --noninteractive` in the same pass
-  so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
-  extension). Needed for Flatpak apps to use the GPU. Triggered by
-  `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
-
-**Not currently delivered.** The ctx stage publishes `/system_files/nvidia`, but every
-consumer copies `/system_files/shared` and `/system_files/bluefin` only — in bluefin,
-bluefin-lts and utah, `grep -n 'COPY --from=common /system_files' Containerfile` returns
-only `shared` and `bluefin` lines, never `nvidia` (cited by content because the line
-numbers in those repos drift). No
-preset here and no `systemctl enable` anywhere in the org references
-`ublue-nvidia-flatpak-runtime-sync.service`, so neither the unit nor the helper is present in
-a built image. `tests/test_nvidia_flatpak_sync.bats` asserts against the files on disk and
-passes regardless. Changes here reach **no** image until common#1124 is resolved.
-
-There is no `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset`
-in this repo and there never has been; CDI auto-generation is enabled per-consumer
-(bluefin-lts `system_files_overrides/nvidia/…`, dakota `elements/bluefin-nvidia/…`) and the
-Fedora bluefin variant has no such preset in either repo.
-
 ### `projectbluefin/bluefin`
 
 - `build_files/base/04-install-kernel-akmods.sh` — the nvidia build block
