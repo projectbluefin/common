@@ -1,7 +1,7 @@
 ---
 name: ci-tooling
-version: "2.3"
-last_updated: "2026-08-09"
+version: "2.4"
+last_updated: "2026-09-26"
 id: ci-tooling
 one_line_purpose: Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.
 entry_point: docs/skills/ci-tooling/SKILL.md
@@ -137,4 +137,4 @@ These are **hygiene gates**, not blocking CI workflow gates. The front-matter si
 |---|---|
 | [references/sha-pinning.md](references/sha-pinning.md) | Full SHA pinning policy, how to find/update SHAs, internal refs, Floating-tag guard regex and exemptions, Renovate vs pre-commit. |
 | [references/pre-commit-conventions.md](references/pre-commit-conventions.md) | Pre-commit auto-fix loop, AI commit attribution, release-state.yaml schema validation, Skill drift detection, Docs hygiene hooks. |
-| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |
+| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, fork processing in the org runner, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |

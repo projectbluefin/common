@@ -65,7 +65,11 @@ decision gates (`docs/skills/human-gates.md`). It should be scoped and
 approved by a maintainer before an agent wires any automation or token access
 into the three forks.
 
-Until that path is designed, re-run the recipe above periodically (or when
-[common#1242](https://github.com/projectbluefin/common/issues/1242) lands the
-Renovate fork-processing fix, since that PR flow is a natural place to also
-surface this check) to confirm no new upstream lag has accumulated.
+Until that path is designed, re-run the recipe above periodically to confirm no
+new upstream lag has accumulated. The Renovate side of that flow landed on
+2026-09-25 — all three forks now carry `"forkProcessing": "enabled"` in
+`renovate.json` and the org runner extracts each one on `testing` (evidence and
+the verification recipe: [ci-tooling →
+Fork processing](../../ci-tooling/references/renovate-and-tools.md#fork-processing-in-the-org-runner)).
+That changes only *dependency-pin* flow; it does not yet distinguish an
+upstream source PR from a routine pin PR, which is the part still gated above.
