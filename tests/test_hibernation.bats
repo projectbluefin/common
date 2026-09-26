@@ -62,7 +62,7 @@ case "$name" in
         [[ ${SWAPON_FAIL:-0} == 0 ]] || exit 1
         if [[ -f $WORKDIR/active ]]; then echo "$WORKDIR/swap/swapfile"; fi ;;
     swapoff)
-        [[ ${STOP_FAIL:-0} == 0 ]] || exit 1
+        [[ ${STOP_FAIL:-0} == 0 && ${SWAPOFF_FAIL:-0} == 0 ]] || exit 1
         rm -f "$WORKDIR/active" ;;
     busctl) printf 's "%s"\n' "${CAPABILITY:-yes}" ;;
     chattr|restorecon|gnome-shell) ;;
@@ -199,6 +199,22 @@ STUB
     unset STOP_FAIL
     run "$WORKDIR/driver" disable
     [ "$status" -eq 0 ]
+}
+
+@test "direct swapoff failure without a unit file preserves swapfile" {
+    run "$WORKDIR/driver" enable
+    [ "$status" -eq 0 ]
+    rm "$WORKDIR/etc/systemd/system/var-swap-swapfile.swap"
+    export SWAPOFF_FAIL=1
+    run "$WORKDIR/driver" disable
+    [ "$status" -ne 0 ]
+    grep -Fxq "swapoff $WORKDIR/swap/swapfile" "$WORKDIR/calls"
+    [ -f "$WORKDIR/swap/swapfile" ]
+    [ -f "$WORKDIR/state/owned" ]
+    unset SWAPOFF_FAIL
+    run "$WORKDIR/driver" disable
+    [ "$status" -eq 0 ]
+    [ ! -e "$WORKDIR/swap" ]
 }
 
 @test "cleanup refuses additional data in the swap subvolume" {
