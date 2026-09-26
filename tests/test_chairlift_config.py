@@ -587,9 +587,13 @@ def test_bundle_brewfiles_declare_the_expected_flatpaks():
 
 
 def test_bundle_names_do_not_collide_with_other_discovered_brewfiles():
-    """A duplicate stem would render two identically-named bundles."""
-    stems = [path.stem for path in BUNDLES_DIR.glob("*.Brewfile")]
-    assert len(stems) == len(set(stems)), f"duplicate bundle names: {stems}"
+    """A duplicate stem would render two identically-named bundles across discoverable paths."""
+    all_brewfile_stems = []
+    for brewfile in ROOT.glob("system_files/**/usr/share/ublue-os/homebrew/*.Brewfile"):
+        all_brewfile_stems.append(brewfile.stem)
+    assert len(all_brewfile_stems) == len(set(all_brewfile_stems)), (
+        f"duplicate bundle names across homebrew directories: {all_brewfile_stems}"
+    )
 
 
 def test_help_links_point_at_bluefin():
