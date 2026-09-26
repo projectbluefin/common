@@ -12,7 +12,6 @@ Entrypoint=/bin/sleep
 Exec=infinity
 UserNS=keep-id
 RunInit=true
-SecurityLabelDisable=true
 Network=none
 ReadOnly=true
 AddDevice=nvidia.com/gpu=all
