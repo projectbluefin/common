@@ -34,7 +34,7 @@ When a workflow omits a top-level `permissions` block, GitHub Actions assigns th
 
 Declaring `permissions: {}` at the top level ensures a **fail-closed** security posture:
 - The default `GITHUB_TOKEN` for every job in the file is completely unprivileged (`none` for all scopes).
-- Any job that forgets its own `permissions` block fails immediately at runtime instead of silently executing with write access.
+- Any job that omits its own `permissions` block runs with unprivileged tokens, and any API calls requiring elevated scopes fail with 403 instead of silently executing with ambient write access.
 - Every privilege must be explicitly declared and justified in code review.
 
 #### Standard Configuration Pattern
@@ -76,7 +76,7 @@ jobs:
 #### Rules
 1. **Mandatory Declaration:** Every workflow file must declare top-level `permissions: {}` (or an explicit minimal top-level mapping if every job in the file shares the exact same read-only scope, e.g. `permissions:\n  contents: read`).
 2. **Minimal Scopes:** Jobs must request only the minimal permissions required. Test and lint jobs must only receive `contents: read`.
-3. **No Ambient Write:** Pull request validation jobs must never request `contents: write`, `packages: write`, or `id-token: write`.
+3. **No Ambient Write:** Pull request validation jobs must never request `contents: write`, `packages: write`, or `id-token: write` (with the documented exception of `pr-e2e.yml` which builds and pushes ephemeral PR test images to GHCR for verification).
 
 ---
 
