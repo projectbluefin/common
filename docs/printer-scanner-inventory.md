@@ -38,6 +38,12 @@ GPL/LGPL linking exception; retain each project's LICENSE and NOTICE.
 | [HP Printer Application](https://github.com/michaelrsweet/hp-printer-app#readme) — Michael R Sweet | Active release [v1.3.1](https://github.com/michaelrsweet/hp-printer-app/releases/tag/v1.3.1), 2026-06-08. Native PCL implementation, distinct from HPLIP Printer Application; PCL 6 support is experimental. | [Apache-2.0](https://github.com/michaelrsweet/hp-printer-app/blob/master/LICENSE). | One release-pinned PCL 5 image with PAPPL; submit a raster fixture and capture PCL output. Exclude experimental PCL 6 from the initial claim. |
 | [LPrint](https://github.com/michaelrsweet/lprint#readme) — Michael R Sweet | Active release [v1.4.0](https://github.com/michaelrsweet/lprint/releases/tag/v1.4.0), 2026-06-08. Upstream warns against packaging current master. | [Apache-2.0](https://github.com/michaelrsweet/lprint/blob/master/LICENSE). | One release-pinned label/receipt image, beginning with a ZPL output fixture. Keep experimental Brother PT/QL and CPCL drivers out of the initial support scope. |
 | [Braille Printer Application](https://github.com/OpenPrinting/braille-printer-app#readme) — OpenPrinting; Arun Patwa, Samuel Thibault and contributors named in README | Development/prototype source: [272d5471a980](https://github.com/OpenPrinting/braille-printer-app/commit/272d5471a980), 2024-12-09; no release/tag found. README describes both an application and classic CUPS packaging, so stable application readiness is unconfirmed. | [LICENSE](https://github.com/OpenPrinting/braille-printer-app/blob/master/LICENSE), [COPYING](https://github.com/OpenPrinting/braille-printer-app/blob/master/COPYING), NOTICE and individual filters must be checked together; README identifies Apache-2.0 application code. | Research-only build and BRF conversion fixture; establish the working application entry point before proposing a maintained embosser image. |
+ The Braille row is expanded in
+  [docs/braille-printer-app-maturity.md](braille-printer-app-maturity.md)
+  (common#1233): source and maintenance status, the copyleft BRF translation
+  dependency closure, the `cups-brf` file sink that doubles as the byte-capturing
+  proof-build target, and a deferral recommendation pending a maintained upstream
+  path, a factory BRF conversion, and a redistribution license audit.
 
 The Ghostscript bundle includes additional families (foo2zjs, SpliX, brlaser,
 pnm2ppa, pxljr, c2esp, label and other legacy filters); they are not all actively
