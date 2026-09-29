@@ -15,9 +15,10 @@ so "physical output" is not a claim here.
 - The upstream `cups-brf` backend already writes processed BRF to a file, so the
   proof build in acceptance item 2 needs no hardware stub — the file *is* the
   byte-capturing sink.
-- The wrapper is Apache-2.0, but the BRF translation stack it pulls in is
-  predominantly copyleft. A redistributable image must honor each license; the
-  wrapper license does not cover the stack.
+- The wrapper and the CUPS stack under it are Apache-2.0 (with a GPL2/LGPL2
+  linking exception), but the BRF translation libraries it pulls in are copyleft.
+  A redistributable image must honor each license; the wrapper license does not
+  cover the stack.
 
 ## 1. Source and maintenance — development/prototype, no release line
 
@@ -37,7 +38,7 @@ no release since the v2.0b1 banner). It is a development/prototype CUPS driver
 package, not a maintained release line. This matches the issue's own precondition:
 "do not label it production-ready without a build and verified BRF pipeline."
 
-## 2. Dependency closure — runnable stack, copyleft-heavy
+## 2. Dependency closure — runnable stack, copyleft only in the translation layer
 
 The package builds with autotools against a CUPS stack. Required and optional
 runtime tools are named in `INSTALL`; the build-time libraries come from
@@ -46,20 +47,24 @@ runtime tools are named in `INSTALL`; the build-time libraries come from
 | Dependency | Role in the BRF path | License | Maintenance evidence |
 |---|---|---|---|
 | [PAPPL](https://github.com/michaelrsweet/pappl) 1.1+ | Application framework for `brf-printer-app` | Apache-2.0 | Active — [michaelrsweet/pappl](https://github.com/michaelrsweet/pappl), pushed 2026-09 |
-| CUPS 2.2.2+ (`libcups`) | IPP spooler the app talks to | GPL-2.0-or-later | System CUPS; maintained upstream |
-| cups-filters 2.0+ (`libcupsfilters`) | MIME/conversion layer | GPL-2.0-or-later | OpenPrinting; required by `configure.ac` |
+| CUPS 2.2.2+ (`libcups`) | IPP spooler the app talks to | Apache-2.0 ([`LICENSE`](https://github.com/OpenPrinting/cups/blob/master/LICENSE)) | System CUPS; maintained upstream |
+| cups-filters 2.0+ (`libcupsfilters`) | MIME/conversion layer | Apache-2.0 with GPL2/LGPL2 exception ([`COPYING`](https://github.com/OpenPrinting/libcupsfilters/blob/master/COPYING)) | OpenPrinting; required by `configure.ac` |
 | [libmagic](https://www.darwinsys.com/file) | Input file-type detection | BSD-2-Clause | Maintained |
 | [liblouis](https://github.com/liblouis/liblouis) | `file2brl`/`lou_translate` — text and backup Braille translation | LGPL-2.1 | Active — [v3.39.0](https://github.com/liblouis/liblouis/releases/tag/v3.39.0), 2026-09 |
 | [liblouisutdml](https://github.com/liblouis/liblouisutdml) | `file2brl` unstructured Braille transcription (the "best Braille" path) | GPL-3.0-or-later | Active — pushed 2026-09 |
 | Optional tools | Freedots + `lou_translate` (musicxml), ImageMagick (raster), poppler (PDF), inkscape (vector), lynx (HTML), antiword (DOC) | vary | Per-format; none required to compile |
 
-**License boundary (barrier to note, not a blocker yet):** the wrapper and
-PAPPL/libmagic are permissive (Apache-2.0 / BSD), but the translation stack that
-makes the device useful is LGPL-2.1 (liblouis) **and** GPL-3.0 (liblouisutdml),
-sitting on top of GPL-2.0 CUPS and cups-filters. A redistributable FSDK image can
-carry this with attribution and LICENSE/NOTICE retention plus copyleft compliance,
-but it is a distinct audit from the four maintained printer applications and has
-not been performed. Bundled filters, table data, and PPDs carry their own terms.
+**License boundary (barrier to note, not a blocker yet):** the wrapper, PAPPL,
+libmagic and the CUPS stack under them are permissive — braille-printer-app's
+[`COPYING`](https://github.com/OpenPrinting/braille-printer-app/blob/master/COPYING)
+marks `Files: *` as Apache-2.0 with the GPL2/LGPL2 linking exception (only the
+bundled `ltmain.sh` is GPL-2+), CUPS is Apache-2.0 and libcupsfilters carries the
+same Apache-2.0-with-exception. The copyleft sits in the translation layer that
+makes the device useful: LGPL-2.1 (liblouis) **and** GPL-3.0-or-later
+(liblouisutdml). A redistributable FSDK image can carry this with attribution and
+LICENSE/NOTICE retention plus copyleft compliance for those two libraries, but it
+is a distinct audit from the four maintained printer applications and has not been
+performed. Bundled filters, table data, and PPDs carry their own terms.
 
 ## 3. Embosser backend — the `cups-brf` backend is itself the byte-capturing sink
 
@@ -142,9 +147,10 @@ exists unconditionally today:
   (2024-12 cups-config fix) but has no maintained release line.
 - **Actual test evidence** — absent. The item-2 harness above is specified but not
   run; a verified BRF conversion must come from the factory, not a local draft.
-- **License audit** — outstanding. The GPL-2.0/GPL-3.0/LGPL-2.1 translation stack
-  under an Apache-2.0 wrapper needs an explicit redistribution audit before an
-  image ships.
+- **License audit** — outstanding. The LGPL-2.1 (liblouis) / GPL-3.0-or-later
+  (liblouisutdml) translation layer pulled in under an Apache-2.0 wrapper and an
+  Apache-2.0 CUPS stack needs an explicit redistribution audit before an image
+  ships.
 
 **Gates to unblock a Braille OCI appliance:**
 
@@ -152,13 +158,15 @@ exists unconditionally today:
    merged-PR activity after 2024-12.
 2. A passing item-2 proof build in the factory — real BRF conversion + byte
    capture, reported with a byte count.
-3. A completed redistribution license audit for the copyleft translation stack.
+3. A completed redistribution license audit for the copyleft translation layer
+   (liblouis LGPL-2.1, liblouisutdml GPL-3.0-or-later).
 
 For contrast, the four maintained printer applications sit on Apache-2.0 PAPPL
-retrofits with active releases; `braille-printer-app` sits on a GPL-branded CUPS
-driver package with no release line. That is a different maturity class, which is
-why the recommendation is deferral until the three gates clear, not a parallel
-image.
+retrofits with active releases; `braille-printer-app` shares their Apache-2.0
+licensing but is an unreleased, development/prototype CUPS driver package with no
+release line. That is a different maturity class — a maintenance gap, not a
+licensing one — which is why the recommendation is deferral until the three gates
+clear, not a parallel image.
 
 ## Open decision for maintainers
 
@@ -171,5 +179,3 @@ the proof build; it does not itself commit Bluefin to either outcome.
 Closes the investigation half of [common#1233](https://github.com/projectbluefin/common/issues/1233)
 (item 1: source/maintenance/dependency/license). Items 2 and 3 remain gated on the
 factory proof build and a maintainer decision, as documented above.
-
-— hive: backend=omp model=lab-worker/ornith
