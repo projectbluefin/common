@@ -102,8 +102,14 @@ Specified factory harness (to be run and reported, not asserted here):
    libmagic, liblouis, liblouisutdml.
 2. Clone `master` @ 272d5471a980; `./autogen.sh && ./configure --enable-braille && make`.
 3. Start `cupsd`; register a `cups-brf` queue. The backend's `devices` output is a
-   classic CUPS discovery line — `file cups-brf:/ "Unknown" "Braille printer"`
-   (`backend/cups-brf.c:47`) — not an IPP Everywhere service; `cupsd` is what
+   classic CUPS discovery line (`backend/cups-brf.c:47`) —
+
+   ```
+   file cups-brf:/ "Virtual Braille BRF Printer" "CUPS-BRF" "MFG:Generic;MDL:CUPS-BRF Printer;DES:Generic CUPS-BRF Printer;CLS:PRINTER;CMD:BRF;"
+   ```
+
+   — i.e. a `device-class device-uri device-info device-make-and-model
+   device-id` tuple on stdout, not an IPP Everywhere service; `cupsd` is what
    exposes the resulting queue over IPP.
 4. Write a known text fixture; `lp -d cups-brf fixture.txt`. Do **not** pass
    `-o raw`: raw jobs bypass CUPS filtering, so `texttobrf` never runs and the
