@@ -62,7 +62,7 @@ Bluefin-common provides a comprehensive Flatpak customization system with multip
 
 Default Flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
 
-- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (37 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
+- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (36 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
 - **`system-dx-flatpaks.Brewfile`** - Additional development-focused Flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox).
 
 These can be installed using:
