@@ -101,13 +101,29 @@ Specified factory harness (to be run and reported, not asserted here):
 1. Fedora-based image with dev packages for CUPS 2.x, libcupsfilters 2.x, pappl,
    libmagic, liblouis, liblouisutdml.
 2. Clone `master` @ 272d5471a980; `./autogen.sh && ./configure --enable-braille && make`.
-3. Start `cupsd`; register a `cups-brf` queue (the backend advertises a virtual
-   "CUPS-BRF" IPP Everywhere service via its `devices` output).
-4. Write a known text fixture; `lp -o raw -d cups-brf fixture.txt`.
+3. Start `cupsd`; register a `cups-brf` queue. The backend's `devices` output is a
+   classic CUPS discovery line — `file cups-brf:/ "Unknown" "Braille printer"`
+   (`backend/cups-brf.c:47`) — not an IPP Everywhere service; `cupsd` is what
+   exposes the resulting queue over IPP.
+4. Write a known text fixture; `lp -d cups-brf fixture.txt`. Do **not** pass
+   `-o raw`: raw jobs bypass CUPS filtering, so `texttobrf` never runs and the
+   backend would write the unconverted text straight into `$HOME/BRF/*.brf`. The
+   queue must resolve the `text/plain` → `application/vnd.cups-brf` filter chain.
 5. Confirm `$HOME/BRF/*.brf` exists, is non-empty, and is valid BRF (8-dot dot
-   grammar); record the captured byte count.
+   grammar); record the captured byte count. A byte-count-only check is not
+   sufficient — it passes on unconverted input, so the dot-grammar check is the
+   actual proof.
 6. Report the captured bytes as the verified BRF pipeline output. No physical
    embosser involved.
+
+**Scope gap in this harness.** [common#1233](https://github.com/projectbluefin/common/issues/1233)
+names the PAPPL `brf-printer-app`, but the steps above drive `cupsd` plus the
+classic `cups-brf` backend and never execute
+`braille-printer-app/brf-printer-app.c`. This proves the BRF *conversion*
+pipeline only. The inventory's "working application entry point" — the PAPPL
+binary starting, self-registering and accepting IPP directly — therefore remains
+unconfirmed, and a further harness that launches `brf-printer-app` itself is
+needed to close it.
 
 ## 5. Decision (acceptance item 3) — recommend deferral, not an FSDK image yet
 
