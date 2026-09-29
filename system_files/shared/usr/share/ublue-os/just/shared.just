@@ -76,9 +76,10 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
 
     if [[ "${SELECTED_OPTION}" == "Disable" ]]; then
         systemctl --user stop "${THUMBNAILER_UNITS[@]}" >/dev/null 2>&1 || true
-        # Mask, not disable: the daemon is also pulled in by a static
-        # graphical-session.target.wants symlink shipped in /usr/lib, which
-        # `disable` cannot remove. Only a mask overrides it.
+        # Mask, not disable: the container units are quadlet-generated, so they
+        # carry no install state `systemctl --user disable` can edit, and the
+        # daemon ships `WantedBy=graphical-session.target default.target`, which
+        # a preset or a re-enable can reinstate. Only a mask overrides both.
         # The per-user mask also blocks the container quadlets, so the 111 MB
         # image is never pulled again while the toggle is off.
         if systemctl --user mask "${THUMBNAILER_UNITS[@]}"; then
@@ -118,7 +119,8 @@ status-ffmpeg-thumbnailer:
         ffmpeg-thumbnailer-daemon.service
     )
     CONTAINER_NAME="${FFT_CONTAINER:-ffmpeg-thumbnailer}"
-    SOCKET_PATH="${FFT_SOCKET:-${XDG_CACHE_HOME:-${HOME}/.cache}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer.sock}"
+    # Must match SOCK_PATH in /usr/libexec/ffmpeg-thumbnailer/ffmpeg-thumbnailer-daemon.
+    SOCKET_PATH="${FFT_SOCKET:-${XDG_CACHE_HOME:-${HOME}/.cache}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock}"
 
     echo "Units (enabled-state / active-state):"
     for unit in "${THUMBNAILER_UNITS[@]}"; do

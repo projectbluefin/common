@@ -301,7 +301,7 @@ _run_thumbnailer() {
         /usr/bin/bash "${WORKDIR}/${script}"
 }
 
-_SOCKET_REL="cache/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer.sock"
+_SOCKET_REL="cache/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock"
 
 _socket_path() {
     printf '%s\n' "${WORKDIR}/${_SOCKET_REL}"
@@ -534,6 +534,17 @@ _make_socket() {
 
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"daemon not running"* ]]
+}
+
+@test "status-ffmpeg-thumbnailer: the default socket path matches the daemon's SOCK_PATH" {
+    # ffmpeg-thumbnailer-daemon binds
+    # ${XDG_CACHE_HOME}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock
+    # (GST_CACHE_DIR + "ffmpeg-thumbnailer" + "sock"). A drifting default here
+    # makes the report claim the daemon is down while it is serving.
+    run grep -Fq \
+        'SOCKET_PATH="${FFT_SOCKET:-${XDG_CACHE_HOME:-${HOME}/.cache}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock}"' \
+        "${WORKDIR}/status-thumbnailer.sh"
+    [ "${status}" -eq 0 ]
 }
 
 @test "status-ffmpeg-thumbnailer: reports a stale non-socket path" {

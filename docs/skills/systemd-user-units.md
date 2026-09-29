@@ -48,37 +48,49 @@ toggle: the generated unit is `<filename-stem>.service`, so
 regardless of the `ContainerName=` inside the file. Do not assume a `.container`
 file can be masked by its own name.
 
-## Enabling: presets, not `systemctl enable`
+## Enabling: `[Install]` + the quadlet generator
 
-Downstream image repos do **not** run `systemctl --global enable`. Units are
-enabled by shipping a preset line, e.g.
-`usr/lib/systemd/user-preset/01-ffmpeg-thumbnailer.preset`:
+Downstream image repos do **not** run `systemctl --global enable`. What starts
+a unit here is one of three things, and it is worth checking which one before
+writing a toggle:
 
-```
-enable ffmpeg-thumbnailer-daemon.service
-```
+- An `[Install] WantedBy=` line plus something that acts on it — a shipped
+  `usr/lib/systemd/user-preset/*.preset` entry, or the user running
+  `systemctl --user enable`. `ffmpeg-thumbnailer-daemon.service` takes this
+  route: it ships `WantedBy=graphical-session.target default.target` and
+  `common` ships no preset for it, so the `enable` branch of the toggle is what
+  installs the wants symlink.
+- A static `usr/lib/systemd/user/<target>.wants/<unit>` symlink baked into the
+  image. `common` uses this for system timers (`timers.target.wants/`), not for
+  the thumbnailer.
+- The quadlet generator. `ffmpeg-thumbnailer.container` and
+  `ffmpeg-thumbnailer-nvidia.container` carry no `[Install]` section at all;
+  the generator materialises `<stem>.service` at user-manager start and they
+  are started on demand or by another unit's dependency.
 
 Two consequences for anything you write in `common`:
 
-- A unit that must start for every user needs either the preset **or** a static
-  `wants/` symlink in the image — a `WantedBy=` line alone is inert until
-  something enables the unit.
-- Because enablement is image state, a per-user toggle cannot undo it with
-  `systemctl --user disable`. See below.
+- A `WantedBy=` line alone is inert. If a unit must start for every user
+  without a ujust opt-in, it needs a preset line or a static `wants/` symlink.
+- A per-user toggle cannot rely on `systemctl --user disable`, because two of
+  the three units have no install state at all. See below.
 
 ## Disabling per user: mask, not disable
 
-`systemctl --user disable <unit>` only removes symlinks the enable verb created.
-It does **not** touch a static `usr/lib/systemd/user/<target>.wants/<unit>`
-symlink, and for quadlet-generated units it has nothing to act on at all — the
+`systemctl --user disable <unit>` only removes symlinks the enable verb
+created. For the quadlet-generated units it has nothing to act on — the
 generated `.service` has no install state systemctl can edit, so only the
-generator decides whether it exists and what pulls it in.
+generator decides whether it exists and what pulls it in. For the daemon it
+does work, but it is not durable: a preset added downstream, or a later
+`enable`, reinstates the wants symlink, and `disable` does nothing to stop a
+unit another unit already pulled in.
 
 `systemctl --user mask <unit>` writes a symlink to `/dev/null` into the user's
 own unit directory (no `sudo`) and outranks the image and generator locations,
-so systemd refuses to load the unit no matter what pulls it in. That is why the
-thumbnailer toggle masks all three units — the daemon *and* both container
-quadlets — instead of stopping them:
+so systemd refuses to load the unit no matter what pulls it in. That is the
+one mechanism that works uniformly for all three units, which is why the
+thumbnailer toggle masks the daemon *and* both container quadlets instead of
+stopping them:
 
 ```bash
 systemctl --user stop ffmpeg-thumbnailer-daemon.service ffmpeg-thumbnailer.service ffmpeg-thumbnailer-nvidia.service
@@ -113,14 +125,15 @@ Two things to carry into the recipe:
 
 ## Red Flags
 
-- A toggle that calls `systemctl --user disable` on a unit shipped in
-  `usr/lib/systemd/user/` — the static `wants/` symlink keeps starting it
+- A toggle that calls `systemctl --user disable` on a quadlet-generated
+  `.service` — there is no install state to remove, so nothing changes
 - Masking a quadlet's `.container` filename instead of the generated `.service`
 - Assuming `systemctl --user cat <quadlet>.service` fails merely because the
   file is in `usr/share/containers/systemd/` — the generator makes the unit
   loadable at user-manager start, and `cat` is the right existence probe
 - A recipe body containing `{{ ... }}`
-- Documenting enablement as `systemctl --global enable`; presets own it
+- Documenting enablement as `systemctl --global enable`; presets, static
+  `wants/` symlinks, or an explicit `systemctl --user enable` own it
 
 ## Verification
 
