@@ -31,7 +31,10 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
     ACTION_VALUE="{{ ACTION }}"
 
     DAEMON_UNIT="ffmpeg-thumbnailer-daemon.service"
-    # Order matters: the daemon is stopped first so it unlinks its socket.
+    # Array order is cosmetic: stop/mask/unmask take all three units in one
+    # call, where argument order does not affect sequencing. The daemon still
+    # gets SIGTERM before the containers go away because its unit orders itself
+    # with After= on them, which is what lets it unlink its socket.
     THUMBNAILER_UNITS=(
         ffmpeg-thumbnailer-daemon.service
         ffmpeg-thumbnailer.service
@@ -41,7 +44,8 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
     # otherwise keeps the shim first in XDG_DATA_DIRS for video MIME types.
     ENV_OVERRIDE="${XDG_CONFIG_HOME:-${HOME}/.config}/environment.d/10-ffmpeg-thumbnailer.conf"
 
-    if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1; then
+    if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1 \
+        && [[ -z "$(systemctl --user is-enabled "${DAEMON_UNIT}" 2>/dev/null)" ]]; then
         echo "The ffmpeg video thumbnailer is not installed on this system."
         exit 0
     fi
@@ -96,14 +100,18 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
         if systemctl --user unmask "${THUMBNAILER_UNITS[@]}"; then
             rm -f "${ENV_OVERRIDE}"
             systemctl --user daemon-reload >/dev/null 2>&1 || true
-            systemctl --user enable --now "${DAEMON_UNIT}" >/dev/null 2>&1 || true
-            systemctl --user start "${THUMBNAILER_UNITS[@]}" >/dev/null 2>&1 || true
+            systemctl --user enable --now --no-block "${DAEMON_UNIT}" >/dev/null 2>&1 || true
+            # --no-block: the container quadlets carry TimeoutStartSec=900 and
+            # pull a 111 MB image on their first start, so a blocking start
+            # would stall this recipe for minutes with its output discarded.
+            systemctl --user start --no-block "${THUMBNAILER_UNITS[@]}" >/dev/null 2>&1 || true
             echo "The ffmpeg video thumbnailer has been enabled"
-            echo "Its units are unmasked and started, but the shim only returns to"
+            echo "Its units are unmasked and starting, but the shim only returns to"
             echo "XDG_DATA_DIRS at the next login, so video thumbnails come back"
             echo "after you log out and back in."
-            echo "The container image is also pulled on first use, so the first"
-            echo "thumbnail after logging back in may fail while the pull completes."
+            echo "The container image is pulled in the background by that start, so"
+            echo "the first thumbnails after logging back in may fail until it lands."
+            echo "Run 'ujust status-ffmpeg-thumbnailer' to see whether it is up."
         else
             echo "Failed to enable the ffmpeg video thumbnailer" >&2
             exit 1
@@ -129,7 +137,10 @@ status-ffmpeg-thumbnailer:
 
     # Same probe as toggle-ffmpeg-thumbnailer, so both recipes agree on whether
     # the thumbnailer exists instead of printing unknown/absent rows for it.
-    if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1; then
+    # The is-enabled fallback keeps a masked daemon counting as installed even
+    # if `systemctl --user cat` fails on it.
+    if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1 \
+        && [[ -z "$(systemctl --user is-enabled "${DAEMON_UNIT}" 2>/dev/null)" ]]; then
         echo "The ffmpeg video thumbnailer is not installed on this system."
         exit 0
     fi

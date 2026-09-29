@@ -134,6 +134,29 @@ run grep -Fqx "systemctl --user mask ffmpeg-thumbnailer-daemon.service" <<< "$(_
 For ordering guarantees (stop before mask, prompt before mutation), compare
 `grep -n` line numbers from the same log.
 
+### Assert the flags a stub cannot feel
+
+A stub returns instantly, so it can never reproduce a blocking call. Anything
+whose real cost is latency — `systemctl start` on a quadlet that pulls an
+image, a network fetch, a `--wait` flag — has to be pinned as a flag assertion
+instead. Assert over every matching call, not just the one you remember:
+
+```bash
+run grep -E "^systemctl --user (start|enable --now)( |$)" <<< "$(_calls)"
+[ "${status}" -eq 0 ]
+while read -r line; do
+    [[ "${line}" == *" --no-block"* ]]
+done <<< "${output}"
+```
+
+### Give each real failure mode its own stub knob
+
+One knob per mock behaviour, not one per unit state. `systemctl cat` and
+`systemctl is-enabled` fail independently on a real system (a masked unit can
+fail the first and still answer the second), so the stub needs
+`MOCK_UNIT_PRESENT` *and* `MOCK_CAT_FAIL`. Collapsing them into one flag makes
+the suite unable to express the case a fallback exists for.
+
 Then run: `bash "${extracted_script}"` with mocked PATH binaries.
 
 ## Pitfall: literal `*` in bats grep assertions

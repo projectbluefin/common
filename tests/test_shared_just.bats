@@ -63,17 +63,21 @@ EOF
 printf 'bctl %s\n' "$*" >> "${CALLS}"
 EOF
 
-    # systemctl stub. MOCK_UNIT_PRESENT=0 makes `systemctl --user cat` fail,
-    # which is how the recipes detect that the thumbnailer is not installed.
+    # systemctl stub. MOCK_UNIT_PRESENT=0 makes both `systemctl --user cat` and
+    # `systemctl --user is-enabled` fail, which is how the recipes detect that
+    # the thumbnailer is not installed. MOCK_CAT_FAIL=1 fails only `cat`, the
+    # way a masked unit can, so the is-enabled fallback is exercised.
     cat > "${WORKDIR}/bin/systemctl" <<'EOF'
 #!/usr/bin/bash
 printf 'systemctl %s\n' "$*" >> "${CALLS}"
 [[ "${1:-}" == "--user" ]] && shift
 case "${1:-}" in
     cat)
-        [[ "${MOCK_UNIT_PRESENT:-1}" == "1" ]] && exit 0 || exit 1
+        [[ "${MOCK_UNIT_PRESENT:-1}" == "1" && "${MOCK_CAT_FAIL:-0}" == "0" ]] || exit 1
+        exit 0
         ;;
     is-enabled)
+        [[ "${MOCK_UNIT_PRESENT:-1}" == "1" ]] || exit 1
         [[ "${MOCK_STATE_FAIL:-0}" == "1" ]] && exit 1
         if [[ "${MOCK_MASKED:-0}" == "1" ]]; then
             printf 'masked\n'
@@ -82,6 +86,7 @@ case "${1:-}" in
         printf '%s\n' "${MOCK_ENABLED_STATE:-enabled}"
         ;;
     is-active)
+        [[ "${MOCK_UNIT_PRESENT:-1}" == "1" ]] || exit 1
         [[ "${MOCK_STATE_FAIL:-0}" == "1" ]] && exit 1
         printf '%s\n' "${MOCK_ACTIVE_STATE:-inactive}"
         ;;
@@ -375,11 +380,43 @@ _make_socket() {
     [ "${status}" -eq 0 ]
     run grep -Fqx "systemctl --user daemon-reload" <<< "$(_calls)"
     [ "${status}" -eq 0 ]
-    run grep -Fqx "systemctl --user enable --now ffmpeg-thumbnailer-daemon.service" <<< "$(_calls)"
+    run grep -Fqx "systemctl --user enable --now --no-block ffmpeg-thumbnailer-daemon.service" <<< "$(_calls)"
     [ "${status}" -eq 0 ]
-    run grep -Fqx "systemctl --user start ffmpeg-thumbnailer-daemon.service ffmpeg-thumbnailer.service ffmpeg-thumbnailer-nvidia.service" <<< "$(_calls)"
+    run grep -Fqx "systemctl --user start --no-block ffmpeg-thumbnailer-daemon.service ffmpeg-thumbnailer.service ffmpeg-thumbnailer-nvidia.service" <<< "$(_calls)"
     [ "${status}" -eq 0 ]
     [[ "${result}" == *"has been enabled"* ]]
+}
+
+@test "toggle-ffmpeg-thumbnailer: enable never issues a blocking start" {
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=enable
+    [ "${status}" -eq 0 ]
+
+    # Quadlets carry TimeoutStartSec=900 and pull a 111 MB image on first
+    # start, so every start/enable --now must hand back control immediately.
+    run grep -E "^systemctl --user (start|enable --now)( |$)" <<< "$(_calls)"
+    [ "${status}" -eq 0 ]
+    while read -r line; do
+        [[ "${line}" == *" --no-block"* ]]
+    done <<< "${output}"
+}
+
+@test "toggle-ffmpeg-thumbnailer: a masked daemon still counts as installed" {
+    # A masked unit can fail the `cat` probe; is-enabled still reports it, so
+    # the recipe must not claim the thumbnailer is missing and skip the toggle.
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=enable MOCK_CAT_FAIL=1 MOCK_MASKED=1
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"not installed"* ]]
+    run grep -Fqx "systemctl --user unmask ffmpeg-thumbnailer-daemon.service ffmpeg-thumbnailer.service ffmpeg-thumbnailer-nvidia.service" <<< "$(_calls)"
+    [ "${status}" -eq 0 ]
+}
+
+@test "status-ffmpeg-thumbnailer: a masked daemon still counts as installed" {
+    _run_thumbnailer status-thumbnailer.sh MOCK_CAT_FAIL=1 MOCK_MASKED=1
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"not installed"* ]]
+    [[ "${output}" == *"Units (enabled-state / active-state):"* ]]
 }
 
 @test "toggle-ffmpeg-thumbnailer: disable and enable both state the re-login caveat" {

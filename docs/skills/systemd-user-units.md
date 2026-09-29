@@ -65,8 +65,10 @@ writing a toggle:
   the thumbnailer.
 - The quadlet generator. `ffmpeg-thumbnailer.container` and
   `ffmpeg-thumbnailer-nvidia.container` carry no `[Install]` section at all;
-  the generator materialises `<stem>.service` at user-manager start and they
-  are started on demand or by another unit's dependency.
+  the generator materialises `<stem>.service` at user-manager start, but
+  nothing in the image pulls those services in. The daemon only orders itself
+  `After=` them, which does not start them, so the sole starter today is the
+  `enable` branch of `ujust toggle-ffmpeg-thumbnailer`.
 
 Two consequences for anything you write in `common`:
 
@@ -101,11 +103,16 @@ systemctl --user unmask ffmpeg-thumbnailer-daemon.service ffmpeg-thumbnailer.ser
 
 Re-enabling also needs `systemctl --user daemon-reload`, and starting the
 container quadlets explicitly if thumbnails must work before the next login.
-A mask is durable user state: it survives image updates until `unmask` (or
-deleting the symlink) removes it.
+Start them with `--no-block`: they carry `TimeoutStartSec=900` and pull a
+111 MB image on first start, so a blocking `start` stalls the caller for
+minutes. A mask is durable user state: it survives image updates until
+`unmask` (or deleting the symlink) removes it.
 
 Stop before mask, in that order: the daemon unlinks its socket on `SIGTERM`, so
-masking a live unit can leave a stale socket path behind.
+masking a live unit can leave a stale socket path behind. A single
+`systemctl --user stop a b c` is enough — argument order does not sequence
+anything; the daemon's `After=` on the container units is what makes systemd
+stop it first.
 
 ## Masking is not enough: the `environment.d` drop-in
 
