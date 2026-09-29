@@ -382,6 +382,17 @@ _make_socket() {
     [[ "${result}" == *"has been enabled"* ]]
 }
 
+@test "toggle-ffmpeg-thumbnailer: disable and enable both state the re-login caveat" {
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=disable
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"log out and back in"* ]]
+
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=enable
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"XDG_DATA_DIRS"* ]]
+    [[ "${output}" == *"log out and back in"* ]]
+}
+
 @test "toggle-ffmpeg-thumbnailer: enable never masks" {
     _run_thumbnailer toggle-thumbnailer.sh ACTION=enable
 
@@ -497,6 +508,17 @@ _make_socket() {
 }
 
 # --- ffmpeg thumbnailer status ------------------------------------------------
+
+@test "status-ffmpeg-thumbnailer: a missing thumbnailer is reported like the toggle does" {
+    _run_thumbnailer status-thumbnailer.sh \
+        MOCK_UNIT_PRESENT=0 XDG_CACHE_HOME="${WORKDIR}/cache"
+    result="${output}"
+
+    [ "${status}" -eq 0 ]
+    [[ "${result}" == *"not installed"* ]]
+    [[ "${result}" != *"Units (enabled-state"* ]]
+    [[ "${result}" != *"Environment override:"* ]]
+}
 
 @test "status-ffmpeg-thumbnailer: reports every unit's enabled and active state" {
     _run_thumbnailer status-thumbnailer.sh \

@@ -129,11 +129,14 @@ rm -f "${ENV_OVERRIDE}"                                      # enable
 Two consequences for any toggle that follows this pattern:
 
 - The override is durable user state, like a mask, and it takes effect at the
-  next login rather than immediately.
+  next login rather than immediately. Say so in *both* toggle branches: removing
+  the file on enable is as deferred as writing it on disable, so a user who
+  enables mid-session sees active units and still no thumbnails until re-login.
 - Report it. A user who unmasks the units by hand, without the toggle, still
   gets no thumbnails and has nothing pointing at the leftover file —
   `status-ffmpeg-thumbnailer` prints whether it is present for exactly that
-  reason.
+  reason. The status recipe also short-circuits on the same "is it installed?"
+  probe as the toggle, so the pair never disagrees about an absent thumbnailer.
 
 ## Writing the toggle recipe
 

@@ -99,8 +99,11 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
             systemctl --user enable --now "${DAEMON_UNIT}" >/dev/null 2>&1 || true
             systemctl --user start "${THUMBNAILER_UNITS[@]}" >/dev/null 2>&1 || true
             echo "The ffmpeg video thumbnailer has been enabled"
-            echo "The container image is pulled on first use, so the first"
-            echo "thumbnail after enabling may fail while the pull completes."
+            echo "Its units are unmasked and started, but the shim only returns to"
+            echo "XDG_DATA_DIRS at the next login, so video thumbnails come back"
+            echo "after you log out and back in."
+            echo "The container image is also pulled on first use, so the first"
+            echo "thumbnail after logging back in may fail while the pull completes."
         else
             echo "Failed to enable the ffmpeg video thumbnailer" >&2
             exit 1
@@ -123,6 +126,13 @@ status-ffmpeg-thumbnailer:
     SOCKET_PATH="${FFT_SOCKET:-${XDG_CACHE_HOME:-${HOME}/.cache}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock}"
     # Must match ENV_OVERRIDE in toggle-ffmpeg-thumbnailer.
     ENV_OVERRIDE="${XDG_CONFIG_HOME:-${HOME}/.config}/environment.d/10-ffmpeg-thumbnailer.conf"
+
+    # Same probe as toggle-ffmpeg-thumbnailer, so both recipes agree on whether
+    # the thumbnailer exists instead of printing unknown/absent rows for it.
+    if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1; then
+        echo "The ffmpeg video thumbnailer is not installed on this system."
+        exit 0
+    fi
 
     echo "Units (enabled-state / active-state):"
     for unit in "${THUMBNAILER_UNITS[@]}"; do
