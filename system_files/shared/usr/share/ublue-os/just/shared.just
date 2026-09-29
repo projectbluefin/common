@@ -121,6 +121,8 @@ status-ffmpeg-thumbnailer:
     CONTAINER_NAME="${FFT_CONTAINER:-ffmpeg-thumbnailer}"
     # Must match SOCK_PATH in /usr/libexec/ffmpeg-thumbnailer/ffmpeg-thumbnailer-daemon.
     SOCKET_PATH="${FFT_SOCKET:-${XDG_CACHE_HOME:-${HOME}/.cache}/gnome-desktop-thumbnailer/gstreamer-1.0/ffmpeg-thumbnailer/sock}"
+    # Must match ENV_OVERRIDE in toggle-ffmpeg-thumbnailer.
+    ENV_OVERRIDE="${XDG_CONFIG_HOME:-${HOME}/.config}/environment.d/10-ffmpeg-thumbnailer.conf"
 
     echo "Units (enabled-state / active-state):"
     for unit in "${THUMBNAILER_UNITS[@]}"; do
@@ -138,6 +140,16 @@ status-ffmpeg-thumbnailer:
         fi
     else
         echo "  podman is not installed"
+    fi
+
+    echo "Environment override:"
+    if [[ -e "${ENV_OVERRIDE}" ]]; then
+        echo "  ${ENV_OVERRIDE}: present"
+        echo "  It shadows the system environment.d drop-in, so the shim stays out of"
+        echo "  XDG_DATA_DIRS and video thumbnails stay off even if the units are unmasked."
+        echo "  Run 'ujust toggle-ffmpeg-thumbnailer enable' to remove it."
+    else
+        echo "  ${ENV_OVERRIDE}: absent (system environment.d drop-in in effect)"
     fi
 
     echo "Daemon socket:"

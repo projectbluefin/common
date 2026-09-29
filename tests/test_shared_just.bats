@@ -582,6 +582,46 @@ _make_socket() {
     [[ "${output}" == *"podman is not installed"* ]]
 }
 
+@test "status-ffmpeg-thumbnailer: reports the environment.d override when present" {
+    mkdir -p "${WORKDIR}/home/.config/environment.d"
+    printf '# stub\n' > "${WORKDIR}/home/.config/environment.d/10-ffmpeg-thumbnailer.conf"
+
+    _run_thumbnailer status-thumbnailer.sh XDG_CACHE_HOME="${WORKDIR}/cache"
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"10-ffmpeg-thumbnailer.conf: present"* ]]
+    [[ "${output}" == *"toggle-ffmpeg-thumbnailer enable"* ]]
+}
+
+@test "status-ffmpeg-thumbnailer: reports an absent environment.d override" {
+    rm -f "${WORKDIR}/home/.config/environment.d/10-ffmpeg-thumbnailer.conf"
+
+    _run_thumbnailer status-thumbnailer.sh XDG_CACHE_HOME="${WORKDIR}/cache"
+
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"10-ffmpeg-thumbnailer.conf: absent"* ]]
+}
+
+@test "status-ffmpeg-thumbnailer: the override path matches the toggle's ENV_OVERRIDE" {
+    # A drifting path here makes the report claim no override while the toggle's
+    # file is still shadowing the system drop-in.
+    override_line='ENV_OVERRIDE="${XDG_CONFIG_HOME:-${HOME}/.config}/environment.d/10-ffmpeg-thumbnailer.conf"'
+    run grep -Fq "${override_line}" "${WORKDIR}/status-thumbnailer.sh"
+    [ "${status}" -eq 0 ]
+    run grep -Fq "${override_line}" "${WORKDIR}/toggle-thumbnailer.sh"
+    [ "${status}" -eq 0 ]
+}
+
+@test "status-ffmpeg-thumbnailer: never changes the environment.d override" {
+    mkdir -p "${WORKDIR}/home/.config/environment.d"
+    printf '# stub\n' > "${WORKDIR}/home/.config/environment.d/10-ffmpeg-thumbnailer.conf"
+
+    _run_thumbnailer status-thumbnailer.sh XDG_CACHE_HOME="${WORKDIR}/cache"
+
+    [ "${status}" -eq 0 ]
+    [ -f "${WORKDIR}/home/.config/environment.d/10-ffmpeg-thumbnailer.conf" ]
+}
+
 @test "status-ffmpeg-thumbnailer: shows recent daemon activity" {
     _run_thumbnailer status-thumbnailer.sh XDG_CACHE_HOME="${WORKDIR}/cache"
 

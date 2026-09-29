@@ -107,6 +107,34 @@ deleting the symlink) removes it.
 Stop before mask, in that order: the daemon unlinks its socket on `SIGTERM`, so
 masking a live unit can leave a stale socket path behind.
 
+## Masking is not enough: the `environment.d` drop-in
+
+The thumbnailer also ships a system `environment.d` drop-in that puts its shim
+directory first in `XDG_DATA_DIRS` for video MIME types. That variable is read
+by the user session at login, not by a unit, so masking the units does nothing
+to it: the shim `.thumbnailer` entries keep winning and video thumbnails keep
+failing to the masked daemon.
+
+`environment.d` resolves same-named files by name across its search path, and
+the user directory outranks `/usr/lib`, so writing an empty (comment-only) file
+at the same name shadows the system drop-in completely:
+
+```bash
+ENV_OVERRIDE="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d/10-ffmpeg-thumbnailer.conf"
+mkdir -p "$(dirname "${ENV_OVERRIDE}")"
+printf '# masks the system drop-in\n' > "${ENV_OVERRIDE}"   # disable
+rm -f "${ENV_OVERRIDE}"                                      # enable
+```
+
+Two consequences for any toggle that follows this pattern:
+
+- The override is durable user state, like a mask, and it takes effect at the
+  next login rather than immediately.
+- Report it. A user who unmasks the units by hand, without the toggle, still
+  gets no thumbnails and has nothing pointing at the leftover file —
+  `status-ffmpeg-thumbnailer` prints whether it is present for exactly that
+  reason.
+
 ## Writing the toggle recipe
 
 Recipe bodies are bash, so test them by extracting the body and stubbing
@@ -132,6 +160,8 @@ Two things to carry into the recipe:
   file is in `usr/share/containers/systemd/` — the generator makes the unit
   loadable at user-manager start, and `cat` is the right existence probe
 - A recipe body containing `{{ ... }}`
+- A toggle that masks units but leaves a session-level `environment.d` drop-in
+  in place, or a status recipe that never reports the override it wrote
 - Documenting enablement as `systemctl --global enable`; presets, static
   `wants/` symlinks, or an explicit `systemctl --user enable` own it
 
@@ -148,6 +178,10 @@ systemctl --user is-enabled ffmpeg-thumbnailer-daemon.service
 
 # Where a mask landed, and what it shadows:
 ls -l "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/"
+
+# Whether a user environment.d override is shadowing the system drop-in:
+ls -l "${XDG_CONFIG_HOME:-$HOME/.config}/environment.d/"
+systemd-analyze --user cat-config environment.d
 
 # What actually pulls a unit in (preset, static wants, or generator):
 systemctl --user show -p LoadState -p UnitFileState -p WantedBy -p RequiredBy \
