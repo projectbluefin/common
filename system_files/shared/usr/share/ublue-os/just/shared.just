@@ -37,6 +37,9 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
         ffmpeg-thumbnailer.service
         ffmpeg-thumbnailer-nvidia.service
     )
+    # A same-named user drop-in overrides /usr/lib/environment.d, which
+    # otherwise keeps the shim first in XDG_DATA_DIRS for video MIME types.
+    ENV_OVERRIDE="${XDG_CONFIG_HOME:-${HOME}/.config}/environment.d/10-ffmpeg-thumbnailer.conf"
 
     if ! systemctl --user cat "${DAEMON_UNIT}" >/dev/null 2>&1; then
         echo "The ffmpeg video thumbnailer is not installed on this system."
@@ -79,15 +82,18 @@ toggle-ffmpeg-thumbnailer ACTION="prompt":
         # The per-user mask also blocks the container quadlets, so the 111 MB
         # image is never pulled again while the toggle is off.
         if systemctl --user mask "${THUMBNAILER_UNITS[@]}"; then
+            mkdir -p "$(dirname "${ENV_OVERRIDE}")"
+            printf '# Written by ujust toggle-ffmpeg-thumbnailer: masks the system drop-in.\n' > "${ENV_OVERRIDE}"
             echo "The ffmpeg video thumbnailer has been disabled"
             echo "Its container and daemon units are masked and stopped;"
-            echo "video thumbnails fall back to the in-sandbox thumbnailer."
+            echo "after you log out and back in, video thumbnails fall back to the in-sandbox thumbnailer."
         else
             echo "Failed to disable the ffmpeg video thumbnailer" >&2
             exit 1
         fi
     else
         if systemctl --user unmask "${THUMBNAILER_UNITS[@]}"; then
+            rm -f "${ENV_OVERRIDE}"
             systemctl --user daemon-reload >/dev/null 2>&1 || true
             systemctl --user enable --now "${DAEMON_UNIT}" >/dev/null 2>&1 || true
             systemctl --user start "${THUMBNAILER_UNITS[@]}" >/dev/null 2>&1 || true

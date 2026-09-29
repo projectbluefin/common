@@ -335,6 +335,20 @@ _make_socket() {
     [[ "${result}" == *"has been disabled"* ]]
 }
 
+@test "toggle-ffmpeg-thumbnailer: disable overrides the environment.d drop-in and enable removes it" {
+    override="${WORKDIR}/home/.config/environment.d/10-ffmpeg-thumbnailer.conf"
+
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=disable
+    [ "${status}" -eq 0 ]
+    [ -f "${override}" ]
+    run grep -q XDG_DATA_DIRS "${override}"
+    [ "${status}" -ne 0 ]
+
+    _run_thumbnailer toggle-thumbnailer.sh ACTION=enable
+    [ "${status}" -eq 0 ]
+    [ ! -e "${override}" ]
+}
+
 @test "toggle-ffmpeg-thumbnailer: disable stops the units before masking them" {
     _run_thumbnailer toggle-thumbnailer.sh ACTION=disable
 
