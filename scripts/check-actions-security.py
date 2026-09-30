@@ -7,7 +7,7 @@ Checks:
 2. SHA pinning: All external (third-party) actions must be pinned to a full 40-character commit SHA
    with a version comment.
 3. pull_request_target restrictions: Workflows triggered by pull_request_target must not perform
-   untrusted checkouts of PR head refs.
+   untrusted checkouts of PR head refs ('github.head_ref' or 'github.event.pull_request.head.*').
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ except ImportError:
 SHA_RE = re.compile(r"^[0-9a-f]{40}$", re.IGNORECASE)
 USES_RE = re.compile(r"^\s*(?:-\s+)?uses:\s*([^\s#]+)(.*)$")
 UNTRUSTED_CHECKOUT_RE = re.compile(
-    r"github\.event\.pull_request\.head\.(?:sha|ref)", re.IGNORECASE
+    r"github\.(?:head_ref|event\.pull_request\.head\b(?:\.(?:sha|ref|repo)\S*)?)",
+    re.IGNORECASE,
 )
 
 

@@ -108,12 +108,14 @@ uses: actions/checkout@3d3c42e
 ```
 
 #### First-Party Actions & Reusable Workflows (`projectbluefin/*`)
-All internal workflow references within the `projectbluefin` organization (`projectbluefin/actions`, `projectbluefin/bonedigger`, `projectbluefin/testsuite`) use managed release tags (`@v1` or `@main`), NOT commit SHAs.
+All internal workflow references within the `projectbluefin` organization (`projectbluefin/actions`, `projectbluefin/bonedigger`, `projectbluefin/testsuite`) use managed release tags (`@v1` or `@main`), NOT commit SHAs — with the single documented exception recorded below.
 
 **Why internal refs use managed tags:**
 1. **Preventing Cross-Repo Update Cascades:** Pinning internal actions to individual commit SHAs creates extreme churn: every commit to `projectbluefin/actions` would require coordinated manual PRs across 10+ downstream consumer repositories.
 2. **Eliminating the `startup_failure` Trap:** When a consumer workflow pins to an internal commit SHA that predated the addition of the called reusable workflow file, GitHub Actions terminates the run with an opaque `startup_failure: This run likely failed because of a workflow file issue` with no diagnostic error (see `bonedigger#27` and `dakota-iso#126`).
 3. **No Unmerged PR Refs:** Workflows must NEVER reference unmerged PR head commits (`refs/pull/*/head`) or ephemeral branch tips (`aa318556... # clanker-queue-rollout`). Reusable workflows must resolve to stable release tags (`@v1`) or the upstream default branch (`@main`).
+
+**Documented exception — `projectbluefin/testsuite`:** `.github/workflows/run-testsuite.yml` in this repository pins `projectbluefin/testsuite/.github/workflows/e2e.yml` to a full commit SHA with a `# main` comment rather than `@main`. The testsuite drives destructive E2E gates whose behaviour changes frequently, so the pin is deliberately held at a known-good commit and advanced by Renovate digest updates (`common#737`, `common#718`) or explicit bumps (`ci: bump testsuite pin`). This SHA pin is a superset of the managed-tag requirement (it is immutable, and `e2e.yml` is known to exist at the pinned commit, so the `startup_failure` trap does not apply), so the scanner exempts `projectbluefin/*` refs from both directions. Any other first-party ref must use a managed tag.
 
 #### Automated Maintenance with Renovate
 Renovate tracks pinned action SHAs across organization repositories. As policy targets:
@@ -127,7 +129,7 @@ Renovate tracks pinned action SHAs across organization repositories. As policy t
 **Requirement:** Workflows triggered by `pull_request_target` must never check out or execute untrusted code from pull request forks within a privileged runner context.
 
 #### Threat Model & Rationale
-Unlike `pull_request` from forks, the `pull_request_target` event runs in the context of the base repository (e.g. `main`), giving the runner access to repository secrets and a read/write `GITHUB_TOKEN`. Checking out untrusted PR head code (`actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}`) and running build commands, npm scripts, tests, or linters allows an untrusted fork author to execute arbitrary code with direct access to repository secrets and write tokens.
+Unlike `pull_request` from forks, the `pull_request_target` event runs in the context of the base repository (e.g. `main`), giving the runner access to repository secrets and a read/write `GITHUB_TOKEN`. Checking out untrusted PR head code (`actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}`, `ref: ${{ github.head_ref }}`, or `repository: ${{ github.event.pull_request.head.repo.full_name }}`) and running build commands, npm scripts, tests, or linters allows an untrusted fork author to execute arbitrary code with direct access to repository secrets and write tokens.
 
 #### Mandatory Restrictions
 1. **Zero Untrusted Execution:** Workflows triggered by `pull_request_target` MUST NOT execute untrusted scripts, build recipes (`just`, `make`, `Containerfile`), or package lifecycle scripts from the PR branch.
@@ -180,8 +182,9 @@ To ensure new and existing repositories remain compliant with this baseline:
 1. **Pre-commit Gate:**
    - `.pre-commit-config.yaml` runs `no-floating-action-tags` to prevent unpinned external action tags from being committed.
    - `scripts/check-actions-security.py` verifies top-level permissions declarations and action pinning.
+   - `check-actions-security-tests` runs `tests/test_actions_security.py`, the fixture regression suite covering missing permissions, floating tags, and `pull_request_target` untrusted checkouts.
 2. **Automated CI Validation:**
-   - `validate.yml` runs `pre-commit run --all-files` on all pull requests, calling `scripts/check-actions-security.py`. Conformance unit tests run locally via `Justfile` (`just test`).
+   - `validate.yml` runs `pre-commit run --all-files` on all pull requests, calling both `scripts/check-actions-security.py` and `tests/test_actions_security.py`. The same suite runs locally via `Justfile` (`just test`).
 3. **Cross-Repo Scanner:**
    - The shared script `scripts/check-actions-security.py` is available for inclusion in all repository CI lanes and scanner audits.
 

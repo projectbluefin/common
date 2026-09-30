@@ -112,6 +112,62 @@ jobs:
 
 
 @pytest.mark.parametrize(
+    "ref_expression",
+    [
+        "${{ github.head_ref }}",
+        "${{ github.event.pull_request.head.ref }}",
+        "${{ github.event.pull_request.head.sha }}",
+        "${{ github.event.pull_request.head.repo.full_name }}",
+    ],
+)
+def test_scanner_detects_all_untrusted_pr_head_expressions(tmp_path: Path, ref_expression: str):
+    """Every untrusted PR-head expression must be flagged, including github.head_ref."""
+    wf = tmp_path / "pwn-request.yml"
+    wf.write_text(f"""
+name: PR Target Workflow
+on: pull_request_target
+permissions: {{}}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: {ref_expression}
+""")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--workflows-dir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "Dangerous untrusted PR checkout detected" in result.stdout
+
+
+def test_scanner_allows_head_ref_outside_pr_target(tmp_path: Path):
+    """github.head_ref in a plain pull_request workflow is not a privileged-context risk."""
+    wf = tmp_path / "plain-pr.yml"
+    wf.write_text("""
+name: PR Workflow
+on: pull_request
+permissions: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.head_ref }}
+""")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--workflows-dir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout
+
+
+@pytest.mark.parametrize(
     "permissions_block",
     [
         "permissions: write-all",

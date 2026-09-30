@@ -78,3 +78,10 @@ repos:
         entry: python3 scripts/check-actions-security.py
         pass_filenames: false
         always_run: true
+      - id: check-actions-security-tests
+        name: Run GitHub Actions security baseline regression tests
+        language: python
+        additional_dependencies: [pytest, pyyaml]
+        entry: pytest tests/test_actions_security.py -q
+        pass_filenames: false
+        always_run: true
