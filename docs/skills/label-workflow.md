@@ -1,7 +1,7 @@
 ---
 name: label-workflow
-version: "2.1"
-last_updated: "2026-09-23"
+version: "2.2"
+last_updated: "2026-09-30"
 id: label-workflow
 one_line_purpose: Route factory work using the canonical label workflow.
 entry_point: docs/skills/label-workflow.md
@@ -48,31 +48,25 @@ not additional labels or state.
 ## Ownership
 
 `common` documents this contract and consumes configured automation; it does not
-own a lifecycle implementation. Reusable lifecycle automation lives in
-`projectbluefin/bonedigger` (`.github/workflows/lifecycle.yml`), called as a
-pinned `workflow_call` from each consuming repository's own
-`.github/workflows/bonedigger.yml` (see `bluefin`'s caller for the reference
-shape: `on: issues.opened, issue_comment.created`, `permissions: issues:
-write, contents: read`, `secrets: inherit`). `bluefin-lts` and `dakota` call
-the same reusable workflow but with a broader trigger (`issues:
-[opened, labeled, closed]`, `pull_request: [opened]`, and a daily schedule)
-and also grant `pull-requests: write`; `dakota` currently pins bonedigger at a
-feature-branch build (`aa31855`, `feat/clanker-queue-rollout`) rather than a
-released ref, so its caller should not be read as the reference shape. As of
-this writing that reusable workflow scopes only to `ujust report` intake,
-confirm-based priority escalation (`priority/p0`/`priority/p1`), and the
-agent-donation fast track (`status/approved`, `status/queued`,
-`flow/agent-donation`) — it does not apply `1-triage` or route
-`3-human-queue`/`3-clanker-queue` for ordinary issues. `projectbluefin/actions`
-does not currently contain a lifecycle workflow, despite earlier text in this
-repository pointing to one there. The `1-triage` default on new issues comes
-from each repository's own issue form where that form sets it (`labels:
-["1-triage"]` in `.github/ISSUE_TEMPLATE/*.yml`, e.g. `common`'s `report.yml`);
-`bluefin` and `dakota` issue forms instead apply `kind/bug`/`status/triage` or
+own a lifecycle implementation. Issue lifecycle is **Hive-managed across the
+factory** — the issue state machine, triage, and queue management belong to
+Hive. `bonedigger` previously hosted the reusable lifecycle automation in
+`.github/workflows/lifecycle.yml`, called as a pinned `workflow_call` from each
+consuming repository's own `.github/workflows/bonedigger.yml` (see `bluefin`'s
+caller for the reference shape: `on: issues.opened, issue_comment.created`,
+`permissions: issues: write, contents: read`, `secrets: inherit`); that workflow
+was removed in `bonedigger#40` (2026-09-29), and `bluefin`, `bluefin-lts`, and
+`dakota`'s callers still pin to historical SHAs of the now-removed file rather
+than a live ref (`dakota` pins to a feature-branch build, so its caller should
+not be read as the reference shape). `projectbluefin/actions` does not currently
+contain a lifecycle workflow, despite earlier text in this repository pointing to
+one there. The `1-triage` default on new issues comes from each repository's own
+issue form where that form sets it (`labels: ["1-triage"]` in
+`.github/ISSUE_TEMPLATE/*.yml`, e.g. `common`'s `report.yml`); `bluefin` and
+`dakota` issue forms instead apply `kind/bug`/`status/triage` or
 `kind/enhancement`/`status/discussing` and do not set `1-triage`. Advancing an
 issue to `3-human-queue` or `3-clanker-queue` is currently a human action, not
-an automated one, unless a repository's caller explicitly implements that
-step.
+an automated one, unless a repository's caller explicitly implements that step.
 
 ## Downstream consumer subsets
 
