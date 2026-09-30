@@ -111,12 +111,12 @@ The factory previously had two lifecycle workflow paths serving different purpos
 
 | Workflow | Location | Called by | Purpose |
 |---|---|---|---|
-| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed) | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
-| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed) | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
+| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed from `main`) | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
+| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed from `main`) | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
 
-`bonedigger#40` (2026-09-29) deleted `lifecycle.yml`; issue lifecycle is now Hive-managed across the factory. The `bonedigger.yml` callers listed above still reference historical SHAs of the now-removed file, so they are not live reusable-workflow targets. Do not treat this table as a callable contract.
+`bonedigger#40` (2026-09-29) deleted `lifecycle.yml` from `main`; issue lifecycle is now Hive-managed across the factory. The `bonedigger.yml` callers listed above are **frozen historical pins**: a `workflow_call` ref resolves at the pinned commit, so `lifecycle.yml@d530767` (also reachable as tag `v1`) and `lifecycle.yml@9c5faf6` still run. What changed is that the file no longer exists on `main`, so those pins cannot be bumped forward. Treat the table as a record of frozen callers, not as a contract to extend.
 
-All internal `projectbluefin/` workflow refs use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) § Internal refs.
+Internal `projectbluefin/` workflow refs otherwise use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. The `bonedigger.yml` lifecycle callers above are the surviving exception and are deliberately left frozen. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) § Internal refs.
 
 There is no `lifecycle-caller.yml` in the factory. If you find one, it is stale — delete it.
 

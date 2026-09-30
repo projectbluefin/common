@@ -55,13 +55,15 @@ Hive. `bonedigger` previously hosted the reusable lifecycle automation in
 consuming repository's own `.github/workflows/bonedigger.yml` (see `bluefin`'s
 caller for the reference shape: `on: issues.opened, issue_comment.created`,
 `permissions: issues: write, contents: read`, `secrets: inherit`); that workflow
-was removed in `bonedigger#40` (2026-09-29), and `bluefin`, `bluefin-lts`, and
-`dakota`'s callers still pin to historical SHAs of the now-removed file rather
-than a live ref (`bluefin` and `bluefin-lts` at `d530767`, `dakota` at
-`9c5faf6`). `projectbluefin/actions` does not currently
-contain a lifecycle workflow, despite earlier text in this repository pointing to
-one there. The `1-triage` default on new issues comes from each repository's own
-issue form where that form sets it (`labels: ["1-triage"]` in
+was removed from `main` in `bonedigger#40` (2026-09-29). `bluefin`,
+`bluefin-lts`, `dakota`, and `knuckle`'s callers are now frozen historical pins
+(`bluefin`, `bluefin-lts`, and `knuckle` at `d530767`, also reachable as tag
+`v1`; `dakota` at `9c5faf6`) — a `workflow_call` ref resolves at the pinned
+commit, so those runs still succeed, but the pins cannot be bumped forward
+because the file no longer exists on `main`. `projectbluefin/actions` does not
+currently contain a lifecycle workflow, despite earlier text in this repository
+pointing to one there. The `1-triage` default on new issues comes from each
+repository's own issue form where that form sets it (`labels: ["1-triage"]` in
 `.github/ISSUE_TEMPLATE/*.yml`, e.g. `common`'s `report.yml`); `bluefin` and
 `dakota` issue forms instead apply `kind/bug`/`status/triage` or
 `kind/enhancement`/`status/discussing` and do not set `1-triage`. Advancing an
