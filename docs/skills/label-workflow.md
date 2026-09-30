@@ -57,8 +57,8 @@ caller for the reference shape: `on: issues.opened, issue_comment.created`,
 `permissions: issues: write, contents: read`, `secrets: inherit`); that workflow
 was removed in `bonedigger#40` (2026-09-29), and `bluefin`, `bluefin-lts`, and
 `dakota`'s callers still pin to historical SHAs of the now-removed file rather
-than a live ref (`dakota` pins to a feature-branch build, so its caller should
-not be read as the reference shape). `projectbluefin/actions` does not currently
+than a live ref (`bluefin` and `bluefin-lts` at `d530767`, `dakota` at
+`9c5faf6`). `projectbluefin/actions` does not currently
 contain a lifecycle workflow, despite earlier text in this repository pointing to
 one there. The `1-triage` default on new issues comes from each repository's own
 issue form where that form sets it (`labels: ["1-triage"]` in

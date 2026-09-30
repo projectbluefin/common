@@ -107,12 +107,14 @@ kubestellar-bot does NOT make design or security decisions. Those hit a human ga
 
 ## Integration status
 
-The factory has two lifecycle workflows serving different purposes:
+The factory previously had two lifecycle workflow paths serving different purposes, both in `bonedigger`'s `.github/workflows/lifecycle.yml`:
 
 | Workflow | Location | Called by | Purpose |
 |---|---|---|---|
-| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
-| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
+| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed) | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
+| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed) | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
+
+`bonedigger#40` (2026-09-29) deleted `lifecycle.yml`; issue lifecycle is now Hive-managed across the factory. The `bonedigger.yml` callers listed above still reference historical SHAs of the now-removed file, so they are not live reusable-workflow targets. Do not treat this table as a callable contract.
 
 All internal `projectbluefin/` workflow refs use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) § Internal refs.
 

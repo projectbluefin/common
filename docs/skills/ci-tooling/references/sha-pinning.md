@@ -53,7 +53,7 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
-| `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | `@v1` |
+| `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | historical SHA — workflow removed in `bonedigger#40` (2026-09-29); no longer a live callable target |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@main` |
 
 **Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` or `projectbluefin/bonedigger` workflow refs. When a SHA predates the file's existence in the repo, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis. See [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27).
