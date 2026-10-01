@@ -1,6 +1,6 @@
 just := just_executable()
 
-# test_libvirt_helper.bats is excluded from just test — it runs unconditionally in CI (unit-tests.yml); the suite needs only a temp HOME, not a libvirtd session
+# test_libvirt_helper.bats is excluded — it runs unconditionally in CI (unit-tests.yml); the suite needs only a temp HOME, not a libvirtd session
 # Every suite in tests/ must be listed below or declared excluded above with a
 # reason; tests/test_suite_registration.bats enforces that.
 # Run unit tests (pytest for hooks.py, bats for shell scripts)

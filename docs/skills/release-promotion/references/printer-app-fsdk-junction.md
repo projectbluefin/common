@@ -190,4 +190,3 @@ done
       a short SHA) as a failure, not as a style nit: it is exactly the
       unreachable-preview case common#1239 was raised about.
 - [ ] Do not mark physical print output verified; no hardware is available.
-
