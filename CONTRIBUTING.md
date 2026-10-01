@@ -58,21 +58,13 @@ Full layer validation (the `common` behave suite from
 - [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) —
   coding and configuration conventions for shell scripts, Just recipes,
   JSON/YAML, and the Containerfile.
-- [`docs/contributing/reviewer-ladder.md`](docs/contributing/reviewer-ladder.md) —
-  draft proposal for a four-rung contributor ladder (Triager, Domain
-  Reviewer); unadopted until a maintainer decision.
-- [`docs/contributing/hold-gate-rubric.md`](docs/contributing/hold-gate-rubric.md) —
-  draft proposal for hold-gate PR queue prioritization rubric (P0/P1/P2 risk tiers
-  and release-gate expedite lane); unadopted until a maintainer decision.
-- [`docs/contributing/triage-sla.md`](docs/contributing/triage-sla.md) —
-  draft proposal for a 14-day first-response SLA on human-authored issues and
-  a triage-first review-allocation rule; unadopted until a maintainer decision.
-- [`docs/contributing/agent-lane-throttle.md`](docs/contributing/agent-lane-throttle.md) —
-  draft proposal for demand-side throttling of agent-filed PRs under review
-  backlog; unadopted until a maintainer decision.
-- [`ACTIONS-SECURITY.md`](./ACTIONS-SECURITY.md) — organization GitHub Actions
-  security baseline: top-level `permissions: {}`, SHA pinning, `pull_request_target`
-  restrictions, and checksum verification.
+- [`docs/specifications/reviewer-ladder.md`](docs/specifications/reviewer-ladder.md) —
+  draft specification for contributor ladder scaling; unadopted until maintainer approval.
+- [`docs/specifications/hold-gate-prioritization.md`](docs/specifications/hold-gate-prioritization.md) —
+  draft specification for hold-gate PR queue prioritization tiers; unadopted until maintainer approval.
+- [`docs/specifications/triage-first-response.md`](docs/specifications/triage-first-response.md) —
+  draft specification for first-response SLA on issues; unadopted until maintainer approval.
+- [`docs/specifications/agent-lane-throttle.md`](docs/specifications/agent-lane-throttle.md) —
+  draft specification for demand-side throttling of agent-filed PRs; unadopted until maintainer approval.
 - [`docs/contributing/self-collision-preflight.md`](docs/contributing/self-collision-preflight.md) —
-  draft proposal for a preflight step that checks a lane's own open PRs for file
-  cluster overlap before it opens another; unadopted until a maintainer decision.
+  draft proposal for preflight check against overlapping open PR clusters.

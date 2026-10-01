@@ -151,23 +151,23 @@ To use the shipped Bluefin movie with Hidamari, follow the
 your Videos folder so the Flatpak can find the movie.
 
 ## Brewfiles
+The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/homebrew/`
+(desktop-specific Flatpaks) and `system_files/shared/usr/share/ublue-os/homebrew/`
+(cross-variant CLI, tools, fonts, and developer environments):
 
-The `/usr/share/ublue-os/homebrew/` directory contains curated application bundles installable via [bbrew](https://github.com/Valkyrie00/homebrew-bbrew):
-
-- **`system-flatpaks.Brewfile`** - Default system-wide Flatpaks for all Bluefin variants.
+- **`system-flatpaks.Brewfile`** - Default system-wide Flatpaks for Bluefin variants.
 - **`system-dx-flatpaks.Brewfile`** - Additional Flatpaks for DX (Developer Experience) mode.
-- **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community Flatpak applications for a full desktop experience.
-- **`fonts.Brewfile`** - Common fonts for everyday work.
-- **`fonts-dev.Brewfile`** - Additional monospace fonts for development.
-- **`cli.Brewfile`** - CLI tools and utilities.
-- **`ai-tools.Brewfile`** - AI and machine learning tools.
-- **`cncf.Brewfile`** - Cloud Native Computing Foundation tools.
-- **`k8s-tools.Brewfile`** - Kubernetes tools.
-- **`ide.Brewfile`** - Integrated development environments.
-- **`artwork.Brewfile`** - Design and artwork applications.
+- **`full-desktop.Brewfile`** - GNOME Circle and community Flatpaks for full desktop.
+- **`fonts.Brewfile`** / **`fonts-dev.Brewfile`** - System and monospace developer fonts.
+- **`cli.Brewfile`** - Common command-line utilities.
+- **`ai-tools.Brewfile`** - Local AI and machine learning tools.
+- **`cncf.Brewfile`** / **`k8s-tools.Brewfile`** - Cloud Native and Kubernetes toolsets.
+- **`ide.Brewfile`** / **`experimental-ide.Brewfile`** - Integrated development environments.
+- **`artwork.Brewfile`** - Graphics, design, and artwork applications.
+- **`swift.Brewfile`** - Swift toolchain and dependencies.
+- **`video-wallpaper.Brewfile`** / **`wallpaper-slideshow.Brewfile`** - Background management bundles.
 
-Users can install these bundles using the `ujust bbrew` command, which will prompt them to select a Brewfile.
-The local Bluespeed stack can be installed directly with `ujust bluespeed`.
+Users can install opt-in bundles via ChairLift or the `ujust bbrew` command.
 
 ## CI / Testing
 
@@ -178,10 +178,9 @@ If you need the per-workflow purpose and ownership map, start with
 
 **On every PR**:
 - `validate.yml` — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards.
+- `unit-tests.yml` — pytest hooks and bats unit test suites.
 - `build.yml` — builds the OCI image with `buildah`.
-- `skill-drift.yml` — warns when implementation changes land without matching skill-doc updates.
 - `pr-e2e.yml` — advisory composed-image common-suite check against a downstream Bluefin base.
-
 **On merge to main** — full layer validation via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite):
 - Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin LTS, Bluefin Stable, and Dakota.
 - SSH-mode: behave runs from the GHA runner over SSH into a QEMU VM — no full GNOME session needed, completes in ~15 min.

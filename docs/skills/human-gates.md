@@ -55,7 +55,7 @@ path, gate checklist) and carries a maintainer fill-in section; agents
 frame, they do not decide. A product-defining PR sitting in `4-review`
 without a record is a `blocked`-label candidate, not a review-latency
 problem. First example:
-[`docs/design/systemd-homed-default.md`](../design/systemd-homed-default.md)
+[`docs/specifications/systemd-homed-default.md`](../specifications/systemd-homed-default.md)
 (dakota#962, [common#1050](https://github.com/projectbluefin/common/issues/1050)).
 
 ---

@@ -4,9 +4,9 @@
 > Filed by the strategist agent. Tracks [common#1060](https://github.com/projectbluefin/common/issues/1060);
 > pairs with the hold-gate prioritization rubric
 > ([common#1043](https://github.com/projectbluefin/common/issues/1043),
-> [`hold-gate-rubric.md`](hold-gate-rubric.md)) and the demand-side throttle
+> [`../specifications/hold-gate-prioritization.md`](../specifications/hold-gate-prioritization.md)) and the demand-side throttle
 > ([common#1052](https://github.com/projectbluefin/common/issues/1052),
-> [`agent-lane-throttle.md`](agent-lane-throttle.md)).
+> [`../specifications/agent-lane-throttle.md`](../specifications/agent-lane-throttle.md)).
 >
 > Nothing below changes agent filing behavior, workflow behavior, or hold-gate
 > enforcement until a maintainer adopts it. It proposes one preflight step an
@@ -16,7 +16,7 @@
 ## Vocabulary
 
 - **Agent lane** — as defined in
-  [`agent-lane-throttle.md`](agent-lane-throttle.md#vocabulary): a class of agent
+  [`../specifications/agent-lane-throttle.md`](../specifications/agent-lane-throttle.md): a class of agent
   work identified by who files it and what it produces, not by a workflow label.
 - **Self-collision** — two open PRs from the *same* lane whose file clusters
   intersect. Distinct from a cross-lane competing pair, where two different lanes
@@ -157,8 +157,8 @@ Draft measures, to be baselined at adoption:
 ## Related
 
 - [common#1060](https://github.com/projectbluefin/common/issues/1060) — self-collision finding (this doc's tracker)
-- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric ([`hold-gate-rubric.md`](hold-gate-rubric.md))
-- [common#1052](https://github.com/projectbluefin/common/issues/1052) — agent-lane output throttle ([`agent-lane-throttle.md`](agent-lane-throttle.md))
+- [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric ([`../specifications/hold-gate-prioritization.md`](../specifications/hold-gate-prioritization.md))
+- [common#1052](https://github.com/projectbluefin/common/issues/1052) — agent-lane output throttle ([`../specifications/agent-lane-throttle.md`](../specifications/agent-lane-throttle.md))
 - [common#1054](https://github.com/projectbluefin/common/issues/1054) — obsolescence detection for superseded hold-gated PRs
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration data
 - [`duplicate-cluster.md`](../skills/pr-review/references/duplicate-cluster.md) — review-time resolution procedure

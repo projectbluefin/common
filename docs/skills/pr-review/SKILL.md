@@ -70,7 +70,7 @@ For "let's review <repo> PRs" the agent assembles the list from three sources, i
 
 Default to **streaming**: present one card, take the verdict, execute it immediately, then present the next. The human stays engaged because every answer produces a visible result before the next question arrives. Batching verdicts is the fallback for non-interactive runs only.
 
-**Easy-wins mode.** Sort ascending by `additions + deletions` and present small ones first. Park anything complex in `3-human-queue` with a findings comment. For multi-tier hold-gate queues, consult the draft [hold-gate prioritization rubric](../../contributing/hold-gate-rubric.md) to order reviews by risk tier (P0 security/integrity → P1 release-gate/defects → P2 tests/docs).
+**Easy-wins mode.** Sort ascending by `additions + deletions` and present small ones first. Park anything complex in `3-human-queue` with a findings comment. For multi-tier hold-gate queues, consult the draft [hold-gate prioritization specification](../../specifications/hold-gate-prioritization.md) to order reviews by risk tier (P0 security/integrity → P1 release-gate/defects → P2 tests/docs).
 
 ### 1 — Dossier (one-call fetch)
 
@@ -174,7 +174,6 @@ queue state reading, branch update, and fork PR rebase.
 | [references/red-check-triage.md](references/red-check-triage.md) | Classifying red checks, infra-flake correlation, `gh` CLI traps |
 | [references/dismissed-approval.md](references/dismissed-approval.md) | Dismissed-approval regression check procedure |
 | [references/stale-snapshots.md](references/stale-snapshots.md) | Re-verifying strategist/roadmap metrics before acting on a finding |
-| [references/worked-example.md](references/worked-example.md) | Worked example session |
 | [references/merge-queue.md](references/merge-queue.md) | Merge queue defaults, landing commands, fork PR rebase |
 | [references/triage-operations.md](references/triage-operations.md) | Issue triage verdicts and blast radius map |
 | [references/common-rationalizations.md](references/common-rationalizations.md) | Common rationalizations and why they are wrong |
@@ -189,5 +188,5 @@ queue state reading, branch update, and fork PR rebase.
 - [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
 - [ci-tooling/SKILL.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
 - [lab-testing/SKILL.md](../lab-testing/SKILL.md) — lab verification
-- [../../contributing/hold-gate-rubric.md](../../contributing/hold-gate-rubric.md) — draft hold-gate PR queue prioritization rubric and expedite policy
-- [../../contributing/reviewer-ladder.md](../../contributing/reviewer-ladder.md) — draft four-rung contributor ladder proposal
+- [../../specifications/hold-gate-prioritization.md](../../specifications/hold-gate-prioritization.md) — draft hold-gate PR queue prioritization specification
+- [../../specifications/reviewer-ladder.md](../../specifications/reviewer-ladder.md) — draft contributor ladder specification

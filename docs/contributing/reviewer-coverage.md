@@ -2,7 +2,7 @@
 
 > **Status**: hold-gated planning artifact. Human review required before adoption.
 > Filed for [common#1058](https://github.com/projectbluefin/common/issues/1058);
-> companion to [reviewer-ladder.md](reviewer-ladder.md) (common#1029).
+> companion to [`../specifications/reviewer-ladder.md`](../specifications/reviewer-ladder.md) (common#1029).
 > Nothing below changes GitHub roles, CODEOWNERS, branch protection, or agent-lane
 > routing until a maintainer adopts it.
 >
@@ -115,12 +115,12 @@ background, not evidence.
 - No changes to merge protection, review requirements, or hold-gate
   enforcement (maintainer decision).
 - No changes to the reviewer ladder itself — see
-  [reviewer-ladder.md](reviewer-ladder.md).
+  [`../specifications/reviewer-ladder.md`](../specifications/reviewer-ladder.md).
 
 ## Related
 
 - [common#1058](https://github.com/projectbluefin/common/issues/1058) — reviewer coverage map / repo-concentration finding (this doc's tracker)
-- [common#1029](https://github.com/projectbluefin/common/issues/1029) — reviewer-scaling rung ([reviewer-ladder.md](reviewer-ladder.md))
+- [common#1029](https://github.com/projectbluefin/common/issues/1029) — reviewer-scaling rung ([`../specifications/reviewer-ladder.md`](../specifications/reviewer-ladder.md))
 - [common#1052](https://github.com/projectbluefin/common/issues/1052) — demand-side lane throttle
 - [common#1043](https://github.com/projectbluefin/common/issues/1043) — hold-gate prioritization rubric
 - [common#1073](https://github.com/projectbluefin/common/pull/1073) — org-wide ROADMAP.md (Phase 0: hold-gated queue <40)
