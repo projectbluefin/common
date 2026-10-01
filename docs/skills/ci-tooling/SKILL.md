@@ -46,8 +46,8 @@ metadata:
 - Debugging a silent CI failure or `startup_failure` with no output → [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md)
 - Writing or testing shell scripts under `system_files/` → [`shell-scripts.md`](../shell-scripts/SKILL.md)
 - User-facing image content changes in `system_files/` or `Containerfile`
-- Release promotion logic and stream semantics (use `release-promotion.md`)
-- Issue lifecycle or queue automation (use `label-workflow.md` or bonedigger skills)
+- Release promotion logic and stream semantics (use [release-promotion](../release-promotion/SKILL.md))
+- Issue lifecycle or queue automation (use [label-workflow](../label-workflow.md) or [bonedigger](../bonedigger/SKILL.md))
 - One-off PR status checks with no reusable CI pattern to capture
 
 ---

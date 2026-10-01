@@ -1,7 +1,7 @@
 ---
 name: hive-automerge
-version: "1.0"
-last_updated: 2026-08-08
+version: "1.1"
+last_updated: "2026-09-24"
 id: hive-automerge
 one_line_purpose: Queue reviewed PRs for Hive's auto-merge-on-green sweep.
 entry_point: docs/skills/hive-automerge.md
@@ -72,8 +72,16 @@ gh pr list --repo projectbluefin/<repo> \
 
 GitHub-native auto-merge (`gh pr merge --auto`) and the Hive sweep are
 independent. Once a PR actually enters a GitHub merge queue,
-`autoMergeRequest` reads `null` — probe with `gh pr merge <N> --auto`
-("already queued") rather than re-arming blindly.
+`autoMergeRequest` reads `null`. Never use `gh pr merge --auto` as a probe: it
+can arm an unqueued PR without a reviewed-head pin. Read queue state instead:
+
+```bash
+gh api graphql -f repo="$REPO" -F number="$N" \
+  -f query='query($repo:String!,$number:Int!){repository(owner:"projectbluefin",name:$repo){pullRequest(number:$number){mergeQueueEntry{id}}}}' \
+  --jq '.data.repository.pullRequest.mergeQueueEntry'
+```
+
+Set `REPO` and `N` from the verified PR; a non-null entry means it is queued.
 
 ## Rules
 

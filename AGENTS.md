@@ -59,14 +59,7 @@ state by hand or invent transitions that are not implemented in the checkout.
 - **Issue lifecycle is Hive-managed across the factory.** The issue state
   machine, triage, and queue management belong to Hive; the canonical
   seven-label contract lives in [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
-  `bonedigger` previously hosted the reusable lifecycle automation in
-  `.github/workflows/lifecycle.yml` (pinned as a `workflow_call` in `bluefin`,
-  `bluefin-lts`, `dakota`, and `knuckle`'s `.github/workflows/bonedigger.yml`
-  callers) but removed it from `main` in `bonedigger#40`; those callers are
-  frozen historical pins — the pinned commits still resolve and run, but the
-  pins cannot be bumped forward. `projectbluefin/actions` does not currently
-  contain a lifecycle workflow. `common` documents and consumes this contract;
-  it does not own its implementation.
+  `common` documents and consumes this contract; it does not own its implementation.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).

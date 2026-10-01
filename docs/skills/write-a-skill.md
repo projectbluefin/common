@@ -1,7 +1,7 @@
 ---
 name: write-a-skill
-version: "1.2"
-last_updated: "2026-09-23"
+version: "1.3"
+last_updated: "2026-09-24"
 id: write-a-skill
 one_line_purpose: Author a new skill doc following front-matter and size rules.
 entry_point: docs/skills/write-a-skill.md
@@ -174,13 +174,10 @@ A well-formed skill contains:
 
 Every implementation PR must include a matching skill update in the same PR.
 
-There is no CI check for this. The `skill-drift.yml` workflow was retired
-across the factory because it never enforced anything — see
-[`skill-drift.md`](./skill-drift.md). The obligation is enforced by review, by
-`pre-commit`, and by the self-repair loop.
-
-- Why: [`skill-improvement.md`](./skill-improvement.md)
-- Why the CI check was retired: [`skill-drift.md`](./skill-drift.md)
+No standalone CI check enforces the update; the retired drift check was an
+always-green stub. Review, `pre-commit` and the self-repair loop carry the
+obligation. See [skill-improvement](skill-improvement.md) for when to update
+and the [factory contract](../factory/agentic-model.md) for CI boundaries.
 
 ## Verification
 

@@ -1,7 +1,7 @@
 ---
 name: skill-improvement
-version: "1.2"
-last_updated: "2026-08-08"
+version: "1.3"
+last_updated: "2026-09-24"
 id: skill-improvement
 one_line_purpose: Capture durable agent learnings in maintained skill docs.
 entry_point: docs/skills/skill-improvement.md
@@ -61,7 +61,7 @@ and documentation drift before completion.
 - [Where to Write It](#where-to-write-it)
 - [Which Skill File to Update](#which-skill-file-to-update)
 - [How to Commit It](#how-to-commit-it)
-- [See Also](#see-also)
+- [Verification](#verification)
 
 ---
 
@@ -127,14 +127,16 @@ If the target repo has no `docs/skills/` directory, create it.
 
 Use the closest matching existing skill. Only create a new skill when the change introduces a new reusable domain that has no existing home.
 
-```
-Changed a workflow?          → ci-tooling/SKILL.md or workflow-map.md
-Changed a GNOME setting?     → dconf-consistency.md
-Changed a release step?      → release-promotion/SKILL.md
-Changed the lifecycle bot?   → label-workflow.md or bonedigger/SKILL.md
-Changed CI gates?            → e2e-ci/SKILL.md
-New domain entirely?         → create docs/skills/<area>.md
-```
+| Changed path | Owning skill |
+|---|---|
+| `.github/workflows/build.yml` | [ci-tooling](ci-tooling/SKILL.md) |
+| `.github/workflows/e2e*.yml`, test configs | [e2e-ci](e2e-ci/SKILL.md) |
+| `.github/workflows/release.yml` | [release-promotion](release-promotion/SKILL.md) |
+| Lifecycle automation | [label-workflow](label-workflow.md) or [bonedigger](bonedigger/SKILL.md) |
+| `system_files/**` | [submodule-boundary](submodule-boundary.md) or [dconf-consistency](dconf-consistency.md) |
+| `Justfile` | The skill owning the changed recipe |
+| `Containerfile` | [containerfile](containerfile/SKILL.md) |
+| `.github/CODEOWNERS` | [governance](governance.md) |
 
 When in doubt, file a GitHub issue in `projectbluefin/common` with the
 component, evidence, and agent-context gap described in the body. Do **not**
@@ -146,45 +148,21 @@ add it to `factory-improvement/SKILL.md` as a running list.
 
 The skill update goes in the **same commit or same PR** as the implementation. Not a follow-up PR. Not "I'll do it later."
 
-```bash
-# stage both the implementation and the skill update together
-git add .github/workflows/something.yml docs/skills/ci-tooling/SKILL.md
-git commit -m "feat(ci): add SHA pinning for new action
+Stage explicit paths, audit the staged diff, and use the current repository
+contract for commit attribution. Do not copy a model or runtime from an old
+example.
 
-Update ci-tooling/SKILL.md with pinning pattern for this action type.
-
-Assisted-by: Claude Sonnet 4.6 via GitHub Copilot
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-```
-
-There is no CI gate for this. Skill-update discipline is enforced by
-`pre-commit`, by review, and by this self-repair loop — see
-[`skill-drift.md`](./skill-drift.md) for why the CI check was retired. Treat
-the obligation as a hard requirement regardless.
+There is no bespoke CI gate for this. Review, `pre-commit`, and the self-repair
+loop enforce the obligation; see [write-a-skill](write-a-skill.md#verification)
+for the authoring checklist.
 
 ---
 
-## Self-audit against canonical skill standards
+## Verification
 
-Before finalizing a skill update, verify it matches the canonical patterns surfaced by Context7 (highest-rated conventions as of 2026-07-20):
-
-| Source | Relevance |
-|---|---|
-| `/anthropics/skills` (benchmark 80.59) | SKILL.md schema, YAML frontmatter rules, bundled resources layout, progressive disclosure model. |
-| `/addyosmani/agent-skills` (benchmark 85.67) | Highest-rated skill-improvement source; target structure for Red Flags and Verification sections. |
-| `/vercel-labs/agent-skills` (benchmark 84.36) | `skills/{name}/SKILL.md` + `scripts/` + `references/` directory convention. |
-
-Checklist:
-- [ ] Frontmatter includes `name`, `description` with "Use when" triggers, `version`, `last_updated`, `tags`, and `metadata.type`.
-- [ ] Description is specific enough that an agent can decide to load the skill from the description alone.
-- [ ] Skill body has `## When to Use`, `## Core Process`, `## Red Flags`, and `## Verification` sections (or equivalent).
-- [ ] Any library/framework API examples were verified via Context7 first and the `libraryId` is recorded in `metadata.context7-sources`.
-- [ ] Files over 200 lines (soft max) are split into a per-skill directory with `references/` or `scripts/` per the Anthropic/Vercel convention — legacy oversized skills are migrated on sight, in the same change that touches them (see `write-a-skill.md`).
-
-## See Also
-
-- [`docs/skills/skill-drift.md`](./skill-drift.md) — why the CI check was retired and what replaced it
-- Canonical skill conventions (verified via Context7):
-  - `/anthropics/skills` — YAML frontmatter, bundled resources, progressive disclosure.
-  - `/addyosmani/agent-skills` — skill-improvement and audit structure.
-  - `/vercel-labs/agent-skills` — per-skill directory layout with `scripts/` and `references/`.
+- [ ] A reusable learning is captured in the closest owning skill in the same PR.
+- [ ] Its frontmatter, links and generated catalog pass the checks in
+      [write-a-skill](write-a-skill.md#verification).
+- [ ] No standalone process-convention CI gate was added; the
+      [factory contract](../factory/agentic-model.md) permits only the
+      aggregate `pre-commit` step.

@@ -165,9 +165,11 @@ The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/ho
 - **`ide.Brewfile`** / **`experimental-ide.Brewfile`** - Integrated development environments.
 - **`artwork.Brewfile`** - Graphics, design, and artwork applications.
 - **`swift.Brewfile`** - Swift toolchain and dependencies.
+- **`nsl.Brewfile`** - Neural Style and creative AI toolset.
 - **`video-wallpaper.Brewfile`** / **`wallpaper-slideshow.Brewfile`** - Background management bundles.
 
 Users can install opt-in bundles via ChairLift or the `ujust bbrew` command.
+The local Bluespeed stack can be installed directly with `ujust bluespeed`.
 
 ## CI / Testing
 

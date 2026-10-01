@@ -68,19 +68,23 @@ For "let's review <repo> PRs" the agent assembles the list from three sources, i
 
 ### Cadence: stream, don't batch
 
-Default to **streaming**: present one card, take the verdict, execute it immediately, then present the next. The human stays engaged because every answer produces a visible result before the next question arrives. Batching verdicts is the fallback for non-interactive runs only.
+Use **streaming**: present one card, take that item's human verdict, execute it immediately, then advance. A non-interactive run stops before any mutation; it cannot substitute one confirmation for multiple verdicts.
 
-**Easy-wins mode.** Sort ascending by `additions + deletions` and present small ones first. Park anything complex in `3-human-queue` with a findings comment. For multi-tier hold-gate queues, consult the draft [hold-gate prioritization specification](../../specifications/hold-gate-prioritization.md) to order reviews by risk tier (P0 security/integrity → P1 release-gate/defects → P2 tests/docs).
+**Easy-wins mode.** Check current security, release and cross-repo blockers
+before sorting ordinary work ascending by `additions + deletions`; present
+small ones first. Park anything complex in `3-human-queue` with a findings
+comment after the human's verdict. An unapproved draft never supplies queue
+policy.
 
 ### 1 — Dossier (one-call fetch)
 
 ```bash
 gh pr list --limit 60 \
-  --json number,title,author,createdAt,additions,deletions,files,labels,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,closingIssuesReferences \
+  --json number,title,author,createdAt,headRefOid,additions,deletions,files,labels,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,closingIssuesReferences \
 | jq '[.[] | select(.author.is_bot | not)][:5]'
 ```
 
-Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5 *after* filtering. For a bot sweep, invert to `select(.author.is_bot)`. Present each PR as a one-screen card. Field definitions and the `mergeStateStatus` table: [references/card-fields.md](references/card-fields.md).
+Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5 *after* filtering. For a bot sweep, invert to `select(.author.is_bot)`. Capture `headRefOid` with the card and diff before the human verdict; retain it for any merge. Field definitions and the `mergeStateStatus` table: [references/card-fields.md](references/card-fields.md).
 
 - **Competing-pair detection (mandatory):** pairwise-intersect file paths and `closingIssuesReferences` across the batch. Print `⚠️ COMPETING PAIR` on any overlap — human must resolve before both can be voted `merge`.
 - **Duplicate-cluster resolution:** a pair sharing a *closing issue*, or two Renovate PRs normalizing to the *same dependency*, is one piece of work twice — resolve as a unit, arming the survivor before closing the rest. Full procedure: [references/duplicate-cluster.md](references/duplicate-cluster.md).
@@ -109,8 +113,10 @@ gum choose "merge" "queue" "close" "defer" "rebase" "changes" "open" "skip" \
 
 ### 3 — Land
 
-Execute the verdict immediately in streaming mode. In batch mode, print the
-complete `gh` command plan and gate it on `gum confirm "Execute action plan?"`.
+Execute each verdict immediately after its own human keypress. Never stage a
+multi-item command plan behind one `gum confirm`.
+For `merge`, pass the captured head SHA to `--match-head-commit`; a changed
+head requires a new diff and a new per-item verdict, never a fresh SHA at land.
 
 **Three landing invariants** — check after every verdict that closes or parks:
 
@@ -134,14 +140,14 @@ queue state reading, branch update, and fork PR rebase.
 - Agent approves, merges, closes, or labels without an explicit human verdict.
 - `queue` verdict applied to the human's own PR (Hive self-merge ban).
 - `lgtm` added without the exact audit approval body — the sweep skips it.
-- `--admin` merge used without explicit human instruction.
+- Any `--admin` override; the human gate does not permit a tool to bypass rulesets.
 - `--delete-branch` used (hard-fails with merge queue).
 - `system_files/shared/` change treated as trivial or fast-laned.
-- Batch executed before the human confirms the staged plan.
+- Multiple PRs mutated behind one batch confirmation instead of per-item verdicts.
 - Competing PRs both staged for merge without human acknowledgment.
 - A PR closed without checking whether its `Closes #NNN` issue is now orphaned.
 - `3-human-queue` and `3-clanker-queue` present on the same item.
-- Re-arming auto-merge because `autoMergeRequest` was `null`, without probing queue.
+- Re-arming auto-merge because `autoMergeRequest` was `null`, without a read-only queue check.
 - A title fix declared done without a close/reopen and re-read of the check.
 - A flake re-run with no issue filed against the check that flaked.
 - A PR with a `DISMISSED` approval re-reviewed without diffing the current head.
@@ -152,7 +158,7 @@ queue state reading, branch update, and fork PR rebase.
 
 - [ ] Every `gh pr merge` / `gh pr close` was preceded by an explicit human verdict.
 - [ ] No approval judgment or recommendation appears in dossier cards.
-- [ ] `--admin` was used only when the human explicitly said so.
+- [ ] No `--admin` override was used; every merge was pinned to the head reviewed by the human.
 - [ ] `system_files/shared/` PRs were flagged as ALL-variant blast radius.
 - [ ] The four [human decision gates](../human-gates.md) were respected.
 - [ ] Competing pairs detected and resolved before staging merges.
@@ -188,5 +194,3 @@ queue state reading, branch update, and fork PR rebase.
 - [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
 - [ci-tooling/SKILL.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
 - [lab-testing/SKILL.md](../lab-testing/SKILL.md) — lab verification
-- [../../specifications/hold-gate-prioritization.md](../../specifications/hold-gate-prioritization.md) — draft hold-gate PR queue prioritization specification
-- [../../specifications/reviewer-ladder.md](../../specifications/reviewer-ladder.md) — draft contributor ladder specification

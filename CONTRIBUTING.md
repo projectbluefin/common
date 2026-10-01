@@ -17,33 +17,14 @@ This repo is **human-first for issues.** Humans file issues, triage them, and de
 Automated agents implement approved work — they do not self-direct triage or close issues without
 human approval.
 
-### The seven labels
+Triage and queue state are managed strictly through the canonical seven labels.
+See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) for the full lifecycle.
 
-Triage runs on exactly seven labels. Nothing else is a workflow state, and there are no slash
-commands:
-
-| Label | Meaning |
-|---|---|
-| `1-triage` | Filed, awaiting a human read |
-| `2-discussing` | Needs a decision or a clearer spec |
-| `3-human-queue` | Accepted, queued for a person |
-| `3-clanker-queue` | Accepted, queued for an automated agent |
-| `4-review` | A pull request is awaiting review |
-| `blocked` | Waiting on human input or an external dependency |
-| `hold` | Intentionally paused |
-
-### Queueing work for an agent
-
-Add `3-clanker-queue` to a triaged issue you want an autonomous agent to implement:
-
+To queue an accepted issue for an autonomous agent:
 ```bash
 gh issue edit <number> --repo projectbluefin/common --add-label 3-clanker-queue
 ```
-
-The issue description must be clear enough to implement without follow-up questions. Vague issues
-sit in the queue indefinitely — no agent will guess at the spec.
-
-Full lifecycle: [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
+The issue description must be clear enough to implement without follow-up questions.
 
 ## CI
 
@@ -68,3 +49,6 @@ Full layer validation (the `common` behave suite from
   draft specification for demand-side throttling of agent-filed PRs; unadopted until maintainer approval.
 - [`docs/contributing/self-collision-preflight.md`](docs/contributing/self-collision-preflight.md) —
   draft proposal for preflight check against overlapping open PR clusters.
+- [`ACTIONS-SECURITY.md`](./ACTIONS-SECURITY.md) — organization GitHub Actions
+  security baseline: top-level `permissions: {}`, SHA pinning, `pull_request_target`
+  restrictions, and checksum verification.

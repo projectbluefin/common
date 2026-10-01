@@ -8,7 +8,7 @@ adding a new script to `system_files/`.
 ```bash
 just test          # run full test suite (pytest + bats)
 just check         # lint Justfile
-pre-commit run --all-files  # hygiene checks (shellcheck, yaml, sha-pinning)
+pre-commit run --all-files  # docs/config hygiene; CI runs shellcheck separately
 ```
 
 `just check-brewfiles` is a separate networked check against real Homebrew
@@ -24,8 +24,8 @@ Every script added to `system_files/*/usr/bin/` must have either:
 1. A `tests/test_<scriptname>.bats` file covering its branching logic, OR
 2. A documented exemption in this file explaining why tests are not feasible.
 
-Profile scripts (`etc/profile.d/*.sh`) are **shellcheck-only** — they run on login
-and have no testable logic beyond syntax.
+Profile scripts with branching behavior need tests too; only pure alias or
+environment declarations can be exempted from behavioral coverage.
 
 ## Test Frameworks
 
@@ -83,58 +83,19 @@ Shell-specific bats patterns live in [`docs/skills/shell-scripts/SKILL.md`](skil
 
 ## Exemptions
 
-Scripts exempt from behavioral testing (shellcheck-only):
-
-| Script | Reason |
-|--------|--------|
-| `etc/profile.d/caffeinate.sh` | Profile.d sourced script — sets aliases only, no branching logic |
-| `etc/profile.d/uutils.sh` | Profile.d sourced script — PATH manipulation only |
-| `etc/profile.d/ublue-fastfetch.sh` | Profile.d sourced script — display only |
-| `etc/profile.d/ublue-motd.sh` | Profile.d sourced script — display only |
-| `etc/profile.d/uwelcome.sh` | Profile.d sourced script — display only; the legacy opt-out migration it carries is covered by `tests/test_motd_integration.bats` |
-| `usr/share/ublue-os/bling/bling.sh` | Sourced helper — sets aliases/functions, no side effects |
-| `usr/share/ublue-os/bling/env.sh` | Sourced helper — sets env vars only |
-| `usr/share/ublue-os/user-setup.hooks.d/20-dynamic-wallpaper.sh` | One-shot hook — logic tested indirectly via setup integration tests |
-| `usr/bin/ublue-motd` | Display-only wrapper — cosmetic tput/glow call, no decision logic |
-| `usr/bin/ublue-image-info.sh` | Read-only reporting wrapper — jq + rpm-ostree status, no branching that affects system state |
-
-**Adding an exemption:** add a row to this table with a one-sentence justification.
-Do not add exemptions for scripts with branching logic.
+`system_files/shared/etc/profile.d/ublue-fastfetch.sh` only defines aliases;
+shellcheck is sufficient. Add an exemption here only for an existing script
+without branching behavior, with a one-sentence reason.
 
 ## Coverage Targets
 
 | Layer | Tool | Current target |
 |-------|------|---------------|
 | Python hooks | pytest-cov | 80% via `--cov-fail-under=80` gate in CI |
-| Shell scripts | shellcheck | 100% of all `.sh` + `usr/bin` scripts |
+| Shell scripts | shellcheck | CI checks `.sh` scripts and the explicitly listed extensionless setup scripts |
 | Shell behavior | bats | All `usr/bin` scripts with branching logic |
 
-## Test Files Reference
+## Test inventory
 
-| File | What it covers |
-|------|---------------|
-| `tests/test_hooks.py` | `system_files/bluefin/etc/bazaar/hooks.py` — Bazaar transaction hooks |
-| `tests/test_libsetup.bats` | `libsetup.sh` — `version-script()` function |
-| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup`, `hookrunner.sh` — shared hook dispatcher + thin-wrapper guard |
-| `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
-| `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
-| `tests/test_bling_preexec_rearm.bats` | `bling/bash-preexec-rearm.sh` — DEBUG trap re-arm with array/scalar `PROMPT_COMMAND`, idempotency, degradation when bash-preexec is absent |
-| `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |
-| `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
-| `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
-| `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
-| `tests/test_native_recipes.bats` | Native recipes with a leftover `bctl`: CLI setup, devmode, signed channel switching, VM setup, Flatpak bundles, and both reset confirmations |
-| `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
-| `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
-| `tests/test_brew_preinstall.bats` | Managed Brewfile lifecycle plus user-unit ordering, resource priority, and preset delivery |
-| `tests/test_validate_brewfiles.bats` | Brewfile metadata validation, tap setup failures, ambiguity diagnostics, safe argument passing, and qualified wallpaper/Zed references |
-| `tests/test_brew_tap_trust.bats` | `apps.just`, `system.just`, `bazaar-hook` — `brew tap` + `brew trust` are separate commands; `brew tap --trust` is invalid (#814) |
-| `tests/test_apps_just.bats` | `apps.just` — `install-opentabletdriver` pinned-download + sha256 gates (tampered payload, HTTP error, unit-before-enable ordering), install/uninstall branches, and `cncf` |
-| `tests/test_image_repo.bats` | `usr/libexec/ublue-image-repo` — image-name/tag routing to upstream GitHub repos |
-| `tests/test_shared_just.bats` | `shared.just` — `powerwash` (double confirmation) and `toggle-tpm2` recipes |
-| `tests/test_escl_fixture.bats` | `tests/fixtures/escl-scanner/run-fixture.sh` — eSCL readiness probing, device detection, capture determinism/geometry/size assertions, DNS-SD discovery, with the simulator and client stubbed |
-| `tests/test_damask_service.bats` | `damask.service`, Flatpak sandbox overrides, and tmpfiles symlink configuration |
-
-## Quality Epic
-
-Ongoing test coverage improvement is tracked in [#553](https://github.com/projectbluefin/common/issues/553).
+The `tests/` directory and `just test` recipe are the source of truth for
+registered suites. Do not maintain a second file-by-file test list here.

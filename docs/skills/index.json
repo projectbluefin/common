@@ -103,7 +103,7 @@
         "github-actions",
         "pitfalls"
       ],
-      "description": "Incident log of CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
+      "description": "CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
       "version": "1.1",
       "last_updated": "2026-09-26",
       "doc_type": "reference"
@@ -305,7 +305,7 @@
     {
       "id": "governance",
       "name": "governance",
-      "one_line_purpose": "Manage CODEOWNERS, triager roles, and governance sync.",
+      "one_line_purpose": "Check repo-local CODEOWNERS, triager roles, and live branch rules.",
       "entry_point": "docs/skills/governance.md",
       "category": "meta",
       "status": "active",
@@ -314,9 +314,9 @@
         "issues",
         "lifecycle"
       ],
-      "description": "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos. Use when managing CODEOWNERS, adding/removing triager permissions, or syncing governance policy across repos.",
-      "version": "1.1",
-      "last_updated": "2026-08-06",
+      "description": "Repo-local triager roles, CODEOWNERS ownership, and live branch protection. Use when changing CODEOWNERS, granting triage permissions, or verifying repository review rules; no cross-repository sync is implied.",
+      "version": "1.2",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
     },
     {
@@ -390,8 +390,8 @@
         "coordination"
       ],
       "description": "KubeStellar Hive coordination, Trust the Machines routing, and the canonical seven-label workflow. Use when finding or routing factory work.",
-      "version": "2.2",
-      "last_updated": "2026-07-29",
+      "version": "2.3",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
     },
     {
@@ -408,8 +408,8 @@
         "merge-queue"
       ],
       "description": "The Hive \"Queue auto merge\" feature: merger-tier queue action applying the `lgtm` label plus an audit approval; a per-minute sweep squash-merges labelled PRs once CI is green. Use when queuing a reviewed PR or listing what the sweep will merge.",
-      "version": "1.0",
-      "last_updated": "2026-08-08",
+      "version": "1.1",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
     },
     {
@@ -480,8 +480,8 @@
         "security"
       ],
       "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
-      "version": "1.3",
-      "last_updated": "2026-09-23",
+      "version": "1.4",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
     },
     {
@@ -737,7 +737,7 @@
     {
       "id": "secrets-policy",
       "name": "secrets-policy",
-      "one_line_purpose": "Verify secrets and credentials against the approved inventory.",
+      "one_line_purpose": "Keep existing workflow authentication inside the factory security boundary.",
       "entry_point": "docs/skills/secrets-policy.md",
       "category": "meta",
       "status": "active",
@@ -746,7 +746,7 @@
         "security",
         "ci"
       ],
-      "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
+      "description": "Existing workflow authentication and the prohibition on new credentials. Use when reviewing auth, diagnosing a missing existing secret, or checking whether a PAT or credential reference is allowed.",
       "version": "1.0",
       "last_updated": "2026-09-26",
       "doc_type": "policy"
@@ -773,7 +773,7 @@
     {
       "id": "skill-drift",
       "name": "skill-drift",
-      "one_line_purpose": "Record why the skill-drift CI check was retired and what replaced it.",
+      "one_line_purpose": "Redirect old skill-drift links to current skill-update rules.",
       "entry_point": "docs/skills/skill-drift.md",
       "category": "meta",
       "status": "deprecated",
@@ -782,9 +782,9 @@
         "drift",
         "ci"
       ],
-      "description": "Retirement record for the skill-drift CI check. Use when you find a stale reference to skill-drift.yml, or are tempted to add a per-convention CI gate for skill documentation.",
-      "version": "2.0",
-      "last_updated": "2026-08-01",
+      "description": "Use when following a legacy skill-drift link or checking whether a separate CI workflow enforces skill updates.",
+      "version": "2.1",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
     },
     {
@@ -800,9 +800,27 @@
         "documentation"
       ],
       "description": "The skill-improvement mandate \u2014 every agent session must produce a skill file update alongside the work. Use when completing a task and deciding whether to write a skill update, or when creating or updating a skill file.",
-      "version": "1.2",
-      "last_updated": "2026-08-08",
+      "version": "1.3",
+      "last_updated": "2026-09-24",
       "doc_type": "reference"
+    },
+    {
+      "id": "spektacular-workflow",
+      "name": "spektacular-workflow",
+      "one_line_purpose": "Move product work from reviewed requirements through a plan to verified delivery.",
+      "entry_point": "docs/skills/spektacular-workflow.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "spektacular",
+        "planning",
+        "hive",
+        "issues"
+      ],
+      "description": "Guides Project Bluefin's issue-to-specification and plan-to-delivery handoffs. Use when drafting or reviewing a specification, triaging an epic, planning a multi-repo feature, or deciding whether Hive may run its plan.",
+      "version": "1.1",
+      "last_updated": "2026-09-24",
+      "doc_type": "procedure"
     },
     {
       "id": "submodule-boundary",
@@ -851,8 +869,8 @@
         "documentation"
       ],
       "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-update mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
-      "version": "1.2",
-      "last_updated": "2026-09-23",
+      "version": "1.3",
+      "last_updated": "2026-09-24",
       "doc_type": "procedure"
     }
   ]

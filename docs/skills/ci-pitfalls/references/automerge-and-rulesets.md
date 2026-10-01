@@ -90,17 +90,6 @@ with:
 
 `owner:` is also required when a workflow runs from a fork: the per-repo installation lookup (`GET /repos/{owner}/{repo}/installation`) 404s, and `owner:` switches to the owner-level lookup (ghostscript-printer-app `update-base.yml`, fsdk-containers#331).
 
-### notify-downstream token in common/build.yml
-
-The `notify-downstream` job in `build.yml` uses `secrets.MERGERAPTOR_APP_ID` + `secrets.MERGERAPTOR_PRIVATE_KEY`. These secrets must be accessible to the `common` repo. If they are not, the job fails with:
-
-```
-The 'client-id' (or deprecated 'app-id') input must be set to a non-empty string.
-```
-
-Note: `vars.MERGERAPTOR_APP_ID` (variable, not secret) does **not** resolve in common — do not use it here. The correct ref is `secrets.MERGERAPTOR_APP_ID`. Verify at:
-https://github.com/organizations/projectbluefin/settings/secrets/actions
-
 Factory callers that combined `owner: projectbluefin` with a
 `repositories:` list for `actions/create-github-app-token@v3` reported
 `Invalid keyData` during cross-installation token creation. This is not proof
