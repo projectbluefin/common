@@ -1,6 +1,6 @@
 ---
 name: bootc
-version: "1.1"
+version: "1.2"
 last_updated: "2026-10-01"
 id: bootc
 one_line_purpose: Work with bootc image build, update, and Containerfile mechanics.
@@ -145,27 +145,47 @@ path is missing, or should not assume `diff` is a real symlink in
 `redirectDiffIfAdditionalLayer`). Not yet reported upstream as of this
 revision; this skill records the workaround and the first-party-fork can
 file the upstream bug from the description above. Do not duplicate the
-workaround in `bootc-update-stage`, `update.just`, or `ujust toggle-testing`
-— those callers already invoke plain `bootc upgrade` (the contract tested by
+workaround in `bootc-update-stage` or `update.just` — those callers already
+invoke plain `bootc upgrade` (the contract tested by
 `tests/test_chairlift_config.py::test_bootc_stage_script_is_executable_and_stages_only`),
-which is the upstream-recommended verb.
+which is the upstream-recommended verb. `ujust toggle-testing` is not in that
+list — it already runs `pkexec bootc switch --enforce-container-sigpolicy`
+(`system_files/bluefin/usr/share/ublue-os/just/system.just`), which takes the
+working `pull` path.
 
 **User-side workaround (for end-user reports):**
 
 ```bash
-# Find the tag bootc would have used
-bootc status --json | jq -r '.status.booted.image.image'
-# Then switch explicitly to bypass the unified auto-detect
-sudo bootc switch ghcr.io/projectbluefin/<image>:testing-latest-tag
+# Find the booted image ref. `.status.booted.image` is an ImageStatus, whose
+# `.image` is an ImageReference struct — the ref string is one level deeper
+# (bootc v1.12.1 crates/lib/src/spec.rs: ImageStatus.image: ImageReference,
+# ImageReference.image: String).
+bootc status --json | jq -r '.status.booted.image.image.image'
+# → e.g. ostree-image-signed:docker://ghcr.io/projectbluefin/utah:testing-20260928-ce09ef7
+
+# Switch to the floating channel tag to bypass the unified auto-detect.
+# Strip the transport prefix and replace the dated tag with the channel tag.
+sudo bootc switch ghcr.io/projectbluefin/<image>:testing
 ```
 
-After the next image build, `bootc upgrade` resumes working because the
-previously broken auto-detect now finds the new tag absent from bootc
-storage and falls back to the working `pull` path.
+Switch to the **floating** tag (`:testing`), not a dated one
+(`:testing-20260928-ce09ef7`). A dated tag pins the system to that exact
+build: `bootc upgrade` then resolves the same immutable digest forever and
+reports no update, so the machine silently stops receiving images.
+
+`bootc upgrade` only works again while the booted ref is absent from bootc's
+unified storage. If the readlink error returns on a later `bootc upgrade`,
+re-run the `bootc switch` above against the same floating ref — that is the
+workaround until bootc-dev/bootc fixes the auto-detect.
 
 **Verification:**
 
 ```bash
+# Confirm the jq path: ImageStatus.image is an ImageReference whose .image is
+# the ref String, so the status ref is .status.booted.image.image.image
+curl -s https://raw.githubusercontent.com/bootc-dev/bootc/v1.12.1/crates/lib/src/spec.rs \
+  | grep -n "pub struct ImageReference" -A 4
+
 # Confirm bootc v1.12.1 still routes through pull_unified on auto-detect
 curl -s https://raw.githubusercontent.com/bootc-dev/bootc/v1.12.1/crates/lib/src/cli.rs \
   | grep -n "image_exists_in_unified_storage\|use_unified" | head -5
