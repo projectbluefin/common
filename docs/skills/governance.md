@@ -1,9 +1,9 @@
 ---
 name: governance
-version: "1.1"
-last_updated: "2026-08-06"
+version: "1.2"
+last_updated: "2026-09-24"
 id: governance
-one_line_purpose: Manage CODEOWNERS, triager roles, and governance sync.
+one_line_purpose: Check repo-local CODEOWNERS, triager roles, and live branch rules.
 entry_point: docs/skills/governance.md
 category: meta
 mcp_compliance_level: partial
@@ -12,10 +12,9 @@ status: active
 dependencies: []
 tags: [governance, issues, lifecycle]
 description: >-
-  Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and
-  branch protection matrix for projectbluefin repos. Use when managing
-  CODEOWNERS, adding/removing triager permissions, or syncing governance
-  policy across repos.
+  Repo-local triager roles, CODEOWNERS ownership, and live branch protection.
+  Use when changing CODEOWNERS, granting triage permissions, or verifying
+  repository review rules; no cross-repository sync is implied.
 metadata:
   type: reference
 ---
@@ -43,83 +42,22 @@ Add a person: `gh api repos/projectbluefin/REPO/collaborators/USERNAME --method 
 
 ## CODEOWNERS structure
 
-Each repo has its own `.github/CODEOWNERS`. The **triage section is the single source of truth in `projectbluefin/common`** and is synced automatically to downstream repos.
+The triager sentinel in `common/.github/CODEOWNERS` is canonical. There is no
+active `sync-codeowners.yml` here: downstream copies require reviewed manual
+propagation and can drift from the source.
 
-### Sentinel block (edit only in `common`)
+**To add/remove a triager:** update the canonical block in `common` with its
+required review, then compare affected downstream blocks and propose their
+repo-local updates. Do not assume an automatic push or bypass local review.
 
-```
-# BEGIN TRIAGERS — managed by projectbluefin/common, do not edit manually in downstream repos
-# To add a triager: append @handle to the line below, then commit to main.
-**/*.md  @handle1 @handle2 @projectbluefin/maintainers
-# END TRIAGERS
-```
-
-**To add/remove a triager:** edit the `**/*.md` line inside the sentinel block in
-`common/.github/CODEOWNERS` → commit to `main` → the sync workflow pushes the change to
-`bluefin`, `bluefin-lts`, `dakota`, and `knuckle` automatically, and reconciles GitHub
-triage permissions.
-
-### Per-repo ownership (maintained in each repo separately)
-
-| Repo | Default owners | Sensitive extra paths |
-|---|---|---|
-| `common` | `@inffy @renner0e @ledif @castrojo @hanthor @ahmedadan` (shared); `@castrojo @hanthor @ahmedadan` (bluefin) | — |
-| `bluefin` | `@castrojo @p5 @m2Giles @tulilirockz` | `.github/workflows/`, `Justfile`, `build_files/` |
-| `bluefin-lts` | same as bluefin | same + `image-versions.yml` exempt (Renovate) |
-| `dakota` | same as bluefin | same + `elements/` |
-| `knuckle` | `@castrojo @p5 @m2Giles @tulilirockz` | `.github/workflows/`, `Justfile` |
-
-## Sync workflow
-
-**File:** `.github/workflows/sync-codeowners.yml` in `projectbluefin/common`
-
-- Triggers on `push` to `main` when `.github/CODEOWNERS` changes, plus `workflow_dispatch`
-- Extracts the `BEGIN/END TRIAGERS` block and replaces it in `bluefin`, `bluefin-lts`, `dakota`, `knuckle`
-- Skips repos where the block is already identical (no noise commits)
-- Uses **mergeraptor** (`MERGERAPTOR_APP_ID` / `MERGERAPTOR_PRIVATE_KEY` org secrets) for cross-repo writes
-
-> **Secret required:** `sync-codeowners.yml` needs `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` set as org or repo secrets. Without them the workflow will fail.
-
-Force a resync anytime:
-```bash
-gh workflow run sync-codeowners.yml --repo projectbluefin/common
-```
-
-## Hive sync coverage
-
-Hive progress sync now covers all five `projectbluefin` repos on staggered cron slots:
-
-| Repo | Minute |
-|---|---|
-| `dakota` | `:00` |
-| `bluefin` | `:15` |
-| `common` | `:20` |
-| `knuckle` | `:30` |
-| `bluefin-lts` | `:45` |
-
-The sync jobs read the seven canonical lifecycle labels across the full repo set.
+Repository owners and sensitive paths live in each repository's current
+`.github/CODEOWNERS`; do not copy an owner table from this document.
 
 ## Branch protection
 
-The factory repositories use protected branches or rulesets; their approval
-policies are not identical. A CODEOWNERS match is required where the table says
-code-owner review is active.
-
-| Repo | Mechanism | Required approvals |
-|---|---|---|
-| `common` | Ruleset `main-review-required-with-renovate-bypass` | 0; no code-owner review required (verified live, see [Verification](#verification)) |
-| `bluefin` | Branch protection on `main` | 1 |
-| `bluefin-lts` | Branch protection on `main` | 1 |
-| `dakota` | Branch protection on `main` | 1 |
-| `knuckle` | Ruleset `main — merge queue` | 1 (merge queue) |
-| `lab` | Ruleset `main — merge queue` | 0; `lint` is required |
-
-`common`'s ruleset name says "review-required" but the live rule sets
-`required_approving_review_count: 0` and `require_code_owner_review: false`.
-The name is aspirational/historical — do not trust it over the live API
-response. The ruleset still blocks non-fast-forward pushes and branch
-deletion, and a separate `main — merge queue` ruleset enforces the
-`validate` and `Build and push image (x86_64|aarch64)` status checks.
+Approval counts and code-owner enforcement differ by repository and can
+change. Read the live ruleset or branch-protection API before acting; a
+ruleset name is not proof of its requirements.
 
 For any repository using a GitHub merge queue, every required check workflow must
 also subscribe to the `merge_group` event with `types: [checks_requested]`.
@@ -127,51 +65,30 @@ Without that trigger, queued PRs remain in `AWAITING_CHECKS` because ordinary
 `pull_request` workflows do not run on merge-group refs. See the lab runbook at
 [`projectbluefin/lab/docs/ops/merge-queue.md`](https://github.com/projectbluefin/lab/blob/main/docs/ops/merge-queue.md).
 
-## Documentation and contract changes — push directly to main
+## Documentation and contract changes
 
-Changes to `docs/**` and `AGENTS.md` in this repo do **not** need a PR. Push directly to `main`:
-
-```bash
-git add docs/... AGENTS.md
-git commit -m "docs: ..."
-git push origin main
-```
-
-This includes skill updates, `docs/SKILL.md` changes, `AGENTS.md`, and any other `docs/` content. Do not open a PR for docs-only work in `projectbluefin/common`. Verify before pushing:
-`git diff --cached --name-only` must show only `docs/*` or `AGENTS.md`.
+The [factory contract](../factory/agentic-model.md) permits the `common`
+doc-only direct-to-main exception only when **every** staged path is under
+`docs/` or is `AGENTS.md`. Inspect `git diff --cached --name-only` first;
+mixed changes need a PR and the appropriate human gates.
 
 ## Lifecycle automation
 
-Issue intake automation lives in
-[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger) and is
-consumed through a `bonedigger.yml` caller:
-
-| Repo | Caller | State |
-|---|---|---|
-| `bluefin` | `bonedigger.yml` | live |
-| `bluefin-lts` | `bonedigger.yml` | live |
-| `dakota` | `bonedigger.yml` | live |
-| `knuckle` | `bonedigger.yml` | live |
-| `common` | none | intentional — no lifecycle caller here |
-
-`common` does not own or run lifecycle automation. The seven canonical labels are
-documented in [`label-workflow.md`](label-workflow.md) and applied per repository;
-there is no cross-repo label sync workflow.
-
-Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.
+[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger)
+owns lifecycle automation; each consumer owns its `bonedigger.yml` caller.
+Check a repository's current workflows instead of assuming a caller exists.
+`common` has no caller. The seven workflow labels are documented in
+[`label-workflow.md`](label-workflow.md), not synchronized by this repo.
 
 ## Verification
 
-- [ ] `common`'s live approval requirement matches the ruleset API, not the ruleset name:
+- [ ] Query the live ruleset rather than trusting a label or an old table:
 
   ```bash
   gh api repos/projectbluefin/common/rulesets --jq '.[] | {id, name}'
-  gh api repos/projectbluefin/common/rulesets/<id> \
+  RULESET_ID="$(gh api repos/projectbluefin/common/rulesets --jq '.[] | select(.name == "main-review-required-with-renovate-bypass") | .id')"
+  test -n "$RULESET_ID" && gh api "repos/projectbluefin/common/rulesets/$RULESET_ID" \
     --jq '.rules[] | select(.type == "pull_request") | .parameters | {required_approving_review_count, require_code_owner_review}'
   ```
-
-  Expected today: `required_approving_review_count: 0`, `require_code_owner_review: false`
-  (verified 2026-08-06 against ruleset `main-review-required-with-renovate-bypass`,
-  id `17070417`).
 - [ ] `pre-commit run check-skill-frontmatter --all-files` passes.
 - [ ] `pre-commit run check-skill-index --all-files` passes.

@@ -2,8 +2,6 @@
 
 Part of [shell-scripts](../SKILL.md) — shellcheck directive syntax, SC code notes, and quoting fix examples.
 
-<!-- TODO(context7): verify all shellcheck SC codes and directive syntax against shellcheck docs -->
-
 ## Disable comment — no inline notes (SC1072/SC1073)
 
 ```bash

@@ -174,8 +174,9 @@ to do here — cite it as the pattern the other layers should reach.
 - **Adding a shared identity schema library or a new `schema` repo.** Rolled
   into #1056 and rejected: common already ships the readers, and a library
   would add a build-time dependency to repos with unrelated build systems.
-- **Creating `ADR.md`, `PLAN.md`, or a `specs/` entry for this decision.** This
-  skill *is* the decision record — AGENTS.md bans committed planning docs.
+- **Creating a second planning record for today's identity mapping.** Current
+  image facts live here; proposed product behavior belongs in one reviewed
+  specification that links the source evidence, not another parallel log.
 
 ## Verification
 
@@ -208,9 +209,3 @@ gh api repos/projectbluefin/server/contents/include/arch.yml \
 # Registry paths and flavor tables are owned by the sibling skill — do not
 # restate them here; read docs/skills/image-registry.md instead.
 ```
-
-### Incident log
-
-| Date | What happened |
-|---|---|
-| 2026-09-23 | Six writers across three repos, no shared schema. `image-tag` hardcoded in two; base-version key named three different ways. Recorded here after nine per-repo "SSOT" PRs merged without converging. |

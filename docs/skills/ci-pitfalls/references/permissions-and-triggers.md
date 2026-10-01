@@ -6,8 +6,6 @@ Part of [ci-pitfalls](../SKILL.md) — caller-level permissions starvation, work
 
 ## Caller-level permissions starvation
 
-<!-- TODO(context7): verify caller permissions inheritance behavior against GitHub Actions reusable-workflow docs -->
-
 When a workflow calls a reusable workflow, the **caller's `permissions:` block is the maximum grant**. A reusable job that declares `permissions: contents: write` cannot exceed what the caller grants — it silently receives only `read`.
 
 ```yaml
@@ -37,8 +35,6 @@ jobs:
 
 ## workflow_run trigger — exact workflow name matching
 
-<!-- TODO(context7): verify workflow_run trigger name matching behavior against GitHub Actions docs -->
-
 `workflow_run` triggers match on the **exact `name:` field** of the target workflow YAML file, not the filename. If the name drifts between repos or variants, the trigger silently never fires.
 
 ```yaml
@@ -65,8 +61,6 @@ on:
 ---
 
 ## merge_group + upload-sarif ref failure
-
-<!-- TODO(context7): verify merge_group ref behavior and upload-sarif limitations against codeql-action docs -->
 
 `github/codeql-action/upload-sarif` fails for merge queue builds with:
 

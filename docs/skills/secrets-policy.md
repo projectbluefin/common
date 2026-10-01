@@ -3,7 +3,7 @@ name: secrets-policy
 version: "1.0"
 last_updated: "2026-09-26"
 id: secrets-policy
-one_line_purpose: Verify secrets and credentials against the approved inventory.
+one_line_purpose: Keep existing workflow authentication inside the factory security boundary.
 entry_point: docs/skills/secrets-policy.md
 category: meta
 mcp_compliance_level: partial
@@ -12,9 +12,9 @@ status: active
 dependencies: []
 tags: [secrets, security, ci]
 description: >-
-  Approved secrets inventory for the Bluefin factory. Use when adding a secret,
-  reviewing workflow auth, or verifying whether PATs or a new credential are
-  allowed.
+  Existing workflow authentication and the prohibition on new credentials.
+  Use when reviewing auth, diagnosing a missing existing secret, or checking
+  whether a PAT or credential reference is allowed.
 metadata:
   type: policy
 ---
@@ -23,19 +23,26 @@ metadata:
 
 **PATs (Personal Access Tokens) are banned.** This is a hard rule with no exceptions.
 
+## When to Use
+
+Review an existing workflow's authentication or diagnose a missing credential;
+never use this skill to invent a new secret or token.
+
 ## Rationale
 
 PATs are user-scoped credentials that:
-- Expire or get revoked silently, causing cascading CI failures
-- Can't be audited per-workflow (one token, unlimited scope)
-- Leave a blast radius tied to an individual's account
-- Are forbidden by the supply chain security model (SLSA L2+)
+- Depend on an individual's account and can expire outside a workflow's lifecycle
+- Make rotation and ownership harder to audit for a single automation task
+- Tie access to a user rather than the owning repository's automation identity
+- Violate the factory's explicit no-PAT policy
 
 GitHub App tokens and the built-in `GITHUB_TOKEN` provide the same capabilities with narrower scope, automatic rotation, and full audit trails.
 
 ## Approved secrets (frozen set)
 
-Additions require a **security review issue** in `projectbluefin/common` before the secret is provisioned or referenced in any workflow.
+These existing names were approved for their listed owners; an entry does not
+authorize an agent to add, copy or provision a credential. Verify current
+workflow use and the owning repo's security review before relying on one.
 
 | Secret | Type | Where | Purpose |
 |---|---|---|---|
@@ -43,72 +50,74 @@ Additions require a **security review issue** in `projectbluefin/common` before 
 | `MERGERAPTOR_APP_ID` | GitHub App ID | common, dakota, bonedigger | MERGERAPTOR bot identity |
 | `MERGERAPTOR_PRIVATE_KEY` | GitHub App private key | common, dakota, bonedigger | MERGERAPTOR bot auth |
 | `CASD_CLIENT_KEY` | TLS client certificate key | dakota | BuildStream remote CAS auth |
-| `SIGNING_SECRET` | cosign private key | common | Legacy key-based image signing — pending keyless migration (#513) |
 
-### In use, not yet listed above
+`common/build.yml` now signs with keyless OIDC. Do not reintroduce
+`SIGNING_SECRET`, even though the external actions PAT-ban allowlist still
+mentions that retired name.
 
-These secret names are referenced by factory workflows today but have no recorded
-security review. Listing them records **observed usage, not approval** — each still
-needs the security review issue from Rule 2 before it counts as part of the frozen
-set.
+### Reported use pending security review
 
-| Secret | Referenced by | Status |
+These historically observed names are **not approved by this table**. Check
+their owning workflows and security-review issues before treating them as
+current, provisioned or safe to reuse.
+
+| Secret | Reported owner | Review status |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (first green deploy, [run 34163377120](https://github.com/projectbluefin/documentation/actions/runs/34163377120)); last missing-token failure 2026-08-09. Deploy green since, one D1-migration failure on 2026-09-24 ([run 36028476654](https://github.com/projectbluefin/documentation/actions/runs/36028476654)) — see #1091. Workflow still lacks the Rule 6 preflight; security review pending |
-| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (#1091); security review pending |
-| `BLUEFINBOT_TOKEN` | `projectbluefin/actions` | In use; security review pending |
-| `SYSUPDATE_SIGNING_KEY` | `projectbluefin/server` | In use; security review pending |
+| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` countme worker | No recorded approval; see [common#1091](https://github.com/projectbluefin/common/issues/1091) |
+| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` countme worker | No recorded approval; see [common#1091](https://github.com/projectbluefin/common/issues/1091) |
+| `BLUEFINBOT_TOKEN` | `projectbluefin/actions` | Security review pending |
+| `SYSUPDATE_SIGNING_KEY` | `projectbluefin/server` | Security review pending |
 
 ## Rules
 
-1. **No new PATs.** If you think you need a PAT, you don't. Use `GITHUB_TOKEN` or a GitHub App token.
-2. **No new secrets without a security review issue.** File an issue in `projectbluefin/common` describing the security review before provisioning or referencing any new secret name.
-3. **GitHub App tokens for cross-repo bot operations.** MERGERAPTOR and BLUEFINBOT are the approved bots. Adding a new bot requires maintainer approval.
-4. **`SIGNING_SECRET` is frozen.** It will be removed when keyless signing migration (#513) lands. Do not reference it in any new workflow.
-5. **Infrastructure keys** (`CASD_CLIENT_KEY`, Cloudflare R2 keys) are reviewed at provisioning time by org admins and frozen thereafter.
-6. **Fail fast when a credential is absent.** A workflow that consumes a
-   non-`GITHUB_TOKEN` secret must check for it **before** the step that uses it and
-   exit with a message naming every missing secret. An absent secret then produces a
-   one-line diagnosis instead of a mid-deploy failure with an opaque error:
-
-   ```yaml
-   - name: Preflight — required secrets
-     env:
-       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-     run: |
-       missing=()
-       for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
-         [ -n "${!name}" ] || missing+=("$name")
-       done
-       if [ ${#missing[@]} -gt 0 ]; then
-         echo "::error::Missing required secrets: ${missing[*]}" >&2
-         echo "See docs/skills/secrets-policy.md — provisioning is a human gate." >&2
-         exit 1
-       fi
-   ```
-
-   Reference the policy, not a workaround: a failed preflight means the credential
-   has not been provisioned, which is a human security decision (Rule 2), never a
-   reason to fall back to a PAT or to silently skip the deploy.
+1. **No new PATs.** Use the built-in `GITHUB_TOKEN` or an already-configured
+   GitHub App token only when the owning repo authorizes it.
+2. **No new secrets in agent work.** Agents must never create, propose, or add
+   a credential or `secrets.NEW_THING` reference. If a human independently
+   considers a new credential, a **security-review issue in
+   `projectbluefin/common`** is required before provisioning or referencing
+   it; stop at the [human security gate](human-gates.md).
+3. **Existing cross-repo bots use their reviewed App identity.** MERGERAPTOR
+   and BLUEFINBOT are existing bot identities, not a reason to register a new
+   App or extend credentials to another repository.
+4. **Signing in `common` is keyless.** `SIGNING_SECRET` was retired; never add
+   it to a new workflow or treat its old allowlist entry as current usage.
+5. **Infrastructure keys** remain owned by the repository and human admins
+   that provisioned them; do not assume this document grants access.
+6. **Fail fast when an existing credential is absent.** An owning workflow
+   must diagnose the missing name before the step that uses it. Do not fall
+   back to a PAT, skip the protected action or reuse another repository's key.
 
 ## Enforcement
 
-- **Actions security baseline:** [`ACTIONS-SECURITY.md`](../../ACTIONS-SECURITY.md) defines token permissions and credential scoping across workflows.
-- **CI gate:** `pat-ban.yml` in `projectbluefin/actions` blocks any PR that introduces a `secrets.XXX` reference not in the approved list above.
-- **Human gate:** Any new secret addition is a Design gate — stop and request maintainer approval.
-- **Not automated in this repo:** there is no pre-commit hook that scans for new
-  secret names. The approved-list check is enforced only by the `pat-ban.yml` CI
-  gate, and the "in use, not yet listed" rows above are the current evidence that
-  the inventory can drift from reality between reviews.
+- **CI check:** `projectbluefin/actions`' `pat-ban.yml` checks added YAML lines
+  in that repository. Its allowlist is not a factory-wide policy or proof a
+  credential is still needed; `common` has no equivalent local pre-commit hook.
+- **Human gate:** A human considering a new credential needs a security-review
+  issue before any provisioning. Agents stop; they never propose or add it.
+- **Unreviewed use:** The reported names above remain findings for their
+  owners to verify, not additions to the approved set.
 
 ## What to do instead of a PAT
 
-| You want to... | Use instead |
+| Need | Existing GitHub primitive |
 |---|---|
-| Push to GHCR | `github.token` with `packages: write` |
-| Open/update PRs | `github.token` with `pull-requests: write` |
-| Create issues | `github.token` with `issues: write` |
-| Cross-repo dispatch | MERGERAPTOR App token (already provisioned) |
-| Force-push to protected branch | Admin bypass via org ruleset |
-| Read private packages | `github.token` (org members get automatic read) |
+| Push to GHCR | `github.token` with `packages: write` where granted |
+| Open/update PRs | `github.token` with `pull-requests: write` where granted |
+| Create issues | `github.token` with `issues: write` where granted |
+| Cross-repo dispatch | An already-provisioned MERGERAPTOR App token, when the owning workflow is authorized |
+| Read private packages | `github.token` only when the owning repo grants access |
+
+Never force-push to a protected branch or bypass its ruleset.
+
+## Red Flags
+
+- A diff introduces `secrets.NEW_THING` or revives `SIGNING_SECRET`.
+- A green PAT-ban check in `actions` is treated as factory-wide approval.
+- A missing credential is replaced with a PAT, silent skip, or admin bypass.
+
+## Verification
+
+- [ ] Compare proposed auth with the owning repository's current workflow.
+- [ ] No new credential names, secret references or PATs were added or proposed.
+- [ ] Existing credential failures stop for a human security decision.

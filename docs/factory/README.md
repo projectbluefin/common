@@ -24,13 +24,6 @@ For a new or relocated agent, follow the copyable
 verifies the target repository first, attaches common as the shared-contract
 sidecar, and requires self-repair and durable learning on every task loop.
 
-### Open proposals awaiting human review
-
-- [`skill-catalog-proposal.md`](skill-catalog-proposal.md) — cross-repo
-  survey of every factory repo's skill-doc system and a proposed shared
-  catalog standard. Not adopted; requires a Design-gate decision before any
-  repo acts on it.
-
 ## Mission and product boundary
 
 - Factory org: `projectbluefin`
@@ -76,35 +69,34 @@ For the workflow-by-workflow purpose map inside `common`, see [`../skills/workfl
 
 ## Agentic operating model
 
-`filed → triage → queued → claimed → done`
+`1-triage` → `2-discussing` when needed → `3-human-queue` or
+`3-clanker-queue` → `4-review` → merge. `blocked` and `hold` are overlays,
+not stages; there is no claim command or `done` label.
 
-Lifecycle automation is Hive-managed and consumed by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` through their own `bonedigger.yml` callers. `common` has no lifecycle caller.
+Lifecycle automation lives in [`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger); `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` own callers. `common` has none.
 Full lifecycle, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
+Substantive product planning follows the [Spektacular workflow](../skills/spektacular-workflow.md)
+and the [adoption specification](../specifications/spektacular-adoption.md)
+with its downstream plan and Hive activation gates.
 Hard rules, branch targets, PR comment policy, session start: [`docs/factory/agentic-model.md`](agentic-model.md)
-
-## Automation coverage
-
-~97% automated across 124 workflows in 7 in-scope repos. **4 intentional human gates:** promotion review, actions merge, priority assignment, stale PR unclaim — see [`docs/skills/human-gates.md`](../skills/human-gates.md). ISO auto-rebuild remains manual (iso repo out of scope).
+Human decisions: [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
 ## Factory infrastructure
 
-**Core pipeline repos** (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`) share full factory infrastructure. **Extended repos** (`bootc-installer`, `knuckle`, `iso`) have AGENTS.md and basic CI but are not yet on the full parity checklist.
+Read each target repo's `AGENTS.md` and verify parity from GitHub below;
+do not infer a workflow exists from a factory inventory.
 
-The following are wired across the factory today (applies to core pipeline repos unless noted):
+- **Workflow state:** the seven labels in [label-workflow](../skills/label-workflow.md), owned by automation.
+- **Delivery:** squash-only merge and the owning repo's branch protection.
+- **Production:** the `factory-operations` environment requires two maintainer approvals before `:stable` tagging in `bluefin`, `bluefin-lts`, and `dakota`.
+- **Hygiene:** repo-local `pre-commit` at developer time and its aggregate CI check, not a bespoke process gate.
 
-- **AGENTS.md** — per-repo operating contract (all repos including extended)
-- **Label taxonomy** — the seven canonical lifecycle labels defined in [`docs/skills/label-workflow.md`](../skills/label-workflow.md). Applied per repo; there is no cross-repo label sync.
-- **Squash-only merge + delete-branch-on-merge**
-- **One issue form per repo**, which also introduces the filer to the label workflow
-- **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
-- **bonedigger lifecycle** — issue intake, `ujust report` handling, and priority escalation. Hive-managed; consumed by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` via `bonedigger.yml`. Not present in `common`, `actions`, or `testsuite`.
-- **pre-commit** — json/yaml/toml hygiene, skill front-matter, doc links, and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`). This is where process conventions are enforced; there is no per-convention CI job.
-- **Renovate** — automated dependency updates (`common`, `bluefin`, `bluefin-lts`, `actions`, `testsuite`; `dakota` not yet)
-- **promotion-candidate-e2e.yml** — weekly Tuesday smoke/common on `bluefin:testing` and `bluefin:lts-testing` before downstream promotions
-- **pr-e2e.yml** — pre-merge composed-image common suite gate for `common` PRs (active)
-- **post-merge-e2e.yml** (bluefin-lts) — smoke/common on `:lts-testing` after every main-branch build
-- **2-human production gate** — `factory-operations` environment requires two maintainer approvals before `:stable` tag in `bluefin`, `bluefin-lts`, `dakota`
-- **consumer-validation.yml** (actions) — validates consumer PR/CI evidence before merging actions changes
+[`bonedigger/templates/`](https://github.com/projectbluefin/bonedigger/tree/main/templates)
+owns canonical issue forms and proposes changes to `common` and image repos by
+PR. `common` currently has only `report.yml` plus `config.yml`, so the next
+sync can add forms and change its chooser; review that PR. `common` owns the
+canonical CODEOWNERS triager block, but its absent sync workflow leaves
+downstream propagation to reviewed repo-local changes.
 
 ## Factory parity
 
@@ -124,26 +116,11 @@ done
 Swap the path for whatever you are checking: `.pre-commit-config.yaml`,
 `docs/SKILL.md`, `docs/skills/index.json`, `.github/workflows/bonedigger.yml`.
 
-A gap worth fixing becomes a GitHub issue, not a row in this file.
+## Open gaps
 
-Factory ACMM status: **Level 3 (Instructed)** as of 2026-06-06.
-
-## Open Gaps
-
-Factory gaps are tracked as GitHub issues — not in this doc. Query GitHub for the live state:
-
-```bash
-# Everything still awaiting triage across the factory
-gh search issues --label "1-triage" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# Work admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
-  --json number,title,repository
-```
-
-For the gap audit protocol and how to file factory issues, see [`docs/skills/factory-improvement.md`](../skills/factory-improvement/SKILL.md).
-Tracking epics: [#404](https://github.com/projectbluefin/common/issues/404) (infra parity) · [#405](https://github.com/projectbluefin/common/issues/405) (QA model)
+Factory gaps live in GitHub, not a hand-maintained list. Use the
+[factory-improvement procedure](../skills/factory-improvement/SKILL.md) for
+the current audit and issue-filing process.
 
 ## Sensitive paths (require maintainer review)
 

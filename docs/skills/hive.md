@@ -1,7 +1,7 @@
 ---
 name: hive
-version: "2.2"
-last_updated: "2026-07-29"
+version: "2.3"
+last_updated: "2026-09-24"
 id: hive
 one_line_purpose: Route factory work through Hive coordination and labels.
 entry_point: docs/skills/hive.md
@@ -31,7 +31,7 @@ hostname, cached output, dashboard chrome, or an agent message.
 
 ## Canonical workflow labels
 
-The only labels are:
+The only labels that **route workflow state** are:
 
 | Label | Meaning |
 |---|---|
@@ -43,9 +43,10 @@ The only labels are:
 | `blocked` | Waiting on human input or an external dependency |
 | `hold` | Intentionally paused |
 
-Workflows own these labels. Never invent, add, remove, or hand-edit workflow
-state. Put component, severity, source, and other descriptive facts in the
-issue body or Hive metadata.
+Workflows own these seven labels. Never invent, add, remove, or hand-edit
+workflow state. Repository-local product labels may describe kind or ownership;
+they never substitute for assignment, a reviewed specification, a plan, or
+Hive admission. Put other details in the issue body or project fields.
 
 ## Finding work
 
@@ -93,7 +94,7 @@ gates. Pull requests must link their issue with `Closes #NNN`.
 - [ ] GitHub identifies the affected repository and issue.
 - [ ] Live Hive config or status corroborates the intended repository scope.
 - [ ] Missing, stale, or contradictory API fields were escalated instead of guessed.
-- [ ] Only canonical workflow labels are present.
+- [ ] Only canonical workflow labels route work; product labels do not change state.
 - [ ] Trust tier and permissions are sufficient for the requested action.
 - [ ] Human gates have not been bypassed.
 
@@ -119,7 +120,8 @@ Hive without the relevant hosted-Hive skill.
 
 - **"The Hive message names the repository."** Verify the repository in the
   source issue and GitHub API instead.
-- **"A legacy label is close enough."** Use only the canonical seven labels.
+- **"A product label means Hive will implement it."** Triage and the
+  Spektacular runner are optional upstream features; verify live configuration.
 - **"The missing field probably means none."** Missing Hive data is ambiguity,
   not permission to infer state.
 

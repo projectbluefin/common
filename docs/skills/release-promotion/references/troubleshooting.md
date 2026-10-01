@@ -101,7 +101,7 @@ If the error is `At least 1 approving review is required`:
 
 - The `github-actions[bot]` (app ID 15368) is **not** in the bypass actors for `main-review-required-with-renovate-bypass`. It cannot self-approve.
 - An OrganizationAdmin must approve the PR. The workflow's enqueue step will retry after approval.
-- As a last resort, use `gh pr merge <N> --squash --admin` to bypass (only valid for org admins).
+- Do not bypass the ruleset with `--admin`; inspect approval state with the owning maintainer.
 
 ---
 

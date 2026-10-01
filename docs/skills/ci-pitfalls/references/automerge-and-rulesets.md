@@ -40,10 +40,7 @@ Digest-only groups continue to automerge.
 enabled on the PR (`gh pr view <N> --json autoMergeRequest`). If null, Renovate hasn't enabled
 it — check the `matchUpdateTypes` rule. If enabled but not merging, verify all required checks
 (`validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)`) show SUCCESS or
-SKIPPED. Org admin can force-merge via:
-```bash
-gh api repos/projectbluefin/common/pulls/<N>/merge -X PUT -f merge_method=squash
-```
+SKIPPED. If the PR still does not enqueue, inspect merge-queue status; do not bypass the ruleset.
 
 **`build.yml` change detection and workflow-only Renovate PRs:** The `pull_request` trigger in
 `build.yml` has no `paths-ignore` at all, so the required Build checks always report on every PR
@@ -56,45 +53,13 @@ to avoid redundant post-merge rebuilds.
 
 ---
 
-## renovate-automerge.yml — merge queue on main requires --auto, not direct merge
-
-<!-- TODO(context7): verify merge queue ruleset bypass actor behavior and gh pr merge --auto semantics against GitHub REST API docs -->
-
-`common/main` has a **merge queue ruleset** (`main — merge queue`). `github-actions[bot]` is not a bypass actor for that ruleset. Calling `gh pr merge --squash` directly is rejected with:
-
-```
-The merge strategy for main is set by the merge queue
-```
-
-The reusable `reusable-renovate-automerge.yml` uses direct `--squash` merge (correct for `testing` branches which have no merge queue). Do **not** use it for `common`. The caller `renovate-automerge.yml` is intentionally inlined and uses `--auto --squash` to enqueue the PR. Since the workflow fires after a successful build, checks have already passed and the queue processes immediately.
-
-**Symptom when broken:** The automerge workflow logs show `✅ Merged PR #N` but the PR remains open. The `||` catch in the merge command suppresses the real error; the success echo runs unconditionally after it.
-
-**Fix already in place:** `renovate-automerge.yml` inlines the PR-find + enqueue logic with `gh pr merge --auto --squash` (PR #782). The reusable is not used here.
-
-Do not "simplify" this back to the reusable — it will silently break again.
-
----
-
 ## Ruleset required status check names must match exact CI job names
 
-<!-- TODO(context7): verify ruleset required status check matching semantics against GitHub branch protection / rulesets docs -->
-
-The two branch rulesets on `main` must use the **exact** job names from `build.yml`. Wrong names silently block the merge queue — checks never arrive, queue waits forever.
-
-Correct names (as of 2026-06-22):
-
-| Ruleset | Required checks |
-|---|---|
-| `main — merge queue` (ID 17513003) | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
-| `main-review-required-with-renovate-bypass` (ID 17070417) | *(no required status checks — bypass actors cover Renovate/mergeraptor; merge queue ruleset handles build gate)* |
-
-**Past breakage:** ruleset 17070417 had `"Build and push image"` (no arch suffix) — never matched any actual check, blocked every Renovate PR. Fixed 2026-06-22 by removing the check entirely from the review ruleset and using correct names in the merge queue ruleset.
-
-If `build.yml` job names change, update both rulesets immediately via:
-```bash
-gh api --method PUT repos/projectbluefin/common/rulesets/17513003 --input ruleset.json
-```
+The live `main` rulesets must require the **exact** job names emitted by
+`build.yml` and `validate.yml`. A former unsuffixed `Build and push image`
+requirement never matched the architecture-qualified jobs and stalled the
+merge queue. Compare the live ruleset API and current CI run job names before
+renaming a job; ruleset updates are human-owned, not a saved `PUT` recipe.
 
 ---
 
@@ -136,4 +101,9 @@ The 'client-id' (or deprecated 'app-id') input must be set to a non-empty string
 Note: `vars.MERGERAPTOR_APP_ID` (variable, not secret) does **not** resolve in common — do not use it here. The correct ref is `secrets.MERGERAPTOR_APP_ID`. Verify at:
 https://github.com/organizations/projectbluefin/settings/secrets/actions
 
-The job has `continue-on-error: true` — build stays green while dispatches fail. Downstream tracking falls back to Renovate (bluefin/bluefin-lts) and dakota's daily cron.
+Factory callers that combined `owner: projectbluefin` with a
+`repositories:` list for `actions/create-github-app-token@v3` reported
+`Invalid keyData` during cross-installation token creation. This is not proof
+that the private key is malformed. Bonedigger's template-sync caller supplies
+`repositories:` without `owner:`; inspect the owning repo's existing inputs
+and App installation before changing scope. Do not add a new credential.

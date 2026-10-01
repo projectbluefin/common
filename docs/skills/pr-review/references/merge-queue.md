@@ -22,33 +22,29 @@ real review gate on `main`. Treat it accordingly.
 E2E checks are **informational** — they do not block merging. Only the required
 checks listed above gate a merge.
 
-Default landing command:
+Default landing command. Capture `REVIEWED_HEAD_SHA` alongside the card and
+diff **before** the human verdict; never refresh it to make a merge pass:
 
 ```bash
-# Squash-merge via the merge queue
-gh pr merge <N> --squash --auto
+gh pr merge <N> --squash --auto --match-head-commit "$REVIEWED_HEAD_SHA"
 ```
 
 > ⚠️ Do NOT use `--delete-branch` — the repo has `deleteBranchOnMerge: true`
 > and the flag **hard-fails** when a merge queue is enabled.
 
-`--admin` bypasses the queue and merges immediately. It requires **explicit
-human instruction** per PR — never default to it.
-
-```bash
-# Admin merge — ONLY when the human explicitly says so
-gh pr merge <N> --squash --admin
-```
-
 ### Reading queue state
 
-`autoMergeRequest` reads `null` once a PR has actually **entered** the merge
-queue — the queue entry supersedes the auto-merge request. Do not treat that as
-"auto-merge fell off" and re-arm blindly. Probe instead:
+`autoMergeRequest` becomes `null` once a PR enters the queue. Never probe with
+`gh pr merge --auto`: that command can arm an unqueued PR. Read queue state:
 
 ```bash
-gh pr merge <N> --auto   # → "is already queued to merge" means it IS queued
+gh api graphql -F number="$N" \
+  -f query='query($number:Int!){repository(owner:"projectbluefin",name:"common"){pullRequest(number:$number){mergeQueueEntry{id}}}}' \
+  --jq '.data.repository.pullRequest.mergeQueueEntry'
 ```
+
+A non-null entry means the PR is queued; otherwise check its current checks
+and human verdict before any mutation.
 
 `mergeStateStatus` also goes `UNKNOWN` for a minute or two while GitHub
 recomputes mergeability after anything lands on `main`. That is not an error;

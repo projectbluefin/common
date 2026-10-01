@@ -23,9 +23,9 @@ metadata:
 
 # Shell Scripts — authoring and testability
 
-> Split from [`ci-tooling.md`](../ci-tooling/SKILL.md) on 2026-06-24. This file holds shell script authoring patterns, testability idioms, and the mandatory touch-points when removing a script. [`ci-tooling.md`](../ci-tooling/SKILL.md) retains CI policy and config; [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) retains the incident log.
-
-<!-- TODO(context7): verify shellcheck directive syntax (SC1072/SC1073, SC1091, SC2148, SC2207) and bats setup/teardown semantics against upstream docs. These were documented from live test debugging, not from Context7 lookups. -->
+This skill owns shell authoring and testability; [CI tooling](../ci-tooling/SKILL.md)
+owns workflow policy and [CI pitfalls](../ci-pitfalls/SKILL.md) owns failure
+diagnosis.
 
 ## When to Use
 

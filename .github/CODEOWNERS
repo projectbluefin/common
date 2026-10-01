@@ -4,7 +4,7 @@ system_files/shared/** @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
 # Bluefin-specific
 system_files/bluefin/** @castrojo @hanthor @ahmedadan
 
-# BEGIN TRIAGERS — managed by projectbluefin/common, do not edit manually in downstream repos
-# To add a triager: append @handle to the line below, then commit to main.
+# BEGIN TRIAGERS — canonical in projectbluefin/common; downstream copies may drift
+# Propose changes here, then propagate through each affected repo's review process.
 **/*.md  @repires @KiKaraage @projectbluefin/maintainers
 # END TRIAGERS

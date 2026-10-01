@@ -59,28 +59,13 @@ Pinning the raw URL to a commit avoids silent schema drift on the next pre-commi
 
 ---
 
-## Skill drift detection
+## Skill updates
 
-**Retired across the factory. Do not re-add it in any repo.**
-
-`skill-drift.yml` never enforced anything. It called the reusable workflow
-`projectbluefin/actions/.github/workflows/skill-drift-check.yml`, whose real
-logic was removed in `actions@001ae97` and replaced with a compatibility stub
-in `actions@a7c230c`. The stub echoed `"Skill drift check removed. Delete
-skill-drift.yml from consumer repo."` and exited successfully without
-inspecting a single changed path.
-
-Five repos (bluefin, bluefin-lts, dakota, knuckle, testsuite) called that stub
-on every PR and received a silent green result regardless of what changed.
-`common` never wired it up. The callers and the stub have since been deleted.
-
-Skill-update discipline is enforced at developer time by `pre-commit` and by
-the self-repair loop in [`skill-improvement.md`](../../skill-improvement.md) — not
-by a CI exit code. Per [`agentic-model.md`](../../../factory/agentic-model.md), the
-aggregate `pre-commit` step is the only place a process convention may fail a
-build; bespoke per-convention CI jobs are banned.
-
-Retirement record: [`skill-drift.md`](../../skill-drift.md)
+The retired `skill-drift.yml` was an always-green stub. Do not re-add a
+standalone process-convention CI job. Skill updates are reviewed and checked
+at developer time with `pre-commit`; CI may rerun that aggregate only. See
+[skill-improvement](../../skill-improvement.md) and the
+[factory contract](../../../factory/agentic-model.md).
 
 ---
 

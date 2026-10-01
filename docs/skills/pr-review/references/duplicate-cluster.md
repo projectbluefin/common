@@ -73,7 +73,7 @@ gh pr merge <S> --squash --match-head-commit "$sha_S"
 
 The pin is the invariant, not the arming mode: both forms refuse if the head
 moved off `$sha_S`. Never drop `--match-head-commit` to get a merge through,
-and never reach for `--admin` without explicit human instruction.
+and never use `--admin` to bypass a refusal.
 
 On `common`, where `main` has a merge queue, the arming form is the one that
 works and the direct form is the one that gets rejected — see

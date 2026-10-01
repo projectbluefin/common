@@ -6,8 +6,6 @@ Part of [ci-pitfalls](../SKILL.md) — rootless buildah vs root podman storage n
 
 ## build.yml — rootless buildah vs root podman storage
 
-<!-- TODO(context7): verify buildah rootless storage vs podman root storage namespace separation against buildah/podman docs -->
-
 `build.yml` uses `redhat-actions/buildah-build` which stores images in **rootless user storage** (`~/.local/share/containers`). The `push-image` composite action uses `sudo podman push` which reads **root storage** (`/var/lib/containers`). These are different namespaces — the push will fail with `image not known` if the image is not in root storage.
 
 **Fix already in place:** After `Export image for scanning`, a `sudo skopeo copy` step promotes the docker-archive into root `containers-storage` so `push-image` finds it.
@@ -27,8 +25,6 @@ Do not remove this step. Without it every push-to-GHCR fails silently until the 
 ---
 
 ## build.yml — GHCR login required before cosign signing
-
-<!-- TODO(context7): verify cosign registry credential behavior and sign-and-publish step ordering against cosign docs -->
 
 The `sign-and-publish` composite action's internal step order is: cosign sign (step 5) → ORAS registry login (step 12). Cosign has no GHCR credentials at step 5 and fails UNAUTHORIZED when pushing the signature blob.
 

@@ -91,7 +91,7 @@ Promotion PRs auto-merge via the merge queue with **0 approvals required**. `Lin
 | Topic | Doc |
 |---|---|
 | CI workflow purposes | [workflow-map.md](../../workflow-map.md) |
-| E2E gates | [e2e-ci.md](../../e2e-ci/SKILL.md) |
+| E2E gates | [e2e-ci](../../e2e-ci/SKILL.md) |
 | Supply chain tooling (shared) | Keyless cosign, SBOM, SLSA L2, Trivy via `projectbluefin/actions` composites |
 
 ---

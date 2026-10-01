@@ -12,24 +12,26 @@ status: active
 dependencies: []
 tags: [ci, workflows, github-actions, pitfalls]
 description: >-
-  Incident log of CI gotchas across projectbluefin repos. Use when debugging
-  silent CI failures, startup_failure, or workflow skip behavior.
+  CI gotchas across projectbluefin repos. Use when debugging silent CI failures,
+  startup_failure, or workflow skip behavior.
 metadata:
   type: reference
   context7-sources:
     - /actions/checkout
-    - /actions/create-github-app-token
     - /github/codeql-action
     - /redhat-actions/buildah-build
     - /containers/skopeo
     - /renovatebot/renovate
 ---
 
-# CI Pitfalls — incident log
+# CI Pitfalls
 
-> Split from [`ci-tooling.md`](../ci-tooling/SKILL.md) on 2026-06-24. This file holds the incident-log / gotcha entries — patterns that have caused silent CI failures or `startup_failure` across factory repos. [`ci-tooling.md`](../ci-tooling/SKILL.md) retains policy and config; [`shell-scripts`](../shell-scripts/SKILL.md) retains shell authoring and testability.
+This skill covers failure signatures; [CI tooling](../ci-tooling/SKILL.md)
+owns workflow policy and [shell scripts](../shell-scripts/SKILL.md) owns
+shell authoring and testability.
 
-<!-- TODO(context7): verify all GitHub Actions behavior claims (workflow_run name matching, merge_group ref handling, create-github-app-token scoping, caller permissions inheritance) against upstream docs. These were documented from live incident debugging, not from Context7 lookups. -->
+Validate a failure against the current workflow and upstream documentation;
+an old incident does not establish present behavior.
 
 ## When to Use
 
@@ -98,4 +100,4 @@ and retain real Homebrew validation in CI.
 | [pr-and-branch.md](references/pr-and-branch.md) | Branch-from-target rule, bulk SHA bump regex trap, actions PR consumer validation evidence format |
 | [permissions-and-triggers.md](references/permissions-and-triggers.md) | Caller-level permissions starvation, workflow_run name matching, merge_group + upload-sarif ref failure |
 | [build-and-push.md](references/build-and-push.md) | Rootless buildah vs root podman storage, GHCR login required before cosign signing |
-| [automerge-and-rulesets.md](references/automerge-and-rulesets.md) | Renovate automerge mechanics, renovate-automerge.yml merge queue, ruleset required status check names, create-github-app-token cross-repo scoping |
+| [automerge-and-rulesets.md](references/automerge-and-rulesets.md) | Renovate platform auto-merge, merge queue check names, and App-token repository scoping |

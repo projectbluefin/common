@@ -177,8 +177,6 @@ in unit tests.
 
 ### XDG_CONFIG_HOME isolation in bats tests
 
-<!-- TODO(context7): verify XDG_CONFIG_HOME fallback behavior and precedence against freedesktop.org spec docs -->
-
 GitHub Actions runners set `XDG_CONFIG_HOME=/home/runner/.config` in their environment. If a bats test overrides `HOME` to a temp dir but does not clear `XDG_CONFIG_HOME`, any script using `${XDG_CONFIG_HOME:-$HOME/.config}` will write to the **real runner path**, not the test's isolated temp dir.
 
 The directory `/home/runner/.config/fish` does not exist on runners, so `cat >>` or similar fails, and with `set -e` the script exits non-zero — test reports `status != 0` with no other diagnostic output.

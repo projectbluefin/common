@@ -144,8 +144,6 @@ to [hplip-printer-app#8](https://github.com/projectbluefin/hplip-printer-app/iss
 
 ## Trivy scan-image archive input
 
-<!-- TODO(context7): verify trivy docker-archive input behavior and image: vs input: parameter semantics against trivy docs -->
-
 When `build.yml` exports a locally built image with:
 
 ```bash

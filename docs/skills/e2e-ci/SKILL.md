@@ -49,17 +49,19 @@ Actions authoring unrelated to the `common` test workflows.
 
 - Runs on PRs to `main` and on `merge_group`
 - Builds the PR's `common` layer candidate first
-- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:stable` by overlaying `/system_files/shared` and `/system_files/bluefin`
+- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:testing` by overlaying `/system_files/shared` and `/system_files/bluefin`
 - Recompiles GSettings schemas in the composed image
 - Pushes the composed image to GHCR and runs the local testsuite wrapper with `suites: common`
 
 This is the pre-merge gate for common-layer changes, so regressions can fail before merge instead of waiting for post-merge E2E.
 In branch protection today it is still an advisory/non-required signal; `build.yml` remains the required merge check.
 
-Use a stable downstream base for this PR-time compose gate. The moving `:testing`
-stream belongs in `promotion-candidate-e2e.yml`; using it here makes unrelated
-downstream churn (for example missing CLI tools in the current testing image)
-fail `common` PRs that only change the shared layer.
+The PR-time base is currently the moving `:testing` stream. If a common PR
+fails E2E, check whether the downstream base changed before attributing the
+failure to this PR; changing the base is a separate workflow decision.
+The later stable-base recommendation was not implemented. The commit that
+introduced `:testing` switched image ownership; it did not settle which base
+the PR gate should use. A maintainer must choose before changing the workflow.
 
 ## Promotion-candidate feedback loop
 
@@ -171,7 +173,7 @@ column against `main` before assuming this repo shipped the bad bytes.
 
 ## Red Flags
 
-- Using `:testing` as the compose base for `pr-e2e.yml` (causes false failures from unrelated downstream churn).
+- Treating an E2E failure on a moving `:testing` base as a common regression without checking downstream changes.
 - A `workflow_run` trigger fix pushed only to `testing` (default-branch constraint means it has no effect until it reaches `main`).
 - The `promote-to-testing` job running on branches other than `main` (double-promotion risk).
 - An unanchored `--certificate-identity-regexp` wildcard in cosign verify.
@@ -179,7 +181,7 @@ column against `main` before assuming this repo shipped the bad bytes.
 
 ## Verification
 
-- [ ] `pr-e2e.yml` uses a stable (not `:testing`) base image.
+- [ ] `pr-e2e.yml` base image is read from the workflow, and downstream drift is separated from the common candidate.
 - [ ] `run-testsuite.yml` SHA pin matches the testsuite commit being relied on.
 - [ ] Promotion `promote-to-testing` job is gated on `head_branch == 'main'`.
 - [ ] cosign identity regexp is anchored with `^...$`.
