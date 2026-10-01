@@ -37,6 +37,11 @@ body:
         The clearer the finish line you describe, the sooner it can be picked
         up. Vague reports sit in triage.
 
+        For a product feature or multi-part request, describe who benefits and
+        the outcome you want. The optional finish-line field below helps a
+        maintainer turn the request into a reviewed specification. Filing this
+        form does not approve a plan or start a Hive implementation run.
+
   - type: textarea
     id: what
     attributes:
@@ -55,6 +60,17 @@ body:
         Pin requests: link the Bodhi update for the last known-good version.
     validations:
       required: true
+
+  - type: textarea
+    id: finish-line
+    attributes:
+      label: "What does done look like?"
+      description: >-
+        Optional for features and epics: give observable pass/fail examples,
+        constraints, and anything this request must not change. Skip for a
+        bug whose reproduction already gives a clear finish line.
+    validations:
+      required: false
 
   - type: input
     id: image
