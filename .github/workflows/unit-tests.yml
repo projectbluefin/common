@@ -45,7 +45,7 @@ jobs:
           pip install pytest pytest-cov pyyaml jsonschema numpy
 
       - name: Install just
-        uses: taiki-e/install-action@b6a061addd82b81aaeca51bdf2c53cd707996e5a # just
+        uses: taiki-e/install-action@040e4337618138609b81ecabab828c7c133bae70 # just
         with:
           tool: just
 
@@ -163,6 +163,9 @@ jobs:
       - name: Run bats (bonedigger report)
         run: bats tests/test_bonedigger_report.bats
 
+      - name: Run bats (projectbluefin-countme)
+        run: bats tests/test_projectbluefin_countme.bats
+
       - name: Run bats (apps.just — install-opentabletdriver, cncf)
         run: bats tests/test_apps_just.bats
       - name: Run bats (escl-fixture)
@@ -172,9 +175,6 @@ jobs:
 
       - name: Run bats (bling preexec re-arm)
         run: bats tests/test_bling_preexec_rearm.bats
-
-      - name: Run bats (bluefin-countme)
-        run: bats tests/test_bluefin_countme.bats
 
       - name: Run bats (brew tap trust)
         run: bats tests/test_brew_tap_trust.bats

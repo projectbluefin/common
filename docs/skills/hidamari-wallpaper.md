@@ -30,6 +30,16 @@ video-wallpaper engine (`io.github.jeffshee.Hidamari`). It is an original
 render — layered ocean-gradient waves with rising glow specks in the Bluefin
 palette — not a re-encode of third-party art.
 
+## User setup and Flatpak visibility
+
+The user-facing steps are in [Hidamari setup](../hidamari.md), linked from
+the repository README. Keep that guide in sync if the asset path changes.
+Hidamari reads its Local Video list from the XDG Videos directory’s
+`Hidamari` subdirectory. The shipped `/usr/share/backgrounds` file must be
+copied there: a symlink back into `/usr` does not make the target accessible
+inside the Flatpak sandbox. Use `xdg-user-dir VIDEOS` to respect localized or
+custom Videos paths, and quote the resulting path.
+
 ## Licensing constraint (do not skip)
 
 The Wallpaper Engine workshop item named in the tracking issue carries **no

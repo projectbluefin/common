@@ -62,7 +62,7 @@ Bluefin-common provides a comprehensive Flatpak customization system with multip
 
 Default Flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
 
-- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (37 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
+- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (36 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
 - **`system-dx-flatpaks.Brewfile`** - Additional development-focused Flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox).
 
 These can be installed using:
@@ -143,6 +143,12 @@ Enable it with `sudo systemctl daemon-reload` and
 under `/etc` or `~/.config` so they survive image updates. Set
 `modules.flatpak.disable` to `false` or remove it to return Flatpak updates to
 the normal `uupd.timer` schedule.
+
+## Animated wallpaper
+
+To use the shipped Bluefin movie with Hidamari, follow the
+[Hidamari setup guide](docs/hidamari.md). It includes the required copy into
+your Videos folder so the Flatpak can find the movie.
 
 ## Brewfiles
 

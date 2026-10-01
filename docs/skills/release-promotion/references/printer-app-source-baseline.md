@@ -8,7 +8,8 @@ lag for the three OpenPrinting-derived printer application forks
 > Scope note: this covers **application source code** parity against
 > `OpenPrinting/*`. Driver/FSDK version pins are owned separately by
 > [common#1242](https://github.com/projectbluefin/common/issues/1242)
-> (Renovate fork-processing) and the Ghostscript FSDK source tracker. Do not
+> (Renovate fork-processing) and are recorded in
+> [printer-app-fsdk-junction.md](./printer-app-fsdk-junction.md). Do not
 > duplicate that ownership here.
 
 ## Re-derivation recipe

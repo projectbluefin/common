@@ -78,7 +78,7 @@ For the workflow-by-workflow purpose map inside `common`, see [`../skills/workfl
 
 `filed → triage → queued → claimed → done`
 
-Lifecycle automation lives in [`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger) and is consumed by `bluefin`, `bluefin-lts`, and `dakota` through their own `bonedigger.yml` callers. `common` has no lifecycle caller.
+Lifecycle automation is Hive-managed and consumed by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` through their own `bonedigger.yml` callers. `common` has no lifecycle caller.
 Full lifecycle, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
 Hard rules, branch targets, PR comment policy, session start: [`docs/factory/agentic-model.md`](agentic-model.md)
 
@@ -97,7 +97,7 @@ The following are wired across the factory today (applies to core pipeline repos
 - **Squash-only merge + delete-branch-on-merge**
 - **One issue form per repo**, which also introduces the filer to the label workflow
 - **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
-- **bonedigger lifecycle** — issue intake, `ujust report` handling, and priority escalation. Owned by `projectbluefin/bonedigger`; consumed by `bluefin`, `bluefin-lts`, and `dakota` via `bonedigger.yml`. Not present in `common`, `actions`, or `testsuite`.
+- **bonedigger lifecycle** — issue intake, `ujust report` handling, and priority escalation. Hive-managed; consumed by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` via `bonedigger.yml`. Not present in `common`, `actions`, or `testsuite`.
 - **pre-commit** — json/yaml/toml hygiene, skill front-matter, doc links, and `no-floating-action-tags` (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`). This is where process conventions are enforced; there is no per-convention CI job.
 - **Renovate** — automated dependency updates (`common`, `bluefin`, `bluefin-lts`, `actions`, `testsuite`; `dakota` not yet)
 - **promotion-candidate-e2e.yml** — weekly Tuesday smoke/common on `bluefin:testing` and `bluefin:lts-testing` before downstream promotions

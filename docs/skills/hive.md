@@ -79,9 +79,10 @@ persist, or include tokens in logs, prompts, issue bodies, or task reports.
 
 ## Ownership and gates
 
-`projectbluefin/actions` owns reusable lifecycle automation and
-`projectbluefin/bonedigger` owns report intake. This repository documents the
-contract; it does not own those implementations.
+`projectbluefin/bonedigger` owns the reusable lifecycle automation (the
+`.github/workflows/lifecycle.yml` reusable workflow, pinned as a `workflow_call`
+in each consumer's own `.github/workflows/bonedigger.yml`) and report intake.
+This repository documents the contract; it does not own those implementations.
 
 Agents act only on assigned or project-routed work. Design, security,
 cross-repository breakage, approval, review, and merge decisions remain human

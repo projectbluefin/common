@@ -1,7 +1,7 @@
 ---
 name: label-workflow
-version: "2.1"
-last_updated: "2026-09-23"
+version: "2.2"
+last_updated: "2026-10-01"
 id: label-workflow
 one_line_purpose: Route factory work using the canonical label workflow.
 entry_point: docs/skills/label-workflow.md
@@ -48,18 +48,31 @@ not additional labels or state.
 ## Ownership
 
 `common` documents this contract and consumes configured automation; it does not
-own a lifecycle implementation. Reusable lifecycle automation lives in
-`projectbluefin/bonedigger` (`.github/workflows/lifecycle.yml`), called as a
-pinned `workflow_call` from each consuming repository's own
-`.github/workflows/bonedigger.yml` (see `bluefin`'s caller for the reference
-shape: `on: issues.opened, issue_comment.created`, `permissions: issues:
-write, contents: read`, `secrets: inherit`). `bluefin-lts` and `dakota` call
-the same reusable workflow but with a broader trigger (`issues:
-[opened, labeled, closed]`, `pull_request: [opened]`, and a daily schedule)
-and also grant `pull-requests: write`; `dakota` currently pins bonedigger at a
-feature-branch build (`aa31855`, `feat/clanker-queue-rollout`) rather than a
-released ref, so its caller should not be read as the reference shape. As of
-this writing that reusable workflow scopes only to `ujust report` intake,
+own a lifecycle implementation. Issue lifecycle is **Hive-managed across the
+factory** — the issue state machine, triage, and queue management belong to
+Hive. `bonedigger` previously hosted the reusable lifecycle automation in
+`.github/workflows/lifecycle.yml`, called as a pinned `workflow_call` from
+each consuming repository's own `.github/workflows/bonedigger.yml` (see
+`bluefin`'s caller for the reference shape: `on: issues.opened,
+issue_comment.created`, `permissions: issues: write, contents: read`,
+`secrets: inherit`); that workflow was removed from `main` in
+`bonedigger#40` (2026-09-29). `bluefin-lts` and `dakota` historically called
+the same reusable workflow with a broader trigger (`issues: [opened,
+labeled, closed]`, `pull_request: [opened]`, and a daily schedule) and also
+granted `pull-requests: write`. `knuckle` sits between the two: it widens
+the issue trigger and adds a daily schedule (`issues: [opened, labeled,
+closed]`, `issue_comment: [created]`, `schedule`) but has no `pull_request`
+trigger and keeps `bluefin`'s `issues: write, contents: read` permissions.
+The retention pins differ: `dakota` pins the newest retained build
+(`9c5faf6`,
+[bonedigger#36](https://github.com/projectbluefin/bonedigger/pull/36)), while
+`bluefin`, `bluefin-lts`, and `knuckle` all pin the older `d530767`
+([bonedigger#26](https://github.com/projectbluefin/bonedigger/pull/26)), so
+those three lag `dakota` in lifecycle behavior. Those callers are now frozen:
+`workflow_call` resolves at the pinned commit, so `lifecycle.yml@d530767`
+(also reachable as tag `v1`) and `lifecycle.yml@9c5faf6` still run, but the
+pins cannot be bumped forward because the file no longer exists on `main`.
+The remaining reusable workflow scopes only to `ujust report` intake,
 confirm-based priority escalation (`priority/p0`/`priority/p1`), and the
 agent-donation fast track (`status/approved`, `status/queued`,
 `flow/agent-donation`) — it does not apply `1-triage` or route

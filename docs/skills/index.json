@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-26",
+  "generated_at": "2026-10-01",
   "schema_version": "1.0",
   "skills": [
     {
@@ -18,6 +18,25 @@
       "description": "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
       "last_updated": "2026-07-01",
+      "doc_type": "procedure"
+    },
+    {
+      "id": "bluefin-review",
+      "name": "bluefin-review",
+      "one_line_purpose": "Land the projectbluefin PR backlog under each repo's policy while a maintainer watches.",
+      "entry_point": "docs/skills/bluefin-review/SKILL.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "review",
+        "merge",
+        "backlog",
+        "prewalk",
+        "agents"
+      ],
+      "description": "Monitored, semi-automatic PR backlog review for projectbluefin repos: the agent lands PRs within each repo's policy while a maintainer watches, planning on a strong model and executing on a fast one. Use when running /bluefin-review.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
       "doc_type": "procedure"
     },
     {
@@ -440,7 +459,7 @@
       ],
       "description": "Ownership map for image-identity and variant metadata across the factory: which layer common owns, which each repo owns, and the field drift between them. Use when adding a variant or writing image-info.json.",
       "version": "1.0",
-      "last_updated": "2026-09-23",
+      "last_updated": "2026-09-29",
       "doc_type": "reference"
     },
     {
@@ -490,8 +509,8 @@
         "workflow"
       ],
       "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
-      "version": "2.1",
-      "last_updated": "2026-09-23",
+      "version": "2.2",
+      "last_updated": "2026-10-01",
       "doc_type": "procedure"
     },
     {
@@ -689,7 +708,7 @@
       ],
       "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
       "version": "1.0",
-      "last_updated": "2026-09-23",
+      "last_updated": "2026-09-26",
       "doc_type": "policy"
     },
     {

@@ -44,8 +44,8 @@ whoever remembers to add it.
 
 - **Every `tests/test_*.bats` / `tests/test_*.py` must be named in the Justfile
   `test` recipe, or declared excluded** with a one-line reason in the comment
-  block directly above the recipe (e.g. `# test_x.bats is excluded — requires a
-  running libvirtd session`). Drift is caught by
+  block directly above the recipe (e.g. `# test_x.bats is excluded — requires
+  hardware not present in CI`). Drift is caught by
   [`tests/test_suite_registration.bats`](../tests/test_suite_registration.bats),
   which runs in
   [`.github/workflows/unit-tests.yml`](../.github/workflows/unit-tests.yml) on

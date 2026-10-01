@@ -107,7 +107,7 @@ gh api repos/projectbluefin/common/rulesets --jq '.[].id' \
 
 `common` runs no factory-policy workflows. Lifecycle automation (issue intake,
 labels, report handling) lives in `projectbluefin/bonedigger` and is consumed
-by `bluefin`, `bluefin-lts`, and `dakota` through their own `bonedigger.yml`
+by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` through their own `bonedigger.yml`
 callers. Do not add a common-owned lifecycle caller or duplicate lifecycle
 logic here.
 
