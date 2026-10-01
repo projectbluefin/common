@@ -454,3 +454,10 @@ check-sb-key:
     else
         echo "Not an EFI system — Secure Boot does not apply."
     fi
+
+alias toggle-hibernation := hibernation
+
+# Configure opt-in Btrfs hibernation, preserving GNOME power timeouts (status|enable|disable)
+[group('System')]
+hibernation $ACTION="":
+    @/usr/libexec/bluefin-hibernation "$ACTION"

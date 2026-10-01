@@ -200,6 +200,11 @@ jobs:
       - name: Run bats (shared.just)
         run: bats tests/test_shared_just.bats
 
+      - name: Test hibernation setup
+        run: |
+          shellcheck system_files/bluefin/usr/libexec/bluefin-hibernation
+          bats tests/test_hibernation.bats
+
       - name: Run bats (system.just)
         run: bats tests/test_system_just.bats
 
