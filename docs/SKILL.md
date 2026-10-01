@@ -29,6 +29,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
 | Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
+| Run a monitored fix-and-land backlog sweep (`/bluefin-review`) | [`bluefin-review/SKILL.md`](skills/bluefin-review/SKILL.md) |
 | Queue a reviewed PR for Hive auto-merge-on-green | [`hive-automerge.md`](skills/hive-automerge.md) |
 | Read the static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
@@ -37,6 +38,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Improve factory automation or audit gaps | [`factory-improvement/SKILL.md`](skills/factory-improvement/SKILL.md) |
 | Onboard a new repo into the factory | [`factory-onboarding.md`](skills/factory-onboarding.md) |
 | Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
+| Change the Blur My Shell defaults or the rounded-blur library | [`gnome-rounded-blur.md`](skills/gnome-rounded-blur.md) |
 | Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |
 | Edit `system_files/shared/` or `bluefin/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
 | Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
@@ -54,6 +56,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Write or test shell scripts | [`shell-scripts/SKILL.md`](skills/shell-scripts/SKILL.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle/SKILL.md`](skills/brew-lifecycle/SKILL.md) |
 | Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
+| Work on `ujust contribute` (Hive contributor podman appliance) | [`contribute.md`](skills/contribute.md) |
 | Work with bootc | [`bootc.md`](skills/bootc.md) |
 | Work with NVIDIA GPU support | [`nvidia/SKILL.md`](skills/nvidia/SKILL.md) |
 | Add or gate a GPU vendor toolkit (AMD, Intel) | [`gpu-toolkit-interface.md`](skills/gpu-toolkit-interface.md) |

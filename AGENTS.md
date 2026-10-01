@@ -56,15 +56,17 @@ state by hand or invent transitions that are not implemented in the checkout.
   CODEOWNERS is owned here and synced to downstream factory repositories; edit
   downstream copies only when the repository-specific section is explicitly in
   scope. Never write to `ublue-os/*`.
-- **Reusable lifecycle automation** belongs to `projectbluefin/bonedigger`
-  (`.github/workflows/lifecycle.yml`, called as a pinned reusable workflow —
-  see `bluefin`, `bluefin-lts`, and `dakota`'s `.github/workflows/bonedigger.yml`
-  callers). It now scopes to `ujust report` intake, confirm-based priority
-  escalation, and the agent-donation fast track — it does not run the general
-  `1-triage` -> `3-human-queue`/`3-clanker-queue` admission for ordinary
-  issues; that step is a human triage decision. `projectbluefin/actions` does
-  not currently contain a lifecycle workflow. `common` documents and consumes
-  these contracts; it does not own their implementations.
+- **Issue lifecycle is Hive-managed across the factory.** The issue state
+  machine, triage, and queue management belong to Hive; the canonical
+  seven-label contract lives in [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
+  `bonedigger` previously hosted the reusable lifecycle automation in
+  `.github/workflows/lifecycle.yml` (pinned as a `workflow_call` in `bluefin`,
+  `bluefin-lts`, `dakota`, and `knuckle`'s `.github/workflows/bonedigger.yml`
+  callers) but removed it from `main` in `bonedigger#40`; those callers are
+  frozen historical pins — the pinned commits still resolve and run, but the
+  pins cannot be bumped forward. `projectbluefin/actions` does not currently
+  contain a lifecycle workflow. `common` documents and consumes this contract;
+  it does not own its implementation.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
@@ -162,6 +164,7 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 | PR review checklist | `docs/skills/pr-review/SKILL.md` |
 | Testing contract | `docs/TESTING.md` |
 | Coding / config style guide | `docs/contributing/style-guide.md` |
+| Actions security baseline | [`ACTIONS-SECURITY.md`](ACTIONS-SECURITY.md) |
 
 ## See also
 

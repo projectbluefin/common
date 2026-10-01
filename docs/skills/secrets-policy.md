@@ -1,7 +1,7 @@
 ---
 name: secrets-policy
 version: "1.0"
-last_updated: "2026-09-23"
+last_updated: "2026-09-26"
 id: secrets-policy
 one_line_purpose: Verify secrets and credentials against the approved inventory.
 entry_point: docs/skills/secrets-policy.md
@@ -54,8 +54,8 @@ set.
 
 | Secret | Referenced by | Status |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Not provisioned org-wide; worker deploy has failed every run since 2026-07-21 — see #1091 |
-| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Not provisioned org-wide — see #1091 |
+| `CLOUDFLARE_API_TOKEN` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (first green deploy, [run 34163377120](https://github.com/projectbluefin/documentation/actions/runs/34163377120)); last missing-token failure 2026-08-09. Deploy green since, one D1-migration failure on 2026-09-24 ([run 36028476654](https://github.com/projectbluefin/documentation/actions/runs/36028476654)) — see #1091. Workflow still lacks the Rule 6 preflight; security review pending |
+| `CLOUDFLARE_ACCOUNT_ID` | `projectbluefin/documentation` (`deploy-countme-worker.yml`) | Provisioned by 2026-09-07 (#1091); security review pending |
 | `BLUEFINBOT_TOKEN` | `projectbluefin/actions` | In use; security review pending |
 | `SYSUPDATE_SIGNING_KEY` | `projectbluefin/server` | In use; security review pending |
 
@@ -94,6 +94,7 @@ set.
 
 ## Enforcement
 
+- **Actions security baseline:** [`ACTIONS-SECURITY.md`](../../ACTIONS-SECURITY.md) defines token permissions and credential scoping across workflows.
 - **CI gate:** `pat-ban.yml` in `projectbluefin/actions` blocks any PR that introduces a `secrets.XXX` reference not in the approved list above.
 - **Human gate:** Any new secret addition is a Design gate — stop and request maintainer approval.
 - **Not automated in this repo:** there is no pre-commit hook that scans for new

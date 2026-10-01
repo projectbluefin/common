@@ -100,6 +100,7 @@ These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
 - `fonts-dev.Brewfile`
 - `ide.Brewfile`
 - `k8s-tools.Brewfile`
+- `nsl.Brewfile` — NSL development machines (requires host virtualization support)
 - `swift.Brewfile`
 - `video-wallpaper.Brewfile` — Hidamari, video wallpaper
 - `wallpaper-slideshow.Brewfile` — Damask, wallpaper slideshow

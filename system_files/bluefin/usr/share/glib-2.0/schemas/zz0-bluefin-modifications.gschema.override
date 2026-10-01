@@ -97,8 +97,12 @@ background-color=(0.0, 0.0, 0.0, 0.8)
 [org.gnome.shell.extensions.blur-my-shell.dash-to-dock]
 blur=true
 
+# Quick Settings, the calendar and the other shell popups are blurred like the
+# dock. blur-my-shell only draws the rounded corners of that blur when the
+# gnome-rounded-blur library (libgnome-rounded-blur.so) is present, which the
+# base images install. See docs/skills/gnome-rounded-blur.md.
 [org.gnome.shell.extensions.blur-my-shell.popup]
-blur=false
+blur=true
 
 #-------------- REMAINING SCHEMAS IN THIS SETTING SECTION ARE LOCATED IN DCONF --------------#
 # Settings bellow are supported with gschema override, but other settings, which are relocatable schemas, are not. Edit dconfs if you need to modify relocatable schemas.
@@ -109,7 +113,7 @@ folder-children=['Games', 'GamingUtilities', 'Utilities', 'Containers', 'Wine', 
 
 # Modifying shortcut actions for custom0, custom1, custom2, etc. are recognized as relocatable schemas
 [org.gnome.settings-daemon.plugins.media-keys]
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']
 home=['']
 
 # Ptyxis color palette is recognized as a relocatable schema

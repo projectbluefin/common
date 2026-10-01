@@ -31,7 +31,8 @@ the labels that route user reports into the factory.
 ## When Not to Use
 
 Do not use this skill for generic GitHub issue triage, unrelated GitHub CLI
-configuration, or lifecycle automation owned by `projectbluefin/actions`.
+configuration, or the general issue-admission routing owned by the factory
+lifecycle (`.github/workflows/lifecycle.yml` in `projectbluefin/bonedigger`).
 
 ## Core Process
 
@@ -54,6 +55,8 @@ configuration, or lifecycle automation owned by `projectbluefin/actions`.
 
 ## Verification
 
+- [ ] Integration tables list each reusable workflow once, combining its
+  responsibilities and callers rather than treating each purpose as a workflow.
 - [ ] Bug routing matches Bluefin, Bluefin LTS, Dakota, and the common fallback.
 - [ ] A bug submits at most one supported queue label.
 - [ ] Baseline and selected profile limits are enforced after redaction.

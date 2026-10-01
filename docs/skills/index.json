@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-27",
+  "generated_at": "2026-10-01",
   "schema_version": "1.0",
   "skills": [
     {
@@ -18,6 +18,25 @@
       "description": "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
       "last_updated": "2026-07-01",
+      "doc_type": "procedure"
+    },
+    {
+      "id": "bluefin-review",
+      "name": "bluefin-review",
+      "one_line_purpose": "Land the projectbluefin PR backlog under each repo's policy while a maintainer watches.",
+      "entry_point": "docs/skills/bluefin-review/SKILL.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "review",
+        "merge",
+        "backlog",
+        "prewalk",
+        "agents"
+      ],
+      "description": "Monitored, semi-automatic PR backlog review for projectbluefin repos: the agent lands PRs within each repo's policy while a maintainer watches, planning on a strong model and executing on a fast one. Use when running /bluefin-review.",
+      "version": "1.0",
+      "last_updated": "2026-09-25",
       "doc_type": "procedure"
     },
     {
@@ -142,6 +161,26 @@
       "doc_type": "reference"
     },
     {
+      "id": "contribute",
+      "name": "contribute",
+      "one_line_purpose": "Operate the ujust contribute podman alias for the Hive contributor appliance.",
+      "entry_point": "docs/skills/contribute.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "contribute",
+        "hive",
+        "podman",
+        "krun",
+        "gvisor",
+        "just"
+      ],
+      "description": "ujust contribute aliases to a podman-run invocation of projectbluefin/contribute defaulting to the projectbluefin Hive. Use when working on the recipe, its isolation-tier warning, or its resource limits.",
+      "version": "1.0",
+      "last_updated": "2026-09-27",
+      "doc_type": "reference"
+    },
+    {
       "id": "dconf-consistency",
       "name": "dconf-consistency",
       "one_line_purpose": "Keep GSettings overrides and dconf lock files in parity.",
@@ -206,7 +245,7 @@
       ],
       "description": "Pre/post-merge E2E CI for common. Use when debugging E2E failures, understanding the PR gate flow, or diagnosing masked brew-setup issues.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
+      "last_updated": "2026-09-29",
       "doc_type": "reference"
     },
     {
@@ -241,6 +280,26 @@
       "description": "How to onboard a repo into the Project Bluefin factory model. The self-improvement mandate, what agents must do, and what is banned. Load when setting up a new repo or auditing factory compliance.",
       "version": "1.0",
       "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "gnome-rounded-blur",
+      "name": "gnome-rounded-blur",
+      "one_line_purpose": "Keep the Blur My Shell GNOME defaults and the gnome-rounded-blur runtime library in agreement.",
+      "entry_point": "docs/skills/gnome-rounded-blur.md",
+      "category": "product",
+      "status": "active",
+      "tags": [
+        "gnome",
+        "blur-my-shell",
+        "rounded-blur",
+        "mutter",
+        "system_files",
+        "gsettings"
+      ],
+      "description": "Use when touching the Blur My Shell GSettings defaults, or when adding, removing or debugging the gnome-rounded-blur library that draws the rounded corners on dock and popup blur. Covers common's config layer versus the base image that installs it.",
+      "version": "1.0",
+      "last_updated": "2026-09-29",
       "doc_type": "reference"
     },
     {
@@ -440,7 +499,7 @@
       ],
       "description": "Ownership map for image-identity and variant metadata across the factory: which layer common owns, which each repo owns, and the field drift between them. Use when adding a variant or writing image-info.json.",
       "version": "1.0",
-      "last_updated": "2026-09-23",
+      "last_updated": "2026-09-29",
       "doc_type": "reference"
     },
     {
@@ -490,8 +549,8 @@
         "workflow"
       ],
       "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
-      "version": "2.1",
-      "last_updated": "2026-09-23",
+      "version": "2.2",
+      "last_updated": "2026-10-01",
       "doc_type": "procedure"
     },
     {
@@ -689,7 +748,7 @@
       ],
       "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
       "version": "1.0",
-      "last_updated": "2026-09-23",
+      "last_updated": "2026-09-26",
       "doc_type": "policy"
     },
     {

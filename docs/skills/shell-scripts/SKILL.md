@@ -41,13 +41,13 @@ metadata:
 
 ---
 
-## Removing a shell script from common — 4 mandatory touch-points
+## Removing a shell script from common — 4 touch-points to check
 
 When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
 
 | File | What to remove |
 |---|---|
-| `.github/workflows/unit-tests.yml` | The script path from the shellcheck `run:` block |
+| `.github/workflows/unit-tests.yml` | Nothing — the shellcheck set is derived from shebangs on disk, so deleting the file is enough |
 | `.github/workflows/validate.yml` | The `shellcheck` step that invokes it (if script-specific) **and** any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
 | `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
 | `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and any related skill links + all cross-references |

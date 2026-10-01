@@ -185,6 +185,22 @@ unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-
 Any package that installs on ALL variants must live in `system_files/shared/preinstall.d/`,
 not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/package-set.md#brewfile-scope-shared-vs-bluefin-for-all-variant-packages).
 
+### NSL opt-in bundle
+
+`system_files/shared/usr/share/ublue-os/homebrew/nsl.Brewfile` exposes the
+`frostyard/tap/nsl` cask through ChairLift and `ujust bbrew`. Keep it outside
+`preinstall.d/`: NSL is a developer workflow with host virtualization
+prerequisites, not a universal default package.
+
+The cask installs only the CLI. The upstream
+[installation guide](https://github.com/frostyard/nsl/blob/v0.7.0/site/content/getting-started/install.md)
+requires an x86-64 host with KVM, systemd-vmspawn, QEMU/UEFI, virtiofsd,
+OpenSSH/systemd-ssh-proxy, user namespaces, and KVM/vsock device access through
+`kvm` membership. Waypipe is optional for desktop windows. Direct users to
+`nsl doctor` after installation; installing this bundle does not provision
+these host dependencies or change groups/device permissions. Those belong to
+the consuming image's package and administrator policy, not the Brewfile.
+
 ---
 
 ## Red Flags

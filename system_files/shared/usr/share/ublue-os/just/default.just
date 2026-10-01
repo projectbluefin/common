@@ -28,9 +28,15 @@ bios-info:
 
 clean-system:
     #!/usr/bin/bash
+    # No `--format` here on purpose: a bare Go-template placeholder is not a
+    # valid `just` token and aborts the parse of this whole file. It can be
+    # written as `{{{{.Repository}}` (just's literal-brace escape), but the
+    # default `podman image ls` table already carries the same columns, so the
+    # placeholder buys nothing. Rationale + gate: tests/test_justfile_syntax.bats
+    # and docs/skills/e2e-ci/SKILL.md.
     if gum confirm "Prune all Podman images and volumes?"; then
         echo "Images that would be pruned:"
-        /usr/bin/podman image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
+        /usr/bin/podman image ls --filter dangling=true 2>/dev/null | head -20
         echo "Volumes that would be pruned:"
         /usr/bin/podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Podman images and volumes?"; then
@@ -42,7 +48,7 @@ clean-system:
     if command -v docker >/dev/null 2>&1; then
       if gum confirm "Prune all Docker images and volumes?"; then
         echo "Images that would be pruned:"
-        docker image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
+        docker image ls --filter dangling=true 2>/dev/null | head -20
         echo "Volumes that would be pruned:"
         docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Docker images and volumes?"; then
@@ -53,7 +59,9 @@ clean-system:
     fi
 
     flatpak uninstall --unused
-    rpm-ostree cleanup -bm
+    if command -v rpm-ostree >/dev/null 2>&1; then
+        rpm-ostree cleanup -bm
+    fi
     if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
         brew autoremove
         brew cleanup
