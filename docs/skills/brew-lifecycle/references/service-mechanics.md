@@ -24,10 +24,14 @@ critical path for GNOME's generated application units. See
 
 User managers cannot depend on the system manager's `network-online.target`.
 The service starts after the graphical session and relies on its bounded
-`Restart=on-failure` policy when connectivity is not ready. It is enabled
-globally via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`.
-Downstream repos do **not** need `systemctl --global enable` calls. The service
-only runs when brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
+`Restart=on-failure` policy when connectivity is not ready. The image ships
+global enablement policy in `usr/lib/systemd/user-preset/01-brew-preinstall.preset`.
+Shipping that file alone does not activate the unit: the consuming image must
+apply the user preset or install the equivalent graphical-session wants link.
+Check `systemctl --global is-enabled brew-preinstall.service` in the composed
+image before relying on login reconciliation. Source: systemd `docs/PRESET.md`,
+"The Logic". The service only runs when brew is installed at
+`/home/linuxbrew/.linuxbrew/bin/brew`.
 
 ### State file
 

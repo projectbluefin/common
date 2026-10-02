@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.1"
-last_updated: "2026-09-23"
+version: "1.2"
+last_updated: "2026-10-01"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -17,6 +17,8 @@ description: >-
   override, or lock file in system_files/.
 metadata:
   type: reference
+  context7-sources:
+    - /systemd/systemd
 ---
 
 # dconf Consistency
@@ -91,15 +93,49 @@ Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot
 
 When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
 
+### Compass launcher
+
+Common ships the `compass` custom shortcut, the image-scoped
+`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
+and `compass.service` plus its user preset. Preserve the other registered
+custom shortcut paths. Input-source switching uses `XF86Keyboard` and
+`<Shift>XF86Keyboard`, leaving Super+Space to `compass toggle`.
+
+Dakota owns the Shell extension build and its higher-priority
+`zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
+override alone does not enable it there. Package the extension from the same
+release as the Homebrew engine and verify the versioned D-Bus contract when
+either changes. Compass v0.28.2's extension supports GNOME 50 and 51.
+
+A user preset is policy, not an enablement operation. The consuming image must
+apply it or ship the equivalent graphical-session wants link. The launcher is
+ordered after `brew-preinstall.service` so an initial package sync finishes
+before its binary condition is evaluated. Do not run systemctl in common's
+scratch `ctx` stage. Source: systemd `docs/PRESET.md`, "The Logic".
+
+Compass v0.28.2 exposes `serve --no-hotkey`, but `start --hidden` does not
+forward that option. An explicitly empty `launcher.hotkey` disables the
+launcher binding; other configured command shortcuts can still use the
+portal. Do not replace writable user settings with an immutable
+`COMPASS_CONFIG` file. Distribution-controlled startup without a launcher
+portal request requires an upstream `start` opt-out or system-default layer.
+Source: [Compass v0.28.2](https://github.com/tuna-os/compass/tree/a1bab693dc59124fbaecb79037f70882b72f74a7),
+`crates/compass/src/{cli,lib}.rs` and `crates/compass-core/src/global_shortcuts.rs`.
+
 ## Validation
 
 `validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
 
-When changing locked settings, still verify locally when possible:
+Compile against the actual schema XML definitions, not an override-only
+directory (which reports "No schema files found" and checks nothing):
 
 ```bash
-# Check the override compiles (requires glib2 tools)
-glib-compile-schemas --strict system_files/bluefin/usr/share/glib-2.0/schemas/
+tmp="$(mktemp -d)"
+cp /usr/share/glib-2.0/schemas/*.xml "$tmp/"
+cp system_files/bluefin/usr/share/glib-2.0/schemas/*.override "$tmp/"
+glib-compile-schemas --strict "$tmp"
+GSETTINGS_BACKEND=memory GSETTINGS_SCHEMA_DIR="$tmp" gsettings get org.gnome.shell enabled-extensions
+rm -r "$tmp"
 ```
 
 The E2E `common` suite validates dconf state post-merge.
