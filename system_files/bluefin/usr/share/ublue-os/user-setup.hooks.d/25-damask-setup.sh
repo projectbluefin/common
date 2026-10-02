@@ -6,7 +6,7 @@ source /usr/lib/ublue/setup-services/libsetup.sh
 
 flatpak info app.drey.Damask &>/dev/null || exit 0
 
-version-script damask-setup user 1 || exit 0
+version-script-check damask-setup user 1 || exit 0
 
 SETTINGS_DIR="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings"
 KEYFILE="${SETTINGS_DIR}/keyfile"
@@ -31,3 +31,8 @@ fi
 if systemctl --user list-unit-files damask.service &>/dev/null; then
 	systemctl --user enable damask.service
 fi
+
+# Record success only after the body ran, so a failed first-boot run retries on
+# the next boot instead of being permanently skipped
+# (projectbluefin/common#1137).
+version-script-commit damask-setup user 1

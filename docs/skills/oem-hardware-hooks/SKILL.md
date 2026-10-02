@@ -50,7 +50,7 @@ Two directories are scanned automatically at first boot — no registration need
 
 - **Image default for all users** → `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`
 - **Locked (users cannot override)** → update both the override and `system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings`
-- **One-time first-boot action for current user** → `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/` with `version-script` contract
+- **One-time first-boot action for current user** → `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/` with the `version-script-check` / `version-script-commit` contract
 - Do not create a new GNOME schema override file for a single setting when the existing Bluefin override already exists.
 
 | Directory | Runner | Runs as |
@@ -62,14 +62,19 @@ Name scripts with a numeric prefix (`10-`, `20-`) to control execution order.
 
 ---
 
-## The version-script contract
+## The version-script-check / version-script-commit contract
 
 Every hook must begin with:
 ```bash
 # shellcheck disable=SC1091
 source /usr/lib/ublue/setup-services/libsetup.sh
 
-version-script <name> <type> <version> || exit 0
+version-script-check <name> <type> <version> || exit 0
+```
+
+and end its body with:
+```bash
+version-script-commit <name> <type> <version>
 ```
 
 - `<name>` — a stable slug (e.g. `framework`, `theming`)
@@ -78,7 +83,7 @@ version-script <name> <type> <version> || exit 0
 
 **Critical when migrating:** use the **same** version number as the downstream hook. Bumping it re-runs the hook on every existing system on next boot.
 
-**`version-script` must fire AFTER all preconditions pass** — the stamp is written before your hook logic runs. See [`references/hook-patterns.md`](references/hook-patterns.md) for the canonical safe pattern and anti-pattern.
+**`version-script-check` is a read-only gate that fires AFTER all preconditions pass** — it records no version. Call `version-script-commit` at the **end** of the hook body, after the work succeeds, to write the stamp. The legacy `version-script` records before the body runs and is kept only for existing downstream callers; do not use it in new hooks. See [`references/hook-patterns.md`](references/hook-patterns.md) for the canonical safe pattern and anti-pattern.
 
 ---
 
@@ -122,7 +127,7 @@ source /usr/lib/ublue/setup-services/libsetup.sh
 
 ## Red Flags
 
-- Calling `version-script` before checking transient preconditions (permanently burns the stamp)
+- Using the legacy `version-script` in a new hook, or calling any gate before checking transient preconditions (the legacy gate permanently burns the stamp)
 - Bumping the version number when migrating a hook from downstream (causes re-run on all existing machines)
 - Dropping un-scoped WirePlumber snippets into `system_files/shared/usr/share/wireplumber/wireplumber.conf.d/` (hardware quirks must explicitly match `device.vendor.id` and `device.product.id` so they only affect target hardware)
 - Assuming `hardware-profiles/` loader from bazzite works in stock bluefin WirePlumber
@@ -134,7 +139,7 @@ source /usr/lib/ublue/setup-services/libsetup.sh
 Before closing any OEM hook PR:
 
 - [ ] `shellcheck -e SC2207` passes on all modified `*.sh` files
-- [ ] `version-script` called **after** all transient preconditions are checked
+- [ ] `version-script-check` called **after** all transient preconditions are checked, and `version-script-commit` at the end of the body
 - [ ] Version number matches downstream when migrating (not bumped)
 - [ ] `bluefin-lts` path structure confirmed (`system_files/usr/share/...` — no `shared/` prefix)
 - [ ] `just check` and `pre-commit run --all-files` pass clean

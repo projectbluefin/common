@@ -105,7 +105,8 @@ monitor.alsa.rules = [
 Use `~` prefix for regex matching to avoid PCI minor-revision fragility.
 
 If you add a new OEM payload to an existing versioned setup hook and want current
-users to receive it, bump that hook's `version-script` version. Otherwise existing
+users to receive it, bump that hook's `version-script-check`/`version-script-commit`
+version. Otherwise existing
 machines skip the new logic forever because the old stamp already exists.
 
 If an OEM payload only applies to one model within a vendor family, gate the copy

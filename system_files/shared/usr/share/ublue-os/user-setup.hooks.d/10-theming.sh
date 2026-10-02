@@ -3,12 +3,12 @@
 # shellcheck disable=SC1091
 source /usr/lib/ublue/setup-services/libsetup.sh
 
-version-script theming user 2 || exit 0
+version-script-check theming user 2 || exit 0
 
 set -xeuo pipefail
 
-VEN_ID="$(cat /sys/devices/virtual/dmi/id/chassis_vendor)"
-SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
+VEN_ID="$(cat /sys/devices/virtual/dmi/id/chassis_vendor 2>/dev/null || true)"
+SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null || true)"
 
 if [[ ":Framework:" =~ :$VEN_ID: ]]; then
 	echo 'Setting touch scroll type'
@@ -23,3 +23,7 @@ if [[ ":Thelio Astra:" =~ :$SYS_ID: ]]; then
 	echo 'Setting Ampere Logo'
 	dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting "'ampere-logo-symbolic'"
 fi
+
+# Record success only after the body ran, so a failing first-login hook retries
+# next login instead of being permanently skipped.
+version-script-commit theming user 2

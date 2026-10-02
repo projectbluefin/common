@@ -90,7 +90,7 @@ teardown() {
     [ "$(jq -r '.version.user."damask-setup"' "${SETUP_CHECKER_FILE}")" = "1" ]
 }
 
-@test "25-damask-setup: version-script gate makes a second run a no-op" {
+@test "25-damask-setup: version-script-check gate makes a second run a no-op" {
     run bash "${PATCHED_HOOK}"
     [ "${status}" -eq 0 ]
 
@@ -136,6 +136,22 @@ EXISTING
 
     run bash "${PATCHED_HOOK}"
     [ "${status}" -ne 0 ]
+}
+
+@test "25-damask-setup: a failing systemctl leaves no version stamp so the hook retries" {
+    echo 1 > "${WORKDIR}/systemctl.rc"
+
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -ne 0 ]
+    [ "$(jq -r '.version.user."damask-setup"' "${SETUP_CHECKER_FILE}")" = "null" ]
+
+    # Next boot: systemctl works again and the hook runs its body and stamps.
+    echo 0 > "${WORKDIR}/systemctl.rc"
+
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+    grep -qx -- "--user enable damask.service" "${WORKDIR}/systemctl.log"
+    [ "$(jq -r '.version.user."damask-setup"' "${SETUP_CHECKER_FILE}")" = "1" ]
 }
 
 @test "25-damask-setup: gracefully skips enable if damask.service does not exist" {

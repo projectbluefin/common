@@ -48,8 +48,16 @@ case "$*" in
         echo "asusd.service enabled"
         exit 0
         ;;
-    "enable --now asusd.service asus-shutdown.service")
-        echo "mock: systemctl enable asusd.service asus-shutdown.service" >&2
+    "list-unit-files asus-shutdown.service")
+        echo "asus-shutdown.service enabled"
+        exit 0
+        ;;
+    "enable --now asusd.service")
+        echo "mock: systemctl enable asusd.service" >&2
+        exit 0
+        ;;
+    "enable --now asus-shutdown.service")
+        echo "mock: systemctl enable asus-shutdown.service" >&2
         exit 0
         ;;
     *)
@@ -189,7 +197,8 @@ EOF
     run bash "${ASUS_HOOK}"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"ASUS hardware detected"* ]]
-    [[ "${output}" == *"mock: systemctl enable asusd.service asus-shutdown.service"* ]]
+    [[ "${output}" == *"mock: systemctl enable asusd.service"* ]]
+    [[ "${output}" == *"mock: systemctl enable asus-shutdown.service"* ]]
 }
 
 @test "11-asus: detects ASUS (short form) and runs setup" {
@@ -197,6 +206,79 @@ EOF
     run bash "${ASUS_HOOK}"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"ASUS"* ]]
+}
+
+@test "11-asus: reloads udev and skips the version commit when enable fails" {
+    echo "ASUSTeK COMPUTER INC." > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
+    # asusd failing to start is transient: udev must still be reloaded and the
+    # version left unrecorded so the hook retries on the next boot.
+    cat > "${WORKDIR}/bin/systemctl" << 'EOF'
+#!/bin/bash
+case "$*" in
+    "list-unit-files asusd.service") echo "asusd.service enabled"; exit 0 ;;
+    "enable --now asusd.service") exit 1 ;;
+    *) exit 0 ;;
+esac
+EOF
+    chmod +x "${WORKDIR}/bin/systemctl"
+
+    run bash "${ASUS_HOOK}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"mock: udevadm control --reload"* ]]
+    [[ "${output}" == *"not recording the version"* ]]
+    run jq -r '.version.system.asus' "${SETUP_CHECKER_FILE}"
+    [ "${output}" != "1" ]
+}
+
+@test "11-asus: records the version when asus-shutdown.service is absent" {
+    echo "ASUSTeK COMPUTER INC." > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
+    # asus-shutdown.service is optional: a permanently missing unit must not
+    # block the commit, otherwise the hook reloads udev on every boot forever.
+    cat > "${WORKDIR}/bin/systemctl" << 'EOF'
+#!/bin/bash
+case "$*" in
+    "list-unit-files asusd.service") echo "asusd.service enabled"; exit 0 ;;
+    "list-unit-files asus-shutdown.service") exit 1 ;;
+    "enable --now asus-shutdown.service") exit 1 ;;
+    *) exit 0 ;;
+esac
+EOF
+    chmod +x "${WORKDIR}/bin/systemctl"
+
+    run bash "${ASUS_HOOK}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"asus-shutdown.service not present"* ]]
+    run jq -r '.version.system.asus' "${SETUP_CHECKER_FILE}"
+    [ "${output}" = "1" ]
+}
+
+@test "11-asus: second boot does nothing when asus-shutdown.service stays absent" {
+    echo "ASUSTeK COMPUTER INC." > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
+    cat > "${WORKDIR}/bin/systemctl" << 'EOF'
+#!/bin/bash
+case "$*" in
+    "list-unit-files asusd.service") echo "asusd.service enabled"; exit 0 ;;
+    "list-unit-files asus-shutdown.service") exit 1 ;;
+    *) exit 0 ;;
+esac
+EOF
+    chmod +x "${WORKDIR}/bin/systemctl"
+
+    run bash "${ASUS_HOOK}"
+    [ "${status}" -eq 0 ]
+
+    run bash "${ASUS_HOOK}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"mock: udevadm control --reload"* ]]
+    [[ "${output}" != *"ASUS hardware detected"* ]]
+}
+
+@test "11-asus: records the version after a successful run" {
+    echo "ASUSTeK COMPUTER INC." > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
+    run bash "${ASUS_HOOK}"
+    [ "${status}" -eq 0 ]
+    run jq -r '.version.system.asus' "${SETUP_CHECKER_FILE}"
+    [ "${output}" = "1" ]
 }
 
 @test "11-asus: skips when asusd.service not installed" {

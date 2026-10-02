@@ -114,23 +114,37 @@ bonedigger crash/panic detection should gate promotions — currently it is disc
 
 ## libsetup.sh — setup versioning
 
-`version-script` in `system_files/shared/usr/lib/ublue/setup-services/libsetup.sh` is the idempotency guard for all first-boot setup scripts.
+`system_files/shared/usr/lib/ublue/setup-services/libsetup.sh` versions every
+first-boot setup script. New and migrated hooks use a gate/commit pair so a
+failed body is retried (projectbluefin/common#1137):
+
+- `version-script-check <name> <type> <n>` is a **read-only gate**. It tells
+  you whether the hook has already run at version `<n>`, but it records no version.
+- `version-script-commit <name> <type> <n>` **writes the stamp**. Call it at
+  the end of the hook body, only on success, so a body that fails never records
+  and retries next boot instead of being permanently skipped.
+- `version-script <name> <type> <n>` is the legacy **check-and-record** gate:
+  it writes the stamp before the body runs. It is kept unchanged because
+  downstream images ship this library and their hooks still call it; do not use
+  it in new hooks.
 
 **Pattern for callers:**
 ```bash
 source /usr/lib/ublue/setup-services/libsetup.sh
-version-script my-service user 1 || exit 0
-# ... setup steps here, run exactly once per version bump ...
+version-script-check my-service user 1 || exit 0   # gate only — exits if already at this version
+# ... setup steps here, run once per version bump ...
+version-script-commit my-service user 1             # record success, after the body ran
 ```
 
-**Protections built into `version-script`:**
-- **Concurrent execution safe:** uses `flock -x` (fd 200 on a `.lock` file adjacent to the state file) so that user-setup and privileged-setup starting simultaneously on first boot cannot both read before either writes — each call is serialised.
+**Protections (in the commit / state helpers):**
+- **Concurrent execution safe:** `version-script-commit` (and the legacy `version-script`) hold `flock -x` (fd 200 on a `.lock` file adjacent to the state file) across the whole read-modify-write, so user-setup and privileged-setup starting simultaneously on first boot cannot both read before either writes.
 - **Malformed state file safe:** validates JSON with `jq` before reading. If `setup_versioning.json` is corrupted, resets to `{}` with a warning rather than silently skipping setup.
-- **Temp file cleanup:** uses `trap 'rm -f "${tmp}"' EXIT` inside the subshell so no orphaned temp files remain on error.
+- **Write failures surface:** a failed write makes `version-script-commit` return non-zero, so a caller under `set -e` aborts instead of treating a lost stamp as success.
+- **Temp file cleanup:** the temp file is `mv`'d into place on success or `rm`'d on failure, so no orphaned temp files remain.
 
 **State file:** `~/.local/share/ublue/setup_versioning.json` (user-scoped, not global).
 
-**Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
+**Test coverage:** `tests/test_libsetup.bats` — 17 tests. Run `just test` to verify.
 
 ## hookrunner.sh — setup hook dispatch
 

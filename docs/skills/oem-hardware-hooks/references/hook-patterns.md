@@ -6,37 +6,52 @@ Part of [oem-hardware-hooks](../SKILL.md) — version-script safe/anti-patterns;
 
 ## The version-script contract — safe and anti-patterns
 
-### Canonical safe pattern (from `11-asus.sh`)
+### Canonical safe pattern (from `11-asus.sh` and `20-oem-brew.sh`)
 
-`version-script` writes a stamp file on first call. **The stamp is written before your hook
-logic runs.** If anything after the stamp call exits 1, the hook is permanently burned — it
-will never retry on future logins.
+`version-script-check` is a **read-only gate** — it tells you whether the hook
+has already run at this version, but it writes nothing. `version-script-commit`
+**writes the stamp**, and it is only reached if the hook body got there
+without failing. Split the two so a failing body never records and retries
+next boot (this is projectbluefin/common#1137). The legacy `version-script`
+records before the body runs; it is kept only for existing downstream callers.
 
 ```bash
-# Check ALL transient preconditions before calling version-script
-BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
+set -euo pipefail
+source /usr/lib/ublue/setup-services/libsetup.sh
+
+# Resolve the interpreter up front so the `[[ -x ]]` check below is safe under
+# `set -u` — the example used to reference ${BREW_BIN} without assigning it.
+BREW_BIN="$(command -v brew 2>/dev/null || true)"
+
+# Check ALL transient preconditions first.
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "hook: brew not found, will retry on next login"
-    exit 0   # ← exit 0 to retry; version-script not yet called
+    exit 0   # ← exit 0 to retry; nothing committed yet
 fi
 
-# Only stamp once all preconditions pass
-version-script myfeature user 1 || exit 0
+# Read-only gate at the top: `|| exit 0` exits if already at this version.
+version-script-check myfeature user 1 || exit 0
+
+# ... your setup work ...
+
+# Record success ONLY at the end, after the body ran. With `set -e` a failing
+# step aborts here, so the version is never committed and the hook retries.
+version-script-commit myfeature user 1
 ```
 
 ### Anti-pattern to avoid
 
 ```bash
-version-script myfeature user 1 || exit 0  # stamp fires here
-
-# These exit 1 paths permanently skip the hook with no recovery:
-if [[ -z "$DEVICE_ID" ]]; then
-    exit 1   # ← BAD: hook burned, never retries
-fi
+# Legacy gate: version-script records the stamp BEFORE the body runs.
+version-script myfeature user 1 || exit 0
+# ... work that exits 1 ... — the stamp is already written, so the hook is
+# permanently skipped on every later run.
 ```
 
-For transient failures (service not ready, file not yet present), use
-`exit 0` — not `exit 1` — so the hook retries on the next login.
+Use `version-script-check` + `version-script-commit` instead. A body that
+fails *before* `version-script-commit` must not record: keep transient
+failures on `exit 0`, and add `set -e` so hard failures abort before the
+commit.
 
 ---
 
@@ -44,7 +59,9 @@ For transient failures (service not ready, file not yet present), use
 
 1. Copy the script verbatim to the corresponding hooks.d directory in common
 2. Add `# shellcheck disable=SC1091` before the `source` line
-3. Keep the same `version-script` version number (do not bump)
+3. Keep the same version number (do not bump); if the hook still uses the
+   legacy `version-script`, switch it to `version-script-check` plus a
+   `version-script-commit` at the end of the body
 4. If the hook depends on icon SVGs, copy them to
    `system_files/shared/usr/share/icons/hicolor/scalable/actions/`
 5. Open a PR in common

@@ -152,5 +152,5 @@ Flatpak applications run sandboxed and typically use `GKeyfileSettingsBackend` r
 Key differences from host GSettings:
 - Config is stored in a keyfile at `~/.var/app/<app-id>/config/glib-2.0/settings/keyfile`.
 - Schema separation: root application preferences are separated from plugin sources (e.g., `[app/drey/Damask]` vs `[app/drey/Damask/sources/slideshow]`).
-- Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` using the `version-script` contract.
+- Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` gated by `version-script-check <name> user <n> || exit 0` at the top of the hook and `version-script-commit <name> user <n>` at the end, so a failed pre-seed retries on the next boot.
 - Non-destructive activation: check `[[ ! -f "${KEYFILE}" ]]` before writing so existing user configurations are never overwritten, and set inactive or dormant defaults (e.g., `active-source='none'`) when activating by default would override host user desktop settings or timed wallpaper slideshows.
