@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01",
+  "generated_at": "2026-10-02",
   "schema_version": "1.0",
   "skills": [
     {
@@ -852,8 +852,8 @@
         "reference"
       ],
       "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
-      "version": "2.2",
-      "last_updated": "2026-08-02",
+      "version": "2.3",
+      "last_updated": "2026-10-02",
       "doc_type": "reference"
     },
     {

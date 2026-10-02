@@ -1,7 +1,7 @@
 ---
 name: workflow-map
-version: "2.2"
-last_updated: "2026-08-02"
+version: "2.3"
+last_updated: "2026-10-02"
 id: workflow-map
 one_line_purpose: Understand what each GitHub workflow in common does.
 entry_point: docs/skills/workflow-map.md
@@ -45,7 +45,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 > - `skill-drift.yml` — retired across the factory; the shared reusable it called was deleted. Process conventions are not CI gates. See `ci-tooling.md` § Skill drift detection.
 > - `docs-quality.yml` — skill frontmatter enforcement belongs in agent review, not CI.
 > - `renovate-automerge.yml` — deleted in [#783](https://github.com/projectbluefin/common/pull/783). Renovate uses `platformAutomerge: true` in `renovate.json`; GitHub's native auto-merge + merge queue replaces it. Do not re-add a workflow-based automerge mechanism.
-> - `lifecycle-caller.yml` — `common` has no lifecycle caller. Lifecycle automation lives in `projectbluefin/bonedigger` and is consumed by the image repos via `bonedigger.yml`. Do not add a common-owned caller.
+> - `lifecycle-caller.yml` — `common` has no lifecycle caller. Issue lifecycle is Hive-managed; downstream `bonedigger.yml` callers retain historical lifecycle pins after [bonedigger#40](https://github.com/projectbluefin/bonedigger/pull/40) removed the reusable workflow from `main`. See [label-workflow.md](label-workflow.md#ownership). Do not add a common-owned caller.
 > - `sync-codeowners.yml` — does not exist in any factory repo. Do not document or re-add it.
 
 ## Mental model
@@ -107,10 +107,18 @@ gh api repos/projectbluefin/common/rulesets --jq '.[].id' \
 
 ### Factory operations
 
-`common` runs no factory-policy workflows. Lifecycle automation (issue intake,
-labels, report handling) lives in `projectbluefin/bonedigger` and is consumed
-by `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` through their own `bonedigger.yml`
-callers. Do not add a common-owned lifecycle caller or duplicate lifecycle
+`common` runs no factory-policy workflows and owns no lifecycle implementation.
+Issue lifecycle, triage, and queue management are Hive-managed across the
+factory. `bonedigger` owns report intake and report-specific automation, not
+the general issue state machine.
+
+[bonedigger#40](https://github.com/projectbluefin/bonedigger/pull/40) removed
+`.github/workflows/lifecycle.yml` from `main`. Downstream `bonedigger.yml`
+callers retain historical pins that still resolve the removed file; those
+pins cannot be advanced to current `main`. `projectbluefin/actions` does not
+currently contain a lifecycle workflow either. See
+[label-workflow.md](label-workflow.md#ownership) for the caller and ownership
+details. Do not add a common-owned lifecycle caller or duplicate lifecycle
 logic here.
 
 Verify this list against the checkout before trusting it:
