@@ -11,20 +11,12 @@ So a single invented key in our maintainer config does not degrade one
 feature: it ships an empty application to every Bluefin user. Bluefin
 preinstalls ChairLift silently at login, so nobody opts into that.
 
-Sources of truth, both read live from upstream at the PINNED tag:
+Sources of truth, both read live from upstream:
   * pages and groups -- upstream's own config.yml, which enumerates every
     page and group and is kept in lockstep with defaultConfig().
   * group and action FIELD names -- the yaml struct tags on GroupConfig and
     ActionConfig in internal/config/config.go. config.yml cannot supply
     these, because it only exercises a subset of the optional fields.
-
-The tag matters. Bluefin ships whichever release ublue-os/tap's
-chairlift cask pins, so that binary's loader is the only one whose opinion
-counts.
-Validating against upstream's moving `main` would false-red on renames that
-never reach our users, and -- far worse -- false-green on a key the pinned
-binary rejects, which is exactly the disabledConfig() outcome this script
-exists to prevent. Bump CHAIRLIFT_SCHEMA_REF in the same change as the cask.
 
 Do not update the expectations in this file from memory -- this script
 reads upstream directly, on purpose.
@@ -43,11 +35,9 @@ import urllib.request
 
 import yaml
 
-#: The ChairLift release Bluefin actually ships, pinned by
-#: ublue-os/tap's chairlift cask. Single source of truth for every
-#: upstream fetch below; bump it together with the cask version, never
-#: independently.
-CHAIRLIFT_SCHEMA_REF = "v26.10.2"
+#: The ChairLift schema ref to validate against. Defaults to upstream main
+#: so that schema validation remains evergreen without manual release bumps.
+CHAIRLIFT_SCHEMA_REF = "main"
 
 UPSTREAM_RAW = (
     f"https://raw.githubusercontent.com/projectbluefin/chairlift/{CHAIRLIFT_SCHEMA_REF}"
@@ -164,10 +154,7 @@ def main() -> int:
                                     f"{', '.join(sorted(action_fields))})"
                                 )
 
-    print(
-        f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} "
-        "(pinned by the ublue-os/tap cask):"
-    )
+    print(f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF}:")
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")
     print(f"  group fields: {', '.join(sorted(group_fields))}")

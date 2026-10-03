@@ -24,8 +24,8 @@ updates_page:
     enabled: true
   # Update policy on Bluefin belongs to uupd (silent background staging,
   # 6-hour timer + AC connect; user reboots on their own schedule).
-  # Upstream's updates_page schema is a fixed set of groups: as of the
-  # pinned v26.10.2 release, the five above plus
+  # Upstream's updates_page schema is a fixed set of groups:
+  # the five above plus
   # automatic_updates_group and channel_group, which we leave unlisted so
   # they keep upstream's defaults. automatic_updates_group is only an
   # on/off switch for the host's own unattended-update timer (uupd here)
