@@ -37,19 +37,6 @@
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "OpenTabletDriver/OpenTabletDriver"
-    },
-    {
-      "customType": "regex",
-      "description": "Track the ChairLift release whose helper, PolicyKit policy and GSettings schemas the Containerfile installs. CHAIRLIFT_RELEASE is the only pin: the build verifies the release's signed checksums.txt for that tag, so a bump is this one line.",
-      "managerFilePatterns": [
-        "/^Containerfile$/"
-      ],
-      "matchStrings": [
-        "ARG CHAIRLIFT_RELEASE=(?<currentValue>v[0-9][0-9A-Za-z.-]*)"
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "projectbluefin/chairlift",
-      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:-(?<prerelease>.+))?$"
     }
   ],
   "packageRules": [
@@ -90,14 +77,6 @@
       "matchDepNames": [
         "OpenTabletDriver/OpenTabletDriver"
       ],
-      "automerge": false
-    },
-    {
-      "description": "ChairLift bumps install a root-owned pkexec helper, so a human reviews each one: never automerge. ChairLift publishes prereleases only, so unstable versions must be offered.",
-      "matchDepNames": [
-        "projectbluefin/chairlift"
-      ],
-      "ignoreUnstable": false,
       "automerge": false
     }
   ]
