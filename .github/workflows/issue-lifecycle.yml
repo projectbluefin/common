@@ -77,6 +77,9 @@ jobs:
           if [[ "$CONFIRM_CUTOFF" == true ]]; then
             args+=(--confirm-client-cutover)
           fi
+          if [[ "$EVENT_NAME" == schedule ]]; then
+            args+=(--labels-only)
+          fi
           python3 scripts/common_issue_policy.py "${args[@]}"
       - name: Preserve migration snapshot
         if: always()

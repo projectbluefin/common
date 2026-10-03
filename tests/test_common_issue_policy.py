@@ -530,7 +530,7 @@ def test_only_bot_history_is_upgraded_and_reporter_forgery_is_untouched(
             posted.append(body["body"])
 
     monkeypatch.setattr(client, "request", request)
-    client.apply(record, data, policy.plan(record, data, CATALOG, migrate=True))
+    client.apply(record, data, policy.plan(record, data, CATALOG))
     if actor_type == "User":
         assert old["body"] == original
         assert posted[0].startswith(policy.COMMENT_MARKER)
@@ -644,7 +644,7 @@ def test_old_discussing_label_does_not_invent_a_reporter_information_request():
     record = issue(("2-discussing", "kind/feature"))
     result = policy.plan(record, facts(), CATALOG, migrate=True)
     assert result["stage"] == "needs-triage"
-    assert "Reporter: answer" not in result["comment"]
+    assert result["comment"] is None
 
 
 def test_action_request_notifies_reporter_once_and_keeps_one_status(monkeypatch):
@@ -709,3 +709,27 @@ def test_first_information_request_is_itself_the_notification(monkeypatch):
     assert len(posted) == 1
     assert "@reporter" in posted[0]["body"]
     assert "bootc status" in posted[0]["body"]
+
+
+@pytest.mark.parametrize("quiet_option", ["migrate", "labels_only"])
+def test_quiet_repair_does_not_close_or_notify_verified_report(quiet_option):
+    record = issue(("needs-verification", "kind/bug"), delivery_body())
+    data = facts(
+        (event("needs-verification"),),
+        (reply("Confirmed fixed in the release linked above"),),
+    )
+    assert policy.plan(record, data, CATALOG)["close"]
+    result = policy.plan(record, data, CATALOG, **{quiet_option: True})
+    assert not result["close"]
+    assert result["comment"] is None
+    assert final_labels(record, result) & set(CATALOG["stages"]) == {"needs-verification"}
+
+
+@pytest.mark.parametrize("quiet_option", ["migrate", "labels_only"])
+def test_quiet_repair_removes_pr_stages_without_commenting(quiet_option):
+    record = issue(("1-triage", "needs-triage", "kind/bug", "hold"))
+    record["pull_request"] = {}
+    result = policy.plan(record, facts(), CATALOG, **{quiet_option: True})
+    assert final_labels(record, result) == {"kind/bug", "hold"}
+    assert result["comment"] is None
+    assert not result["close"]

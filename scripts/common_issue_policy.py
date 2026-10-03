@@ -121,8 +121,9 @@ def referenced_issues(body):
     return numbers
 
 
-def plan(record, facts, catalog, *, migrate=False):
+def plan(record, facts, catalog, *, migrate=False, labels_only=False):
     """Return a proposed public label/comment/state transition without performing I/O."""
+    quiet = migrate or labels_only
     current = labels_of(record)
     stages, retired = set(catalog["stages"]), set(catalog["retired_stages"])
     if record.get("state") == "closed":
@@ -156,7 +157,7 @@ def plan(record, facts, catalog, *, migrate=False):
             "number": record["number"],
             "add": [],
             "remove": sorted(current & (stages | retired)),
-            "comment": text,
+            "comment": None if quiet else text,
             "close": False,
             "stage": None,
         }
@@ -428,8 +429,8 @@ def plan(record, facts, catalog, *, migrate=False):
         "number": record["number"],
         "add": sorted(desired - current),
         "remove": sorted((current & managed) - desired),
-        "comment": text,
-        "close": close,
+        "comment": None if quiet else text,
+        "close": False if quiet else close,
         "stage": stage,
     }
 
@@ -706,6 +707,11 @@ def main(argv=None):
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--labels-only",
+        action="store_true",
+        help="repair labels without comments or closures",
+    )
+    parser.add_argument(
         "--migrate",
         action="store_true",
         help="conservatively migrate existing human-queue/needs-human preferences",
@@ -764,18 +770,18 @@ def main(argv=None):
         {
             **entry,
             "plan": plan(
-                entry["record"], entry["facts"], catalog, migrate=args.migrate
+                entry["record"],
+                entry["facts"],
+                catalog,
+                migrate=args.migrate,
+                labels_only=args.labels_only,
             ),
         }
         for entry in entries
     ]
     legacy_changes = any(
-        labels_of(entry["record"]) & set(catalog["retired_stages"])
-        or any(
-            "factory issue pipeline" in (c.get("body") or "")
-            for c in entry["facts"]["comments"]
-        )
-        for entry in entries
+        set(entry["plan"]["remove"]) & set(catalog["retired_stages"])
+        for entry in output
     )
     if args.apply and (args.migrate or args.retire_labels or legacy_changes):
         # Archive old assignments and definitions, including closed history, before any mutation.

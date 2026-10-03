@@ -136,8 +136,10 @@ proof of delivery. Avoid repeating unchanged lifecycle notices.
 
 Source: `scripts/common_issue_policy.py`, `.github/issue-policy.json`, and
 `.github/workflows/issue-lifecycle.yml`, all scoped to common. Events and hourly
-reconciliation update labels and one status comment per record. Native PR
-review, assignment, checks, branches, and merge-queue state are untouched.
+reconciliation repair labels. Event-driven reconciliation maintains one status
+comment per record; scheduled sweeps use `--labels-only`, without comments or
+closures. Native PR review, assignment, checks, branches, and merge-queue state
+are untouched.
 
 Preview and archive the existing issue/PR migration before applying:
 
@@ -147,6 +149,10 @@ gh workflow run issue-lifecycle.yml --repo projectbluefin/common -f apply=true -
 ```
 Run dispatch only after review and merge. Local-token apply is refused: gates
 must have bot provenance, not a human operator's actor.
+Migration is labels-only: it posts no status comments, sends no reporter action
+requests, and closes no records. After migration, normal events handle targeted
+status updates; scheduled sweeps remain quiet. Historical comments alone do not
+trigger migration backups; removing retired assignments does.
 
 Ambiguous queues return to triage. Existing human routing becomes `human-only`;
 overlays and unrelated labels survive. Every migration archives assignments and
