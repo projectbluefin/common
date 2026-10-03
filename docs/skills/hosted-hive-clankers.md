@@ -29,11 +29,11 @@ issue before acting.
 
 ## Availability
 
-Use the operator-supplied relay origin. When connecting via Clankers, connect to
-`wss://clankers.projectbluefin.io/v1/connect` (manifest at `https://clankers.projectbluefin.io/`,
-health at `/health`, profile at `/v1/me`). Upstream Hive spokes are hosted under
-`*.hive.hivecommons.dev` (migrated from legacy `*.hive.kubestellar.io`) with the
-contributor WebSocket at `/api/contribute/ws` (`/contribute` is the HTML landing page).
+Use the operator-supplied relay origin. `https://agents.projectbluefin.io/` is
+the HTTP 302 landing page redirecting to the active hosted Hive contribute
+endpoint. Upstream Hive spokes are hosted under `*.hive.hivecommons.dev`
+(migrated from legacy `*.hive.kubestellar.io`) with the contributor WebSocket
+at `/api/contribute/ws` (`/contribute` is the HTML landing page).
 When the deployment exposes `GET /api/contribute/status`, inspect `hub`,
 `active_contributors`, `total_registered`, and `actionable_items`. If reachability,
 path, or domain differs from the checked-in source, treat the relay as ambiguous.
