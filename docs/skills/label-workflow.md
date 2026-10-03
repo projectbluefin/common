@@ -100,7 +100,7 @@ self-assign a task or authorize changes outside the agreed scope.
    in the issue body, then selects `needs-verification`. Required fields:
 
    ```text
-   Image: ghcr.io/projectbluefin/utah:stable@sha256:<64-hex-digest>
+   Image: <actual-published-image-reference>@sha256:<64-hex-digest>
    Fix revision: <40-hex-commit>
    Release/build: https://<actual-release-or-successful-publishing-run>
    Verify: <specific-update-reboot-and-reproduction-instructions>
