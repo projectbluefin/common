@@ -74,8 +74,15 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
+      pull-requests: read
     steps:
+      - name: Check out trusted issue policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
       - name: Open or update the tracking issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,13 +102,14 @@ jobs:
 
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --repo "$REPO" \
-              --body "Still failing on \`${SHA:0:7}\` — ${RUN_URL}"
-            echo "Updated existing issue #${existing}"
-            exit 0
-          fi
+              --body "Still failing on \`${SHA:0:7}\` — ${RUN_URL}
 
-          gh issue create --repo "$REPO" --title "$TITLE" --label "1-triage" --body \
-          "Post-merge E2E failed on \`${SHA:0:7}\`.
+          Next actor: maintainer. Inspect the failed matrix entry and logs, identify the owning repository, and assign the regression fix. Reporter action: none unless additional evidence is requested."
+            echo "Updated existing issue #${existing}"
+          else
+            issue_url=$(gh issue create --repo "$REPO" --title "$TITLE" --body \
+          "<!-- report-type: bug -->
+          Post-merge E2E failed on \`${SHA:0:7}\`.
 
           Run: ${RUN_URL}
 
@@ -115,4 +123,19 @@ jobs:
           matrix entry failed before assuming otherwise.
 
           This issue is reused for subsequent failures. Close it once the run is
-          green again."
+          green again.
+
+          Next actor: maintainer. Inspect the failed matrix entry and logs, identify the owning repository, and assign the regression fix. Reporter action: none unless additional evidence is requested.")
+            existing="${issue_url##*/}"
+          fi
+          # GITHUB_TOKEN issue writes do not trigger another Actions issue event.
+          python3 scripts/common_issue_policy.py --repo "$REPO" --issue "$existing" --apply
+      - name: Preserve migration snapshot
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: common-e2e-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ~/.local/state/common-issue-policy/*.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 30

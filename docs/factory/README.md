@@ -6,7 +6,7 @@ This directory is the org-level entry point for agents and maintainers working a
 
 ## Operating principle
 
-> **Humans approve design, security, and merge. Everything else is automated, self-healing, and non-blocking.**
+> **Humans approve design, security, and merge. Common's pilot also retains trusted human implementation acceptance and delivery evidence; automation advances only implemented transitions.**
 
 Project Bluefin aims to be the most sophisticated CNCF showcase of cloud-native operating systems built with bootc. The factory is an **agentic CI/CD organism**: agents implement, humans set direction. Manual orchestration is treated as a reliability tax — every manual step that *can* be automated *will* be, every automated step must self-heal, and every remaining human gate is intentional and named in [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
@@ -69,12 +69,39 @@ For the workflow-by-workflow purpose map inside `common`, see [`../skills/workfl
 
 ## Agentic operating model
 
-`1-triage` → `2-discussing` when needed → `3-human-queue` or
-`3-clanker-queue` → `4-review` → merge. `blocked` and `hold` are overlays,
-not stages; there is no claim command or `done` label.
+The issue lifecycle in [`label-workflow.md`](../skills/label-workflow.md) is a
+**common-only pilot**, not an organization-wide migration. Common owns two
+forms, a local policy script/catalog, and event plus hourly reconciliation.
+Other repositories retain their current local labels, forms, and lifecycle
+callers; read the target repository's `AGENTS.md` before acting.
 
-Issue lifecycle is Hive-managed across the factory: the state machine, triage, and queue routing belong to Hive. `bonedigger` previously hosted the reusable `.github/workflows/lifecycle.yml` (called as a pinned `workflow_call` from each consumer's own `bonedigger.yml`); that workflow was removed from `main` in `bonedigger#40` (2026-09-29) and now survives only at the pinned commits (`d530767` for `bluefin`/`bluefin-lts`/`knuckle`, `9c5faf6` for `dakota`) the consumers retain. `common` documents the contract and consumes the configured automation; it owns no lifecycle implementation.
-Full lifecycle, epics, project board, and PR labels: [`docs/skills/label-workflow.md`](../skills/label-workflow.md)
+Trusted humans accept implementation through GitHub's label picker after
+clarifying scope. The runtime checks immutable event authority and issue-body
+revision. Machine-analysis consent, an old queue, or Hive `ready` is not
+acceptance. PRs use native assignment and review status, not issue-stage labels.
+Existing approvals, reviews, branches, assignments, overlays, and unrelated
+descriptive/operational/`agent/*`/`hive/*` labels remain intact.
+
+Image reports stay open after implementation merge. An authorized human must
+record delivered-image evidence before requesting reporter verification;
+there is no release scraper or inferred shipped status. Every project-owned
+lifecycle post names status, next actor, specific next steps, and reporter
+action. Reporters reply normally and never need labels or lifecycle commands.
+
+Preview local migration and reconciliation before an authorized apply:
+
+```bash
+python3 scripts/common_issue_policy.py --repo projectbluefin/common --dry-run
+python3 scripts/common_issue_policy.py --repo projectbluefin/common --apply
+```
+
+The local runtime uses native `needs-human` enumeration gating while work is
+unaccepted or human-only. It changes no global Hive custom approval API,
+deployment, or credentials, and cannot guarantee scheduling enforcement for
+every worker. Hive readiness and trusted implementation acceptance remain
+separate facts. See the label skill for the operator procedure and evidence
+requirements.
+
 Substantive product planning follows the [Spektacular workflow](../skills/spektacular-workflow.md)
 and the [adoption specification](../specifications/spektacular-adoption.md)
 with its downstream plan and Hive activation gates.
@@ -86,16 +113,18 @@ Human decisions: [`docs/skills/human-gates.md`](../skills/human-gates.md).
 Read each target repo's `AGENTS.md` and verify parity from GitHub below;
 do not infer a workflow exists from a factory inventory.
 
-- **Workflow state:** the seven labels in [label-workflow](../skills/label-workflow.md), owned by automation.
+- **Workflow state:** common's pilot is defined in [label-workflow](../skills/label-workflow.md); other repositories retain their local contracts.
 - **Delivery:** squash-only merge and the owning repo's branch protection.
 - **Production:** the `factory-operations` environment requires two maintainer approvals before `:stable` tagging in `bluefin`, `bluefin-lts`, and `dakota`.
 - **Hygiene:** repo-local `pre-commit` at developer time and its aggregate CI check, not a bespoke process gate.
 
-[`bonedigger/templates/`](https://github.com/projectbluefin/bonedigger/tree/main/templates)
-owns canonical issue forms and proposes changes to `common` and image repos by
-PR. `common` currently has only `report.yml` plus `config.yml`, so the next
-sync can add forms and change its chooser; review that PR. `common` owns the
-canonical CODEOWNERS triager block, but its absent sync workflow leaves
+Common owns `bug-report.yml`, `feature-request.yml`, and chooser `config.yml`
+under `.github/ISSUE_TEMPLATE/`. Intake starts in triage with bug/feature kind
+and an explicit analysis preference; maintainers refine acceptance criteria
+later. Report intake automation is a separate integration, not authority to
+replace common's forms or accept implementation. No form ownership or
+downstream migration changes are part of this pilot.
+Common owns the canonical CODEOWNERS triager block, but its absent sync workflow leaves
 downstream propagation to reviewed repo-local changes.
 
 ## Factory parity
@@ -114,7 +143,7 @@ done
 ```
 
 Swap the path for whatever you are checking: `.pre-commit-config.yaml`,
-`docs/SKILL.md`, `docs/skills/index.json`, `.github/workflows/bonedigger.yml`.
+`docs/SKILL.md`, `docs/skills/index.json`, or the target's own lifecycle workflow.
 
 ## Open gaps
 

@@ -1,0 +1,82 @@
+name: "Bug report"
+description: "Tell us what went wrong in Bluefin common and how to reproduce it."
+labels: ["needs-triage", "kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Help us understand the bug
+
+        Use a short, specific issue title. Describe one problem per report and remove
+        passwords, tokens, serial numbers, and other private information from evidence.
+        If you used report intake automation, you can link its evidence below.
+
+        ## What happens next
+
+        This report starts in `needs-triage`. A maintainer will read it, ask for missing
+        information if needed, and decide whether to accept implementation work.
+        Welcoming machine analysis is **not** approval to implement a change.
+
+        You do not need to choose labels or use commands in comments. Reply normally
+        when asked for details. A merged fix does not mean it has reached your image:
+        maintainers will record delivery evidence before asking you to update and verify.
+        See the [common issue lifecycle](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "Summarize the bug, its impact, and when it began. Include relevant hardware or application details."
+      placeholder: "When I…, I see… This prevents me from…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "What did you expect?"
+      description: "Describe the behavior you expected instead."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to reproduce"
+      description: "Give the smallest repeatable set of steps. If it is intermittent or you cannot reproduce it, explain what you tried."
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: image
+    attributes:
+      label: "Image details"
+      description: "Open a terminal and run `bootc status`. Paste the complete output below, including the booted image and any staged image. If the machine cannot boot, the command fails, or bootc is not applicable, explain that instead and provide any image or version details you know."
+      placeholder: "Paste complete bootc status output here, or explain why it is unavailable."
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Additional evidence"
+      description: "Optional: relevant logs, screenshots, error messages, or links to report evidence. Redact private information before sharing."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: automation-preference
+    attributes:
+      label: "Automation preference"
+      description: "Choose how you want this report analyzed. Human interaction only asks us not to use machine analysis or agent implementation; routine status and label automation still runs. A maintainer must separately accept any implementation work."
+      options:
+        - "Human interaction only"
+        - "Machine analysis is welcome"
+        - "No preference"
+    validations:
+      required: true

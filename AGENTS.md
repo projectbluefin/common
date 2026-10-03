@@ -36,30 +36,45 @@ The factory is automation-first: workflows, branches, assignees, projects,
 PR linkages, and merge queues advance active work. Do not simulate workflow
 state by hand or invent transitions that are not implemented in the checkout.
 
-- **The seven canonical labels:**
-  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
-  Select at most one numbered workflow label (`1-triage`, `2-discussing`,
-  `3-human-queue`, `3-clanker-queue`, `4-review`), with `blocked` or `hold` as
-  an optional overlay; automation enforces the combination and routes the next
-  action.
-- **Humans provide intent** through issue content, form fields, Hive metadata,
-  review, and explicit hold or routing decisions.
-- **Agents implement assigned work** and link it to a PR with `Closes #NNN`;
-  they do not claim work with slash commands or manufacture queue state.
+- **Common-only issue lifecycle:**
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) is the
+  authority for this pilot's five issue stages, overlays, and human-only
+  preference. PRs use native assignment and review status, not issue-stage
+  labels. Preserve descriptive, operational, `agent/*`, and `hive/*` labels
+  alongside existing assignments, approvals, reviews, branches, and merge
+  queues. Other repositories keep their own local lifecycle contracts.
+- **Humans accept implementation** through a trusted label-picker event after
+  clarifying scope and acceptance criteria. The runtime validates the immutable
+  event actor's permissions and the issue body revision. Reporter consent to
+  machine analysis, an old queue, or Hive `ready` is not acceptance. Reporters
+  reply normally and never need label permissions or a public lifecycle command.
+- **Agents implement accepted, assigned work** and link it with `Refs #NNN`
+  while delivery to the reporter's image is unresolved. Use `Closes #NNN`
+  only for code-only work satisfied at merge, or already delivered and
+  verified reports. Merge is not image delivery. Project-owned lifecycle
+  posts state status, next actor, specific next steps, and reporter action.
 - **Hive coordination & Clankers relay:** Hive may select work for another
   monitored repository. Clankers is only the authenticated relay for that
   assignment; verify the assigned repository and issue in GitHub before acting.
   It does not bypass human approval, review, or merge gates.
-- **Issue forms & CODEOWNERS ownership:** This repository owns its own issue
-  forms in `.github/ISSUE_TEMPLATE/`; there is one form, and it doubles as the
-  contributor's introduction to the label workflow. The triager section of
-  CODEOWNERS is owned here and synced to downstream factory repositories; edit
-  downstream copies only when the repository-specific section is explicitly in
-  scope. Never write to `ublue-os/*`.
-- **Issue lifecycle is Hive-managed across the factory.** The issue state
-  machine, triage, and queue management belong to Hive; the canonical
-  seven-label contract lives in [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
-  `common` documents and consumes this contract; it does not own its implementation.
+- **Issue forms:** Common owns `bug-report.yml`, `feature-request.yml`, and
+  chooser `config.yml` in `.github/ISSUE_TEMPLATE/`. Forms initialize triage
+  and kind labels; structured CLI bodies are initialized server-side because
+  ordinary reporters cannot reliably set labels. Analysis preference never
+  accepts implementation. These forms are not an organization-wide standard.
+- **CODEOWNERS ownership:** The triager section is owned here; edit downstream
+  copies only when the repository-specific section is explicitly in scope.
+  Never write to `ublue-os/*`.
+- **Common lifecycle runtime:** `scripts/common_issue_policy.py`,
+  `.github/issue-policy.json`, and `.github/workflows/issue-lifecycle.yml`
+  reconcile common events and hourly missed-event repair only. Delivery stages
+  require validated evidence from an authorized human, not presumed image
+  delivery. Report intake automation remains a separate integration.
+- **Hive boundary:** The runtime uses native `needs-human` enumeration gating
+  for unaccepted and human-only common work. Label presence alone is not
+  verified Hive admission, and Hive `ready` is not the accepted-stage gate.
+  This pilot changes no global Hive approval API, deployment, or credentials
+  and cannot guarantee scheduling enforcement for every worker.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).

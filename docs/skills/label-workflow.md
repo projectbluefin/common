@@ -1,9 +1,9 @@
 ---
 name: label-workflow
-version: "2.2"
-last_updated: "2026-10-01"
+version: "4.0"
+last_updated: "2026-10-02"
 id: label-workflow
-one_line_purpose: Route factory work using the canonical label workflow.
+one_line_purpose: Operate the common-only issue lifecycle and preserve other repositories' local label contracts.
 entry_point: docs/skills/label-workflow.md
 category: meta
 mcp_compliance_level: partial
@@ -12,180 +12,187 @@ status: active
 dependencies: []
 tags: [labels, issues, workflow]
 description: >-
-  The canonical Trust the Machines workflow and seven-label contract for
-  projectbluefin factory repositories. Use when triaging, routing, or reviewing
-  work.
+  The common-only pilot's issue stages, human acceptance gate, delivery evidence,
+  and reporter next steps. Use when triaging common reports, linking PRs,
+  reconciling lifecycle labels, or checking a target repository's local authority.
 metadata:
   type: procedure
 ---
 
-# Label Workflow — projectbluefin Factory
+# Label Workflow — common pilot
 
-## The contract
+This is the lifecycle authority for **`projectbluefin/common` only**. It does
+not migrate other repositories or change Hive deployment, authentication, or
+scheduling. Start with the target repository's `AGENTS.md` elsewhere. The
+numbered workflow and `queue/*` dialects in other repositories remain local
+contracts, not instructions to apply the common pilot across the organization.
 
-**Trust the Machines: workflows own state; humans provide intent.**
+## Issue stages
 
-The factory has exactly seven labels:
+An open common issue carries exactly one of these five stages. Pull requests
+carry none: use native GitHub assignment, review requests, review status,
+checks, and the merge queue instead.
 
-| Label | Meaning | Owner |
+| Stage | Status | Next actor and specific next step | Reporter action |
+|---|---|---|---|
+| `needs-triage` | Submitted, not yet accepted for implementation | Trusted human triager reads the report and decides whether to clarify, accept, or decline it | Wait; add relevant details in an ordinary reply if available |
+| `triage/needs-information` | A specific question prevents a decision | The person named in the triager's question provides the missing information; triager then reassesses | Reply normally to the question; no label or command required |
+| `triage/accepted` | Trusted human has accepted implementation scope | Maintainer records acceptance criteria and assigns or explicitly routes work; assignee implements and links a PR | No action unless a specific question is asked |
+| `awaiting-release` | Implementation is merged, but delivery to the affected image or channel is unproven | Authorized human records evidence that the fix is available in the reporter's affected image/channel | Wait for delivery instructions; merge alone is not a reason to update |
+| `needs-verification` | Delivery evidence is recorded and the outcome needs checking | Reporter follows the specified update/reboot/reproduction steps; maintainer reviews the reply and closes or reopens work | Verify on the named image/version and report the result in a normal reply |
+
+Declined, duplicate, or completed work can be closed with a reason rather than
+inventing another stage. Code-only work whose acceptance criteria are met at
+merge may close then; image reports remain open until delivery and verification
+are recorded. Do not leave an accepted issue looking completed just because
+its implementation PR merged.
+
+### Overlays and analysis preference
+
+| Label | Meaning | Required context |
 |---|---|---|
-| `1-triage` | New work awaiting triage | Workflow |
-| `2-discussing` | Discussion or design clarification | Workflow |
-| `3-human-queue` | Admitted to the human-maintained queue | Workflow |
-| `3-clanker-queue` | Admitted to the agent-maintained queue | Workflow |
-| `4-review` | Pull request awaiting review | Workflow |
-| `blocked` | Waiting on human input or an external dependency | Workflow |
-| `hold` | Intentionally paused | Workflow |
+| `blocked` | A decision or external dependency prevents progress | Name the dependency, who can resolve it, and the next step in the same lifecycle post |
+| `hold` | Work is intentionally paused | State who paused it, why, and what permits resuming |
+| `human-only` | Reporter requests human interaction rather than machine analysis or agent implementation | Preserve the preference during triage, assignment, migration, and reconciliation; routine status automation may still run |
 
-These are the only labels. A contributor or maintainer may select one numbered
-label to express the intended next step, with `blocked` or `hold` as an
-optional overlay. Automation validates the selection, repairs illegal
-combinations, and performs the resulting triage. Do not create a second state
-machine with comments, custom labels, or local scripts. Issue forms, issue
-bodies, and Hive metadata may contain descriptive facts, but those facts are
-not additional labels or state.
+These coexist with one issue stage; they do not imply acceptance or erase an
+existing assignee, approval, review request, branch, or merge-queue entry.
+Preserve descriptive labels (including `kind/bug` and `kind/feature`),
+operational labels (`lgtm`, `automerge`, `chore/deps`), and
+`agent/*` and `hive/*` routing labels. Change the owned stage labels, not the
+entire unrelated label set.
 
-## Ownership
+## Intake and trusted acceptance
 
-`common` documents this contract and consumes configured automation; it does not
-own a lifecycle implementation. Issue lifecycle is **Hive-managed across the
-factory** — the issue state machine, triage, and queue management belong to
-Hive. `bonedigger` previously hosted the reusable lifecycle automation in
-`.github/workflows/lifecycle.yml`, called as a pinned `workflow_call` from
-each consuming repository's own `.github/workflows/bonedigger.yml` (see
-`bluefin`'s caller for the reference shape: `on: issues.opened,
-issue_comment.created`, `permissions: issues: write, contents: read`,
-`secrets: inherit`); that workflow was removed from `main` in
-`bonedigger#40` (2026-09-29). `bluefin-lts` and `dakota` historically called
-the same reusable workflow with a broader trigger (`issues: [opened,
-labeled, closed]`, `pull_request: [opened]`, and a daily schedule) and also
-granted `pull-requests: write`. `knuckle` sits between the two: it widens
-the issue trigger and adds a daily schedule (`issues: [opened, labeled,
-closed]`, `issue_comment: [created]`, `schedule`) but has no `pull_request`
-trigger and keeps `bluefin`'s `issues: write, contents: read` permissions.
-The retention pins differ: `dakota` pins the newest retained build
-(`9c5faf6`,
-[bonedigger#36](https://github.com/projectbluefin/bonedigger/pull/36)), while
-`bluefin`, `bluefin-lts`, and `knuckle` all pin the older `d530767`
-([bonedigger#26](https://github.com/projectbluefin/bonedigger/pull/26)), so
-those three lag `dakota` in lifecycle behavior. Those callers are now frozen:
-`workflow_call` resolves at the pinned commit, so `lifecycle.yml@d530767`
-(also reachable as tag `v1`) and `lifecycle.yml@9c5faf6` still run, but the
-pins cannot be bumped forward because the file no longer exists on `main`.
-The remaining reusable workflow scopes only to `ujust report` intake,
-confirm-based priority escalation (`priority/p0`/`priority/p1`), and the
-agent-donation fast track (`status/approved`, `status/queued`,
-`flow/agent-donation`) — it does not apply `1-triage` or route
-`3-human-queue`/`3-clanker-queue` for ordinary issues. `projectbluefin/actions`
-does not currently contain a lifecycle workflow, despite earlier text in this
-repository pointing to one there. The `1-triage` default on new issues comes
-from each repository's own issue form where that form sets it (`labels:
-["1-triage"]` in `.github/ISSUE_TEMPLATE/*.yml`, e.g. `common`'s `report.yml`);
-`bluefin` and `dakota` issue forms instead apply `kind/bug`/`status/triage` or
-`kind/enhancement`/`status/discussing` and do not set `1-triage`. Advancing an
-issue to `3-human-queue` or `3-clanker-queue` is currently a human action, not
-an automated one, unless a repository's caller explicitly implements that
-step.
+Common owns `bug-report.yml`, `feature-request.yml`, and the chooser
+`config.yml` under `.github/ISSUE_TEMPLATE/`. The forms start with
+`needs-triage` plus `kind/bug` or `kind/feature`. Reporters do not need label
+permissions. Ordinary user CLI submissions cannot reliably set labels; the
+server initializes intake from the structured issue body instead.
 
-## Downstream consumer subsets
+The form's **Automation preference** has three choices:
 
-The seven canonical labels are the factory-wide contract for the core pipeline
-repos (`common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`).
-A downstream **consumer** product — for example Bluefin Server — may maintain a
-smaller label subset for its own issue forms and lifecycle. That subset is
-product-local: it is **not** an extension of the factory catalog, is not
-synchronized to the core pipeline repos, and is never the organization-wide
-source of truth.
+- **Human interaction only** requests `human-only` handling.
+- **Machine analysis is welcome** permits analysis, not implementation acceptance.
+- **No preference** expresses no analysis preference, not implementation acceptance.
 
-| Product | Local subset |
-|---|---|
-| Bluefin Server | `kind/bug`, `status/triage`, `kind/enhancement`, `status/discussing`, `flow/agent-donation` |
+Intake records preference, not approval. A trusted human accepts the current
+scope through GitHub's label picker. The runtime checks the immutable label
+event's actor, current repository write/maintain/admin permission, and
+`lastEditedAt`; changing the body requires fresh acceptance. A bot label, old
+queue, reporter reply, or Hive `ready` result is not approval. Reporters reply
+normally, without slash commands. A response returns an information request
+to maintainer assessment, not directly to accepted work. Acceptance does not
+self-assign a task or authorize changes outside the agreed scope.
 
-Treat a consumer subset as local configuration only. Do not read it as standing
-in for, or adding to, the seven canonical factory labels above, and do not copy
-it into a core pipeline repo.
+## PR linkage and delivery
 
-## Workflow
+1. Link the accepted issue with **`Refs #NNN`** while the reporter's affected
+   image remains unresolved. Keep existing assignments, approvals, review
+   requests, branches, and merge-queue decisions intact.
+2. Use GitHub's native PR status during implementation and review. Do not add
+   an issue stage or a replacement review label to the PR.
+3. For an image report, a merged implementation moves the issue to
+   `awaiting-release`, not closed. Identify the merged PR/commit and the
+   affected image/channel; neither a common build nor a downstream PR proves
+   that the reporter can consume the fix.
+4. An authorized human records verified delivery under **Delivery evidence**
+   in the issue body, then selects `needs-verification`. Required fields:
 
-1. A form or contributor files work with enough context to act.
-2. Workflow automation applies `1-triage`.
-3. A human clarifies the request; automation advances it to `2-discussing` when
-   discussion is required.
-4. The owning workflow routes work to `3-human-queue` or `3-clanker-queue`.
-5. A contributor or agent works on the assigned branch and opens a pull
-   request linking the issue with `Closes #NNN`.
-6. Workflow automation applies `4-review`; a human reviews the pull request.
-7. Merge closes the linked issue. `blocked` and `hold` are workflow-controlled
-   overlays and may pause work at any stage.
+   ```text
+   Image: ghcr.io/projectbluefin/utah:stable@sha256:<64-hex-digest>
+   Fix revision: <40-hex-commit>
+   Release/build: https://<actual-release-or-successful-publishing-run>
+   Verify: <specific-update-reboot-and-reproduction-instructions>
+   ```
 
-Do not infer state from an old label, an issue comment, or an unlinked branch.
-Use the current workflow output, GitHub assignment, project state, branch, and
-pull request association.
+   The runtime checks the actor and record shape; the human verifies the image
+   actually contains the fix. A skipped publishing job is not delivery.
+5. After that request, the reporter replies `Confirmed fixed` with the tested
+   version to close, or `Still broken` to return to triage. Other ordinary
+   replies remain available for discussion; no slash commands are required.
 
-## Human actions
+Use **`Closes #NNN`** only for code-only tasks whose acceptance criteria are
+satisfied at merge, or reports whose delivery and verification are already
+complete. Do not blanket-close image reports from an implementation PR.
 
-### Filing and triage
+## Lifecycle posts
 
-Use the repository's issue forms. If filing without a form, include the
-problem, expected outcome, reproduction or evidence, affected scope, and
-acceptance criteria. Keep descriptive classification in the issue body.
+Every project-owned lifecycle post includes all four:
 
-Humans decide whether the work is valid, needs discussion, belongs in the
-human queue, or should be routed to an agent queue by selecting the matching
-canonical label. Automation rejects extra labels and handles the resulting
-triage.
+- **Status:** what is known now, including whether implementation is accepted,
+  merely merged, or evidenced as delivered.
+- **Next actor:** the reporter, triager, assignee, or delivery maintainer who
+  actually owns the next action.
+- **Specific next steps:** the question, decision, implementation scope,
+  delivery evidence, or update/reproduction instructions required.
+- **Reporter action:** the exact requested reply or verification step, or an
+  explicit statement that no action is needed yet.
 
-### Review
+Do not make reporters decipher labels, issue commands, or interpret a merge as
+proof of delivery. Avoid repeating unchanged lifecycle notices.
 
-When `4-review` is present:
+## Operating the common runtime
 
-1. Verify the pull request solves the linked issue.
-2. Check required tests and evidence.
-3. Approve or request changes using the repository's normal review flow.
-4. Apply a hold through the owning workflow if a merge must pause.
+Source: `scripts/common_issue_policy.py`, `.github/issue-policy.json`, and
+`.github/workflows/issue-lifecycle.yml`, all scoped to common. Events and hourly
+reconciliation update labels and one status comment per record. Native PR
+review, assignment, checks, branches, and merge-queue state are untouched.
 
-### Blocking and holding
+Preview and archive the existing issue/PR migration before applying:
 
-Explain the decision or missing input in the issue or pull request. Select
-`blocked` or `hold` when the work is blocked or intentionally paused;
-automation preserves the overlay and reports the next action.
+```bash
+python3 scripts/common_issue_policy.py --migrate --dry-run --output /tmp/common-migration.json
+gh workflow run issue-lifecycle.yml --repo projectbluefin/common -f apply=true -f migrate=true
+```
+Run dispatch only after review and merge. Local-token apply is refused: gates
+must have bot provenance, not a human operator's actor.
 
-## Agent and contributor actions
+Ambiguous queues return to triage. Existing human routing becomes `human-only`;
+overlays and unrelated labels survive. Every migration archives assignments and
+definitions under `~/.local/state/common-issue-policy/` before mutation; workflows
+upload these snapshots as 30-day artifacts, including after a failed apply.
 
-1. Read the issue and target repository `AGENTS.md`.
-2. Work only on an issue routed to you by assignment, project state, or
-   `3-clanker-queue`.
-3. Create a scoped branch and keep the change small.
-4. Run the target repository's validation commands.
-5. Open a pull request containing `Closes #NNN`.
-6. Respond to review feedback; do not self-approve or self-merge.
+Retired definitions remain inert temporarily for older installed report clients.
+They are not workflow stages or approval signals. After the reviewed runtime
+is deployed and the supported-client cutoff is confirmed, explicitly retire:
 
-If blocked, describe the exact decision or dependency in the issue and stop.
-Do not change labels to manufacture progress.
+```bash
+gh workflow run issue-lifecycle.yml --repo projectbluefin/common -f apply=true -f retire=true -f confirm-client-cutover=true
+```
 
-## Epics and project metadata
+Retirement refuses an undeployed policy or remaining active old assignments.
+No mutation in another repository is allowed.
 
-Use issue descriptions and project fields to explain multi-part work, priority,
-scope, size, source, and relationships. These are metadata, not labels. Link
-child issues to a parent with plain text such as `Part of #NNN`.
+### Hive boundary
 
-## Red Flags
+The runtime uses Hive's native **`needs-human` enumeration gate** while
+common work is unaccepted or requests human-only interaction. This is local
+GitHub label enforcement, not a new Hive custom approval API or a deployment
+change. Independent human/app `needs-human` gates are never cleared by acceptance;
+their owner must explicitly withdraw them after resolving the reason. Only
+automatic lifecycle-bot gates clear when the accepted scope is eligible.
 
-- Any label outside the seven names in the table above.
-- A human selecting more than one numbered workflow label.
-- A slash command being treated as a state transition.
-- A document claiming that `common` owns lifecycle automation.
-- Queue state inferred from an issue body, comment, or stale local checkout.
-- Treating a downstream consumer label subset as part of the factory contract.
+Hive's current `ready` queue is **not a verified `triage/accepted` admission
+gate**. The native enumeration gate does not establish a universal guarantee
+for cached, assigned, or differently configured Hive workers.
+Read live Hive state for coordination, then verify GitHub's trusted acceptance,
+scope, assignment, overlays, and `human-only` preference before acting.
+Acceptance and scheduling are separate facts. See [hive.md](hive.md).
 
-## Verification
+Other repositories retain their local contracts and synchronization. Do not
+run an organization-wide sync or infer adoption from label definitions.
 
-- [ ] `gh label list` on the repository returns only the seven canonical labels
-      plus repository-local automation labels.
-- [ ] Downstream consumer subsets are documented as local, never as factory contract.
-- [ ] No workflow guidance invents another label or slash-command transition.
-- [ ] Work is routed by the owning workflow, assignment, project, branch, and PR.
-- [ ] Pull requests link issues with `Closes #NNN`.
-- [ ] `pre-commit run check-skill-frontmatter --all-files` passes.
-- [ ] `pre-commit run check-skill-index --all-files` passes.
-- [ ] `pre-commit run check-doc-links --all-files` passes.
+## Operator review checklist
+
+- [ ] The target is `projectbluefin/common`, with exactly one open-issue stage
+      and no issue-stage labels on PRs.
+- [ ] Acceptance has an authorized human event, not just label presence or
+      consent to machine analysis.
+- [ ] Existing overlays, preferences, unrelated labels, assignments, approvals,
+      reviews, branches, and merge-queue state are preserved.
+- [ ] Image reports use references and remain open after implementation merge.
+- [ ] Delivery and verification changes cite validated human evidence; no
+      unimplemented delivery automation is claimed.
+- [ ] Each lifecycle post names status, next actor, specific next steps, and
+      reporter action without requiring label permissions or slash commands.

@@ -90,7 +90,7 @@ Humans decide when a new secret is needed. This is a security gate, not a conven
 
 ## What "autonomous" means for promotions
 
-The factory is **fully automated** end-to-end. For bluefin, bluefin-lts, and dakota:
+Image build and promotion are automated in the flows described below. This is not end-to-end automation of common reports: implementation acceptance, delivery evidence, and outcome verification retain human gates. For bluefin, bluefin-lts, and dakota:
 
 1. Builds fire automatically (push to `testing` / Renovate digest bump / daily cron)
 2. Post-build E2E runs automatically (bluefin: required gate; bluefin-lts/dakota: advisory)
@@ -217,10 +217,10 @@ When you discover something broken or missing in the factory during a session:
 
 1. File a GitHub issue in `projectbluefin/common`
 2. Describe the gap in the issue body — scope, impact, and what "fixed" looks like
-3. **Do not** self-apply a queue label — triage and queue admission are human decisions
+3. **Do not** self-accept implementation — common acceptance requires a trusted human decision, distinct from analysis consent, assignment, or Hive readiness
 4. **Do not** add it to a static doc section — docs are operating procedure, not backlogs
 
-See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full label taxonomy and filing workflow.
+See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the common-only lifecycle; other repositories retain their local contracts.
 
 ## PR comment policy
 
@@ -231,11 +231,43 @@ See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full 
 - `@` mentions only when asking someone to do something specific. Never standalone.
 - When in doubt, post nothing.
 
+The project's common lifecycle workflow still posts actionable next-step
+notices. Each states status, next actor, specific next steps, and reporter
+action (or explicitly none). This is not permission for agents to duplicate
+native PR review or check status with informational review comments.
+
+## Common issue and PR lifecycle
+
+Read [`label-workflow.md`](../skills/label-workflow.md) for common's stages,
+overlays, human-only preference, and operator procedure. This pilot does not
+migrate other repositories or change their local lifecycle automation.
+Common PRs use native assignment and review state, not issue-stage labels.
+Preserve existing assignees, approvals, reviews, branches, merge queues,
+descriptive/operational labels, and `agent/*`/`hive/*` routing.
+
+Trusted human label-picker events and unchanged issue-body scope authorize
+implementation acceptance. Reporters reply normally; consent to machine
+analysis is not acceptance and no public lifecycle slash command is required.
+Link image reports with `Refs #NNN` until delivery and verification are
+evidenced. A merge is not proof that the reporter's image contains the fix.
+Code-only tasks satisfied at merge may use `Closes #NNN`; unresolved image
+reports stay open. Delivery stages require validated authorized-human evidence,
+not a release scraper or inferred downstream pickup.
+
+The runtime uses native `needs-human` enumeration gating for unaccepted or
+human-only common work. This changes no global Hive custom approval API,
+deployment, or credentials, and makes no universal worker scheduling guarantee.
+
 ## Finding work
 
+For common, inspect accepted-stage candidates, then verify the trusted human
+acceptance record, current scope, assignment, overlays, and analysis preference:
+
 ```bash
-# Work admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open
+gh issue list --repo projectbluefin/common --label "triage/accepted" --state open
 ```
 
-See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the seven-label contract.
+Label presence is not verified Hive admission; Hive `ready` is not this pilot's
+acceptance gate. Outside common, use the target repository's local finding-work
+procedure. See [`label-workflow.md`](../skills/label-workflow.md) for the common
+contract.

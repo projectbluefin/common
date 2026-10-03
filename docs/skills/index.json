@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02",
+  "generated_at": "2026-10-03",
   "schema_version": "1.0",
   "skills": [
     {
@@ -389,9 +389,9 @@
         "multi-repo",
         "coordination"
       ],
-      "description": "KubeStellar Hive coordination, Trust the Machines routing, and the canonical seven-label workflow. Use when finding or routing factory work.",
-      "version": "2.3",
-      "last_updated": "2026-09-24",
+      "description": "Hive coordination across repositories with GitHub as workflow authority. Use when finding routed work or checking the common pilot's acceptance boundary.",
+      "version": "3.0",
+      "last_updated": "2026-10-02",
       "doc_type": "reference"
     },
     {
@@ -539,7 +539,7 @@
     {
       "id": "label-workflow",
       "name": "label-workflow",
-      "one_line_purpose": "Route factory work using the canonical label workflow.",
+      "one_line_purpose": "Operate the common-only issue lifecycle and preserve other repositories' local label contracts.",
       "entry_point": "docs/skills/label-workflow.md",
       "category": "meta",
       "status": "active",
@@ -548,9 +548,9 @@
         "issues",
         "workflow"
       ],
-      "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
-      "version": "2.2",
-      "last_updated": "2026-10-01",
+      "description": "The common-only pilot's issue stages, human acceptance gate, delivery evidence, and reporter next steps. Use when triaging common reports, linking PRs, reconciling lifecycle labels, or checking a target repository's local authority.",
+      "version": "4.0",
+      "last_updated": "2026-10-02",
       "doc_type": "procedure"
     },
     {

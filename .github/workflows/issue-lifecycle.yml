@@ -1,0 +1,89 @@
+name: Common issue lifecycle
+
+on:
+  issues:
+    types: [opened, reopened, edited, labeled, unlabeled, assigned, unassigned, closed]
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, labeled, unlabeled, closed]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply changes (false previews only)
+        type: boolean
+        default: false
+      migrate:
+        description: Conservatively migrate existing issues and PRs
+        type: boolean
+        default: false
+      retire:
+        description: Retire inert definitions after the supported-client cutoff
+        type: boolean
+        default: false
+      confirm-client-cutover:
+        description: Confirm older report clients no longer need retired definitions
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: common-issue-lifecycle
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.repository == 'projectbluefin/common'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      # Only trusted default-branch policy is executed, including for fork PRs.
+      - name: Check out trusted lifecycle policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Reconcile labels and next steps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          APPLY: ${{ inputs.apply }}
+          MIGRATE: ${{ inputs.migrate }}
+          RETIRE: ${{ inputs.retire }}
+          CONFIRM_CUTOFF: ${{ inputs['confirm-client-cutover'] }}
+        run: |
+          args=(--repo projectbluefin/common)
+          if [[ "$EVENT_NAME" != schedule && "$EVENT_NAME" != workflow_dispatch ]]; then
+            args+=(--event-file "$GITHUB_EVENT_PATH")
+          fi
+          if [[ "$EVENT_NAME" == workflow_dispatch && "$APPLY" != true ]]; then
+            args+=(--dry-run)
+          else
+            args+=(--apply)
+          fi
+          if [[ "$MIGRATE" == true ]]; then
+            args+=(--migrate)
+          fi
+          if [[ "$RETIRE" == true ]]; then
+            args+=(--retire-labels)
+          fi
+          if [[ "$CONFIRM_CUTOFF" == true ]]; then
+            args+=(--confirm-client-cutover)
+          fi
+          python3 scripts/common_issue_policy.py "${args[@]}"
+      - name: Preserve migration snapshot
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: common-lifecycle-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ~/.local/state/common-issue-policy/*.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 30

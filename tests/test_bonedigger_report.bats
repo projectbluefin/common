@@ -131,74 +131,33 @@ EOF
     [ "$output" = "bluefin|latest" ]
 }
 
-@test "queue choices map to at most one supported queue label" {
-    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
-        "$BONEDIGGER_SCRIPT" "Submit to the clanker queue for machine analysis"
-    [ "$status" -eq 0 ]
-    [ "$output" = "3-clanker-queue" ]
 
-    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
-        "$BONEDIGGER_SCRIPT" "I only want human interaction"
-    [ "$status" -eq 0 ]
-    [ "$output" = "3-human-queue" ]
-
-    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
-        "$BONEDIGGER_SCRIPT" "No queue preference"
-    [ "$status" -eq 0 ]
-    [ -z "$output" ]
-}
-
-@test "queue selection records one workflow-readable routing preference" {
+@test "human-only consent replaces prior analysis consent in the submitted body" {
     cat << 'EOF' > "$WORKDIR/bin/gum"
 #!/usr/bin/bash
 case "$1" in
-    choose) printf 'Submit to the clanker queue for machine analysis\n' ;;
+    choose) printf 'Human interaction only\n' ;;
     style) exit 0 ;;
 esac
 EOF
     chmod +x "$WORKDIR/bin/gum"
     mkdir -p "$WORKDIR/draft"
-    : > "$WORKDIR/draft/queue-label.txt"
     printf '%s\n' \
         '## Bluefin report' \
-        '<!-- bonedigger-queue-preference: 3-human-queue -->' \
+        '<!-- automation-preference: analysis -->' \
         > "$WORKDIR/draft/issue.md"
 
     run env PATH="$WORKDIR/bin:$PATH" bash -c '
         source "$1"
         DRAFT_DIR="$2"
-        choose_queue_preference
+        choose_automation_preference
     ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
 
     [ "$status" -eq 0 ]
-    [ "$(< "$WORKDIR/draft/queue-label.txt")" = "3-clanker-queue" ]
-    [ "$(grep -cF '<!-- bonedigger-queue-preference: 3-clanker-queue -->' "$WORKDIR/draft/issue.md")" -eq 1 ]
-    ! grep -qF '<!-- bonedigger-queue-preference: 3-human-queue -->' "$WORKDIR/draft/issue.md"
+    grep -qF '<!-- automation-preference: human-only -->' "$WORKDIR/draft/issue.md"
+    ! grep -qF '<!-- automation-preference: analysis -->' "$WORKDIR/draft/issue.md"
 }
 
-@test "no queue preference still records ujust report intake" {
-    cat << 'EOF' > "$WORKDIR/bin/gum"
-#!/usr/bin/bash
-case "$1" in
-    choose) printf 'No queue preference\n' ;;
-    style) exit 0 ;;
-esac
-EOF
-    chmod +x "$WORKDIR/bin/gum"
-    mkdir -p "$WORKDIR/draft"
-    : > "$WORKDIR/draft/queue-label.txt"
-    printf '## Bluefin report\n' > "$WORKDIR/draft/issue.md"
-
-    run env PATH="$WORKDIR/bin:$PATH" bash -c '
-        source "$1"
-        DRAFT_DIR="$2"
-        choose_queue_preference
-    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
-
-    [ "$status" -eq 0 ]
-    [ -z "$(< "$WORKDIR/draft/queue-label.txt")" ]
-    grep -qF '<!-- bonedigger-queue-preference: none -->' "$WORKDIR/draft/issue.md"
-}
 
 @test "network smart logs are redacted and bounded" {
     cat << 'EOF' > "$WORKDIR/bin/journalctl"
@@ -709,21 +668,22 @@ EOF
     [ ! -e "$LOCAL_REPORT_ROOT/last/journal.txt" ]
 }
 
-@test "issue creation uses direct gh arguments and one queue label" {
+@test "ordinary reporters create issues without requesting label permissions" {
     cat << 'EOF' > "$WORKDIR/bin/gh"
 #!/usr/bin/bash
-printf '%s\n' "$*" >> "$CALLS_FILE"
-if [[ "$1" == issue ]]; then
-    printf 'https://github.com/projectbluefin/bluefin/issues/99\n'
-fi
+for arg in "$@"; do
+    if [[ "$arg" == --label ]]; then
+        printf 'Reporter cannot set repository labels\n' >&2
+        exit 1
+    fi
+done
+printf 'https://github.com/projectbluefin/common/issues/99\n'
 EOF
     chmod +x "$WORKDIR/bin/gh"
-    export CALLS_FILE="$WORKDIR/gh-calls"
     mkdir -p "$WORKDIR/draft"
-    printf 'projectbluefin/bluefin\n' > "$WORKDIR/draft/repo.txt"
-    printf '3-clanker-queue\n' > "$WORKDIR/draft/queue-label.txt"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
     printf 'Short title\n' > "$WORKDIR/draft/title.txt"
-    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+    printf '<!-- report-type: bug -->\n' > "$WORKDIR/draft/issue.md"
 
     run env PATH="$WORKDIR/bin:$PATH" bash -c '
         source "$1"
@@ -732,9 +692,7 @@ EOF
     ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
 
     [ "$status" -eq 0 ]
-    [ "$output" = "https://github.com/projectbluefin/bluefin/issues/99" ]
-    grep -qF "issue create --repo projectbluefin/bluefin --title Short title --body-file $WORKDIR/draft/issue.md --label 3-clanker-queue" "$CALLS_FILE"
-    [ "$(grep -o -- '--label' "$CALLS_FILE" | wc -l)" -eq 1 ]
+    [ "$output" = "https://github.com/projectbluefin/common/issues/99" ]
 }
 
 @test "confirmation accepts a GitHub issue URL and posts no device identifier" {
@@ -794,6 +752,7 @@ EOF
 @test "declining submission preserves the draft and resume command" {
     cat << 'EOF' > "$WORKDIR/bin/gum"
 #!/usr/bin/bash
+[[ "$1" == choose ]] && printf 'No preference\n'
 if [[ "$1" == confirm ]]; then
     exit 1
 fi
@@ -801,7 +760,6 @@ EOF
     chmod +x "$WORKDIR/bin/gum"
     mkdir -p "$WORKDIR/draft"
     printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
-    printf '\n' > "$WORKDIR/draft/queue-label.txt"
     printf 'Short title\n' > "$WORKDIR/draft/title.txt"
     printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
 
@@ -817,7 +775,7 @@ EOF
     [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
 }
 
-@test "cancelling final queue selection preserves the bug draft" {
+@test "cancelling automation selection preserves the bug draft" {
     cat << 'EOF' > "$WORKDIR/bin/gum"
 #!/usr/bin/bash
 [[ "$1" == choose ]] && exit 1
@@ -825,7 +783,6 @@ EOF
     chmod +x "$WORKDIR/bin/gum"
     mkdir -p "$WORKDIR/draft"
     printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
-    : > "$WORKDIR/draft/queue-label.txt"
     printf 'Short title\n' > "$WORKDIR/draft/title.txt"
     printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
     : > "$WORKDIR/draft/bug-report.txt"
@@ -839,7 +796,6 @@ EOF
 
     [ "$status" -eq 0 ]
     [ -f "$WORKDIR/draft/issue.md" ]
-    [[ "$output" == *"Submission was cancelled before selecting a queue preference."* ]]
     [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
 }
 
@@ -854,6 +810,7 @@ case "$1" in
         esac
         ;;
     confirm) exit 1 ;;
+    choose) printf 'No preference\n' ;;
 esac
 EOF
     chmod +x "$WORKDIR/bin/gum"

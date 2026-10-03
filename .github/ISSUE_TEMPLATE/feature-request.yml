@@ -1,0 +1,70 @@
+name: "Feature request"
+description: "Describe a problem Bluefin common could solve and the outcome you need."
+labels: ["needs-triage", "kind/feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Start with the problem
+
+        Use a short, specific issue title. Tell us who is affected and what would improve
+        their experience. You do not need logs, a technical design, or final acceptance
+        criteria to suggest a feature; maintainers will refine those with you later.
+
+        ## What happens next
+
+        This request starts in `needs-triage`. A maintainer will read it, clarify scope
+        if needed, and decide whether to accept implementation work. A suggestion is
+        not an implementation commitment, and welcoming machine analysis is **not**
+        approval to implement a change.
+
+        You do not need to choose labels or use commands in comments. Reply normally
+        when asked for details. For image changes, maintainers will record delivery
+        evidence before asking you to update and verify the outcome.
+        See the [common issue lifecycle](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem to solve"
+      description: "What are you trying to do, who is affected, and what gets in the way?"
+      placeholder: "As someone who…, I need to…, but currently…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: "Desired outcome"
+      description: "Describe what success would look like. A concrete example is helpful; a proposed implementation is optional."
+    validations:
+      required: true
+
+  - type: input
+    id: component
+    attributes:
+      label: "Affected component"
+      description: "Which part of common is involved? It is fine to say you are unsure."
+      placeholder: "For example: ujust recipe, desktop defaults, package selection, or unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: "Current workaround"
+      description: "How do you handle this today, and what are its limitations? Say none if you have no workaround."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: automation-preference
+    attributes:
+      label: "Automation preference"
+      description: "Choose how you want this request analyzed. Human interaction only asks us not to use machine analysis or agent implementation; routine status and label automation still runs. A maintainer must separately accept any implementation work."
+      options:
+        - "Human interaction only"
+        - "Machine analysis is welcome"
+        - "No preference"
+    validations:
+      required: true

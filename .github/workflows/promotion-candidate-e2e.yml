@@ -36,17 +36,37 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
+      pull-requests: read
     steps:
+      - name: Check out trusted issue policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
       - name: File promotion-blocker issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
+          set -euo pipefail
           DATE=$(date +'%Y-%m-%d')
-          gh issue create \
+          issue_url=$(gh issue create \
             --repo "$REPO" \
             --title "ci: promotion candidate E2E failed — ${DATE}" \
-            --body "The Tuesday promotion-candidate E2E suite failed before the weekly promotion window. **Do NOT promote** \`bluefin:testing\` or \`bluefin:lts-testing\` until resolved. Workflow run: ${RUN_URL}" \
-            --label "1-triage"
+            --body "<!-- report-type: bug -->
+          The Tuesday promotion-candidate E2E suite failed before the promotion window. **Do NOT promote** the affected testing images until resolved. Workflow run: ${RUN_URL}
+
+          Next actor: maintainer. Inspect the failed suite, identify the regression owner, and require a passing candidate run before promotion. Reporter action: none unless additional evidence is requested.")
+          python3 scripts/common_issue_policy.py --repo "$REPO" --issue "${issue_url##*/}" --apply
+      - name: Preserve migration snapshot
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: common-candidate-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ~/.local/state/common-issue-policy/*.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 30

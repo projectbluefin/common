@@ -6,17 +6,26 @@
 
 ## Why?
 
-<!-- Link the issue this closes: "Closes #NNN" -->
-Closes #
+<!-- Link related issues with "Refs #NNN". Use "Closes #NNN" only for code-only
+     work whose acceptance criteria are satisfied at merge, or a report whose
+     delivery and verification are already complete. Image reports stay open
+     until delivery evidence and reporter verification are recorded. -->
+Refs #
 
 ## PR pipeline
 
 ```
-opened ──▶ 4-review ──▶ approved ──▶ merged
+opened ──▶ native review status ──▶ approved ──▶ merge queue ──▶ merged
 ```
 
 > A maintainer reviews and approves; merge goes through the merge queue.
 > Select `blocked` or `hold` to pause the work.
+
+PRs use GitHub assignments, review requests, and review status, not issue-stage
+labels. Keep related image reports open after merge: record what must ship and
+which image or channel the reporter will need before requesting verification.
+Project-owned lifecycle posts state the status, next actor, specific next steps,
+and reporter action (or explicitly say none is needed).
 
 ## Checklist
 

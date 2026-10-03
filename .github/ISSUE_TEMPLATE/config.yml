@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
   - name: "Questions and troubleshooting"
-    url: https://github.com/ublue-os/bluefin/discussions
-    about: "Not sure it is a bug? Ask here first — most questions are answered faster than issues."
-  - name: "todo.projectbluefin.io — the work board"
-    url: https://github.com/orgs/projectbluefin/projects/2
-    about: "Every open issue, left to right, from triage to shipped. Find something to work on."
+    url: https://community.projectbluefin.io/
+    about: "Ask the Bluefin community for help if you are not yet sure this is a bug."
+  - name: "Common issue lifecycle"
+    url: https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md
+    about: "What happens after a report, who acts next, and how delivered fixes are verified."
   - name: "Contributing guide"
     url: https://docs.projectbluefin.io/contributing
-    about: "How the project is built and how to get a change merged."
+    about: "How Bluefin is built and how to contribute a change. Common's repository instructions take precedence for its pilot workflow."

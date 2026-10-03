@@ -1,7 +1,7 @@
 ---
 name: hive
-version: "2.3"
-last_updated: "2026-09-24"
+version: "3.0"
+last_updated: "2026-10-02"
 id: hive
 one_line_purpose: Route factory work through Hive coordination and labels.
 entry_point: docs/skills/hive.md
@@ -12,8 +12,8 @@ status: active
 dependencies: []
 tags: [hive, multi-repo, coordination]
 description: >-
-  KubeStellar Hive coordination, Trust the Machines routing, and the canonical
-  seven-label workflow. Use when finding or routing factory work.
+  Hive coordination across repositories with GitHub as workflow authority.
+  Use when finding routed work or checking the common pilot's acceptance boundary.
 metadata:
   type: reference
   context7-sources:
@@ -29,24 +29,25 @@ governor and agent state, and contributor or federation state exposed by the
 checked-in API. Do not infer repository scope or workflow state from a
 hostname, cached output, dashboard chrome, or an agent message.
 
-## Canonical workflow labels
+## Workflow-state authority
 
-The only labels that **route workflow state** are:
+Read [`label-workflow.md`](./label-workflow.md) before triaging common work.
+It defines the **common-only** pilot, overlays, analysis preference, and
+trusted human acceptance gate. Other repositories retain their local numbered
+or `queue/*` contracts; read their `AGENTS.md` rather than applying this pilot.
 
-| Label | Meaning |
-|---|---|
-| `1-triage` | New work awaiting triage |
-| `2-discussing` | Discussion or design clarification |
-| `3-human-queue` | Human-maintained queue |
-| `3-clanker-queue` | Agent-maintained queue |
-| `4-review` | Pull request awaiting review |
-| `blocked` | Waiting on human input or an external dependency |
-| `hold` | Intentionally paused |
+Common issues use one lifecycle stage; PRs use native GitHub assignment and
+review status. Preserve descriptive and operational labels alongside
+`agent/*` and `hive/*` routing. Reporter machine-analysis consent is not
+implementation acceptance; immutable labeled-event authority and unchanged
+issue-body scope establish acceptance, not the label's presence alone.
 
-Workflows own these seven labels. Never invent, add, remove, or hand-edit
-workflow state. Repository-local product labels may describe kind or ownership;
-they never substitute for assignment, a reviewed specification, a plan, or
-Hive admission. Put other details in the issue body or project fields.
+The common runtime uses native `needs-human` enumeration gating for
+unaccepted or human-only work. It introduces no global Hive approval API or
+deployment change. Hive `ready` is not a verified accepted-label admission
+gate, and local reconciliation cannot guarantee scheduling enforcement for
+cached, assigned, or differently configured workers. Verify the human
+acceptance record, scope, assignment, overlays, and preference before acting.
 
 ## Finding work
 
@@ -80,21 +81,27 @@ persist, or include tokens in logs, prompts, issue bodies, or task reports.
 
 ## Ownership and gates
 
-`projectbluefin/bonedigger` owns the reusable lifecycle automation (the
-`.github/workflows/lifecycle.yml` reusable workflow, pinned as a `workflow_call`
-in each consumer's own `.github/workflows/bonedigger.yml`) and report intake.
-This repository documents the contract; it does not own those implementations.
+Common owns its local policy script, catalog, and issue-lifecycle workflow.
+Report intake automation is a separate integration, and other repositories
+retain their local lifecycle callers. This pilot changes none of those
+implementations or Hive's deployment, authentication, or secrets.
 
-Agents act only on assigned or project-routed work. Design, security,
-cross-repository breakage, approval, review, and merge decisions remain human
-gates. Pull requests must link their issue with `Closes #NNN`.
+Agents act only on accepted, assigned or explicitly routed common work.
+Design, security, cross-repository breakage, approval, review, and merge
+decisions remain human gates. Link image reports with `Refs #NNN` while
+delivery is unresolved; code-only work satisfied at merge may use
+`Closes #NNN`. Delivery/verification transitions require validated human
+evidence, not a Hive queue result. Follow the target repository's local PR
+linkage rules outside common.
 
 ## Verification
 
 - [ ] GitHub identifies the affected repository and issue.
 - [ ] Live Hive config or status corroborates the intended repository scope.
 - [ ] Missing, stale, or contradictory API fields were escalated instead of guessed.
-- [ ] Only canonical workflow labels route work; product labels do not change state.
+- [ ] Common issues have at most one pilot stage; PRs have no issue-stage label.
+- [ ] Trusted human acceptance and delivery evidence are validated independently
+      of Hive readiness, and human-only preferences remain intact.
 - [ ] Trust tier and permissions are sufficient for the requested action.
 - [ ] Human gates have not been bypassed.
 
@@ -105,8 +112,9 @@ Project Bluefin repositories.
 
 ## When NOT to Use
 
-Do not use it to mutate labels, claim work, bypass review, or operate a hosted
-Hive without the relevant hosted-Hive skill.
+Do not use it to self-accept work, claim work, bypass review, or operate a
+hosted Hive without the relevant hosted-Hive skill. Trusted human common
+triage follows the label-picker procedure in the label-workflow skill.
 
 ## Core Process
 
@@ -128,5 +136,6 @@ Hive without the relevant hosted-Hive skill.
 ## Red Flags
 
 - Queue state inferred from cached output or an agent message.
-- More than one numbered workflow label.
+- Common work accepted from machine-analysis consent, a body edit, an old
+  queue, or Hive readiness instead of an authorized human decision.
 - A label or slash command used as an unverified state transition.

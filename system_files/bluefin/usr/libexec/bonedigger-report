@@ -530,6 +530,7 @@ collect_baseline() {
     {
         printf '## %s\n\n' "$BONEDIGGER_BRAND"
         printf '_Created with `ujust report`._\n\n'
+        printf '<!-- report-type: bug -->\n\n'
         printf '### Summary\n\n%s\n\n' "$description"
         printf '### Steps to reproduce\n\n%s\n\n' "$reproduction"
         printf '### System\n\n'
@@ -644,6 +645,7 @@ collect_feature_body() {
     {
         printf '## 🫐 Bluefin Feature Request\n\n'
         printf '_Created with `ujust report`._\n\n'
+        printf '<!-- report-type: feature -->\n\n'
         printf '### Requested change\n\n%s\n' "$description"
     } > "$DRAFT_DIR/issue.md"
     printf '%s\n' "$title" > "$DRAFT_DIR/title.txt"
@@ -656,7 +658,6 @@ create_draft() {
     mkdir -p "$DRAFT_ROOT"
     DRAFT_DIR="$(mktemp -d "${DRAFT_ROOT}/draft-XXXXXX")"
     printf '%s\n' "$repo" > "$DRAFT_DIR/repo.txt"
-    : > "$DRAFT_DIR/queue-label.txt"
 }
 
 keep_draft() {
@@ -692,8 +693,7 @@ load_draft() {
     local filename
 
     if [[ ! -d "$RESUME_DIR" || ! -f "$RESUME_DIR/repo.txt" || \
-        ! -f "$RESUME_DIR/queue-label.txt" || ! -f "$RESUME_DIR/title.txt" || \
-        ! -f "$RESUME_DIR/issue.md" ]]; then
+        ! -f "$RESUME_DIR/title.txt" || ! -f "$RESUME_DIR/issue.md" ]]; then
         printf 'Invalid report draft: %s\n' "$RESUME_DIR" >&2
         return 1
     fi
@@ -779,18 +779,13 @@ publish_smart_logs() {
 
 create_issue() {
     local repo
-    local queue_label
     local title
     local issue_url
     local -a args
 
     repo="$(< "$DRAFT_DIR/repo.txt")"
-    queue_label="$(< "$DRAFT_DIR/queue-label.txt")"
     title="$(< "$DRAFT_DIR/title.txt")"
     args=(issue create --repo "$repo" --title "$title" --body-file "$DRAFT_DIR/issue.md")
-    if [[ -n "$queue_label" ]]; then
-        args+=(--label "$queue_label")
-    fi
 
     if ! issue_url="$(gh "${args[@]}")"; then
         printf 'Could not create the GitHub issue.\n' >&2
@@ -813,12 +808,10 @@ submit_draft() {
     local issue_url
 
     preview_draft
-    if [[ -f "$DRAFT_DIR/bug-report.txt" ]]; then
-        if ! choose_queue_preference; then
-            printf 'Submission was cancelled before selecting a queue preference.\n'
-            keep_draft "$DRAFT_DIR"
-            return
-        fi
+    if ! choose_automation_preference; then
+        printf 'Submission was cancelled before selecting an automation preference.\n'
+        keep_draft "$DRAFT_DIR"
+        return
     fi
     if ((${#PROFILE_FILES[@]} > 0)); then
         consent_message="Publish the selected smart logs publicly and create this issue?"
@@ -851,48 +844,38 @@ submit_draft() {
     offer_browser "$issue_url"
 }
 
-queue_label_for_choice() {
+preference_for_choice() {
     case "$1" in
-        "Submit to the clanker queue for machine analysis")
-            printf '3-clanker-queue\n'
-            ;;
-        "I only want human interaction")
-            printf '3-human-queue\n'
-            ;;
-        "No queue preference")
-            printf '\n'
-            ;;
-        *)
-            return 1
-            ;;
+        "Machine analysis is welcome") printf 'analysis\n' ;;
+        "Human interaction only") printf 'human-only\n' ;;
+        "No preference") printf 'unspecified\n' ;;
+        *) return 1 ;;
     esac
 }
 
-save_queue_preference() {
-    local queue_label="$1"
-    local marker_value="${queue_label:-none}"
+save_automation_preference() {
+    local preference="$1"
 
     sed -i -E \
-        '/^<!-- bonedigger-queue-preference: (3-clanker-queue|3-human-queue|none) -->$/d' \
+        '/^<!-- ([[:alnum:]-]*queue-preference|automation-preference): .* -->$/d' \
         "$DRAFT_DIR/issue.md"
-    printf '%s\n' "$queue_label" > "$DRAFT_DIR/queue-label.txt"
-    printf '\n<!-- bonedigger-queue-preference: %s -->\n' "$marker_value" \
+    printf '\n<!-- automation-preference: %s -->\n' "$preference" \
         >> "$DRAFT_DIR/issue.md"
 }
 
-choose_queue_preference() {
-    local queue_choice
-    local queue_label
+choose_automation_preference() {
+    local choice
+    local preference
 
-    gum style --bold --foreground 212 "Final routing preference"
+    gum style --bold --foreground 212 "Automation preference"
     gum style --foreground 245 \
-        "Choose machine analysis, human-only interaction, or leave routing to triage."
-    queue_choice="$(gum choose \
-        "No queue preference" \
-        "Submit to the clanker queue for machine analysis" \
-        "I only want human interaction")" || return
-    queue_label="$(queue_label_for_choice "$queue_choice")" || return
-    save_queue_preference "$queue_label"
+        "This records consent to analysis, not approval to implement. A maintainer reviews the request first."
+    choice="$(gum choose \
+        "No preference" \
+        "Machine analysis is welcome" \
+        "Human interaction only")" || return
+    preference="$(preference_for_choice "$choice")" || return
+    save_automation_preference "$preference"
 }
 
 parse_confirm_target() {
