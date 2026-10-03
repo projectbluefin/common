@@ -170,7 +170,8 @@ The old `image-flavor =~ dx` gate was removed. That gate was dead once the -dx i
 
 ## Known caveats
 
-- **Docker daemon**: `brew install docker` provides the CLI. The `moby-engine` daemon must be present in the base image as a layered system package. If `dockerd` is missing, docker CLI works but containers won't run. Verify moby is in the Containerfile before shipping.
+- **Docker daemon**: `brew install docker` provides the CLI. The `moby-engine` daemon must be present in the base image as a layered system package. If `dockerd` is missing, docker CLI works but containers won't run. Verify moby is in the Containerfile before shipping. `ujust devmode` follows this path: it installs the docker CLI only and adds the user to the `docker` group, so it depends on a rootful daemon from the base image.
+- **Rootless alternative**: `ujust setup-docker` is the rootless path and does not use the base-image daemon. It installs `docker-engine` (moby) plus `rootlesskit`/`slirp4netns` via Homebrew and registers `dockerd` in the current user's namespace with `dockerd-rootless-setuptool.sh install`. It aborts before prompting if `/var/run/docker.sock` is writable by the current user (the guard is a `-w` test, so a live rootful socket that the user cannot write — no `docker` group membership — does not trigger it). See `system_files/bluefin/usr/share/ublue-os/just/system.just` (setup-docker).
 - **Lima guest runtime**: Lima uses `containerd`/`nerdctl` by default. For devcontainer workflows requiring the Docker daemon, Docker can be installed inside the Lima guest VM (`limactl shell ubuntu sudo apt-get install docker.io`).
 - **`gum choose --no-limit` section headers**: header strings (e.g. `── Docker ───`) are selectable items. They are filtered out in the summary/install logic by using specific `grep -q` patterns that don't match header text. Do not use item names that are substrings of header text.
 

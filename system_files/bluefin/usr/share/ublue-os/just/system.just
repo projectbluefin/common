@@ -479,3 +479,47 @@ check-sb-key:
     else
         echo "Not an EFI system — Secure Boot does not apply."
     fi
+
+# Install Docker (rootless) via Homebrew
+# Installs the docker CLI plus the docker-engine daemon, rootlesskit and
+# slirp4netns, then runs the rootless daemon setup tool to register the
+# per-user docker service. Aborts early if a rootful daemon socket is
+# writable by the current user.
+[group('System')]
+setup-docker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if ! command -v brew &>/dev/null; then
+        echo "Homebrew is required to install Docker." >&2
+        echo "Install it first: https://docs.projectbluefin.io/administration#homebrew" >&2
+        exit 1
+    fi
+
+    # dockerd-rootless-setuptool.sh refuses to install while a rootful daemon
+    # socket is reachable, so bail out before prompting or doing any work.
+    # BLUEFIN_DOCKER_SOCKET is a test hook: it lets the bats suite point the
+    # guard at a fixture socket. Leave it unset in normal use.
+    docker_socket="${BLUEFIN_DOCKER_SOCKET:-/var/run/docker.sock}"
+    if [ -w "${docker_socket}" ]; then
+        echo "A rootful Docker daemon is running and its socket (${docker_socket}) is writable."
+        echo "dockerd-rootless-setuptool.sh cannot install alongside it."
+        echo "Stop and disable it first, for example:"
+        echo "    sudo systemctl disable --now docker.service docker.socket"
+        exit 1
+    fi
+
+    gum confirm "Install Docker (rootless) via Homebrew?" || exit 0
+
+    # 'docker' is the CLI only; 'docker-engine' is the daemon and ships
+    # dockerd-rootless-setuptool.sh. rootlesskit + slirp4netns are required
+    # for the rootless daemon.
+    brew install docker docker-engine rootlesskit slirp4netns
+
+    # Register and start dockerd inside the current user's namespace.
+    dockerd-rootless-setuptool.sh install
+
+    gum style \
+        --foreground 2 --border rounded --border-foreground 2 \
+        --align center --width 60 --padding "1 3" \
+        "Docker (rootless) is installed and active. Use it in this session."

@@ -17,6 +17,7 @@ test:
     bats tests/test_bling_fastfetch.bats
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
+    bats tests/test_setup_docker.bats
     bats tests/test_native_recipes.bats
     bats tests/test_ujust.bats
     bats tests/test_ujust_completion.bats
