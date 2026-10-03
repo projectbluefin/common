@@ -55,8 +55,15 @@ nvidia-related changes, read `elements/bluefin-nvidia/` in dakota first.
   (`nv_pmops_suspend` → `NV_ERR_NOT_SUPPORTED`), systemd-suspend aborts, and
   the machine wakes seconds after sleep starts (common#803, same failure class
   as dakota#1118).
-- `NVreg_TemporaryFilePath=/var/tmp` — the default `/tmp` is tmpfs; a failed
-  VRAM save there aborts suspend through the notifier path too.
+- `NVreg_TemporaryFilePath=/var/lib/systemd/sleep` — the default `/tmp` is
+  tmpfs; a failed VRAM save there aborts suspend through the notifier path too.
+  It must not be `/var/tmp`: with notifiers the save file is opened from
+  `systemd-sleep` (`systemd_sleep_t`), which Fedora's SELinux policy denies on
+  `tmp_t`, so VRAM is lost and the GPU crashes on resume (utah#492/#533,
+  fedora-selinux/selinux-policy#3087). `/var/lib/systemd/sleep` is
+  `systemd_sleep_var_lib_t`, which the policy already lets that domain manage.
+  `usr/lib/tmpfiles.d/nvidia-suspend.conf` creates the directory (systemd does
+  not ship it); `tests/test_nvidia_suspend.bats` keeps the two in step.
 
 Both options are inert on systems without the nvidia module and ignored as
 unknown parameters by drivers that predate them. The `zz-` prefix keeps the
@@ -97,6 +104,7 @@ Do **not** install `nvidia-container-runtime`, `libnvidia-container1`, `libnvidi
 
 ## Red Flags
 
+- Pointing `NVreg_TemporaryFilePath` at `/var/tmp`, `/tmp` or any other path `systemd_sleep_t` cannot write — the VRAM save is denied under enforcing SELinux and resume crashes the GPU (utah#533)
 - Removing `system_files/shared/usr/lib/modprobe.d/zz-nvidia-suspend.conf` or either of its options — sleep regresses to the common#803 "wakes seconds after suspend" veto on images whose driver package does not pin them
 - Removing the `80-nvidia-container-toolkit.preset` CDI preset
 - Removing the `golang-github-nvidia-container-toolkit` exclusion from the bluefin build script
@@ -108,7 +116,7 @@ Do **not** install `nvidia-container-runtime`, `libnvidia-container1`, `libnvidi
 
 Before closing any nvidia-related PR:
 
-- [ ] `zz-nvidia-suspend.conf` still carries `NVreg_UseKernelSuspendNotifiers=1` and `NVreg_TemporaryFilePath=/var/tmp` (common#803)
+- [ ] `zz-nvidia-suspend.conf` still carries `NVreg_UseKernelSuspendNotifiers=1` and `NVreg_TemporaryFilePath=/var/lib/systemd/sleep` (common#803, utah#533), and `tmpfiles.d/nvidia-suspend.conf` still creates that directory
 - [ ] No `ublue-os/*` repos were written to
 - [ ] CDI preset not accidentally removed — `80-nvidia-container-toolkit.preset` still enables `nvidia-cdi-refresh.{path,service}`
 - [ ] `golang-github-nvidia-container-toolkit` exclusion in bluefin build script is still present
