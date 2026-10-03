@@ -26,6 +26,11 @@ binding='<Super>e'
 command='nautilus --new-window'
 name='New File Manager Window'
 
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/compass]
+name='Compass'
+command='/home/linuxbrew/.linuxbrew/bin/compass toggle'
+binding='<Super>space'
+
 # Emoji picker shortcuts for it.mijorus.smile were removed: Smile is no longer in
 # system-flatpaks.Brewfile, so the bindings were no-ops on a default install and
 # <Super>period shadowed GNOME's built-in emoji insertion shortcut. Users who install
