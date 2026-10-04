@@ -1,7 +1,7 @@
 ---
 name: label-workflow
-version: "4.0"
-last_updated: "2026-10-02"
+version: "4.1"
+last_updated: "2026-10-03"
 id: label-workflow
 one_line_purpose: Operate the common-only issue lifecycle and preserve other repositories' local label contracts.
 entry_point: docs/skills/label-workflow.md
@@ -159,16 +159,46 @@ overlays and unrelated labels survive. Every migration archives assignments and
 definitions under `~/.local/state/common-issue-policy/` before mutation; workflows
 upload these snapshots as 30-day artifacts, including after a failed apply.
 
-Retired definitions remain inert temporarily for older installed report clients.
-They are not workflow stages or approval signals. After the reviewed runtime
-is deployed and the supported-client cutoff is confirmed, explicitly retire:
+Retirement removes definitions from the label picker as well as assignments.
+Supported common report clients must not request retired labels; older clients
+that do must upgrade. After deployment and the explicit client cutoff, retire:
 
 ```bash
-gh workflow run issue-lifecycle.yml --repo projectbluefin/common -f apply=true -f retire=true -f confirm-client-cutover=true
+gh workflow run issue-lifecycle.yml --repo projectbluefin/common -f apply=true -f migrate=true -f retire=true -f confirm-client-cutover=true
 ```
 
 Retirement refuses an undeployed policy or remaining active old assignments.
 No mutation in another repository is allowed.
+
+### Cleanup and recovery
+
+- Zero open assignments does not mean unused. Check closed history, forms,
+  workflows, and skill/API consumers before deleting definitions. Hive still
+  uses `lgtm` and `good first issue`; preserve its routing namespaces.
+- Archive definitions and all issue/PR assignments before deletion. Recreating
+  a definition does not restore its historical assignments; restore those
+  associations separately from the backup when undoing a mistaken deletion.
+- Account type alone does not prove authorship. Older generated notices may have
+  used a maintainer token. Migrate an owner-authorized, exact known template only
+  after archiving it; never rewrite ordinary discussion or human-modified variants.
+- `GitHub.request()` does not retry 5xx failures. An apply can stop partway;
+  inspect failed logs, preserve its snapshot, and compare live state before
+  re-dispatching the quiet migration. Pause scheduled/event repair during recovery.
+- A queued rerun with no job is not progress. Inspect competing runs; if the
+  rerun is stuck or its control state is inconsistent, dispatch a fresh migration
+  rather than waiting indefinitely. Keep `migrate=true` on retirement dispatches.
+- Classification is not substantive triage. Read the current discussion, verify
+  every completion criterion against merged implementation and runtime evidence,
+  preserve linked-PR ownership, and publish a specific next action or real decision.
+  Documentation, a withdrawn PR, and a delivered user fix are different outcomes.
+  Preparing an actionable scope does not itself grant implementation acceptance.
+- For content migration, pause the workflow before editing issue bodies with a
+  user token. Remove only bounded machine-owned pipeline panels; preserve human
+  text and recorded preferences. Body edits can invalidate acceptance or satisfy
+  an information request, so inspect the resulting stage before restoring repair.
+- Verify definitions and assignments separately, plus kind/area coverage, native
+  ownership, holds, preferences, and comment/closure behavior. Re-enable repair
+  and finish with a quiet migration dispatch, not a bulk status-comment pass.
 
 ### Hive boundary
 

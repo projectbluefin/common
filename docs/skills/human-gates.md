@@ -48,8 +48,9 @@ Examples:
 
 **Product-defining specifications.** Changes to an account/identity model,
 user-visible default, or shipped feature such as family safety require a
-maintainer-approved specification before the associated PR moves past
-`4-review`. The specification records affected products, alternatives, threat
+maintainer-approved specification before the associated PR is approved for merge.
+Common PRs use native review state; other repositories follow their local review
+lifecycle. The specification records affected products, alternatives, threat
 and UX impact, upgrade/rollback, verification, and the maintainer's choice.
 Agents frame those choices; maintainers decide. A draft or absent
 specification leaves the PR at the human gate, not merely waiting for review

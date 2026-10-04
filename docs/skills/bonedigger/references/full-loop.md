@@ -10,12 +10,12 @@ bonedigger and kubestellar-bot together form the closed improvement loop that dr
 user runs ujust report
   └─ bonedigger agent collects selected diagnostics
        └─ scrubs PII on-device and previews the payload
-            └─ creates a structured issue in the target image repo
-                 └─ lifecycle bot moves issue through pipeline
-                      └─ kubestellar-bot picks up 3-clanker-queue issue
+            └─ creates a structured issue in the owning repo
+                 └─ human accepts implementation under that repo's contract
+                      └─ Hive coordinates eligible, assigned work
                            └─ dispatches agent to implement fix
-                                └─ PR shipped back to image repo
-                                     └─ merged → better OS
+                                └─ PR opened where changed code is owned
+                                     └─ merged → delivery → verification
                                           └─ better bonedigger
                                                └─ loop
 ```
@@ -73,6 +73,12 @@ exact `ujust report --resume …` command. The visible `ujust report` report
 heading remains the intake compatibility marker rather than making issue
 creation depend on a label.
 
+Common uses its own intake and acceptance contract: do not request retired
+numbered queue labels there. Machine-analysis consent does not accept
+implementation; the server initializes current stages and preserves preferences.
+Legacy `bonedigger-queue-preference` markers on existing reports remain preference
+data, not active queue labels. See [`label-workflow.md`](../../label-workflow.md).
+
 ### Confirm an existing issue
 
 Use `ujust report --confirm <issue-number-or-url>` when the current system is
@@ -104,7 +110,8 @@ See [`label-workflow.md`](../../label-workflow.md) for the full lifecycle refere
 ## kubestellar-bot - what it does
 
 kubestellar-bot is the implementation agent layer. It:
-- Monitors `3-clanker-queue` issues across all factory repos
+- Monitors eligible work under each repository's contract; `3-clanker-queue`
+  applies only where that local queue is used, not to the common pilot.
 - Dispatches agents to claim and implement fixes
 - Manages the PR lifecycle from claim → ship
 - Reports progress back to the hive dashboard

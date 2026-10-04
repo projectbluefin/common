@@ -132,8 +132,8 @@ is decided, it stays a default.
 
 ## 8. Gate checklist for any org-wide convention PR
 
-A PR implementing Option A may leave `4-review` only when **all** of the
-following are true:
+A PR implementing Option A may receive final maintainer approval only when
+**all** of the following are true:
 
 - [ ] §9 is filled in by a maintainer (decision, scope, date, decider).
 - [ ] The OGC's explicit agreement to the org-wide default is recorded here

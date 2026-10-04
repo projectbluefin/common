@@ -549,8 +549,8 @@
         "workflow"
       ],
       "description": "The common-only pilot's issue stages, human acceptance gate, delivery evidence, and reporter next steps. Use when triaging common reports, linking PRs, reconciling lifecycle labels, or checking a target repository's local authority.",
-      "version": "4.0",
-      "last_updated": "2026-10-02",
+      "version": "4.1",
+      "last_updated": "2026-10-03",
       "doc_type": "procedure"
     },
     {

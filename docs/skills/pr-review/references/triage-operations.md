@@ -9,7 +9,7 @@ Same dossier → verdict → stage → land loop, with issue verdicts:
 | Verdict | Effect |
 |---|---|
 | `close` | Close with the human's stated reason |
-| `label <name>` | Apply a label — only the 7 canonical labels per [label-workflow](../../label-workflow.md). Queue labels swap, never stack |
+| `label <name>` | Follow the common pilot's five issue stages and preserve descriptive, operational, and routing labels — see [label-workflow](../../label-workflow.md). PRs use native review state, not issue stages or numbered queues. |
 | `assign` | Assign to a user or bot |
 | `dup <#>` | Close as duplicate, link to the original |
 | `wrongrepo <repo>` | Transfer or close with redirect |
