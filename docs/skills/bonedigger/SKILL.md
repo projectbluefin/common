@@ -1,7 +1,7 @@
 ---
 name: bonedigger
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-10-04"
 id: bonedigger
 one_line_purpose: Operate bonedigger and kubestellar-bot issue/report automation.
 entry_point: docs/skills/bonedigger/SKILL.md
@@ -31,8 +31,18 @@ the labels that route user reports into the factory.
 ## When Not to Use
 
 Do not use this skill for generic GitHub issue triage, unrelated GitHub CLI
-configuration, or the general issue-admission routing owned by the factory
-lifecycle (`.github/workflows/lifecycle.yml` in `projectbluefin/bonedigger`).
+configuration, or general issue-admission routing. bonedigger's
+`.github/workflows/lifecycle.yml` was removed from `main` in `bonedigger#40`
+(commit `3397cad`, 2026-09-29) and the lifecycle is now Hive-managed across
+the factory. `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` keep
+`bonedigger.yml` callers as retention pins at full commit SHAs (see
+[`references/full-loop.md`](references/full-loop.md)); `common` has no
+lifecycle caller. Narrow callers pinned to `d530767` (tag `v1`) are being
+wired into the four OCI printer forks (`ps-printer-app`, `hplip-printer-app`,
+`gutenprint-printer-app`, `ghostscript-printer-app`); see
+`projectbluefin/common#1224`. Use
+[`label-workflow.md`](../label-workflow.md) for the common-only pilot lifecycle
+and [`hive.md`](../hive.md) for cross-repo coordination.
 
 ## Core Process
 
