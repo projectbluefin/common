@@ -74,7 +74,8 @@ state by hand or invent transitions that are not implemented in the checkout.
   Delivery stages require authorized human evidence. Prow is issue-only descriptive
   classification/negative hold control, not acceptance, assignment, review, or merge.
 - **Protected readers and Hive boundary:** Preserve native `needs-human`, independent
-  human/app gates, active catalog reader gates, and human-only preferences. Only the
+  human/app gates, active catalog reader gates, and human-only preferences (a
+  maintainer may waive `human-only` by removing the label). Only the
   lifecycle bot's automatic gate clears after eligible acceptance. Label presence
   or Hive `ready` does not verify scheduling/admission for every worker; inaccessible
   Hive settings remain unverified. Adoption adds no global API or credentials.

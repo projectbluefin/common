@@ -48,9 +48,9 @@ Missing/unresolved conflicting kinds retain `needs-kind` and implementation gati
 |---|---|
 | `blocked` | Name dependency, resolver, and next step; owner resolves it before resumption |
 | `hold` | Record pause reason/owner/resumption condition; owner explicitly withdraws only the pause |
-| `human-only` | Human interaction/contributors only; preserve reporter preference, while routine status automation may run |
+| `human-only` | Human interaction/contributors only. Set from the reporter's preference at intake; a maintainer can waive it by removing the label |
 | `needs-human` | Native reader gate; acceptance clears only the lifecycle bot's automatic gate, never a human/app's independent gate |
-| `needs-decision`, catalog `gate_labels` | Preserve each active native reader's question/decision gate; its owner resolves reason and explicitly removes it |
+| `needs-decision`, catalog `gate_labels` | Owner answers the question, then removes the label. On accepted work, `needs-decision` pauses it; acceptance stays |
 
 ChairLift's catalog preserves `question` as a native reader gate, not a stage. Keep operational labels with active consumers: routing, request, provenance, priority, review/dependency labels, `agent/*`, and `hive/*`.
 Examples include `ai-fix-requested`, `from-review`, `source:agent`, `lgtm`, `automerge`, and `chore/deps` where locally used; they grant no shared lifecycle authority.
@@ -78,11 +78,12 @@ Resolve each blocker/hold/decision/native human gate through its owner. Acceptan
 does not clear independent gates, assign a contributor, or guarantee scheduling.
 Use **Assignees** or explicit routing to the existing work owner; respect human-only.
 
-The maintainer label-removal waiver is proposed in
-[Actions #609](https://github.com/projectbluefin/actions/pull/609), not deployed in
-the current managed `v1`. Until that change is reviewed and released, removing
-`human-only` alone is reverted from the intake preference; it does not release
-Hive's `needs-human` gate.
+A maintainer with write access can waive `human-only` by removing the label. The
+bot then stops re-adding it, until someone adds it back.
+
+When `needs-decision` is added to an accepted issue (for example by Hive), the
+issue stays accepted and `needs-human` stays on. Removing `needs-decision`
+resumes work; no re-accept is needed.
 
 For an actionable reporter question, explicitly `@reporter` in a new request
 and select `triage/needs-information` within five minutes, or select the stage
@@ -155,10 +156,10 @@ Common waiting report is exactly this visible layout (plus its hidden marker):
 
 ## Maintainer
 
-- Review, use GitHub's **Labels** picker to add `triage/accepted` if you approve implementation.
-- Do not remove `needs-triage` or `needs-human` to signal approval: the bot restores them until acceptance is recorded.
-- Acceptance does not assign a contributor.
-- If a specific question prevents acceptance, ask it and select `triage/needs-information`; if declining or marking a duplicate, close with the reason. `/hive approve` is not a Common lifecycle acceptance action.
+- To accept, add `triage/accepted`.
+- Removing `needs-triage` or `needs-human` does not work, let the bot do it.
+- Accepting means we want it in Bluefin - you are not committed to working on this.
+- Need more information? Ask, then add `triage/needs-information`. To decline, close with a reason.
 
 ## Reporter
 
