@@ -85,6 +85,21 @@ normally, without slash commands. A response returns an information request
 to maintainer assessment, not directly to accepted work. Acceptance does not
 self-assign a task or authorize changes outside the agreed scope.
 
+### Exact maintainer action
+
+After deciding to implement an issue, review or update its body scope and
+completion criteria **first**, then open GitHub's **Labels** picker and add
+`triage/accepted`. Do not remove `needs-triage` or `needs-human` as a substitute:
+the reconciler restores waiting labels until trusted acceptance is recorded.
+`/hive approve` is Hive coordination, not a Common lifecycle acceptance event.
+
+For a recorded decision, resolve its reason and remove `needs-decision` before
+accepting. Resolve `blocked` or `hold` through their owner; independent human/app
+`needs-human` gates remain until explicitly withdrawn. The bot normally clears
+only its own automatic gate after eligible acceptance. Then assign or explicitly
+route the accepted work; acceptance alone neither assigns nor guarantees Hive
+scheduling. Status posts must name these exact controls and expected transitions.
+
 ## PR linkage and delivery
 
 1. Link the accepted issue with **`Refs #NNN`** while the reporter's affected

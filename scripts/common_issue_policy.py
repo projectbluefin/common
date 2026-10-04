@@ -340,7 +340,13 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
         elif response:
             close = True
 
-    next_steps = "Maintainer: check ownership and duplicates; record scope and completion criteria; request specific information, accept implementation, or close with a reason."
+    next_steps = (
+        "Maintainer: review the scope and completion criteria in the issue body, then use GitHub's **Labels** picker to add `triage/accepted` if you approve implementation. "
+        "Do not remove `needs-triage` or `needs-human` to signal approval: the bot restores them until acceptance is recorded. "
+        "After valid acceptance, the bot clears the waiting stage and its automatic admission gate unless a block, hold, or human-only preference still applies; acceptance does not assign a contributor. "
+        "If a specific question prevents acceptance, ask it and select `triage/needs-information`; if declining or marking a duplicate, close with the reason. "
+        "`/hive approve` is not a Common lifecycle acceptance action."
+    )
     reporter = "No action needed unless information is requested."
     if tracking:
         next_steps = "Maintainer: maintain this standing tracker and link actionable child issues. Do not assign the tracker as an implementation task."
@@ -352,7 +358,11 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
                 next_steps += " Run `bootc status` and paste the complete output, or explain that the machine cannot boot, the command fails, or it is not applicable."
             reporter = "Provide the requested information in a reply or edit the corresponding form fields."
         elif requester == "maintainer":
-            next_steps = "Maintainer: resolve the decision recorded in this discussion and write the agreed scope and completion criteria. Do not start implementation before that decision."
+            next_steps = (
+                "Maintainer: resolve the recorded decision and update the agreed scope and completion criteria in the issue body first. "
+                "Then remove `needs-decision` if its reason is resolved and use GitHub's **Labels** picker to add `triage/accepted`. "
+                "Removing a waiting label or posting `/hive approve` does not record Common implementation acceptance."
+            )
         else:
             requests = [
                 c
@@ -375,12 +385,12 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
     elif stage == "triage/accepted":
         next_steps = "Assigned contributor: implement only the accepted scope, run its tests, and open a linked PR. Reviewers: review the current head; required checks and merge controls still apply."
         if not record.get("assignees") and not facts.get("linked_prs"):
-            next_steps = "Maintainer: assign an available contributor for the accepted scope. Contributor: implement that scope, test it, and open a linked PR."
+            next_steps = "Maintainer: use GitHub's **Assignees** picker to assign an available contributor for the accepted scope, or explicitly route the work. Acceptance does not self-assign. Contributor: implement that scope, test it, and open a linked PR."
         if human_only:
             next_steps = "Maintainer: assign a human contributor. Human contributor: implement the accepted scope and open a linked PR. Machine analysis and agent implementation are excluded."
         if "needs-human" in current and not automatic_gate and not human_only:
             next_steps = (
-                "Maintainer: an existing independent `needs-human` gate remains. Resolve its reason and explicitly clear it only when agent implementation is allowed. "
+                "Maintainer: a human or app added an independent `needs-human` gate. Resolve its recorded reason, then explicitly remove that label only when implementation is allowed; the bot will not clear it for you. "
                 + next_steps
             )
     elif stage == "awaiting-release":
@@ -391,7 +401,7 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
         reporter = f"Check image `{evidence['image']}`. Reply `Confirmed fixed` with the version tested, or `Still broken` with what you observed."
     if current & {"blocked", "hold"}:
         next_steps = (
-            "Maintainer/dependency owner: resolve the recorded blocker or hold before any new implementation dispatch. Existing assignments and PRs are preserved. "
+            "Maintainer/dependency owner: resolve the recorded blocker or hold, then have its owner remove `blocked` or `hold` using the Labels picker before new implementation dispatch. Preserve existing assignments and PRs. "
             + next_steps
         )
     if not kind:
@@ -400,7 +410,7 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
         )
     if "triage/accepted" in current and not approved:
         next_steps = (
-            "Maintainer: acceptance is missing a trusted human label event or the issue was edited after approval. Reassess the current scope before reapplying `triage/accepted`. "
+            "Maintainer: the current scope lacks valid human acceptance or changed after approval. Review the body first, then use the Labels picker to select `triage/accepted` again to record a fresh acceptance event. "
             + next_steps
         )
     links = [
