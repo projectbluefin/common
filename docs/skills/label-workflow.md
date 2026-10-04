@@ -178,12 +178,20 @@ No mutation in another repository is allowed.
 - Archive definitions and all issue/PR assignments before deletion. Recreating
   a definition does not restore its historical assignments; restore those
   associations separately from the backup when undoing a mistaken deletion.
+- Account type alone does not prove authorship. Older generated notices may have
+  used a maintainer token. Migrate an owner-authorized, exact known template only
+  after archiving it; never rewrite ordinary discussion or human-modified variants.
 - `GitHub.request()` does not retry 5xx failures. An apply can stop partway;
   inspect failed logs, preserve its snapshot, and compare live state before
   re-dispatching the quiet migration. Pause scheduled/event repair during recovery.
 - A queued rerun with no job is not progress. Inspect competing runs; if the
   rerun is stuck or its control state is inconsistent, dispatch a fresh migration
   rather than waiting indefinitely. Keep `migrate=true` on retirement dispatches.
+- Classification is not substantive triage. Read the current discussion, verify
+  every completion criterion against merged implementation and runtime evidence,
+  preserve linked-PR ownership, and publish a specific next action or real decision.
+  Documentation, a withdrawn PR, and a delivered user fix are different outcomes.
+  Preparing an actionable scope does not itself grant implementation acceptance.
 - For content migration, pause the workflow before editing issue bodies with a
   user token. Remove only bounded machine-owned pipeline panels; preserve human
   text and recorded preferences. Body edits can invalidate acceptance or satisfy
