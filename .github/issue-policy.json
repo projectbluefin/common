@@ -7,6 +7,12 @@
 	"bug_fields": ["what happened?", "what did you expect?", "steps to reproduce", "image details"],
 	"feature_fields": ["problem to solve", "desired outcome", "affected component"],
 	"main_ci_workflows": [".github/workflows/unit-tests.yml", ".github/workflows/validate.yml", ".github/workflows/build.yml"],
+	"intake_rules": [
+		{"match": {"title_prefixes": ["bug:", "fix:", "[bug]"]}, "labels": ["kind/bug"]},
+		{"match": {"title_prefixes": ["feat:", "feature:", "enhancement:", "[feature]", "[enhancement]"]}, "labels": ["kind/feature"]},
+		{"match": {"body_headings": ["Feature Request"]}, "labels": ["kind/feature"]},
+		{"match": {"title_prefixes": ["question:", "[question]"]}, "labels": ["kind/task"]}
+	],
 	"stages": {
 		"needs-triage": {
 			"color": "ededed",

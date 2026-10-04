@@ -62,6 +62,11 @@ Never erase assignees, approvals, reviews, branches, or merge-queue entries.
 Consumers own forms/chooser. Forms initialize triage plus kind; structured CLI bodies initialize server-side because reporters cannot reliably set labels.
 **Automation preference** distinguishes **Human interaction only**, **Machine analysis is welcome**, and **No preference**.
 Analysis consent, old queues, reporter comments, bot labels, and Hive `ready` never accept implementation.
+Descriptive title/body rules live in each catalog's `intake_rules`, not in a
+shared application's code. Common opts in its own bug/feature/question taxonomy;
+ChairLift additionally declares its ACMM/guide/quality and documentation rules.
+Those labels are metadata, not authenticated provenance, analysis consent,
+acceptance or assignment; existing primary kinds and independent gates win.
 
 A trusted human reviews/updates body scope and criteria **first**, then adds `triage/accepted` in **Labels**. Runtime checks immutable actor, current write/maintain/admin permission, and body revision.
 Later body edits or assessment/information resets require fresh human acceptance.

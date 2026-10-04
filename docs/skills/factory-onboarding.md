@@ -58,6 +58,11 @@ Re-read live target state; do not promise zero bypass.
 Author `.github/issue-policy.json` for the exact repository: distinct `display_name`/`comment_marker`, five stages, definitions, `retired_stages`, one-time `label_aliases`, and `standing_issues`.
 `kind_sources` can classify still-active operational labels without deleting/reverse-mirroring them; `gate_labels` preserves native reader gates.
 Keep one `kind/*` on open issues; `area/*` labels stack.
+Declare only locally justified descriptive `intake_rules`; do not inherit
+another application's ACMM/agent/title routing. Rules use bounded literal title
+prefixes, body text or headings and catalog metadata labels only. They cannot
+grant stages, infer consent, assign work, remove an independent gate or override
+an existing primary kind; conflicting inferred kinds remain human-gated.
 Missing/ambiguous kind requires human classification, not arbitrary migration priority.
 
 Choose `delivery.type: image` for Common-style image delivery or `delivery.type: release` for ChairLift-style application/package delivery.
