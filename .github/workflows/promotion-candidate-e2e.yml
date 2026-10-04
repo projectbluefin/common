@@ -69,6 +69,8 @@ jobs:
           ## Reporter
           **Reporter action:** None unless additional evidence is requested.")
           printf 'issue-number=%s\n' "${issue_url##*/}" >> "$GITHUB_OUTPUT"
+      # The issue is authoritative if pending/red main CI refuses reconciliation.
+      # After main CI is green, refresh this issue explicitly; hourly repair is labels-only.
       - name: Reconcile the recorded promotion incident
         id: policy
         uses: projectbluefin/actions/issue-lifecycle@v1
