@@ -99,10 +99,11 @@ QR login is intentionally out of scope.
 
 ## bonedigger — what it does NOT do
 
-bonedigger does not own the seven-label workflow. The reusable `lifecycle.yml`
-workflow it once provided is now Hive-managed and survives only at the full
-commit SHAs that `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` pin in
-their own `bonedigger.yml` callers. `common` has no lifecycle caller.
+bonedigger does not own trusted issue acceptance or the shared lifecycle engine.
+Opted-in Common and ChairLift call `projectbluefin/actions`' shared lifecycle
+through managed `@v1`; Hive supplies assignment and scheduling. The historical
+bonedigger `lifecycle.yml` remains at the full commit SHAs pinned by `bluefin`,
+`bluefin-lts`, `dakota`, and `knuckle` for their report-intake integrations.
 See § Integration status below.
 
 See [`label-workflow.md`](../../label-workflow.md) for the full lifecycle reference.
@@ -111,7 +112,7 @@ See [`label-workflow.md`](../../label-workflow.md) for the full lifecycle refere
 
 kubestellar-bot is the implementation agent layer. It:
 - Monitors eligible work under each repository's contract; `3-clanker-queue`
-  applies only where that local queue is used, not to the common pilot.
+  applies only where that local queue is used, not to opted-in Common or ChairLift.
 - Dispatches agents to claim and implement fixes
 - Manages the PR lifecycle from claim → ship
 - Reports progress back to the hive dashboard
@@ -120,27 +121,27 @@ kubestellar-bot does NOT make design or security decisions. Those hit a human ga
 
 ## Integration status
 
-The factory callers share one reusable bonedigger lifecycle workflow with
-several responsibilities:
+The historical factory report-intake callers retain the bonedigger workflow:
 
 | Workflow | Location | Called by | Purpose |
 |---|---|---|---|
 | bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` (removed from `main`; retained at each caller's pinned SHA) | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | ujust-report intake, confirmation tracking and priority escalation, agent donation fast-track |
 
-`bonedigger#40` (2026-09-29) deleted `lifecycle.yml` from `main`; issue lifecycle
-is now Hive-managed across the factory. The `bonedigger.yml` callers above are
+`bonedigger#40` (2026-09-29) deleted `lifecycle.yml` from `main`.
+The `bonedigger.yml` callers above are
 **retention pins**: a `workflow_call` ref resolves at the pinned commit, so
 `lifecycle.yml@d530767` (tag `v1`) and `lifecycle.yml@9c5faf6` still run. Because
 the file no longer exists on `main`, those pins cannot be bumped forward.
 
-Internal `projectbluefin/` workflow refs otherwise use `@main` — **not SHA
+Internal `projectbluefin/` workflow refs otherwise use managed `@main` or `@v1` — **not SHA
 pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when
 pins drifted; the pre-commit floating-tag guard already exempts
 `projectbluefin/*`. The `bonedigger.yml` lifecycle retention pins above are the
 one deliberate exception. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) §
 Internal refs.
 
-There is no `lifecycle-caller.yml` in the factory. If you find one, it is stale — delete it.
+Common's `issue-lifecycle.yml` calls the shared Actions runtime; preserve that
+caller rather than adding a second engine or assuming ownership from a filename.
 
 bonedigger's `sync-templates.yml` continues to propagate issue templates to factory repos.
 

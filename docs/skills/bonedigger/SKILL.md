@@ -33,15 +33,15 @@ the labels that route user reports into the factory.
 Do not use this skill for generic GitHub issue triage, unrelated GitHub CLI
 configuration, or general issue-admission routing. bonedigger's
 `.github/workflows/lifecycle.yml` was removed from `main` in `bonedigger#40`
-(commit `3397cad`, 2026-09-29) and the lifecycle is now Hive-managed across
-the factory. `bluefin`, `bluefin-lts`, `dakota`, and `knuckle` keep
-`bonedigger.yml` callers as retention pins at full commit SHAs (see
-[`references/full-loop.md`](references/full-loop.md)); `common` has no
-lifecycle caller. Narrow callers pinned to `d530767` (tag `v1`) are being
+(commit `3397cad`, 2026-09-29). `bluefin`, `bluefin-lts`, `dakota`, and `knuckle`
+keep `bonedigger.yml` report-intake callers as retention pins at full commit
+SHAs (see [`references/full-loop.md`](references/full-loop.md)). Common and
+ChairLift use the shared Actions lifecycle instead. Narrow intake callers
+pinned to `d530767` (tag `v1`) are being
 wired into the four OCI printer forks (`ps-printer-app`, `hplip-printer-app`,
 `gutenprint-printer-app`, `ghostscript-printer-app`); see
 `projectbluefin/common#1224`. Use
-[`label-workflow.md`](../label-workflow.md) for the common-only pilot lifecycle
+[`label-workflow.md`](../label-workflow.md) for the opted-in shared lifecycle
 and [`hive.md`](../hive.md) for cross-repo coordination.
 
 ## Core Process

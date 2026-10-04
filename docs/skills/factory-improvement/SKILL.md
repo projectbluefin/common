@@ -83,10 +83,10 @@ gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> `projectbluefin/common` runs its own pilot stages (`needs-triage`,
-> `triage/accepted`, `awaiting-release`, `needs-verification`) and does
-> **not** carry `1-triage` or `3-clanker-queue`. Common issues therefore do
-> not appear in these queries; query the common pilot directly when
+> `projectbluefin/common` uses shared stages (`needs-triage`,
+> `triage/needs-information`, `triage/accepted`, `awaiting-release`,
+> `needs-verification`), not `1-triage` or `3-clanker-queue`. Common issues
+> do not appear in these queries; query Common's shared lifecycle directly when
 > triaging common work — see
 > [`../label-workflow.md`](../label-workflow.md).
 
@@ -100,7 +100,7 @@ Each factory repo must have ALL of:
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
 | `bonedigger.yml` wired (image repos only) | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
-| Canonical lifecycle labels present | `gh label list --repo projectbluefin/{repo} \| grep -E '1-triage\|3-clanker-queue'` for `bluefin`, `bluefin-lts`, `dakota`, `actions`, `testsuite`. `common` runs its own pilot stages instead — see [`../label-workflow.md`](../label-workflow.md) and verify with `gh label list --repo projectbluefin/common \| grep -E 'needs-triage\|triage/accepted'`. |
+| Canonical lifecycle labels present | Verify each repository's local contract with `gh label list --repo projectbluefin/{repo}`; Common and ChairLift use the opted-in shared stages, not numbered queues. See [`../label-workflow.md`](../label-workflow.md). |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
 | Squash-only merge | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed` |
 

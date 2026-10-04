@@ -24,10 +24,10 @@ gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> `projectbluefin/common` runs its own pilot stages (`needs-triage`,
-> `triage/accepted`, `awaiting-release`, `needs-verification`) and does
-> **not** carry `1-triage` or `3-clanker-queue`. The queries above exclude
-> common issues. To triage common work, query the common pilot directly —
+> `projectbluefin/common` uses shared stages (`needs-triage`,
+> `triage/needs-information`, `triage/accepted`, `awaiting-release`,
+> `needs-verification`), not `1-triage` or `3-clanker-queue`. These queries exclude
+> common issues. To triage Common work, query its shared lifecycle directly —
 > see [`../../label-workflow.md`](../../label-workflow.md).
 
 ### TRIAGE
@@ -112,10 +112,10 @@ gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> `projectbluefin/common` runs its own pilot stages and does not carry
-> `1-triage` or `3-clanker-queue`. The queries above exclude common
-> issues. To enumerate common's open gap inventory, query the common
-> pilot directly — see [`../../label-workflow.md`](../../label-workflow.md).
+> Common and ChairLift use the opted-in shared stages, not `1-triage` or
+> `3-clanker-queue`. The queries above exclude their issues. Query each
+> repository's current stages directly — see
+> [`../../label-workflow.md`](../../label-workflow.md).
 
 ---
 

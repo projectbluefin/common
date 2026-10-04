@@ -45,7 +45,6 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 > - `skill-drift.yml` — retired across the factory; the shared reusable it called was deleted. Process conventions are not CI gates. See `ci-tooling.md` § Skill drift detection.
 > - `docs-quality.yml` — skill frontmatter enforcement belongs in agent review, not CI.
 > - `renovate-automerge.yml` — deleted in [#783](https://github.com/projectbluefin/common/pull/783). Renovate uses `platformAutomerge: true` in `renovate.json`; GitHub's native auto-merge + merge queue replaces it. Do not re-add a workflow-based automerge mechanism.
-> - `lifecycle-caller.yml` — `common` has no lifecycle caller. Issue lifecycle is Hive-managed; downstream `bonedigger.yml` callers retain historical lifecycle pins after [bonedigger#40](https://github.com/projectbluefin/bonedigger/pull/40) removed the reusable workflow from `main`. See [label-workflow.md](label-workflow.md#ownership). Do not add a common-owned caller.
 > - `sync-codeowners.yml` — does not exist in any factory repo. Do not document or re-add it.
 
 ## Mental model
@@ -107,19 +106,18 @@ gh api repos/projectbluefin/common/rulesets --jq '.[].id' \
 
 ### Factory operations
 
-`common` runs no factory-policy workflows and owns no lifecycle implementation.
-Issue lifecycle, triage, and queue management are Hive-managed across the
-factory. `bonedigger` owns report intake and report-specific automation, not
-the general issue state machine.
+Common owns `.github/issue-policy.json`, `.github/prow.yaml`, and the
+`issue-lifecycle.yml` and read-only `issue-policy-preview.yml` callers.
+`projectbluefin/actions` owns their reusable workflows and implementation;
+both callers use managed `@v1`. Hive supplies assignment and scheduling,
+not trusted implementation acceptance. Do not duplicate the shared engine here.
 
 [bonedigger#40](https://github.com/projectbluefin/bonedigger/pull/40) removed
 `.github/workflows/lifecycle.yml` from `main`. Downstream `bonedigger.yml`
 callers retain historical pins that still resolve the removed file; those
-pins cannot be advanced to current `main`. `projectbluefin/actions` does not
-currently contain a lifecycle workflow either. See
-[label-workflow.md](label-workflow.md#ownership) for the caller and ownership
-details. Do not add a common-owned lifecycle caller or duplicate lifecycle
-logic here.
+pins cannot be advanced to current `main`. These report-intake retention pins
+are separate from Common and ChairLift's shared lifecycle adoption. See
+[label-workflow.md](label-workflow.md) for current ownership and controls.
 
 Verify this list against the checkout before trusting it:
 

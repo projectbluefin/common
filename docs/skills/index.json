@@ -389,7 +389,7 @@
         "multi-repo",
         "coordination"
       ],
-      "description": "Hive coordination across repositories with GitHub as workflow authority. Use when finding routed work or checking the common pilot's acceptance boundary.",
+      "description": "Hive coordination across repositories with GitHub as workflow authority. Use when finding routed work or checking the opted-in shared acceptance boundary.",
       "version": "3.0",
       "last_updated": "2026-10-02",
       "doc_type": "reference"

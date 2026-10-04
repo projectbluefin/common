@@ -13,7 +13,7 @@ dependencies: []
 tags: [hive, multi-repo, coordination]
 description: >-
   Hive coordination across repositories with GitHub as workflow authority.
-  Use when finding routed work or checking the common pilot's acceptance boundary.
+  Use when finding routed work or checking the opted-in shared acceptance boundary.
 metadata:
   type: reference
   context7-sources:
@@ -81,10 +81,11 @@ persist, or include tokens in logs, prompts, issue bodies, or task reports.
 
 ## Ownership and gates
 
-Common owns its local policy script, catalog, and issue-lifecycle workflow.
-Report intake automation is a separate integration, and other repositories
-retain their local lifecycle callers. This pilot changes none of those
-implementations or Hive's deployment, authentication, or secrets.
+Common owns its catalog, Prow configuration, and issue-lifecycle caller;
+`projectbluefin/actions` owns the shared lifecycle and status implementation,
+consumed through managed `@v1` by opted-in Common and ChairLift. Report intake
+remains separate. Other repositories retain their local callers until opt-in;
+this adoption changes no Hive deployment, authentication, or secrets.
 
 Agents act only on accepted, assigned or explicitly routed common work.
 Design, security, cross-repository breakage, approval, review, and merge
