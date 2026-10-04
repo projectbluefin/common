@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-03",
+  "generated_at": "2026-10-04",
   "schema_version": "1.0",
   "skills": [
     {
@@ -268,7 +268,7 @@
     {
       "id": "factory-onboarding",
       "name": "factory-onboarding",
-      "one_line_purpose": "Onboard repositories to the Project Bluefin factory model.",
+      "one_line_purpose": "Onboard an opted-in repository to the shared issue lifecycle and constrained Prow controls.",
       "entry_point": "docs/skills/factory-onboarding.md",
       "category": "meta",
       "status": "active",
@@ -277,10 +277,10 @@
         "onboarding",
         "setup"
       ],
-      "description": "How to onboard a repo into the Project Bluefin factory model. The self-improvement mandate, what agents must do, and what is banned. Load when setting up a new repo or auditing factory compliance.",
-      "version": "1.0",
-      "last_updated": "2026-07-29",
-      "doc_type": "reference"
+      "description": "Defines repository opt-in, authority inspection, shared callers, preview, migration, and release proof. Use when onboarding a factory repository or reviewing lifecycle and Prow adoption.",
+      "version": "2.0",
+      "last_updated": "2026-10-04",
+      "doc_type": "procedure"
     },
     {
       "id": "gnome-rounded-blur",
@@ -539,7 +539,7 @@
     {
       "id": "label-workflow",
       "name": "label-workflow",
-      "one_line_purpose": "Operate the common-only issue lifecycle and preserve other repositories' local label contracts.",
+      "one_line_purpose": "Operate opted-in Common and ChairLift issues with trusted acceptance, delivery, and constrained Prow.",
       "entry_point": "docs/skills/label-workflow.md",
       "category": "meta",
       "status": "active",
@@ -548,9 +548,9 @@
         "issues",
         "workflow"
       ],
-      "description": "The common-only pilot's issue stages, human acceptance gate, delivery evidence, and reporter next steps. Use when triaging common reports, linking PRs, reconciling lifecycle labels, or checking a target repository's local authority.",
-      "version": "4.0",
-      "last_updated": "2026-10-02",
+      "description": "Documents opted-in Common and ChairLift stages, human gates, Prow controls, delivery evidence, and notifications. Use when triaging issues, linking PRs, refreshing status, or reviewing lifecycle migration.",
+      "version": "5.0",
+      "last_updated": "2026-10-04",
       "doc_type": "procedure"
     },
     {

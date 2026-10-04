@@ -6,7 +6,7 @@ This directory is the org-level entry point for agents and maintainers working a
 
 ## Operating principle
 
-> **Humans approve design, security, and merge. Common's pilot also retains trusted human implementation acceptance and delivery evidence; automation advances only implemented transitions.**
+> **Humans approve design, security, and merge. Opted-in Common and ChairLift retain trusted human implementation acceptance and delivery evidence; automation advances only implemented transitions.**
 
 Project Bluefin aims to be the most sophisticated CNCF showcase of cloud-native operating systems built with bootc. The factory is an **agentic CI/CD organism**: agents implement, humans set direction. Manual orchestration is treated as a reliability tax — every manual step that *can* be automated *will* be, every automated step must self-heal, and every remaining human gate is intentional and named in [`docs/skills/human-gates.md`](../skills/human-gates.md).
 
@@ -19,10 +19,11 @@ New workflows must self-heal: retry on transient failures, fast-fail on bad toke
 3. [`docs/factory/agentic-model.md`](agentic-model.md) — cross-repo hard rules, branch targets, PR policy, session start
 4. Relevant `docs/skills/*` files — lazy-load for the specific task; use [`docs/SKILL.md`](../SKILL.md) as the router
 
-For a new or relocated agent, follow the copyable
-[`factory-onboarding.md`](../skills/factory-onboarding.md) procedure. It
-verifies the target repository first, attaches common as the shared-contract
-sidecar, and requires self-repair and durable learning on every task loop.
+For repository opt-in, migration, or client retirement, follow the canonical
+[`factory-onboarding.md`](../skills/factory-onboarding.md) procedure: inspect
+local authority and live readers/writers/gates, install shared Actions callers,
+preview read-only, merge natively, prove released/main CI, archive/migrate quietly,
+declare client cutoff, refresh reviewed statuses, and prove stable live outcomes.
 
 ## Mission and product boundary
 
@@ -53,6 +54,7 @@ dakota      ─┘                  │
 - `actions`: shared GitHub Actions used across the org
 - `bootc-installer`: GTK4/Adwaita + KDE/XFCE multi-variant Flatpak installer for bootc images
 - `knuckle`: Go-based TUI installer — `main` branch, no testing branch
+- `chairlift`: application-level system-management experience, including delivery dependencies on image-installed helpers
 
 For the workflow-by-workflow purpose map inside `common`, see [`../skills/workflow-map.md`](../skills/workflow-map.md).
 
@@ -66,41 +68,44 @@ For the workflow-by-workflow purpose map inside `common`, see [`../skills/workfl
 - `testsuite` — https://github.com/projectbluefin/testsuite
 - `bootc-installer` — https://github.com/projectbluefin/bootc-installer
 - `knuckle` — https://github.com/projectbluefin/knuckle
+- `chairlift` — https://github.com/projectbluefin/chairlift
 
 ## Agentic operating model
 
-The issue lifecycle in [`label-workflow.md`](../skills/label-workflow.md) is a
-**common-only pilot**, not an organization-wide migration. Common owns two
-forms, a local policy script/catalog, and event plus hourly reconciliation.
-Other repositories retain their current local labels, forms, and lifecycle
-callers; read the target repository's `AGENTS.md` before acting.
+The shared issue lifecycle in [`label-workflow.md`](../skills/label-workflow.md)
+is an **explicit opt-in for Common and ChairLift**, not an organization-wide
+migration. `projectbluefin/actions` owns the runtime/status/Prow modules,
+`issue-lifecycle` and `prow-labels` actions, and reusable conductor; first-party
+references use managed `@v1`, third-party CNCF Prow uses an immutable SHA.
+Consumers own catalogs, constrained `.github/prow.yaml`, intake forms, delivery
+contracts, and thin callers. Other repositories retain their local contracts.
 
-Trusted humans accept implementation through GitHub's label picker after
-clarifying scope. The runtime checks immutable event authority and issue-body
-revision. Machine-analysis consent, an old queue, or Hive `ready` is not
-acceptance. PRs use native assignment and review status, not issue-stage labels.
-Existing approvals, reviews, branches, assignments, overlays, and unrelated
-descriptive/operational/`agent/*`/`hive/*` labels remain intact.
+Trusted humans accept current scope through GitHub's **Labels** picker.
+Classification, analysis consent, legacy queues, and Hive `ready` are not
+acceptance or assignment. Protected native reader/independent human gates,
+human-only preferences, assignees, reviews, branches, operational labels, and
+merge queues survive adoption. Prow only classifies open issues or applies/
+withdraws negative holds; it cannot accept, assign, dispatch, review, or merge.
+PR progress belongs to native GitHub controls, not issue-stage labels.
 
-Image reports stay open after implementation merge. An authorized human must
-record delivered-image evidence before requesting reporter verification;
-there is no release scraper or inferred shipped status. Every project-owned
-lifecycle post names status, next actor, specific next steps, and reporter
-action. Reporters reply normally and never need labels or lifecycle commands.
+Common requires delivered-image evidence; ChairLift requires actual application/
+package delivery, including required image-installed helpers. Unresolved product
+reports use `Refs`, remain open after merge, and request normal reporter replies
+only after specific information requests or authorized delivery evidence. Bot
+reports use Status, role-headed action bullets, and explicit Reporter action;
+structured notification identity prevents repeat mentions from formatting/repair.
 
-Preview local migration and reconciliation before an authorized apply:
+Onboarding includes live ruleset review, human review/queue, actual main CI and
+released Actions source, writer cutover, all-history archived quiet migration,
+supported-client cutoff before definition retirement, reviewed comment/mention-
+aware refresh, UI/state/Prow-outcome evidence, and a stable second preview.
+Local-token apply is refused; use the reviewed default-branch caller with Bot
+provenance. The onboarding skill is the single operator procedure.
 
-```bash
-python3 scripts/common_issue_policy.py --repo projectbluefin/common --dry-run
-python3 scripts/common_issue_policy.py --repo projectbluefin/common --apply
-```
-
-The local runtime uses native `needs-human` enumeration gating while work is
-unaccepted or human-only. It changes no global Hive custom approval API,
-deployment, or credentials, and cannot guarantee scheduling enforcement for
-every worker. Hive readiness and trusted implementation acceptance remain
-separate facts. See the label skill for the operator procedure and evidence
-requirements.
+Native `needs-human` enumeration gating is local protection, not verified global
+Hive admission. Invisible Hive settings remain unverified; cached/assigned or
+differently configured workers may differ. Read live coordination and verify
+GitHub's accepted scope, actual assignment, overlays, and reporter preference.
 
 Substantive product planning follows the [Spektacular workflow](../skills/spektacular-workflow.md)
 and the [adoption specification](../specifications/spektacular-adoption.md)
@@ -113,17 +118,18 @@ Human decisions: [`docs/skills/human-gates.md`](../skills/human-gates.md).
 Read each target repo's `AGENTS.md` and verify parity from GitHub below;
 do not infer a workflow exists from a factory inventory.
 
-- **Workflow state:** common's pilot is defined in [label-workflow](../skills/label-workflow.md); other repositories retain their local contracts.
-- **Delivery:** squash-only merge and the owning repo's branch protection.
+- **Workflow state:** [label-workflow](../skills/label-workflow.md) applies to opted-in Common and ChairLift; other repositories keep their contracts.
+- **Delivery:** the owning repository's live native reviews, checks, merge queue, and branch protection; all changes use branch + PR, with no REST/admin bypass.
 - **Production:** the `factory-operations` environment requires two maintainer approvals before `:stable` tagging in `bluefin`, `bluefin-lts`, and `dakota`.
 - **Hygiene:** repo-local `pre-commit` at developer time and its aggregate CI check, not a bespoke process gate.
 
-Common owns `bug-report.yml`, `feature-request.yml`, and chooser `config.yml`
-under `.github/ISSUE_TEMPLATE/`. Intake starts in triage with bug/feature kind
-and an explicit analysis preference; maintainers refine acceptance criteria
-later. Report intake automation is a separate integration, not authority to
-replace common's forms or accept implementation. No form ownership or
-downstream migration changes are part of this pilot.
+Common and ChairLift own their local forms and chooser config. Intake starts
+triage with kind and an explicit analysis preference; a human separately accepts
+scope. Report intake integrations neither replace local ownership nor dispatch
+unaccepted work. Opt-in does not propagate forms or lifecycle policy org-wide.
+Common's queue/check ruleset `17513003` and separate two-review ruleset `23854231`
+both expose `OrganizationAdmin` `always` bypass; read live state rather than
+promising zero bypass, and never use that capability to evade the native gates.
 Common owns the canonical CODEOWNERS triager block, but its absent sync workflow leaves
 downstream propagation to reviewed repo-local changes.
 

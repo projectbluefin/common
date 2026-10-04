@@ -12,81 +12,45 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: Apply changes (false previews only)
+        description: Apply the reviewed preview (false reads only)
+        type: boolean
+        default: false
+      issue:
+        description: Optional issue or PR number; empty previews the repository
+        type: string
+        default: ''
+      labels-only:
+        description: Repair labels without comments, mentions, or closure
         type: boolean
         default: false
       migrate:
-        description: Conservatively migrate existing issues and PRs
+        description: Quiet full-history alias and retired-label migration
         type: boolean
         default: false
       retire:
-        description: Retire inert definitions after the supported-client cutoff
+        description: Retire definitions after migration and supported-client cutover
         type: boolean
         default: false
       confirm-client-cutover:
-        description: Confirm older report clients no longer need retired definitions
+        description: Confirm supported callers no longer write retired labels
         type: boolean
         default: false
 
 permissions: {}
 
-concurrency:
-  group: common-issue-lifecycle
-  cancel-in-progress: false
-
 jobs:
   reconcile:
     if: github.repository == 'projectbluefin/common'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
     permissions:
       contents: read
+      actions: read
       issues: write
       pull-requests: write
-    steps:
-      # Only trusted default-branch policy is executed, including for fork PRs.
-      - name: Check out trusted lifecycle policy
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-      - name: Reconcile labels and next steps
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EVENT_NAME: ${{ github.event_name }}
-          APPLY: ${{ inputs.apply }}
-          MIGRATE: ${{ inputs.migrate }}
-          RETIRE: ${{ inputs.retire }}
-          CONFIRM_CUTOFF: ${{ inputs['confirm-client-cutover'] }}
-        run: |
-          args=(--repo projectbluefin/common)
-          if [[ "$EVENT_NAME" != schedule && "$EVENT_NAME" != workflow_dispatch ]]; then
-            args+=(--event-file "$GITHUB_EVENT_PATH")
-          fi
-          if [[ "$EVENT_NAME" == workflow_dispatch && "$APPLY" != true ]]; then
-            args+=(--dry-run)
-          else
-            args+=(--apply)
-          fi
-          if [[ "$MIGRATE" == true ]]; then
-            args+=(--migrate)
-          fi
-          if [[ "$RETIRE" == true ]]; then
-            args+=(--retire-labels)
-          fi
-          if [[ "$CONFIRM_CUTOFF" == true ]]; then
-            args+=(--confirm-client-cutover)
-          fi
-          if [[ "$EVENT_NAME" == schedule ]]; then
-            args+=(--labels-only)
-          fi
-          python3 scripts/common_issue_policy.py "${args[@]}"
-      - name: Preserve migration snapshot
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: common-lifecycle-backup-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ~/.local/state/common-issue-policy/*.json
-          if-no-files-found: ignore
-          include-hidden-files: true
-          retention-days: 30
+    uses: projectbluefin/actions/.github/workflows/reusable-issue-lifecycle.yml@v1
+    with:
+      apply: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
+      issue: ${{ inputs.issue || '' }}
+      labels-only: ${{ github.event_name == 'schedule' || inputs['labels-only'] || false }}
+      migrate: ${{ inputs.migrate || false }}
+      retire: ${{ inputs.retire || false }}
+      confirm-client-cutover: ${{ inputs['confirm-client-cutover'] || false }}

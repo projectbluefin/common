@@ -7,13 +7,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '*.md'
-      - 'LICENSE'
-      - '.gitignore'
-      - 'docs/**'
-      - 'AGENTS.md'
-      - '.github/workflows/**'
   merge_group:
   workflow_dispatch:
 
@@ -37,17 +30,16 @@ jobs:
       build_required: ${{ steps.detect.outputs.build_required }}
     steps:
       - name: Checkout
-        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           submodules: false
 
       - name: Detect image input changes
-        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        if: github.event_name != 'workflow_dispatch'
         id: detect
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -57,7 +49,7 @@ jobs:
             exit 0
           fi
 
-          # Excludes mirror the push paths-ignore list and must stay root-scoped:
+          # Docs-only main revisions still report native CI without rebuilding an unchanged image.
           # '*.md' (not '**/*.md') because Markdown under system_files/ is copied
           # into the image by the Containerfile, so it is a real build input.
           # .github/workflows/** is intentionally NOT excluded: Renovate bumps action
@@ -190,8 +182,8 @@ jobs:
 
   manifest:
     name: Create and sign multi-arch manifest
-    needs: [build_push]
-    if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+    needs: [image_changes, build_push]
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && needs.image_changes.outputs.build_required != 'false'
     runs-on: ubuntu-26.04
     permissions:
       packages: write

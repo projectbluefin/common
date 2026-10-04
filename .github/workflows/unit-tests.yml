@@ -13,12 +13,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "system_files/**"
-      - "tests/**"
-      - "scripts/**"
-      - "Justfile"
-      - ".github/workflows/unit-tests.yml"
   merge_group:
   workflow_dispatch:
 

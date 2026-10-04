@@ -1,0 +1,46 @@
+name: Common issue policy preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/issue-policy.json'
+      - '.github/prow.yaml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/issue-lifecycle.yml'
+      - '.github/workflows/issue-policy-preview.yml'
+  workflow_dispatch:
+    inputs:
+      runtime-ref:
+        description: First-party Actions candidate ref for read-only preview; production uses v1
+        type: string
+        default: v1
+      caller-ref:
+        description: Reviewed caller data commit; empty uses event revision
+        type: string
+        default: ''
+      issue:
+        description: Optional issue or PR number
+        type: string
+        default: ''
+      migrate:
+        description: Include all closed issue and PR label history
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  preview:
+    if: github.repository == 'projectbluefin/common'
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    # Bootstrap source is read-only; change this interface to @v1 after publication.
+    uses: projectbluefin/actions/.github/workflows/reusable-issue-policy-preview.yml@feat/shared-issue-onboarding
+    with:
+      runtime-ref: ${{ inputs['runtime-ref'] || 'feat/shared-issue-onboarding' }}
+      caller-ref: ${{ inputs['caller-ref'] || github.event.pull_request.head.sha || github.sha }}
+      issue: ${{ inputs.issue || '' }}
+      migrate: ${{ github.event_name == 'pull_request' || inputs.migrate }}

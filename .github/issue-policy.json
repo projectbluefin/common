@@ -1,5 +1,12 @@
 {
 	"repository": "projectbluefin/common",
+	"display_name": "Common",
+	"comment_marker": "<!-- common-issue-lifecycle:v1 -->",
+	"delivery": {"type": "image"},
+	"label_aliases": {},
+	"bug_fields": ["what happened?", "what did you expect?", "steps to reproduce", "image details"],
+	"feature_fields": ["problem to solve", "desired outcome", "affected component"],
+	"main_ci_workflows": [".github/workflows/unit-tests.yml", ".github/workflows/validate.yml", ".github/workflows/build.yml"],
 	"stages": {
 		"needs-triage": {
 			"color": "ededed",
@@ -23,6 +30,18 @@
 		}
 	},
 	"labels": {
+		"blocked": {
+			"color": "e74c3c",
+			"description": "Work is blocked on human input or an external dependency."
+		},
+		"hold": {
+			"color": "8b949e",
+			"description": "Work is intentionally paused; its owner must explicitly permit resuming."
+		},
+		"kind/test": {
+			"color": "0e8a16",
+			"description": "Test authoring or a recorded test failure."
+		},
 		"needs-kind": {
 			"color": "ededed",
 			"description": "A maintainer must classify this issue; the intake source did not establish its kind."

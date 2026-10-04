@@ -1,0 +1,20 @@
+{
+  "labels": {
+    "kind": {
+      "values": [
+        "bug",
+        "feature",
+        "task",
+        "test"
+      ],
+      "exclusive": true
+    }
+  },
+  "hold": {
+    "label": "hold"
+  },
+  "tide": {
+    "merge_on_events": false
+  },
+  "require_matching_label": []
+}

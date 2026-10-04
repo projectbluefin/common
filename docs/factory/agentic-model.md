@@ -48,10 +48,7 @@ cross-repository breakage, merge, or production human gates.
   ```
   Nested `.git` directories (worktrees, auxiliary clones) stage as gitlinks and silently corrupt history.
 - **Never push directly to a protected branch.** Always open a PR. PRs require approval from a human reviewer.
-- **Doc-only exception in `common`:** `docs/` edits and `AGENTS.md` changes may be pushed directly to `main` — no PR required. Before using this exception, confirm every changed path is under `docs/` or is `AGENTS.md`:
-  ```bash
-  git diff --cached --name-only  # must show only docs/* or AGENTS.md
-  ```
+- **Common documentation also uses branch + PR.** Older direct-main exceptions are obsolete. Read the actual review/check/queue rulesets before publication; administrative bypass capability is not approval to skip those gates.
 - **CI gates protect the OCI image artifact.** A check earns `exit 1` only if failure means a broken or wrong image ships. Process conventions (attribution, skill files, doc formatting) are enforced at developer time by `pre-commit`; CI may re-run that suite as a single aggregate step, and that aggregate step is the only permitted place a process convention may fail a build. Never add a bespoke per-convention CI job — that is why `skill-drift.yml` was retired across the factory.
 - **Attribution on every AI-authored commit (convention, not a CI gate):**
   ```

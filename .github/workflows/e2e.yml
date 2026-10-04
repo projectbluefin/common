@@ -75,6 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       issues: write
       pull-requests: read
     steps:
@@ -84,6 +85,7 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
       - name: Open or update the tracking issue
+        id: incident
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -104,7 +106,13 @@ jobs:
             gh issue comment "$existing" --repo "$REPO" \
               --body "Still failing on \`${SHA:0:7}\` — ${RUN_URL}
 
-          Next actor: maintainer. Inspect the failed matrix entry and logs, identify the owning repository, and assign the regression fix. Reporter action: none unless additional evidence is requested."
+          ## Maintainer
+          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Identify the owning repository and record the regression scope.
+          - Accept and assign the fix through the issue lifecycle; do not assume a new reference PR fixed it.
+
+          ## Reporter
+          **Reporter action:** None unless a maintainer requests additional evidence."
             echo "Updated existing issue #${existing}"
           else
             issue_url=$(gh issue create --repo "$REPO" --title "$TITLE" --body \
@@ -125,17 +133,29 @@ jobs:
           This issue is reused for subsequent failures. Close it once the run is
           green again.
 
-          Next actor: maintainer. Inspect the failed matrix entry and logs, identify the owning repository, and assign the regression fix. Reporter action: none unless additional evidence is requested.")
+          ## Maintainer
+          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Identify the owning repository and record the regression scope.
+          - Accept and assign the fix through the issue lifecycle; do not assume a new reference PR fixed it.
+
+          ## Reporter
+          **Reporter action:** None unless a maintainer requests additional evidence.")
             existing="${issue_url##*/}"
           fi
-          # GITHUB_TOKEN issue writes do not trigger another Actions issue event.
-          python3 scripts/common_issue_policy.py --repo "$REPO" --issue "$existing" --apply
+          printf 'issue-number=%s\n' "$existing" >> "$GITHUB_OUTPUT"
+      # GITHUB_TOKEN writes do not trigger a second issue workflow.
+      - name: Reconcile the recorded incident and its exact next actions
+        id: policy
+        uses: projectbluefin/actions/issue-lifecycle@v1
+        with:
+          apply: 'true'
+          issue: ${{ steps.incident.outputs.issue-number }}
       - name: Preserve migration snapshot
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: common-e2e-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ~/.local/state/common-issue-policy/*.json
+          path: ${{ steps.policy.outputs.backup-directory }}
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 30

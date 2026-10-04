@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       issues: write
       pull-requests: read
     steps:
@@ -46,6 +47,7 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
       - name: File promotion-blocker issue
+        id: incident
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -59,14 +61,26 @@ jobs:
             --body "<!-- report-type: bug -->
           The Tuesday promotion-candidate E2E suite failed before the promotion window. **Do NOT promote** the affected testing images until resolved. Workflow run: ${RUN_URL}
 
-          Next actor: maintainer. Inspect the failed suite, identify the regression owner, and require a passing candidate run before promotion. Reporter action: none unless additional evidence is requested.")
-          python3 scripts/common_issue_policy.py --repo "$REPO" --issue "${issue_url##*/}" --apply
+          ## Maintainer
+          - Open the failed suite and logs at ${RUN_URL}.
+          - Identify the regression owner and agree on the fix scope.
+          - Require a passing candidate run before promotion.
+
+          ## Reporter
+          **Reporter action:** None unless additional evidence is requested.")
+          printf 'issue-number=%s\n' "${issue_url##*/}" >> "$GITHUB_OUTPUT"
+      - name: Reconcile the recorded promotion incident
+        id: policy
+        uses: projectbluefin/actions/issue-lifecycle@v1
+        with:
+          apply: 'true'
+          issue: ${{ steps.incident.outputs.issue-number }}
       - name: Preserve migration snapshot
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: common-candidate-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ~/.local/state/common-issue-policy/*.json
+          path: ${{ steps.policy.outputs.backup-directory }}
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 30

@@ -10,10 +10,10 @@ and `dakota`. Changes here propagate to every variant. Stay surgical.
 3. [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md) — cross-repo
    rules if the task spans repos.
 
-For downstream factory onboarding, follow
-[`docs/skills/factory-onboarding.md`](docs/skills/factory-onboarding.md):
-target-repository authority comes first, common is a shared sidecar, and every
-task loop must self-repair safely and write back durable learning.
+For repository opt-in, migration, client retirement, or downstream onboarding,
+follow [`docs/skills/factory-onboarding.md`](docs/skills/factory-onboarding.md).
+Target-repository authority comes first; Common supplies reusable contracts and
+Actions supplies the shared implementation, not copied bots or user-level policy.
 
 ## Build, test, and lint
 
@@ -36,45 +36,48 @@ The factory is automation-first: workflows, branches, assignees, projects,
 PR linkages, and merge queues advance active work. Do not simulate workflow
 state by hand or invent transitions that are not implemented in the checkout.
 
-- **Common-only issue lifecycle:**
-  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) is the
-  authority for this pilot's five issue stages, overlays, and human-only
-  preference. PRs use native assignment and review status, not issue-stage
-  labels. Preserve descriptive, operational, `agent/*`, and `hive/*` labels
-  alongside existing assignments, approvals, reviews, branches, and merge
-  queues. Other repositories keep their own local lifecycle contracts.
+- **Explicitly opted-in Common and ChairLift lifecycle:**
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) defines five
+  issue stages, overlays, trusted acceptance, constrained Prow, and notifications.
+  Each consumer owns its catalog/forms and delivery contract; other repositories
+  retain local lifecycle contracts until reviewed opt-in. PRs use native assignment,
+  reviews, checks, and merge controls, not issue stages. Preserve active operational,
+  descriptive, `agent/*`, and `hive/*` labels and existing work ownership.
 - **Humans accept implementation** through a trusted label-picker event after
   clarifying scope and acceptance criteria. The runtime validates the immutable
   event actor's permissions and the issue body revision. Reporter consent to
   machine analysis, an old queue, or Hive `ready` is not acceptance. Reporters
   reply normally and never need label permissions or a public lifecycle command.
-- **Agents implement accepted, assigned work** and link it with `Refs #NNN`
-  while delivery to the reporter's image is unresolved. Use `Closes #NNN`
-  only for code-only work satisfied at merge, or already delivered and
-  verified reports. Merge is not image delivery. Project-owned lifecycle
-  posts state status, next actor, specific next steps, and reporter action.
+- **Agents implement accepted, assigned work** within the agreed scope and only
+  after independent human gates permit it. Link unresolved product reports with
+  `Refs #NNN`; use `Closes #NNN` only for merge-satisfied code-only work or already
+  delivered/verified reports. Merge is not image/application delivery. Bot reports
+  use Status, role headings/action bullets, and explicit Reporter action.
 - **Hive coordination & Clankers relay:** Hive may select work for another
   monitored repository. Clankers is only the authenticated relay for that
   assignment; verify the assigned repository and issue in GitHub before acting.
   It does not bypass human approval, review, or merge gates.
-- **Issue forms:** Common owns `bug-report.yml`, `feature-request.yml`, and
-  chooser `config.yml` in `.github/ISSUE_TEMPLATE/`. Forms initialize triage
-  and kind labels; structured CLI bodies are initialized server-side because
-  ordinary reporters cannot reliably set labels. Analysis preference never
-  accepts implementation. These forms are not an organization-wide standard.
+- **Repository-owned intake:** Common owns `bug-report.yml`, `feature-request.yml`,
+  and chooser `config.yml` in `.github/ISSUE_TEMPLATE/`; ChairLift owns its local
+  forms. Intake initializes triage/kind server-side, including structured CLI bodies.
+  Analysis preference never accepts implementation. Adoption does not replace
+  other repositories' forms or security/report-intake ownership.
 - **CODEOWNERS ownership:** The triager section is owned here; edit downstream
   copies only when the repository-specific section is explicitly in scope.
   Never write to `ublue-os/*`.
-- **Common lifecycle runtime:** `scripts/common_issue_policy.py`,
-  `.github/issue-policy.json`, and `.github/workflows/issue-lifecycle.yml`
-  reconcile common events and hourly missed-event repair only. Delivery stages
-  require validated evidence from an authorized human, not presumed image
-  delivery. Report intake automation remains a separate integration.
-- **Hive boundary:** The runtime uses native `needs-human` enumeration gating
-  for unaccepted and human-only common work. Label presence alone is not
-  verified Hive admission, and Hive `ready` is not the accepted-stage gate.
-  This pilot changes no global Hive approval API, deployment, or credentials
-  and cannot guarantee scheduling enforcement for every worker.
+- **Shared lifecycle/Prow runtime:** `projectbluefin/actions` owns
+  `scripts/issue_policy.py`, `scripts/issue_status.py`, and `scripts/prow_commands.py`,
+  packaged as `issue-lifecycle` and `prow-labels`. Common owns its catalog,
+  `.github/prow.yaml`, and `.github/workflows/issue-lifecycle.yml`, calling
+  `reusable-issue-lifecycle.yml@v1`. The single serialized conductor reads trusted
+  default-branch data; hourly repair and full-history migration are labels-only.
+  Delivery stages require authorized human evidence. Prow is issue-only descriptive
+  classification/negative hold control, not acceptance, assignment, review, or merge.
+- **Protected readers and Hive boundary:** Preserve native `needs-human`, independent
+  human/app gates, active catalog reader gates, and human-only preferences. Only the
+  lifecycle bot's automatic gate clears after eligible acceptance. Label presence
+  or Hive `ready` does not verify scheduling/admission for every worker; inaccessible
+  Hive settings remain unverified. Adoption adds no global API or credentials.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
@@ -116,16 +119,18 @@ Before marking work done:
 - Vendored files under `system_files/bluefin/usr/share/gnome-shell/extensions/`.
 - Org/app credential pairs; use `GITHUB_TOKEN` or provisioned GitHub Apps.
 
-## Doc-only push exception
+## Branch and native merge gates
 
-Changes that touch only `docs/**` and/or `AGENTS.md` may be pushed directly to
-`main` without a PR. Verify first:
+**Every change requires a branch and PR targeting `main`, including `docs/**`
+and `AGENTS.md`.** This supersedes older doc-only direct-push exceptions.
+Honor live native reviews, required checks, and merge-queue controls; use no
+direct-main, REST merge, or admin-bypass route to evade them.
 
-```bash
-git diff --cached --name-only  # must show only docs/* or AGENTS.md
-```
-
-**Everything else requires a branch + PR targeting `main`.**
+Common's queue/check ruleset is `17513003`; its separate two-review ruleset is
+`23854231`. Both expose `OrganizationAdmin` `always` bypass in current source
+state; do not claim zero bypass or use that capability as approval. Re-read live
+repository/organization rulesets and branch protection before landing changes.
+Changes to protection/ownership/security remain human decisions.
 
 ## PR rules
 
