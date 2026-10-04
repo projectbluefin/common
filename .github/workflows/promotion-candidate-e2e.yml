@@ -76,7 +76,7 @@ jobs:
           apply: 'true'
           issue: ${{ steps.incident.outputs.issue-number }}
       - name: Preserve migration snapshot
-        if: always()
+        if: always() && steps.policy.outputs.backup-directory != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: common-candidate-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
