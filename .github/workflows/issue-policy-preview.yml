@@ -37,10 +37,9 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
-    # Bootstrap source is read-only; change this interface to @v1 after publication.
-    uses: projectbluefin/actions/.github/workflows/reusable-issue-policy-preview.yml@feat/shared-issue-onboarding
+    uses: projectbluefin/actions/.github/workflows/reusable-issue-policy-preview.yml@v1
     with:
-      runtime-ref: ${{ inputs['runtime-ref'] || 'feat/shared-issue-onboarding' }}
+      runtime-ref: ${{ inputs['runtime-ref'] || 'v1' }}
       caller-ref: ${{ inputs['caller-ref'] || github.event.pull_request.head.sha || github.sha }}
       issue: ${{ inputs.issue || '' }}
       migrate: ${{ github.event_name == 'pull_request' || inputs.migrate }}

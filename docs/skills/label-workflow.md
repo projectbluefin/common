@@ -48,7 +48,7 @@ Missing/unresolved conflicting kinds retain `needs-kind` and implementation gati
 |---|---|
 | `blocked` | Name dependency, resolver, and next step; owner resolves it before resumption |
 | `hold` | Record pause reason/owner/resumption condition; owner explicitly withdraws only the pause |
-| `human-only` | Human interaction/contributors only; seeds from reporter preference, waivable by trusted maintainer label removal |
+| `human-only` | Human interaction/contributors only; preserve reporter preference, while routine status automation may run |
 | `needs-human` | Native reader gate; acceptance clears only the lifecycle bot's automatic gate, never a human/app's independent gate |
 | `needs-decision`, catalog `gate_labels` | Preserve each active native reader's question/decision gate; its owner resolves reason and explicitly removes it |
 
@@ -76,7 +76,13 @@ Removing `needs-triage`/`needs-human` does not accept work: automatic waiting ga
 return. `/hive approve` is not a Common or ChairLift lifecycle acceptance action.
 Resolve each blocker/hold/decision/native human gate through its owner. Acceptance
 does not clear independent gates, assign a contributor, or guarantee scheduling.
-Use **Assignees** or explicit routing to the existing work owner; respect human-only unless a trusted maintainer explicitly waived it by removing `human-only` in GitHub's **Labels** picker.
+Use **Assignees** or explicit routing to the existing work owner; respect human-only.
+
+The maintainer label-removal waiver is proposed in
+[Actions #609](https://github.com/projectbluefin/actions/pull/609), not deployed in
+the current managed `v1`. Until that change is reviewed and released, removing
+`human-only` alone is reverted from the intake preference; it does not release
+Hive's `needs-human` gate.
 
 For an actionable reporter question, explicitly `@reporter` in a new request
 and select `triage/needs-information` within five minutes, or select the stage
