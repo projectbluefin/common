@@ -154,6 +154,13 @@ Every project-owned lifecycle post includes all four:
 Do not make reporters decipher labels, issue commands, or interpret a merge as
 proof of delivery. Avoid repeating unchanged lifecycle notices.
 
+The waiting-stage post uses **Status: Waiting on Maintainer**, a **Maintainer**
+heading with four action bullets, and a separate **Reporter** heading. Preserve
+that layout and its concise guidance when editing the generator, not merely
+the current bot comment. Blocker, classification, and stale-acceptance advice
+remain additional maintainer bullets; standing trackers retain their own task.
+Formatting changes must not alter labels, acceptance gates, or closure decisions.
+
 ## Operating the common runtime
 
 Source: `scripts/common_issue_policy.py`, `.github/issue-policy.json`, and

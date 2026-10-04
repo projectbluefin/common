@@ -328,16 +328,17 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
         elif response:
             close = True
 
-    next_steps = (
-        "Maintainer: review the scope and completion criteria in the issue body, then use GitHub's **Labels** picker to add `triage/accepted` if you approve implementation. "
-        "Do not remove `needs-triage` or `needs-human` to signal approval: the bot restores them until acceptance is recorded. "
-        "After valid acceptance, the bot clears the waiting stage and its automatic admission gate unless a block, hold, or human-only preference still applies; acceptance does not assign a contributor. "
-        "If a specific question prevents acceptance, ask it and select `triage/needs-information`; if declining or marking a duplicate, close with the reason. "
-        "`/hive approve` is not a Common lifecycle acceptance action."
+    waiting_steps = (
+        "Review, use GitHub's **Labels** picker to add `triage/accepted` if you approve implementation.",
+        "Do not remove `needs-triage` or `needs-human` to signal approval: the bot restores them until acceptance is recorded.",
+        "Acceptance does not assign a contributor.",
+        "If a specific question prevents acceptance, ask it and select `triage/needs-information`; if declining or marking a duplicate, close with the reason. `/hive approve` is not a Common lifecycle acceptance action.",
     )
+    next_steps = "Maintainer: " + " ".join(waiting_steps)
     reporter = "No action needed unless information is requested."
     if tracking:
         next_steps = "Maintainer: maintain this standing tracker and link actionable child issues. Do not assign the tracker as an implementation task."
+        waiting_steps = (next_steps,)
     elif stage == "triage/needs-information":
         if missing:
             details = ", ".join(missing)
@@ -387,20 +388,21 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
     elif stage == "needs-verification" and evidence:
         next_steps = f"Reporter: update to the image containing the fix documented in [this release/build]({evidence['url']}), reboot if required, and {evidence['verify']}"
         reporter = f"Check image `{evidence['image']}`. Reply `Confirmed fixed` with the version tested, or `Still broken` with what you observed."
+    prerequisites = []
     if current & {"blocked", "hold"}:
-        next_steps = (
-            "Maintainer/dependency owner: resolve the recorded blocker or hold, then have its owner remove `blocked` or `hold` using the Labels picker before new implementation dispatch. Preserve existing assignments and PRs. "
-            + next_steps
+        prerequisites.insert(
+            0,
+            "Maintainer/dependency owner: resolve the recorded blocker or hold, then have its owner remove `blocked` or `hold` using the Labels picker before new implementation dispatch. Preserve existing assignments and PRs.",
         )
     if not kind:
-        next_steps = (
-            "Maintainer: classify the issue before scheduling it. " + next_steps
-        )
+        prerequisites.insert(0, "Maintainer: classify the issue before scheduling it.")
     if "triage/accepted" in current and not approved:
-        next_steps = (
-            "Maintainer: the current scope lacks valid human acceptance or changed after approval. Review the body first, then use the Labels picker to select `triage/accepted` again to record a fresh acceptance event. "
-            + next_steps
+        prerequisites.insert(
+            0,
+            "Maintainer: the current scope lacks valid human acceptance or changed after approval. Review the body first, then use the Labels picker to select `triage/accepted` again to record a fresh acceptance event.",
         )
+    if prerequisites:
+        next_steps = " ".join((*prerequisites, next_steps))
     links = [
         f"[PR #{pr['number']}]({pr['html_url']})"
         for pr in facts.get("linked_prs", [])
@@ -414,13 +416,17 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
         else ""
     )
     titles = {
-        "needs-triage": "Awaiting maintainer assessment",
+        "needs-triage": "Waiting on Maintainer",
         "triage/needs-information": "Waiting for information or a decision",
         "triage/accepted": "Accepted for implementation",
         "awaiting-release": "Merged fix awaiting image delivery",
         "needs-verification": "Published fix awaiting reporter verification",
     }
-    text = f"{COMMENT_MARKER}\n**Status:** {titles[stage]}\n\n**Next actor and steps:** {next_steps}\n\n**Reporter action:** {reporter}{existing}"
+    if stage == "needs-triage":
+        bullets = "\n".join(f"- {step}" for step in (*prerequisites, *waiting_steps))
+        text = f"{COMMENT_MARKER}\n**Status:** {titles[stage]}\n\n## Maintainer\n\n{bullets}\n\n## Reporter\n\n**Reporter action:** {reporter}{existing}"
+    else:
+        text = f"{COMMENT_MARKER}\n**Status:** {titles[stage]}\n\n**Next actor and steps:** {next_steps}\n\n**Reporter action:** {reporter}{existing}"
     if close:
         text = f"{COMMENT_MARKER}\n**Status:** Reporter confirmed the published fix.\n\n**Next actor and steps:** Lifecycle automation closes this report as completed. Maintainer: retain its delivery evidence.\n\n**Reporter action:** none; reopen or file a linked report if the problem returns."
     return {
