@@ -70,15 +70,14 @@ def trusted_event(event, facts):
 
 
 def approved_scope(timeline, facts):
-    event = latest_event(timeline, "triage/accepted")
-    if not trusted_event(event, facts) or "last_edited_at" not in facts:
+    human_events = [e for e in timeline if trusted_event(e, facts)]
+    event = latest_event(human_events, "triage/accepted")
+    if not event or "last_edited_at" not in facts:
         return False
     if facts["last_edited_at"] and facts["last_edited_at"] >= event["created_at"]:
         return False
-    withdrawal = latest_event(timeline, "triage/accepted", "unlabeled")
-    if trusted_event(withdrawal, facts) and event_order(withdrawal) > event_order(
-        event
-    ):
+    withdrawal = latest_event(human_events, "triage/accepted", "unlabeled")
+    if withdrawal and event_order(withdrawal) > event_order(event):
         return False
     # Returning to assessment or information gathering invalidates that grant,
     # including a policy-generated request. A reporter reply cannot revive it.
@@ -231,17 +230,6 @@ def plan(record, facts, catalog, *, migrate=False, labels_only=False):
                 if requested != "needs-verification" or evidence
                 else "awaiting-release"
             )
-    merged = [
-        pr
-        for pr in facts.get("linked_prs", [])
-        if pr.get("merged_at") and record["number"] in referenced_issues(pr.get("body"))
-    ]
-    image_details = fields.get(
-        "image details", fields.get("image and version", fields.get("system", ""))
-    ).lower()
-    image_report = image_details not in EMPTY and "not applicable" not in image_details
-    if approved and merged and not tracking and image_report:
-        stage = "awaiting-release" if stage != "needs-verification" else stage
 
     info_event = latest_event(timeline, "triage/needs-information")
     comments = facts.get("comments", [])

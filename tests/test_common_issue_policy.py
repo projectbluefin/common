@@ -272,6 +272,8 @@ def test_closed_issue_is_not_reopened_or_posted_to():
 def test_merged_fix_does_not_claim_image_delivery_or_close_report():
     record, data = accepted()
     record["body"] = "### Image details\nghcr.io/projectbluefin/utah:testing\n"
+    record["labels"].append("awaiting-release")
+    data["timeline"].append(event("awaiting-release", time=T2))
     data["linked_prs"] = [
         {
             "number": 20,
@@ -592,7 +594,7 @@ def test_earlier_independent_human_gate_is_not_cleared_by_acceptance():
     assert "needs-human" in final_labels(record, policy.plan(record, data, CATALOG))
 
 
-def test_legacy_cli_image_report_enters_delivery_wait_not_dispatch():
+def test_legacy_cli_merged_reference_keeps_accepted_scope_in_implementation():
     record = issue(
         ("triage/accepted",),
         "## Bluefin Bug Report\n### System\nImage: ghcr.io/projectbluefin/utah:testing\n",
@@ -609,9 +611,9 @@ def test_legacy_cli_image_report_enters_delivery_wait_not_dispatch():
         ),
     )
     result = policy.plan(record, data, CATALOG)
-    assert result["stage"] == "awaiting-release"
+    assert result["stage"] == "triage/accepted"
     assert "kind/bug" in final_labels(record, result)
-    assert "needs-human" in final_labels(record, result)
+    assert "needs-human" not in final_labels(record, result)
 
 
 def test_failed_verification_stays_in_assessment_on_next_sweep():
@@ -733,3 +735,64 @@ def test_quiet_repair_removes_pr_stages_without_commenting(quiet_option):
     assert final_labels(record, result) == {"kind/bug", "hold"}
     assert result["comment"] is None
     assert not result["close"]
+
+
+def test_unrelated_merged_reference_keeps_accepted_work_in_implementation():
+    record = issue(("awaiting-release", "needs-human", "kind/bug"))
+    record["body"] = "### Image details\nghcr.io/projectbluefin/dakota:testing\n"
+    data = facts(
+        (
+            event("needs-human", "github-actions[bot]", "Bot", time=T0),
+            event("triage/accepted"),
+            event("awaiting-release", "github-actions[bot]", "Bot", time=T2),
+            event(
+                "triage/accepted", "github-actions[bot]", "Bot",
+                time=T2, action="unlabeled",
+            ),
+        ),
+        prs=(
+            {
+                "number": 20,
+                "merged_at": T2,
+                "state": "closed",
+                "body": "Docs: explain the workflow. Refs #10",
+                "html_url": "https://github.com/projectbluefin/common/pull/20",
+            },
+        ),
+    )
+    result = policy.plan(record, data, CATALOG)
+    assert result["stage"] == "triage/accepted"
+    assert final_labels(record, result) == {"triage/accepted", "kind/bug"}
+    assert not result["close"]
+
+
+def test_bot_restoration_does_not_replace_the_valid_human_acceptance():
+    record, data = accepted()
+    data["timeline"].extend(
+        (
+            event(
+                "triage/accepted", "github-actions[bot]", "Bot",
+                time=T2, action="unlabeled",
+            ),
+            event("triage/accepted", "github-actions[bot]", "Bot", time=T2),
+        )
+    )
+    result = policy.plan(record, data, CATALOG)
+    assert result["stage"] == "triage/accepted"
+    assert final_labels(record, result) == {"triage/accepted", "kind/feature"}
+
+
+def test_human_withdrawal_cannot_be_hidden_by_a_later_bot_removal():
+    record, data = accepted()
+    data["timeline"] = [
+        event("triage/accepted", time=T0),
+        event("triage/accepted", action="unlabeled"),
+        event(
+            "triage/accepted", "github-actions[bot]", "Bot",
+            time=T2, action="unlabeled",
+        ),
+        event("triage/accepted", "github-actions[bot]", "Bot", time=T2),
+    ]
+    result = policy.plan(record, data, CATALOG)
+    assert result["stage"] == "needs-triage"
+    assert "needs-human" in final_labels(record, result)

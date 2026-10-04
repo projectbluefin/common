@@ -85,6 +85,11 @@ normally, without slash commands. A response returns an information request
 to maintainer assessment, not directly to accepted work. Acceptance does not
 self-assign a task or authorize changes outside the agreed scope.
 
+Bot reconciliation may remove or restore the stage label without replacing the
+underlying human grant. Evaluate the latest authorized human acceptance and
+withdrawal events, not the latest bot event. A later body edit or return to
+assessment/information gathering still requires fresh human acceptance.
+
 ### Exact maintainer action
 
 After deciding to implement an issue, review or update its body scope and
@@ -107,10 +112,12 @@ scheduling. Status posts must name these exact controls and expected transitions
    requests, branches, and merge-queue decisions intact.
 2. Use GitHub's native PR status during implementation and review. Do not add
    an issue stage or a replacement review label to the PR.
-3. For an image report, a merged implementation moves the issue to
-   `awaiting-release`, not closed. Identify the merged PR/commit and the
-   affected image/channel; neither a common build nor a downstream PR proves
-   that the reporter can consume the fix.
+3. For an image report, a maintainer verifies that the actual implementation
+   merged, identifies its PR/commit and the affected image/channel, then selects
+   `awaiting-release` in GitHub's **Labels** picker. A merged PR containing
+   `Refs #NNN` may be documentation or other related work: that reference alone
+   must not advance an accepted issue to delivery. Neither a common build nor a
+   downstream PR proves that the reporter can consume the fix.
 4. An authorized human records verified delivery under **Delivery evidence**
    in the issue body, then selects `needs-verification`. Required fields:
 
