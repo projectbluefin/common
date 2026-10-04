@@ -37,8 +37,8 @@ These are poor fits for KubeVirt and other VM-only gates because they depend on 
 
 ## Report path
 
-File an issue in `projectbluefin/common` using the repository issue form and
-select **Hardware test result**. Include:
+Record hardware validation on the owning issue, or file a common bug report when
+the test exposes a new defect. Include:
 
 - exact image digest or tag tested
 - hardware make/model/generation
@@ -47,8 +47,8 @@ select **Hardware test result**. Include:
 - pstore/kdump evidence, pasted inline or linked
 - severity: `all-clear`, `degraded`, or `blocker`
 
-The form applies `1-triage`. Maintainers record the outcome — all-clear, degraded,
-or blocker — in the issue itself during triage.
+Common's forms initialize `needs-triage`; other repositories use their local
+intake. Maintainers record all-clear, degraded, or blocker outcomes in the issue.
 
 ## Promotion policy
 

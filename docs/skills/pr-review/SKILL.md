@@ -72,9 +72,9 @@ Use **streaming**: present one card, take that item's human verdict, execute it 
 
 **Easy-wins mode.** Check current security, release and cross-repo blockers
 before sorting ordinary work ascending by `additions + deletions`; present
-small ones first. Park anything complex in `3-human-queue` with a findings
-comment after the human's verdict. An unapproved draft never supplies queue
-policy.
+small ones first. In common, park complex work with a human-directed `hold`
+and findings; PRs retain native assignment and review state. Other repositories
+follow their local queue contract. An unapproved draft never supplies queue policy.
 
 ### 1 — Dossier (one-call fetch)
 
@@ -120,8 +120,10 @@ head requires a new diff and a new per-item verdict, never a fresh SHA at land.
 
 **Three landing invariants** — check after every verdict that closes or parks:
 
-1. **Queue labels swap, never add.** `3-human-queue` and `3-clanker-queue` are
-   mutually exclusive — swap in the same command on both the PR and its issue.
+1. **Respect the target lifecycle.** Common PRs use native assignment and review
+   status, not numbered queue labels; preserve the linked issue's stage and gates.
+   Elsewhere, mutually exclusive `3-human-queue` and `3-clanker-queue` labels swap
+   in the same command under that repository's local contract.
 
 2. **Retitling requires close/reopen.** `edited` is not a trigger for
    `validate.yml`. A rerun replays the stale payload. Close, reopen, re-verify.
@@ -146,7 +148,7 @@ queue state reading, branch update, and fork PR rebase.
 - Multiple PRs mutated behind one batch confirmation instead of per-item verdicts.
 - Competing PRs both staged for merge without human acknowledgment.
 - A PR closed without checking whether its `Closes #NNN` issue is now orphaned.
-- `3-human-queue` and `3-clanker-queue` present on the same item.
+- Numbered queue labels on a common PR, or conflicting queues elsewhere.
 - Re-arming auto-merge because `autoMergeRequest` was `null`, without a read-only queue check.
 - A title fix declared done without a close/reopen and re-read of the check.
 - A flake re-run with no issue filed against the check that flaked.
