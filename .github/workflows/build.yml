@@ -95,7 +95,7 @@ jobs:
 
       - name: Setup runner
         if: env.BUILD_REQUIRED == 'true'
-        uses: projectbluefin/actions/bootc-build/setup-runner@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/bootc-build/setup-runner@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
         with:
           storage-backend: btrfs
           update-podman: "true"
@@ -148,7 +148,7 @@ jobs:
 
       - name: Scan image for CVEs
         if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/scan-image@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/bootc-build/scan-image@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
         with:
           input: /tmp/scan-image.tar
           severity-threshold: CRITICAL
@@ -158,7 +158,7 @@ jobs:
       - name: Push image
         id: push
         if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/push-image@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/bootc-build/push-image@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.generate-tags.outputs.local_tag }}
@@ -215,7 +215,7 @@ jobs:
 
       - name: Create multi-arch manifest
         id: create-manifest
-        uses: projectbluefin/actions/bootc-build/create-manifest@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/bootc-build/create-manifest@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           digests-json: ${{ steps.digests.outputs.json }}
@@ -233,7 +233,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign, generate SBOM, and attest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           digest: ${{ steps.create-manifest.outputs.digest }}
