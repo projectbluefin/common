@@ -122,8 +122,8 @@ head requires a new diff and a new per-item verdict, never a fresh SHA at land.
 
 1. **Respect the target lifecycle.** Common PRs use native assignment and review
    status, not numbered queue labels; preserve the linked issue's stage and gates.
-   Elsewhere, mutually exclusive `3-human-queue` and `3-clanker-queue` labels swap
-   in the same command under that repository's local contract.
+   Elsewhere, legacy queue labels (`3-human-queue` / `3-clanker-queue`) swap
+   in the same command only under that repository's local unmigrated contract.
 
 2. **Retitling requires close/reopen.** `edited` is not a trigger for
    `validate.yml`. A rerun replays the stale payload. Close, reopen, re-verify.

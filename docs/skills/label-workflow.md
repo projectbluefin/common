@@ -41,8 +41,8 @@ requested reviewers, review decisions, checks, and merge queue own PR progress.
 | `needs-verification` | Authorized delivery evidence recorded | Reporter tests named version/instructions; result closes or retriages | Reply `Confirmed fixed` with tested version or `Still broken` with observations |
 
 Decline/duplicate/completion is closure with a reason, not another stage. Standing trackers retain `tracking`; triage/assign actionable children separately.
-One catalog `kind/*` describes issue type; multiple `area/*` labels describe scope.
-Missing/unresolved conflicting kinds retain `needs-kind` and implementation gating until trusted human classification, never acceptance by classification.
+Exactly four canonical `kind/*` labels exist in Common: `kind/bug`, `kind/feature`, `kind/task`, `kind/test`. Missing or unrecognized kinds retain `needs-kind` and gating until classified.
+Intake rules automatically classify known title prefixes (e.g. `bug:`, `review backlog (correctness):` $\rightarrow$ `kind/bug`; `review backlog (docs-currency):`, `[architect]` $\rightarrow$ `kind/task`). Intake never overrides an existing `kind/*` label.
 
 | Overlay/gate | Meaning and owner action |
 |---|---|
@@ -94,6 +94,7 @@ maintainer-owned. Ordinary replies require no labels or commands.
 ## Constrained Prow commands
 
 Post **one command-only line in a new comment**. Mutations need immutable human commenter/sender match, current write/maintain/admin permission, an **open issue**, and trusted default-branch catalog/config.
+Lifecycle and Prow runs are serialized per repository. Burst-posting commands across multiple issues in quick succession will cancel older pending runs via concurrency limits; wait for one command run to finish before posting the next.
 Edited commands, multiline/prose, PR mutations, unauthorized actors, unknown values, and broad Prow features do not execute.
 `/help` and `/prow help` are read-only human help without mutation permission; help grants no authority.
 

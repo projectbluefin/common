@@ -8,10 +8,11 @@
 	"feature_fields": ["problem to solve", "desired outcome", "affected component"],
 	"main_ci_workflows": [".github/workflows/unit-tests.yml", ".github/workflows/validate.yml", ".github/workflows/build.yml"],
 	"intake_rules": [
-		{"match": {"title_prefixes": ["bug:", "fix:", "[bug]"]}, "labels": ["kind/bug"]},
+		{"match": {"title_prefixes": ["bug:", "fix:", "[bug]", "review backlog (correctness):", "review backlog (security):"]}, "labels": ["kind/bug"]},
 		{"match": {"title_prefixes": ["feat:", "feature:", "enhancement:", "[feature]", "[enhancement]"]}, "labels": ["kind/feature"]},
 		{"match": {"body_headings": ["Feature Request"]}, "labels": ["kind/feature"]},
-		{"match": {"title_prefixes": ["question:", "[question]"]}, "labels": ["kind/task"]}
+		{"match": {"title_prefixes": ["test:", "[test]"]}, "labels": ["kind/test"]},
+		{"match": {"title_prefixes": ["question:", "[question]", "review backlog (docs-currency):", "review backlog (intent-alignment):", "review backlog (style):", "[architect]"]}, "labels": ["kind/task"]}
 	],
 	"stages": {
 		"needs-triage": {

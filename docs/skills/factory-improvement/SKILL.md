@@ -51,7 +51,7 @@ Never automate these. Never propose automating them without explicit maintainer 
 
 | Gate | Why it must be human |
 |---|---|
-| Admitting an issue to a queue (`3-human-queue` / `3-clanker-queue`) | Prioritization judgment; agent scope assignment |
+| Admitting an issue to implementation (`triage/accepted`, or legacy `3-clanker-queue`) | Prioritization judgment; scope acceptance |
 | PR merge approval (1 human reviewer per CODEOWNERS) | Accountability; trust for org-critical changes |
 | Release blocker calls during a promotion window | Release impact judgment |
 | Production promotion decisions (Tuesday 06:00 UTC, N=7 floor) | Final go/no-go for user-facing changes |
@@ -74,12 +74,12 @@ See [`references/loop-detail.md`](references/loop-detail.md) for the full MEASUR
 # Quick status
 ~/src/hive-status
 
-# Everything awaiting triage
-gh search issues --label "1-triage" --owner projectbluefin --state open \
+# Everything awaiting triage (legacy repos: 1-triage; opted-in: needs-triage)
+gh search issues --label "needs-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# Work admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
+# Work accepted / admitted to queue (legacy repos: 3-clanker-queue; opted-in: triage/accepted)
+gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 

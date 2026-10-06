@@ -15,12 +15,12 @@ MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
 ```bash
 ~/src/hive-status
 
-# Everything awaiting triage across the factory
-gh search issues --label "1-triage" --owner projectbluefin --state open \
+# Everything awaiting triage (legacy repos: 1-triage; opted-in: needs-triage)
+gh search issues --label "needs-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# Work already admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
+# Work already accepted (legacy repos: 3-clanker-queue; opted-in: triage/accepted)
+gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
@@ -103,12 +103,12 @@ Each rule must exist in exactly ONE location. Other files should have a one-line
 Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this doc — they drift. Always query GitHub for the current state:
 
 ```bash
-# Everything awaiting triage
-gh search issues --label "1-triage" --owner projectbluefin --state open \
+# Everything awaiting triage (legacy repos: 1-triage; opted-in: needs-triage)
+gh search issues --label "needs-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# Work admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
+# Work already accepted (legacy repos: 3-clanker-queue; opted-in: triage/accepted)
+gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
