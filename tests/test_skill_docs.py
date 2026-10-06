@@ -11,7 +11,6 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHECK_DOC_LINKS = REPO_ROOT / "scripts/check-doc-links.sh"
-CHECK_SKILL_FRONTMATTER = REPO_ROOT / "scripts/check-skill-frontmatter.sh"
 CHECK_SKILL_INDEX = REPO_ROOT / "scripts/check-skill-index.sh"
 GENERATE_SKILL_INDEX = REPO_ROOT / "scripts/generate_skill_index.py"
 
@@ -112,7 +111,7 @@ def make_skill_tree(tmp_path: Path) -> Path:
         skills_dir / "zeta.md",
         frontmatter="""
             id: zeta
-            name: Zeta skill
+            name: zeta
             one_line_purpose: "Zeta purpose"
             entry_point: docs/skills/zeta.md
             category: reference
@@ -130,7 +129,7 @@ def make_skill_tree(tmp_path: Path) -> Path:
         skills_dir / "alpha" / "SKILL.md",
         frontmatter="""
             id: alpha
-            name: Alpha skill
+            name: alpha
             one_line_purpose: "Alpha purpose"
             entry_point: docs/skills/alpha/SKILL.md
             category: test-authoring
@@ -181,91 +180,81 @@ def test_check_doc_links_reports_missing_link(tmp_path: Path) -> None:
     assert "broken link in docs/guide.md -> missing.md" in result.stdout
 
 
-def test_check_skill_frontmatter_passes_with_valid_files(tmp_path: Path) -> None:
-    skills = tmp_path / "docs" / "skills"
-    (skills / "nested").mkdir(parents=True)
-
-    write_skill(
-        skills / "alpha.md",
-        frontmatter="""
-            name: Alpha
+VALID_FRONTMATTER = """
+            id: demo
+            name: demo
+            one_line_purpose: Demo purpose
+            entry_point: docs/skills/demo.md
+            category: meta
+            status: active
+            tags: [docs]
+            description: Demo description
             version: "1.0"
             last_updated: "2026-08-01"
-            tags: [docs]
-            description: Alpha skill description
-            metadata:
-              type: reference
-        """,
-    )
-    write_skill(
-        skills / "nested" / "SKILL.md",
-        frontmatter="""
-            name: Nested
-            version: "1.0"
-            last_updated: "2026-08-01"
-            tags: [docs]
-            description: Nested skill description
-            metadata:
-              type: reference
-        """,
-    )
-    (skills / "index.md").write_text("generated catalog\n")
-
-    result = run_script("bash", CHECK_SKILL_FRONTMATTER, tmp_path)
-
-    assert result.returncode == 0
-    assert result.stdout == ""
-    assert result.stderr == ""
-
-
-def test_check_skill_frontmatter_accepts_front_matter_larger_than_a_pipe_buffer(
-    tmp_path: Path,
-) -> None:
-    # A required key on the first line lets `grep -q` exit before the whole
-    # front-matter is consumed. If the key test feeds grep through a pipe, the
-    # producer takes SIGPIPE once the payload exceeds the 64 KiB pipe buffer,
-    # and `pipefail` turns a successful match into a "missing key" error.
-    skills = tmp_path / "docs" / "skills"
-    padding = "\n".join(
-        " " * 12 + f"x_pad_{i:03d}: {'a' * 180}" for i in range(400)
-    )
-
-    write_skill(
-        skills / "large.md",
-        frontmatter="""
-            name: Large
-            version: "1.0"
-            last_updated: "2026-08-01"
-            tags: [docs]
-            description: Large skill description
             metadata:
               type: reference
 """
-        + padding,
-    )
-
-    text = (skills / "large.md").read_text()
-    assert len(text.encode()) > 64 * 1024
-    assert len(text.splitlines()) < 500
-
-    result = run_script("bash", CHECK_SKILL_FRONTMATTER, tmp_path)
-
-    assert result.returncode == 0, result.stdout
-    assert "missing required key" not in result.stdout
-    assert "missing metadata.type" not in result.stdout
 
 
-def test_check_skill_frontmatter_reports_missing_front_matter(
+def run_catalog(mod, monkeypatch: pytest.MonkeyPatch, mode: str) -> int:
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", mode])
+    try:
+        return mod.main()
+    except SystemExit as e:  # validate_catalog exits on schema errors
+        return e.code
+
+
+@pytest.mark.parametrize(
+    ("frontmatter", "body", "expected"),
+    [
+        (None, "", "no YAML front matter found"),
+        (VALID_FRONTMATTER.replace("name: demo", "name: Demo"), "", "does not match id"),
+        (VALID_FRONTMATTER.split("            metadata:")[0], "", "'doc_type' is a required property"),
+        (VALID_FRONTMATTER.replace("Demo description", "x" * 257), "", "is too long"),
+        (VALID_FRONTMATTER, "line\n" * 500, "hard max 500"),
+    ],
+    ids=["no-front-matter", "name-id-mismatch", "no-metadata-type", "long-description", "over-500-lines"],
+)
+def test_generate_skill_index_rejects_invalid_skill(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    frontmatter: str | None,
+    body: str,
+    expected: str,
 ) -> None:
-    skills = tmp_path / "docs" / "skills"
-    skills.mkdir(parents=True)
-    (skills / "broken.md").write_text("# no front matter\n")
+    skills_dir = tmp_path / "docs" / "skills"
+    skills_dir.mkdir(parents=True)
+    skill = skills_dir / "demo.md"
+    if frontmatter is None:
+        skill.write_text("# no front matter\n")
+    else:
+        write_skill(skill, frontmatter=frontmatter)
+        skill.write_text(skill.read_text() + body)
+    (skills_dir / "index.schema.json").write_text(
+        (REPO_ROOT / "docs/skills/index.schema.json").read_text()
+    )
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, tmp_path)
 
-    result = run_script("bash", CHECK_SKILL_FRONTMATTER, tmp_path)
+    assert run_catalog(mod, monkeypatch, "--check") == 1
+    assert expected in capsys.readouterr().err
 
-    assert result.returncode == 1
-    assert "has no front-matter" in result.stdout
+
+def test_generate_skill_index_warns_over_soft_line_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    skills_dir = tmp_path / "docs" / "skills"
+    write_skill(skills_dir / "demo.md", frontmatter=VALID_FRONTMATTER)
+    (skills_dir / "demo.md").write_text((skills_dir / "demo.md").read_text() + "line\n" * 200)
+    (skills_dir / "index.schema.json").write_text(
+        (REPO_ROOT / "docs/skills/index.schema.json").read_text()
+    )
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, tmp_path)
+
+    assert run_catalog(mod, monkeypatch, "--write") == 0
+    assert "soft max 200" in capsys.readouterr().err
 
 
 def test_check_skill_index_passes_with_complete_links(tmp_path: Path) -> None:
@@ -435,7 +424,7 @@ def test_generate_skill_index_accepts_widened_categories(tmp_path: Path) -> None
         skills_dir / "platform-skill.md",
         frontmatter="""
             id: platform-skill
-            name: Platform skill
+            name: platform-skill
             one_line_purpose: Platform purpose
             entry_point: docs/skills/platform-skill.md
             category: platform
@@ -444,13 +433,15 @@ def test_generate_skill_index_accepts_widened_categories(tmp_path: Path) -> None
             description: Platform skill description
             version: "1.0"
             last_updated: "2026-09-23"
+            metadata:
+              type: reference
         """,
     )
     write_skill(
         skills_dir / "product-skill.md",
         frontmatter="""
             id: product-skill
-            name: Product skill
+            name: product-skill
             one_line_purpose: Product purpose
             entry_point: docs/skills/product-skill.md
             category: product
@@ -459,6 +450,8 @@ def test_generate_skill_index_accepts_widened_categories(tmp_path: Path) -> None
             description: Product skill description
             version: "1.0"
             last_updated: "2026-09-23"
+            metadata:
+              type: reference
         """,
     )
     schema_text = (REPO_ROOT / "docs/skills/index.schema.json").read_text()

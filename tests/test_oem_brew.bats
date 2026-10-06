@@ -10,19 +10,19 @@
 OEM_BREW_HOOK="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/user-setup.hooks.d/20-oem-brew.sh"
 LIBSETUP_REAL="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/ublue/setup-services/libsetup.sh"
 
+load helpers
+
 WORKDIR=""
 
 setup() {
     WORKDIR="$(mktemp -d)"
     export WORKDIR
     export HOME="${WORKDIR}/home"
-    mkdir -p "${HOME}/.local/share/ublue" "${WORKDIR}/sys/devices/virtual/dmi/id"
+    mkdir -p "${HOME}/.local/share/ublue"
 
     # Default to an unrelated machine. Individual tests set the vendor they
     # need, so a positive test cannot pass by inheriting setup state.
-    printf '%s\n' "Generic" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
-    printf '%s\n' "Generic" > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
-    printf '%s\n' "Generic PC" > "${WORKDIR}/sys/devices/virtual/dmi/id/product_name"
+    fake_dmi "${WORKDIR}" chassis_vendor=Generic sys_vendor=Generic "product_name=Generic PC"
 
     mkdir -p "${WORKDIR}/bin"
 

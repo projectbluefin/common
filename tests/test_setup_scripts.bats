@@ -23,123 +23,31 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# ublue-system-setup
+# Wrapper smoke tests — config/fallback/missing-dir logic lives in hookrunner
 # ---------------------------------------------------------------------------
 
-@test "ublue-system-setup: get_config returns fallback when config file missing" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/nonexistent.json"
-  result="$(bash -c "
-    source ${SYSTEM_SETUP@Q}
-    get_config '.\"system-hooks-directory\"' '/default/path'
-  ")"
-  [ "${result}" = "/default/path" ]
-}
-
-@test "ublue-system-setup: get_config reads value from json file" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo '{"system-hooks-directory": "/custom/hooks"}' > "${SETUP_CONFIG_FILE}"
-  result="$(bash -c "
-    source ${SYSTEM_SETUP@Q}
-    get_config '.\"system-hooks-directory\"' '/default/path'
-  ")"
-  [ "${result}" = "/custom/hooks" ]
-}
-
-@test "ublue-system-setup: get_config returns fallback for null json value" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo '{"system-hooks-directory": null}' > "${SETUP_CONFIG_FILE}"
-  result="$(bash -c "
-    source ${SYSTEM_SETUP@Q}
-    get_config '.\"system-hooks-directory\"' '/default/path'
-  ")"
-  [ "${result}" = "/default/path" ]
-}
-
-@test "ublue-system-setup: runs hooks in hooks directory" {
-  export HOOKS_DIR="${WORKDIR}/hooks"
+_smoke() {
+  local wrapper="$1" key="$2"
+  export HOOKS_DIR="${WORKDIR}/${key}"
   mkdir -p "${HOOKS_DIR}"
-  echo "#!/bin/bash" > "${HOOKS_DIR}/01-test.sh"
-  echo "echo hook_ran > ${WORKDIR}/result" >> "${HOOKS_DIR}/01-test.sh"
+  printf '#!/bin/bash\necho ran > %s/result\n' "${WORKDIR}" > "${HOOKS_DIR}/01-test.sh"
   chmod +x "${HOOKS_DIR}/01-test.sh"
-
   export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo "{\"system-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
-
-  bash "${SYSTEM_SETUP}"
+  echo "{\"${key}\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
+  bash "${wrapper}"
   [ -f "${WORKDIR}/result" ]
 }
 
-@test "ublue-system-setup: exits cleanly when hooks directory missing" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo '{"system-hooks-directory": "/nonexistent/hooks"}' > "${SETUP_CONFIG_FILE}"
-  run bash "${SYSTEM_SETUP}"
-  [ "${status}" -eq 0 ]
+@test "ublue-system-setup: runs hooks from its configured directory" {
+  _smoke "${SYSTEM_SETUP}" system-hooks-directory
 }
 
-@test "ublue-system-setup: exits cleanly when hooks directory is empty" {
-  export HOOKS_DIR="${WORKDIR}/empty-system-hooks"
-  mkdir -p "${HOOKS_DIR}"
-
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo "{\"system-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
-
-  run bash "${SYSTEM_SETUP}"
-  [ "${status}" -eq 0 ]
+@test "ublue-user-setup: runs hooks from its configured directory" {
+  _smoke "${USER_SETUP}" user-hooks-directory
 }
 
-# ---------------------------------------------------------------------------
-# ublue-user-setup
-# ---------------------------------------------------------------------------
-
-@test "ublue-user-setup: get_config returns fallback when config file missing" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/nonexistent.json"
-  result="$(bash -c "
-    source ${USER_SETUP@Q}
-    get_config '.\"user-hooks-directory\"' '/default/user/path'
-  ")"
-  [ "${result}" = "/default/user/path" ]
-}
-
-@test "ublue-user-setup: get_config reads value from json file" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo '{"user-hooks-directory": "/custom/user/hooks"}' > "${SETUP_CONFIG_FILE}"
-  result="$(bash -c "
-    source ${USER_SETUP@Q}
-    get_config '.\"user-hooks-directory\"' '/default/user/path'
-  ")"
-  [ "${result}" = "/custom/user/hooks" ]
-}
-
-@test "ublue-user-setup: runs user hooks in hooks directory" {
-  export HOOKS_DIR="${WORKDIR}/user-hooks"
-  mkdir -p "${HOOKS_DIR}"
-  echo "#!/bin/bash" > "${HOOKS_DIR}/01-user.sh"
-  echo "echo user_hook_ran > ${WORKDIR}/user_result" >> "${HOOKS_DIR}/01-user.sh"
-  chmod +x "${HOOKS_DIR}/01-user.sh"
-
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo "{\"user-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
-
-  bash "${USER_SETUP}"
-  [ -f "${WORKDIR}/user_result" ]
-}
-
-@test "ublue-user-setup: exits cleanly when hooks directory missing" {
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo '{"user-hooks-directory": "/nonexistent/user/hooks"}' > "${SETUP_CONFIG_FILE}"
-  run bash "${USER_SETUP}"
-  [ "${status}" -eq 0 ]
-}
-
-@test "ublue-user-setup: exits cleanly when hooks directory is empty" {
-  export HOOKS_DIR="${WORKDIR}/empty-user-hooks"
-  mkdir -p "${HOOKS_DIR}"
-
-  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
-  echo "{\"user-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
-
-  run bash "${USER_SETUP}"
-  [ "${status}" -eq 0 ]
+@test "ublue-privileged-setup: runs hooks from its configured directory" {
+  _smoke "${PRIVILEGED_SETUP}" privileged-hooks-directory
 }
 
 # ---------------------------------------------------------------------------
@@ -179,6 +87,21 @@ teardown() {
 
   bash -c "source ${HOOKRUNNER_LIB@Q}; run_setup_hooks custom-hooks-directory ${HOOKS_DIR@Q}"
   [ "$(tr '\n' ' ' < "${WORKDIR}/order")" = "a b " ]
+}
+
+@test "hookrunner: exits cleanly when hooks directory is missing" {
+  export SETUP_CONFIG_FILE="${WORKDIR}/nonexistent.json"
+  bash -c "source ${HOOKRUNNER_LIB@Q}; run_setup_hooks custom-hooks-directory /nonexistent/hooks"
+}
+
+@test "hookrunner: hook paths with spaces are handled safely" {
+  export HOOKS_DIR="${WORKDIR}/hooks dir with spaces"
+  mkdir -p "${HOOKS_DIR}"
+  printf '#!/bin/bash\necho space > %q/space_result\n' "${WORKDIR}" > "${HOOKS_DIR}/01-space.sh"
+  export SETUP_CONFIG_FILE="${WORKDIR}/nonexistent.json"
+
+  bash -c "source ${HOOKRUNNER_LIB@Q}; run_setup_hooks custom-hooks-directory ${HOOKS_DIR@Q}"
+  [ -f "${WORKDIR}/space_result" ]
 }
 
 # ---------------------------------------------------------------------------

@@ -11,6 +11,8 @@ FRAMEWORK_HOOK="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/sys
 ASUS_HOOK="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/system-setup.hooks.d/11-asus.sh"
 LIBSETUP_REAL="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/ublue/setup-services/libsetup.sh"
 
+load helpers
+
 WORKDIR=""
 
 setup() {
@@ -18,7 +20,6 @@ setup() {
 
     # Fake DMI/proc filesystem
     mkdir -p \
-        "${WORKDIR}/sys/devices/virtual/dmi/id" \
         "${WORKDIR}/proc" \
         "${WORKDIR}/etc/modprobe.d" \
         "${WORKDIR}/etc/udev/rules.d" \
@@ -27,10 +28,8 @@ setup() {
     # Default: non-Framework, non-ASUS, AMD CPU
     echo "AuthenticAMD" > "${WORKDIR}/proc/cpuinfo_vendor"
     printf 'vendor_id\t: AuthenticAMD\n' > "${WORKDIR}/proc/cpuinfo"
-    echo "Generic" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
-    echo "Generic Desktop" > "${WORKDIR}/sys/devices/virtual/dmi/id/product_name"
-    echo "1.00" > "${WORKDIR}/sys/devices/virtual/dmi/id/bios_version"
-    echo "Generic Vendor" > "${WORKDIR}/sys/devices/virtual/dmi/id/sys_vendor"
+    fake_dmi "${WORKDIR}" chassis_vendor=Generic "product_name=Generic Desktop" \
+        bios_version=1.00 "sys_vendor=Generic Vendor"
     echo "ID=fedora" > "${WORKDIR}/etc/os-release"
 
     # Mock commands that must not run for real in tests

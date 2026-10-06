@@ -152,4 +152,4 @@ run_setup_hooks "user-hooks-directory" "/usr/share/ublue-os/user-setup.hooks.d"
 
 **Do not** reintroduce a private `get_config` or `for script in ...` loop in a wrapper — `tests/test_setup_scripts.bats` fails the build if you do. The three scripts were byte-identical copies before, which is how one dispatch-loop defect shipped three times over.
 
-**Test coverage:** `tests/test_setup_scripts.bats` and `tests/test_privileged_setup.bats`. Run `just test` to verify.
+**Test coverage:** `tests/test_setup_scripts.bats`. Run `just test` to verify.

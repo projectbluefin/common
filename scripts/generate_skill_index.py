@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Generate docs/skills/index.json from docs/skills/*.md front matter.
+"""Validate skill front matter and generate docs/skills/index.json from it.
 
 Usage:
     python3 scripts/generate_skill_index.py --write   # regenerate index.json
     python3 scripts/generate_skill_index.py --check   # verify index.json is up to date (exit 1 if stale)
 
 The catalog is validated against docs/skills/index.schema.json (JSON Schema
-2020-12) before being written or compared. This script is the only supported
+2020-12) before being written or compared; each skill must also have
+name == id and stay under the line budget. This script is the only supported
 way to produce index.json — do not hand-edit it.
 """
 from __future__ import annotations
@@ -26,6 +27,8 @@ SKILLS_DIR = REPO_ROOT / "docs" / "skills"
 SCHEMA_PATH = SKILLS_DIR / "index.schema.json"
 INDEX_PATH = SKILLS_DIR / "index.json"
 SCHEMA_VERSION = "1.0"
+MAX_LINES_SOFT = 200
+MAX_LINES_HARD = 500
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
 
@@ -59,6 +62,15 @@ def build_skill_entry(path: Path) -> dict:
     missing = [k for k in required if k not in fm]
     if missing:
         raise ValueError(f"{rel}: missing required front-matter key(s): {missing}")
+    if fm["name"] != fm["id"]:
+        raise ValueError(f"{rel}: name ({fm['name']!r}) does not match id ({fm['id']!r})")
+
+    # Oversized skills are migrated to per-skill directories (write-a-skill.md).
+    lines = path.read_text().count("\n")
+    if lines > MAX_LINES_HARD:
+        raise ValueError(f"{rel} is {lines} lines (hard max {MAX_LINES_HARD})")
+    if lines > MAX_LINES_SOFT:
+        print(f"warning: {rel} is {lines} lines (soft max {MAX_LINES_SOFT})", file=sys.stderr)
 
     entry = {
         "id": fm["id"],

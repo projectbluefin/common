@@ -34,7 +34,8 @@
         "tags",
         "description",
         "version",
-        "last_updated"
+        "last_updated",
+        "doc_type"
       ],
       "additionalProperties": false,
       "properties": {
@@ -78,7 +79,7 @@
         },
         "doc_type": {
           "type": "string",
-          "description": "Value of front-matter metadata.type, if present (e.g. reference, procedure, runbook, policy)."
+          "description": "Value of front-matter metadata.type (e.g. reference, procedure, runbook, policy)."
         }
       }
     }

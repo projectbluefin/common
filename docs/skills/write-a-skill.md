@@ -89,18 +89,19 @@ metadata:
   "Use when ..." second sentence.
 - `metadata.type`: one of `procedure`, `reference`, `runbook`, `policy`.
 
-All of the above (except `metadata`) are validated against
-`docs/skills/index.schema.json` and compiled into `docs/skills/index.json` /
-`index.md` by `scripts/generate_skill_index.py`. After adding or editing a
-skill, run:
+All of the above are validated against `docs/skills/index.schema.json` (plus
+`name` == `id` and the 200/500-line budget) and compiled into
+`docs/skills/index.json` / `index.md` by `scripts/generate_skill_index.py`.
+After adding or editing a skill, run:
 
 ```bash
 python3 scripts/generate_skill_index.py --write
 ```
 
 and commit the regenerated `index.json`/`index.md` alongside your change.
-`scripts/generate_skill_index.py --check` runs in pre-commit and CI and fails
-if the catalog is stale.
+`scripts/generate_skill_index.py --check` (pre-commit hook
+`check-skill-catalog`) runs in pre-commit and CI and fails if any skill is
+invalid or the catalog is stale.
 
 ## Description rules
 
@@ -141,7 +142,7 @@ that same change:
 - Update every inbound link across the repo (`docs/SKILL.md`'s router table,
   any other skill that references it) from `skills/<name>.md` to
   `skills/<name>/SKILL.md`.
-- `scripts/check-skill-frontmatter.sh` and `scripts/check-skill-index.sh` both
+- `scripts/generate_skill_index.py` and `scripts/check-skill-index.sh` both
   recognize `docs/skills/*/SKILL.md` alongside flat `docs/skills/*.md` — no
   script changes needed for a new migration.
 
@@ -188,7 +189,6 @@ Before committing a new or updated skill:
 - [ ] Body has `When to Use`, process/reference content, `Red Flags`, and
       `Verification` sections.
 - [ ] Project-internal facts include a verification command.
-- [ ] `bash scripts/check-skill-frontmatter.sh` passes with no errors.
 - [ ] File is under 200 lines (soft) or under 500 lines (hard max).
 - [ ] `python3 scripts/generate_skill_index.py --write` run and the
       regenerated `docs/skills/index.json`/`index.md` are committed.

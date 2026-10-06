@@ -80,13 +80,16 @@ def handle_jetbrains():
         case 'teardown':
             return 'deny'
 
-def handle_vscode():
-    def appid_is_vscode(appid):
-        return appid == 'com.visualstudio.code'
+IDE_HOOKS = {
+    'vscode':   (lambda appid: appid == 'com.visualstudio.code', 'ublue-os/tap/visual-studio-code-linux'),
+    'vscodium': (lambda appid: appid == 'com.vscodium.codium',   'ublue-os/tap/vscodium-linux'),
+    'zed':      (lambda appid: appid.startswith('dev.zed.Zed'),  'ublue-os/tap/zed-linux'),
+}
 
+def handle_ide(appid_matches, brew_pkg):
     match stage:
         case 'setup':
-            if transaction_type == 'install' and appid_is_vscode(transaction_appid):
+            if transaction_type == 'install' and appid_matches(transaction_appid):
                 return 'ok'
             else:
                 return 'pass'
@@ -108,79 +111,7 @@ def handle_vscode():
                 if dialog_response_id == 'run-devmode':
                     spawn_ujust('devmode')
                 else:
-                    spawn_brew('ublue-os/tap/visual-studio-code-linux')
-            except:
-                pass
-            return ''
-
-        case 'teardown':
-            return 'deny'
-
-def handle_vscodium():
-    def appid_is_vscodium(appid):
-        return appid == 'com.vscodium.codium'
-
-    match stage:
-        case 'setup':
-            if transaction_type == 'install' and appid_is_vscodium(transaction_appid):
-                return 'ok'
-            else:
-                return 'pass'
-
-        case 'setup-dialog':
-            return 'ok'
-
-        case 'teardown-dialog':
-            if dialog_response_id in ('download', 'run-devmode'):
-                return 'ok'
-            else:
-                return 'abort'
-
-        case 'catch':
-            return 'abort'
-
-        case 'action':
-            try:
-                if dialog_response_id == 'run-devmode':
-                    spawn_ujust('devmode')
-                else:
-                    spawn_brew('ublue-os/tap/vscodium-linux')
-            except:
-                pass
-            return ''
-
-        case 'teardown':
-            return 'deny'
-
-def handle_zed():
-    def appid_is_zed(appid):
-        return appid.startswith('dev.zed.Zed')
-
-    match stage:
-        case 'setup':
-            if transaction_type == 'install' and appid_is_zed(transaction_appid):
-                return 'ok'
-            else:
-                return 'pass'
-
-        case 'setup-dialog':
-            return 'ok'
-
-        case 'teardown-dialog':
-            if dialog_response_id in ('download', 'run-devmode'):
-                return 'ok'
-            else:
-                return 'abort'
-
-        case 'catch':
-            return 'abort'
-
-        case 'action':
-            try:
-                if dialog_response_id == 'run-devmode':
-                    spawn_ujust('devmode')
-                else:
-                    spawn_brew('ublue-os/tap/zed-linux')
+                    spawn_brew(brew_pkg)
             except:
                 pass
             return ''
@@ -191,15 +122,10 @@ def handle_zed():
 # ---
 
 response = 'pass'
-match hook_id:
-    case 'jetbrains-toolbox':
-        response = handle_jetbrains()
-    case 'vscode':
-        response = handle_vscode()
-    case 'vscodium':
-        response = handle_vscodium()
-    case 'zed':
-        response = handle_zed()
+if hook_id == 'jetbrains-toolbox':
+    response = handle_jetbrains()
+elif hook_id in IDE_HOOKS:
+    response = handle_ide(*IDE_HOOKS[hook_id])
 
 print(response)
 sys.exit(0)

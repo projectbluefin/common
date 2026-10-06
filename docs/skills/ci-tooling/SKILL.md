@@ -111,7 +111,7 @@ The repo-level `.pre-commit-config.yaml` includes local hooks that protect the a
 
 | Hook | Script | What it checks |
 |---|---|---|
-| `Validate skill front-matter` | `scripts/check-skill-frontmatter.sh` | Every `docs/skills/*.md` has required front-matter keys and description ≤256 chars. |
+| `Validate skill front-matter and docs/skills/index.json` | `scripts/generate_skill_index.py --check` | Every skill's front matter validates against `docs/skills/index.schema.json` (required keys, description ≤256 chars), size budget holds, and `index.json`/`index.md` are up to date. |
 | `Validate docs/SKILL.md skill index` | `scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
 | `Validate internal markdown links` | `scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
 

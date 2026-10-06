@@ -186,288 +186,74 @@ class TestJetbrainsHook:
 
 
 # ---------------------------------------------------------------------------
-# VSCode hook
+# Brew-installed IDE hooks (VSCode, VSCodium, Zed)
 # ---------------------------------------------------------------------------
 
-class TestVSCodeHook:
-    def test_setup_install_vscode_returns_ok(self):
+IDE_CASES = [
+    ("vscode", "com.visualstudio.code", "com.vscodium.codium", "ublue-os/tap/visual-studio-code-linux"),
+    ("vscodium", "com.vscodium.codium", "com.visualstudio.code", "ublue-os/tap/vscodium-linux"),
+    ("zed", "dev.zed.Zed", "org.mozilla.firefox", "ublue-os/tap/zed-linux"),
+]
+
+
+@pytest.mark.parametrize("hook_id,appid,other_appid,brew_pkg", IDE_CASES)
+class TestIDEHook:
+    def test_setup_install_returns_ok(self, hook_id, appid, other_appid, brew_pkg):
         resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
+            "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "setup",
             "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "com.visualstudio.code",
+            "BAZAAR_TS_APPID": appid,
         })
         assert resp == "ok"
 
-    def test_setup_non_vscode_returns_pass(self):
+    def test_setup_other_app_returns_pass(self, hook_id, appid, other_appid, brew_pkg):
         resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
+            "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "setup",
             "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "com.vscodium.codium",
+            "BAZAAR_TS_APPID": other_appid,
         })
         assert resp == "pass"
 
-    def test_setup_dialog_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "setup-dialog",
-        })
-        assert resp == "ok"
+    @pytest.mark.parametrize("stage,dialog_response,expected", [
+        ("setup-dialog", None, "ok"),
+        ("teardown-dialog", "download", "ok"),
+        ("teardown-dialog", "run-devmode", "ok"),
+        ("teardown-dialog", "cancel", "abort"),
+        ("catch", None, "abort"),
+        ("teardown", None, "deny"),
+    ])
+    def test_stage_response(self, hook_id, appid, other_appid, brew_pkg, stage, dialog_response, expected):
+        env = {"BAZAAR_HOOK_ID": hook_id, "BAZAAR_HOOK_STAGE": stage}
+        if dialog_response:
+            env["BAZAAR_HOOK_DIALOG_RESPONSE_ID"] = dialog_response
+        assert _load_hooks(env) == expected
 
-    def test_teardown_dialog_download_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_run_devmode_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_cancel_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
-        })
-        assert resp == "abort"
-
-    def test_catch_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "catch",
-        })
-        assert resp == "abort"
-
-    def test_teardown_returns_deny(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscode",
-            "BAZAAR_HOOK_STAGE": "teardown",
-        })
-        assert resp == "deny"
-
-    def test_action_download_spawns_brew_vscode(self):
+    def test_action_download_spawns_brew(self, hook_id, appid, other_appid, brew_pkg):
         resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "vscode",
+            "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "action",
             "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-            "BAZAAR_TS_APPID": "com.visualstudio.code",
+            "BAZAAR_TS_APPID": appid,
         })
         assert resp == ""
         assert len(calls) == 1
         cmd = " ".join(calls[0])
         assert "brew tap ublue-os/tap" in cmd
         assert "brew trust ublue-os/tap" in cmd
-        assert "brew install --cask ublue-os/tap/visual-studio-code-linux" in cmd
+        assert f"brew install --cask {brew_pkg}" in cmd
 
-    def test_action_run_devmode_spawns_devmode(self):
+    def test_action_run_devmode_spawns_devmode(self, hook_id, appid, other_appid, brew_pkg):
         resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "vscode",
+            "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "action",
             "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-            "BAZAAR_TS_APPID": "com.visualstudio.code",
+            "BAZAAR_TS_APPID": appid,
         })
         assert resp == ""
         assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "ujust devmode" in cmd
-
-
-# ---------------------------------------------------------------------------
-# VSCodium hook
-# ---------------------------------------------------------------------------
-
-class TestVSCodiumHook:
-    def test_setup_install_codium_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "setup",
-            "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "com.vscodium.codium",
-        })
-        assert resp == "ok"
-
-    def test_setup_non_codium_returns_pass(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "setup",
-            "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "com.visualstudio.code",
-        })
-        assert resp == "pass"
-
-    def test_setup_dialog_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "setup-dialog",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_download_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_run_devmode_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_cancel_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
-        })
-        assert resp == "abort"
-
-    def test_catch_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "catch",
-        })
-        assert resp == "abort"
-
-    def test_teardown_returns_deny(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "teardown",
-        })
-        assert resp == "deny"
-
-    def test_action_download_spawns_brew_vscodium(self):
-        resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "action",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-            "BAZAAR_TS_APPID": "com.vscodium.codium",
-        })
-        assert resp == ""
-        assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "brew tap ublue-os/tap" in cmd
-        assert "brew trust ublue-os/tap" in cmd
-        assert "brew install --cask ublue-os/tap/vscodium-linux" in cmd
-
-    def test_action_run_devmode_spawns_devmode(self):
-        resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "vscodium",
-            "BAZAAR_HOOK_STAGE": "action",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-            "BAZAAR_TS_APPID": "com.vscodium.codium",
-        })
-        assert resp == ""
-        assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "ujust devmode" in cmd
-
-
-# ---------------------------------------------------------------------------
-# Zed hook
-# ---------------------------------------------------------------------------
-
-class TestZedHook:
-    def test_setup_install_zed_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "setup",
-            "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "dev.zed.Zed",
-        })
-        assert resp == "ok"
-
-    def test_setup_non_zed_returns_pass(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "setup",
-            "BAZAAR_TS_TYPE": "install",
-            "BAZAAR_TS_APPID": "org.mozilla.firefox",
-        })
-        assert resp == "pass"
-
-    def test_setup_dialog_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "setup-dialog",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_download_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_run_devmode_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-        })
-        assert resp == "ok"
-
-    def test_teardown_dialog_cancel_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
-        })
-        assert resp == "abort"
-
-    def test_catch_returns_abort(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "catch",
-        })
-        assert resp == "abort"
-
-    def test_teardown_returns_deny(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "teardown",
-        })
-        assert resp == "deny"
-
-    def test_action_download_spawns_brew_zed(self):
-        resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "action",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "download",
-            "BAZAAR_TS_APPID": "dev.zed.Zed",
-        })
-        assert resp == ""
-        assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "brew tap ublue-os/tap" in cmd
-        assert "brew trust ublue-os/tap" in cmd
-        assert "brew install --cask ublue-os/tap/zed-linux" in cmd
-
-    def test_action_run_devmode_spawns_devmode(self):
-        resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "zed",
-            "BAZAAR_HOOK_STAGE": "action",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-devmode",
-            "BAZAAR_TS_APPID": "dev.zed.Zed",
-        })
-        assert resp == ""
-        assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "ujust devmode" in cmd
+        assert "ujust devmode" in " ".join(calls[0])
 
 
 # ---------------------------------------------------------------------------

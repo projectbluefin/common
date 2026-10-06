@@ -48,12 +48,6 @@ repos:
         language: pygrep
         entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
         exclude: '\.pre-commit-config\.yaml$'
-      - id: check-skill-frontmatter
-        name: Validate skill front-matter
-        language: system
-        entry: bash scripts/check-skill-frontmatter.sh
-        pass_filenames: false
-        always_run: true
       - id: check-skill-index
         name: Validate docs/SKILL.md skill index
         language: system
@@ -67,7 +61,7 @@ repos:
         pass_filenames: false
         always_run: true
       - id: check-skill-catalog
-        name: Validate docs/skills/index.json is up to date
+        name: Validate skill front-matter and docs/skills/index.json
         language: system
         entry: python3 scripts/generate_skill_index.py --check
         pass_filenames: false

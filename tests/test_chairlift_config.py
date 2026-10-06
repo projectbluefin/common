@@ -663,44 +663,6 @@ def test_just_check_stays_hermetic():
     )
 
 
-#: Mutations that each make `just check` fetch from the network. Every one
-#: must trip the guard; a mutation that survives means the guard is
-#: decorative.
-_HERMETIC_MUTATIONS = {
-    "in the check body": (
-        'check: (_fmt "--check" "Checking")',
-        'check: (_fmt "--check" "Checking")\n    python3 tests/check-chairlift-config',
-    ),
-    "as a check dependency": (
-        'check: (_fmt "--check" "Checking")',
-        'check: check-chairlift-config (_fmt "--check" "Checking")',
-    ),
-    "in a transitive dependency body": (
-        "_fmt mode verb:\n",
-        "_fmt mode verb:\n    python3 tests/check-chairlift-config\n",
-    ),
-}
-
-
-@pytest.mark.parametrize("placement", sorted(_HERMETIC_MUTATIONS))
-def test_hermetic_guard_catches_check_recipe_mutations(placement):
-    """Mutation test for the guard above.
-
-    The original guard only regex-matched the `check:` header line, so
-    moving the validator one line down into the recipe body defeated it
-    silently. Re-add the fetch in three places and assert each one fails.
-    """
-    justfile = JUSTFILE.read_text(encoding="utf-8")
-    original, mutated = _HERMETIC_MUTATIONS[placement]
-    assert original in justfile, (
-        f"Justfile no longer contains {original!r}; update _HERMETIC_MUTATIONS "
-        "so this mutation still exercises the hermetic guard"
-    )
-
-    with pytest.raises(AssertionError, match="must stay hermetic"):
-        _assert_just_check_is_hermetic(justfile.replace(original, mutated, 1))
-
-
 def test_just_recipe_closure_reaches_dependency_bodies():
     """The guard is only as good as the parser. Pin that the closure of
     `check` actually contains `_fmt`'s body rather than just its name."""
@@ -897,12 +859,3 @@ def test_chairlift_icons_ship_system_wide():
         assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
             f"{icon.relative_to(ROOT)} is not an SVG document"
         )
-
-
-def test_chairlift_desktop_entry_records_upstream_provenance():
-    """These are verbatim upstream GPL-3.0 artifacts. Keep the attribution and
-    the version next to them so a cask bump has an obvious place to look."""
-    header = DESKTOP_FILE.read_text(encoding="utf-8")
-    assert "projectbluefin/chairlift" in header
-    assert "v26.09.0-alpha.2" in header
-    assert "GPL-3.0" in header

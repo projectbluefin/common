@@ -84,7 +84,7 @@ version-script <name> <type> <version> || exit 0
 
 ## Shellcheck requirement
 
-CI runs `shellcheck -e SC2207` on all `*.sh` files in `system_files/`.
+CI (`validate.yml`) runs `shellcheck -e SC1091,SC2207` on all `*.sh` files in `system_files/`.
 Always suppress SC1091 inline:
 
 ```bash

@@ -47,8 +47,7 @@ When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
 
 | File | What to remove |
 |---|---|
-| `.github/workflows/unit-tests.yml` | Nothing — the shellcheck set is derived from shebangs on disk, so deleting the file is enough |
-| `.github/workflows/validate.yml` | The `shellcheck` step that invokes it (if script-specific) **and** any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
+| `.github/workflows/validate.yml` | Nothing for shellcheck (the set is derived from extension/shebang on disk); remove any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
 | `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
 | `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and any related skill links + all cross-references |
 

@@ -76,7 +76,7 @@ agent docs structure:
 
 | Hook | Script | What it checks |
 |---|---|---|
-| `Validate skill front-matter` | `scripts/check-skill-frontmatter.sh` | Every `docs/skills/*.md` has required front-matter keys (`name`, `version`, `last_updated`, `tags`, `description`, `metadata.type`) and description ≤256 chars. |
+| `Validate skill front-matter and docs/skills/index.json` | `scripts/generate_skill_index.py --check` | Every `docs/skills/*.md` and `docs/skills/*/SKILL.md` front matter validates against `docs/skills/index.schema.json` (required keys incl. `metadata.type`, description ≤256 chars), `name` == `id`, ≤500 lines (warns >200), and `index.json`/`index.md` are up to date. |
 | `Validate docs/SKILL.md skill index` | `scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
 | `Validate internal markdown links` | `scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
 

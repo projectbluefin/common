@@ -22,8 +22,8 @@ alias neofetch='ublue-fastfetch'
 ## Suppress SC1091 (source-following info) for the find step
 
 ```yaml
-- name: Run shellcheck — .sh scripts
-  run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091
+- name: Shellcheck .sh scripts
+  run: find system_files -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091,SC2207
 ```
 
 ## Both quoting fixes required for hook runners

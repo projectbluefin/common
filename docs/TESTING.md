@@ -92,7 +92,7 @@ without branching behavior, with a one-sentence reason.
 | Layer | Tool | Current target |
 |-------|------|---------------|
 | Python hooks | pytest-cov | 80% via `--cov-fail-under=80` gate in CI |
-| Shell scripts | shellcheck | CI checks `.sh` scripts and the explicitly listed extensionless setup scripts |
+| Shell scripts | shellcheck | `validate.yml` checks `.sh` scripts and extensionless bash/sh scripts (derived from shebangs) |
 | Shell behavior | bats | All `usr/bin` scripts with branching logic |
 
 ## Test inventory

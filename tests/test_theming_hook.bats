@@ -6,16 +6,17 @@
 THEMING_HOOK="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/user-setup.hooks.d/10-theming.sh"
 LIBSETUP_REAL="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/ublue/setup-services/libsetup.sh"
 
+load helpers
+
 WORKDIR=""
 PATCHED_HOOK=""
 
 setup() {
     WORKDIR="$(mktemp -d)"
-    mkdir -p "${WORKDIR}/sys/devices/virtual/dmi/id" "${WORKDIR}/bin"
+    mkdir -p "${WORKDIR}/bin"
 
     # Default hardware: no special theming path.
-    echo "Generic Vendor" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
-    echo "Generic Product" > "${WORKDIR}/sys/devices/virtual/dmi/id/product_name"
+    fake_dmi "${WORKDIR}" "chassis_vendor=Generic Vendor" "product_name=Generic Product"
 
     # Patch absolute source/sys paths so hook runs in temp dir.
     PATCHED_HOOK="${WORKDIR}/10-theming.sh"

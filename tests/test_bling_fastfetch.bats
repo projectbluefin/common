@@ -31,58 +31,18 @@ teardown() {
 # FASTFETCH_FORCE_THEME override — covers all 9 named colors
 # ---------------------------------------------------------------------------
 
-@test "ublue-bling-fastfetch: blue returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=blue run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;53;132;228" ]
-}
-
-@test "ublue-bling-fastfetch: green returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=green run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;58;148;74" ]
-}
-
-@test "ublue-bling-fastfetch: orange returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=orange run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;237;91;0" ]
-}
-
-@test "ublue-bling-fastfetch: pink returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=pink run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;213;97;153" ]
-}
-
-@test "ublue-bling-fastfetch: purple returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=purple run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;139;62;165" ]
-}
-
-@test "ublue-bling-fastfetch: red returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=red run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;230;45;66" ]
-}
-
-@test "ublue-bling-fastfetch: slate returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=slate run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;111;131;150" ]
-}
-
-@test "ublue-bling-fastfetch: teal returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=teal run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;33;144;164" ]
-}
-
-@test "ublue-bling-fastfetch: yellow returns correct ANSI color" {
-    FASTFETCH_FORCE_THEME=yellow run bash "${SCRIPT}"
-    [ "${status}" -eq 0 ]
-    [ "${output}" = "38;2;200;136;0" ]
+@test "ublue-bling-fastfetch: each named theme maps to its ANSI color" {
+    local pair theme want
+    for pair in blue=53\;132\;228 green=58\;148\;74 orange=237\;91\;0 \
+        pink=213\;97\;153 purple=139\;62\;165 red=230\;45\;66 \
+        slate=111\;131\;150 teal=33\;144\;164 yellow=200\;136\;0; do
+        theme="${pair%%=*}" want="38;2;${pair#*=}"
+        FASTFETCH_FORCE_THEME="${theme}" run bash "${SCRIPT}"
+        [ "${status}" -eq 0 ] && [ "${output}" = "${want}" ] || {
+            echo "${theme}: got '${output}' (status ${status}), want '${want}'"
+            return 1
+        }
+    done
 }
 
 # ---------------------------------------------------------------------------
