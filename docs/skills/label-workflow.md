@@ -117,10 +117,11 @@ Partial failure/unreadable final state is reported accurately, not assumed succe
 1. Use **`Refs #NNN`** while the product report remains unresolved. Route through
    existing assignees/PR owners; do not duplicate work or replace native review.
 2. Maintainer verifies the **actual fix** merged, then selects `awaiting-release`
-   with **Labels**. A merged reference/documentation PR is not a fix or delivery.
-3. Authorized human records **Delivery evidence** in the body, verifies real
-   publication, then selects `needs-verification` after the body edit. Common uses:
-
+   with **Labels** manually. A merged PR does not move an issue to `awaiting-release` automatically.
+   A merged reference or documentation PR is not an OS fix or delivery.
+3. Authorized human records **Delivery evidence** in the issue body, verifies real
+   publication to the affected image/channel, then selects `needs-verification` with **Labels**
+   after the body edit. Common uses:
    ```text
    Image: <published-image>@sha256:<64-hex-digest>
    Fix revision: <40-hex-commit>
