@@ -75,6 +75,22 @@
       "pinDigests": true
     },
     {
+      "description": "The shared issue lifecycle runtime only runs from the managed v1 release and its onboarding check requires the literal @v1 caller ref, so a SHA pin breaks Prow as soon as v1 moves. Keep these lifecycle refs on @v1.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "projectbluefin/actions"
+      ],
+      "matchFileNames": [
+        ".github/workflows/issue-lifecycle.yml",
+        ".github/workflows/issue-policy-preview.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/promotion-candidate-e2e.yml"
+      ],
+      "pinDigests": false
+    },
+    {
       "description": "Require human review for GitHub Actions minor/patch updates",
       "matchManagers": [
         "github-actions"

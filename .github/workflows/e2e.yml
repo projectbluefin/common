@@ -148,7 +148,7 @@ jobs:
       # After main CI is green, refresh this issue explicitly; hourly repair is labels-only.
       - name: Reconcile the recorded incident and its exact next actions
         id: policy
-        uses: projectbluefin/actions/issue-lifecycle@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+        uses: projectbluefin/actions/issue-lifecycle@v1
         with:
           apply: 'true'
           issue: ${{ steps.incident.outputs.issue-number }}
