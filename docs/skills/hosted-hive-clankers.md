@@ -64,9 +64,10 @@ Follow the checked-in request and message contract:
    Candidate selection order is: operator priority override (`queue_order`),
    contributor's own work (`#2390`), opt-in label interests (`#2637`), fewer
    recent failures (`#2435`), then scan order. Items must carry the repository's
-   accepted implementation label (`triage/accepted` on opted-in repos like `common`
-   and `chairlift`, or `3-clanker-queue` where the legacy queue is still active)
-   when label allow-filtering is enabled.
+   operator-configured readiness label when label allow-filtering is enabled
+   (for example, `triage/accepted` on opted-in repos like `common` and `chairlift`,
+   or `3-clanker-queue` where the legacy queue is still active).
+   Hive admission filters remain unverified without operator dashboard access.
    The assignment may also carry ephemeral `github_token`,
    `token_expires_at`, `restrictions`, and `contributor_labels`. Verify `repo`
    and `number` against GitHub before doing work, and never echo the token or

@@ -82,6 +82,9 @@ Install a small `.github/workflows/issue-lifecycle.yml` caller of
 Reuse the opted-in caller's events and dispatch inputs, scoped to the target.
 The shared workflow serializes Prow then lifecycle reconciliation in one
 repository concurrency group; bot-token writes need not trigger a second event.
+Burst-posting Prow commands or dispatches across multiple issues in quick succession
+will cancel older pending runs via concurrency limits; dispatch targeted refreshes one
+issue at a time (`apply=true labels-only=true issue=N`) and let each run complete.
 Hourly repair is labels-only. `pull_request_target` reads trusted default-branch
 data only: no fork/PR code executes with write permissions.
 
@@ -164,7 +167,11 @@ gh workflow run issue-lifecycle.yml --repo "$REPOSITORY" -f apply=true -f migrat
 ```
 
 Migration is quiet: no status comments, reporter mentions/action requests, or
-closures. The runtime backs up all-state assignments, definitions, catalog, and
+closures. The runtime enforces a main-CI preflight gate: `apply=true` is refused
+until every workflow in `main_ci_workflows` has passed on the current default-branch
+commit ("Apply requires successful main CI"). Do not dispatch `apply=true` while main
+CI is still pending or failing.
+The runtime backs up all-state assignments, definitions, catalog, and
 preview before writes; download the workflow evidence artifact (30-day retention)
 to the operator's durable archive. Preserve partial-failure archives and review
 skipped changed records against fresh state rather than force-overwriting them.
@@ -190,7 +197,9 @@ that evidence and cannot discover installed clients. Retirement retains its back
 
 ### 8. Refresh reviewed statuses, prove outcomes, then preview again
 
-Approve targeted comment/mention-aware normal previews before refresh; dispatch `issue=<number>` and `apply=true` without quiet flags for each reviewed record.
+Approve targeted comment/mention-aware normal previews before refresh; dispatch
+`issue=<number>` and `apply=true` without quiet flags for each reviewed record,
+one issue at a time.
 Archive superseded owned bot statuses, preserve human comments, and inspect requester identity/dedup before notifying reporters.
 Do not mass-ping the backlog or treat scheduled labels-only repair as status proof.
 
@@ -203,6 +212,18 @@ Run a second read-only preview on settled live state; review any change and prov
 Handoff actual evidence and remaining external uncertainties. Update the nearest canonical skill/catalog in the same PR with durable, source-backed learning.
 The next repository should reuse the seam, not copy the bot.
 
+### 9. Org rollout checklist (rollout across all 39 repos)
+
+When onboarding each repository into this shared lifecycle:
+
+- [ ] **Audit and delete stray kind labels:** Run `gh label list -R <repo> --search kind/` and delete non-catalog kind labels (e.g., `kind/documentation`, `kind/cleanup`, `kind/enhancement`). Relabel open instances with `/kind task` or `/kind bug` first via Prow.
+- [ ] **Author repository-owned `.github/issue-policy.json`:** Define the 5 lifecycle stages, 4 canonical kinds (`bug`, `feature`, `task`, `test`), `retired_stages` (`1-triage`, `2-discussing`, `3-human-queue`, `3-clanker-queue`, `4-review`), and locally justified `intake_rules` (declaring only prefixes this repository's own intake sources and review sweeps produce).
+- [ ] **Sync `.github/prow.yaml`:** Validate exact match with the catalog kind values (`exclusive: true`).
+- [ ] **Wire `.github/workflows/issue-lifecycle.yml`:** Call `projectbluefin/actions/.github/workflows/reusable-issue-lifecycle.yml@v1`.
+- [ ] **Update issue forms:** Set default labels to `["needs-triage"]` and remove hardcoded `1-triage` or `3-clanker-queue`.
+- [ ] **Verify main-CI apply gate:** Confirm all `main_ci_workflows` are green on the merge commit before running `apply=true`.
+- [ ] **Run quiet migration:** Run `apply=true migrate=true` and confirm legacy aliases/stages are retired without sending comments.
+- [ ] **Check Hive admission filter:** If the repository is served by Hive, verify that the hub label filter is configured so accepted, ungated work is admitted to the queue, and verify whether the live Hive reports `ready > 0` (otherwise unverified operator setting).
 ## Red flags and verification
 
 Stop for unresolved design/security/cross-repository breakage/merge gates,

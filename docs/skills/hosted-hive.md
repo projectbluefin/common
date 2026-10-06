@@ -45,7 +45,7 @@ Read the relevant record before acting:
 Management & Operations controls in Hive v2:
 - `hub.contribute_queue_order`: Drag-and-drop operator priority override. Pinned items sort first.
 - `hub.contribute_queue_hold`: Per-issue manual park (`%s#%d`). Held items are excluded until resumed.
-- `hub.contribute_labels_mode` & `hub.contribute_deny_labels`: Label filter mode (`allow` or `deny`). When `allow`, only issues matching the list (e.g., `triage/accepted` for opted-in repos) are offered to contributors. Note: older configurations used `3-clanker-queue`, which is now retired in opted-in repos (`common`, `chairlift`).
+- `hub.contribute_labels_mode` & `hub.contribute_deny_labels`: Contributor label filter mode (`allow` or `deny`). When in `allow` mode, only issues matching the operator-configured readiness labels are offered. Note: older deployments used `3-clanker-queue`; on opted-in repositories with the shared lifecycle, ensure the filter is configured to admit accepted work (e.g. `triage/accepted`). This hub setting is an unverified operator control from repository source.
 - `hub.disabled_tiers` & `hub.tier_limits`: Disabled tiers (`newcomer`, `contributor`, etc.) and caps on `MaxConcurrent`, `MaxPerHour`, and `MaxPerDay`.
 
 

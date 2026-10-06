@@ -39,9 +39,7 @@ Hive's requested [`plan export` contract](https://github.com/hivecommons/spektac
 | Hosted Hive | Owns optional triage, leases, receipts, human checkpoints and plan import; no local doc edit activates it. |
 
 ## Task 1: Make intake and review usable today
-
-- [x] Keep the one existing issue form's `1-triage` default and add an optional feature/epic finish-line prompt. A maintainer may add `kind/feature` or `Epic` only after reviewing scope; the form itself neither admits an agent nor starts a Hive run.
-- [ ] Before enabling a design-enforcement caller, compare its checked opt-in and `required-field-groups` with the actual issue-form headings. Today's one-form template does not contain that opt-in or all default headings; do not silently treat a feature report as a complete specification. Avoid a `projects:` form default that requires every filer to have Project #2 write access.
+- [x] Keep standard issue form intake (`needs-triage` default, replacing legacy `1-triage`) and add an optional feature/epic finish-line prompt. A maintainer may add `kind/feature` or `Epic` only after reviewing scope; the form itself neither admits an agent nor starts a Hive run.
 - [ ] A reviewer checks the seven sections against current code, child states and issue history, keeps original child links, resolves conflicting requirements and records true dependencies. The GitHub body renders metadata in a YAML fence; a later file-store artifact requires actual leading YAML frontmatter.
 - [ ] Set Project #2 `Specification ID` to the **actual CLI-returned name only after import**. Until then, treat existing values as provisional issue-era identifiers. `Workflow Stage: Specification` stays put while the document is under review; labels and issue queue state remain separate.
 - [ ] Check the [procedure](../../skills/spektacular-workflow.md) and local [human gates](../../skills/human-gates.md) with one real reviewer, not just a Markdown linter. A bounded bug remains a direct issue; unclear work can be investigated before a specification is drafted.

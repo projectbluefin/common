@@ -58,13 +58,12 @@ having to opt in to a profile (`common#1338`).
 
 Every payload is previewed locally. Submission requires explicit consent,
 uses `gh issue create` rather than a browser form, and offers final-submission
-queue preferences: `3-clanker-queue`, `3-human-queue`, or no queue label.
+automation preferences (`Human interaction only`, `Machine analysis is welcome`, or `No preference`).
 GitHub silently drops labels requested by reporters without repository triage
 access, so the client also records a validated
-`bonedigger-queue-preference` marker in the issue body, including `none` when
-normal triage is selected. The write-enabled
-Bonedigger intake workflow applies that preference after creation. The direct
-`--label` argument remains as the fast path for reporters who do have access.
+`automation-preference` marker in the issue body, including `none` when
+normal triage is selected (legacy submissions used `bonedigger-queue-preference`).
+The write-enabled Bonedigger intake workflow initializes current stages and preserves preferences.
 Selected smart logs are
 published to a public gist only after that preview and consent. `gh` is
 required and authenticated; if it is absent, the user can consent to
