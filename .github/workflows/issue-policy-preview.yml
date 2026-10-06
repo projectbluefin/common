@@ -37,7 +37,7 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
-    uses: projectbluefin/actions/.github/workflows/reusable-issue-policy-preview.yml@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+    uses: projectbluefin/actions/.github/workflows/reusable-issue-policy-preview.yml@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
     with:
       runtime-ref: ${{ inputs['runtime-ref'] || 'v1' }}
       caller-ref: ${{ inputs['caller-ref'] || github.event.pull_request.head.sha || github.sha }}

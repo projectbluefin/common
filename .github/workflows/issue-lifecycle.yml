@@ -46,7 +46,7 @@ jobs:
       actions: read
       issues: write
       pull-requests: write
-    uses: projectbluefin/actions/.github/workflows/reusable-issue-lifecycle.yml@48a0112c6293d00357eef0ef3a4ce2e54dbdd94a # v1
+    uses: projectbluefin/actions/.github/workflows/reusable-issue-lifecycle.yml@ae7d740d261d56354aeaf0a72af6f87e442e0472 # v1
     with:
       apply: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
       issue: ${{ inputs.issue || '' }}
