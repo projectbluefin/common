@@ -63,7 +63,7 @@ For "let's review <repo> PRs" the agent assembles the list from three sources, i
      --jq '.[] | select(.autoMergeRequest != null) | "\(.number)\t\(.title)"'
    gh pr list --repo projectbluefin/<repo> --label lgtm --json number,title,mergeStateStatus
    ```
-   Armed/labelled PRs still show up in the review queue: the human verdict is the only real gate (required approvals are 0 — see [references/merge-queue.md](references/merge-queue.md)). Prow's merge gate is described in [label-workflow.md](../label-workflow.md).
+   Armed/labelled PRs still show up in the review queue: the human verdict is the real gate (the ruleset requires 2 approving GitHub reviews — see [references/merge-queue.md](references/merge-queue.md)). Prow's merge gate is described in [label-workflow.md](../label-workflow.md).
 3. **Live GitHub state** — the dossier fetch below is the authority.
 
 ### Cadence: stream, don't batch

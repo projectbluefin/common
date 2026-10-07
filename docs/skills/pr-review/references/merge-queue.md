@@ -10,14 +10,11 @@ Part of [pr-review](../SKILL.md) — merge queue settings, branch update command
 | Grouping strategy | `ALLGREEN` ("only merge non-failing pull requests") |
 | Max entries to build | 5 |
 | Required checks | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
-| Required approvals | **0** — and no code-owner review |
+| Required approvals | **2** approving GitHub reviews — no code-owner review |
 
-> ⚠️ The ruleset is named `main-review-required-with-renovate-bypass`, but the
-> live rule requires **no** approval and **no** code-owner review. Never infer
-> approval behavior from the ruleset name — read the live parameters.
-
-Because approvals are not enforced, the human verdict in this loop is the only
-real review gate on `main`. Treat it accordingly.
+> ⚠️ Never infer approval behavior from the ruleset name
+> (`main-review-required-with-renovate-bypass`) — read the live parameters:
+> `gh api repos/projectbluefin/common/rulesets/23854231`.
 
 E2E checks are **informational** — they do not block merging. Only the required
 checks listed above gate a merge.
