@@ -1,32 +1,31 @@
 ---
 name: governance
-version: "1.2"
-last_updated: "2026-09-24"
+version: "2.0"
+last_updated: "2026-10-07"
 id: governance
-one_line_purpose: Check repo-local CODEOWNERS, triager roles, and live branch rules.
+one_line_purpose: Check OWNERS approvers, triager roles, and live branch rules.
 entry_point: docs/skills/governance.md
 category: meta
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
 dependencies: []
-tags: [governance, issues, lifecycle]
+tags: [governance, issues, owners]
 description: >-
-  Repo-local triager roles, CODEOWNERS ownership, and live branch protection.
-  Use when changing CODEOWNERS, granting triage permissions, or verifying
-  repository review rules; no cross-repository sync is implied.
+  Triager roles, OWNERS approvers synced from projectbluefin/.project, and live
+  branch protection. Use when changing who approves, granting triage
+  permissions, or verifying repository review rules.
 metadata:
   type: reference
 ---
 
-# Contributor Governance — Triagers & CODEOWNERS
+# Contributor Governance — Triagers & OWNERS
 
 ## Contents
 - [Roles](#roles)
-- [CODEOWNERS structure](#codeowners-structure)
-- [Sync workflow](#sync-workflow)
+- [OWNERS](#owners)
 - [Branch protection](#branch-protection)
-- [Lifecycle automation](#lifecycle-automation)
+- [Issue and PR automation](#issue-and-pr-automation)
 
 ---
 
@@ -40,18 +39,15 @@ metadata:
 Triagers are granted **triage** permission directly on each repo (not via team).
 Add a person: `gh api repos/projectbluefin/REPO/collaborators/USERNAME --method PUT --field permission=triage`
 
-## CODEOWNERS structure
+## OWNERS
 
-The triager sentinel in `common/.github/CODEOWNERS` is canonical. There is no
-active `sync-codeowners.yml` here: downstream copies require reviewed manual
-propagation and can drift from the source.
+Each Prow repository has a root `OWNERS` file whose `approvers:` may `/lgtm`
+and `/approve` pull requests and receive review requests. It is generated from
+`maintainers.yaml` in `projectbluefin/.project`; a sync job opens a PR in each
+repository when that list changes.
 
-**To add/remove a triager:** update the canonical block in `common` with its
-required review, then compare affected downstream blocks and propose their
-repo-local updates. Do not assume an automatic push or bypass local review.
-
-Repository owners and sensitive paths live in each repository's current
-`.github/CODEOWNERS`; do not copy an owner table from this document.
+**To add/remove an approver:** change `maintainers.yaml` in
+`projectbluefin/.project` through its normal review. Never edit `OWNERS` by hand.
 
 ## Branch protection
 
@@ -72,13 +68,10 @@ doc-only direct-to-main exception only when **every** staged path is under
 `docs/` or is `AGENTS.md`. Inspect `git diff --cached --name-only` first;
 mixed changes need a PR and the appropriate human gates.
 
-## Lifecycle automation
+## Issue and PR automation
 
-[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger)
-owns lifecycle automation; each consumer owns its `bonedigger.yml` caller.
-Check a repository's current workflows instead of assuming a caller exists.
-`common` has no caller. The seven workflow labels are documented in
-[`label-workflow.md`](label-workflow.md), not synchronized by this repo.
+Prow drives issues and PRs; see [`label-workflow.md`](label-workflow.md) for
+the flow, labels, and commands.
 
 ## Verification
 

@@ -119,7 +119,7 @@ This is deliberately a *disclosure* rule, not a prohibition. It leaves the
 and it makes that judgment visible to the reviewer rather than silently
 duplicated.
 
-## Compliance with the seven-label contract
+## Compliance with the label workflow
 
 The preflight is a **filing-time convention, not a workflow state**:
 

@@ -30,7 +30,7 @@ Two columns make up the map:
 
 | Repo | Owners of record | Open hold-gated PRs | Merged, trailing 7d | Signal |
 |---|---|---|---|---|
-| common | `@projectbluefin/maintainers` + named owners (see `.github/CODEOWNERS`) | 3 | 57 | healthy |
+| common | `@projectbluefin/maintainers` + named owners (see root `OWNERS`) | 3 | 57 | healthy |
 | bluefin | `@projectbluefin/maintainers` | 4 | 26 | healthy |
 | bluefin-lts | `@projectbluefin/maintainers` | 2 | 21 | healthy |
 | dakota | `@projectbluefin/maintainers` | 0 | 58 | healthy |

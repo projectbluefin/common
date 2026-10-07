@@ -1,7 +1,7 @@
 ---
 name: pr-review
-version: "3.7"
-last_updated: "2026-09-25"
+version: "3.8"
+last_updated: "2026-10-07"
 id: pr-review
 one_line_purpose: Run human-decides, agent-lands backlog review one card at a time.
 entry_point: docs/skills/pr-review/SKILL.md
@@ -57,13 +57,13 @@ For "let's review <repo> PRs" the agent assembles the list from three sources, i
      jq -r '.items[] | select(.repository == "projectbluefin/<repo>") | [.recommended_action, .number, .title] | @tsv'
    ```
    `ready-for-human-merge` items go first. Verify every fact live — the feed is a snapshot, not authority. See [queue-feed.md](../queue-feed.md).
-2. **Auto-merge-armed scan** — PRs a human already queued with `gh pr merge --auto` (or the Hive sweep label):
+2. **Auto-merge-armed scan** — PRs a human already queued with `gh pr merge --auto`, or that carry Prow's `lgtm`:
    ```bash
    gh pr list --repo projectbluefin/<repo> --json number,title,autoMergeRequest \
      --jq '.[] | select(.autoMergeRequest != null) | "\(.number)\t\(.title)"'
    gh pr list --repo projectbluefin/<repo> --label lgtm --json number,title,mergeStateStatus
    ```
-   Armed/labelled PRs still show up in the review queue: the human verdict is the only real gate (required approvals are 0 — see [references/merge-queue.md](references/merge-queue.md)). For the Hive sweep contract, see [hive-automerge.md](../hive-automerge.md).
+   Armed/labelled PRs still show up in the review queue: the human verdict is the only real gate (required approvals are 0 — see [references/merge-queue.md](references/merge-queue.md)). Prow's merge gate is described in [label-workflow.md](../label-workflow.md).
 3. **Live GitHub state** — the dossier fetch below is the authority.
 
 ### Cadence: stream, don't batch
@@ -72,8 +72,8 @@ Use **streaming**: present one card, take that item's human verdict, execute it 
 
 **Easy-wins mode.** Check current security, release and cross-repo blockers
 before sorting ordinary work ascending by `additions + deletions`; present
-small ones first. In common, park complex work with a human-directed `hold`
-and findings; PRs retain native assignment and review state. Other repositories
+small ones first. In Prow repositories, park complex work with a human-directed
+`/hold` and findings. Other repositories
 follow their local queue contract. An unapproved draft never supplies queue policy.
 
 ### 1 — Dossier (one-call fetch)
@@ -103,7 +103,7 @@ gum choose "merge" "queue" "close" "defer" "rebase" "changes" "open" "skip" \
 | Verdict | Effect |
 |---|---|
 | `merge` | Squash-merge via merge queue |
-| `queue` | Hive auto-merge: audit approval + `lgtm` label (others' PRs only — see [hive-automerge.md](../hive-automerge.md)) |
+| `queue` | Prow: approving review + `/lgtm` comment (others' PRs only); Prow queues it once checks and required approvals pass — see [label-workflow.md](../label-workflow.md) |
 | `close` | Close with the human's stated reason |
 | `defer` | Leave open, move to next |
 | `rebase` | Update branch, re-present later |
@@ -120,10 +120,10 @@ head requires a new diff and a new per-item verdict, never a fresh SHA at land.
 
 **Three landing invariants** — check after every verdict that closes or parks:
 
-1. **Respect the target lifecycle.** Common PRs use native assignment and review
-   status, not numbered queue labels; preserve the linked issue's stage and gates.
+1. **Respect the target workflow.** Prow repositories use `/lgtm`, `/approve`,
+   and `/hold`, not numbered queue labels; preserve the linked issue's labels.
    Elsewhere, legacy queue labels (`3-human-queue` / `3-clanker-queue`) swap
-   in the same command only under that repository's local unmigrated contract.
+   in the same command only under that repository's local contract.
 
 2. **Retitling requires close/reopen.** `edited` is not a trigger for
    `validate.yml`. A rerun replays the stale payload. Close, reopen, re-verify.
@@ -140,15 +140,15 @@ queue state reading, branch update, and fork PR rebase.
 
 - Agent states an opinion on whether a PR should be merged.
 - Agent approves, merges, closes, or labels without an explicit human verdict.
-- `queue` verdict applied to the human's own PR (Hive self-merge ban).
-- `lgtm` added without the exact audit approval body — the sweep skips it.
+- `queue` verdict applied to the human's own PR (Prow refuses `/lgtm` from the author).
+- `lgtm` or `approved` added as a raw label instead of `/lgtm` / `/approve`.
 - Any `--admin` override; the human gate does not permit a tool to bypass rulesets.
 - `--delete-branch` used (hard-fails with merge queue).
 - `system_files/shared/` change treated as trivial or fast-laned.
 - Multiple PRs mutated behind one batch confirmation instead of per-item verdicts.
 - Competing PRs both staged for merge without human acknowledgment.
 - A PR closed without checking whether its `Closes #NNN` issue is now orphaned.
-- Numbered queue labels on a common PR, or conflicting queues elsewhere.
+- Numbered queue labels on a Prow repository PR, or conflicting queues elsewhere.
 - Re-arming auto-merge because `autoMergeRequest` was `null`, without a read-only queue check.
 - A title fix declared done without a close/reopen and re-read of the check.
 - A flake re-run with no issue filed against the check that flaked.
@@ -189,9 +189,8 @@ queue state reading, branch update, and fork PR rebase.
 ## See Also
 
 - [queue-feed.md](../queue-feed.md) — optional cheap first-pass source list (non-authoritative; verify every fact live)
-- [hive-automerge.md](../hive-automerge.md) — Hive "Queue auto merge" sweep contract (`lgtm` label + audit approval)
 - [human-gates.md](../human-gates.md) — the four human decision gates
-- [label-workflow.md](../label-workflow.md) — canonical label lifecycle
+- [label-workflow.md](../label-workflow.md) — Prow flow, labels, and commands
 - [governance.md](../governance.md) — branch protection and ownership
 - [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
 - [ci-tooling/SKILL.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning

@@ -17,19 +17,14 @@ This repo is **human-first for issues.** Humans file issues, triage them, and de
 Automated agents implement approved work — they do not self-direct triage or close issues without
 human approval.
 
-Use the bug-report or feature-request form. Reports start in triage; the lifecycle
-post names the next actor and action. Reporters reply normally and do not need
-to manage labels or use slash commands.
+Use the bug-report or feature-request form. A maintainer reads every report;
+once it is accepted (`/triage accepted`) it can be picked up. Reporters reply
+normally and do not need labels or slash commands.
 
-Maintainers accept actionable scope through the label picker. Acceptance must
-come from a trusted human and match the current issue body; consenting to
-machine analysis is not approval to implement. Existing assignments and PRs
-continue through native GitHub review and merge controls.
-
-Link unresolved image reports with `Refs #NNN`, not closing keywords. A merged
-change may still need publication in the affected image and reporter verification.
-See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) for the
-common-only lifecycle, evidence requirements, and human-only handling.
+Pull requests are reviewed and merged with Prow: a reviewer comments `/lgtm`,
+an `OWNERS` approver approves, and Prow puts the PR in the merge queue. See
+[`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) for the full
+flow, labels, and commands.
 
 ## CI
 

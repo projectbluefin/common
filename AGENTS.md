@@ -10,11 +10,6 @@ and `dakota`. Changes here propagate to every variant. Stay surgical.
 3. [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md) — cross-repo
    rules if the task spans repos.
 
-For repository opt-in, migration, client retirement, or downstream onboarding,
-follow [`docs/skills/factory-onboarding.md`](docs/skills/factory-onboarding.md).
-Target-repository authority comes first; Common supplies reusable contracts and
-Actions supplies the shared implementation, not copied bots or user-level policy.
-
 ## Build, test, and lint
 
 ```bash
@@ -36,49 +31,23 @@ The factory is automation-first: workflows, branches, assignees, projects,
 PR linkages, and merge queues advance active work. Do not simulate workflow
 state by hand or invent transitions that are not implemented in the checkout.
 
-- **Explicitly opted-in Common and ChairLift lifecycle:**
-  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) defines five
-  issue stages, overlays, trusted acceptance, constrained Prow, and notifications.
-  Each consumer owns its catalog/forms and delivery contract; other repositories
-  retain local lifecycle contracts until reviewed opt-in. PRs use native assignment,
-  reviews, checks, and merge controls, not issue stages. Preserve active operational,
-  descriptive, `agent/*`, and `hive/*` labels and existing work ownership.
-- **Humans accept implementation** through a trusted label-picker event after
-  clarifying scope and acceptance criteria. The runtime validates the immutable
-  event actor's permissions and the issue body revision. Reporter consent to
-  machine analysis, an old queue, or Hive `ready` is not acceptance. Reporters
-  reply normally and never need label permissions or a public lifecycle command.
-- **Agents implement accepted, assigned work** within the agreed scope and only
-  after independent human gates permit it. Link unresolved product reports with
-  `Refs #NNN`; use `Closes #NNN` only for merge-satisfied code-only work or already
-  delivered/verified reports. Merge is not image/application delivery. Bot reports
-  use Status, role headings/action bullets, and explicit Reporter action.
+- **Issues and PRs run on Prow:** see
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) for the flow,
+  labels, and `/commands`. New issues carry `needs-human`; a maintainer accepts
+  with `/triage accepted` and removes `needs-human` by hand when agents may take
+  the work. PRs merge through the merge queue once they have `lgtm`, `approved`,
+  Common's 2 GitHub approvals, and green checks.
+- **Agents implement accepted work only:** `triage/accepted`, no `needs-human`,
+  no `blocked` or `hold`. Never set those labels, `lgtm`, or `approved` on your
+  own work. Link issues with `Refs #NNN` or `Fixes #NNN`.
 - **Hive coordination & Clankers relay:** Hive may select work for another
   monitored repository. Clankers is only the authenticated relay for that
   assignment; verify the assigned repository and issue in GitHub before acting.
   It does not bypass human approval, review, or merge gates.
-- **Repository-owned intake:** Common owns `bug-report.yml`, `feature-request.yml`,
-  and chooser `config.yml` in `.github/ISSUE_TEMPLATE/`; ChairLift owns its local
-  forms. Intake initializes triage/kind server-side, including structured CLI bodies.
-  Analysis preference never accepts implementation. Adoption does not replace
-  other repositories' forms or security/report-intake ownership.
-- **CODEOWNERS ownership:** The triager section is owned here; edit downstream
-  copies only when the repository-specific section is explicitly in scope.
-  Never write to `ublue-os/*`.
-- **Shared lifecycle/Prow runtime:** `projectbluefin/actions` owns
-  `scripts/issue_policy.py`, `scripts/issue_status.py`, and `scripts/prow_commands.py`,
-  packaged as `issue-lifecycle` and `prow-labels`. Common owns its catalog,
-  `.github/prow.yaml`, and `.github/workflows/issue-lifecycle.yml`, calling
-  `reusable-issue-lifecycle.yml@v1`. The single serialized conductor reads trusted
-  default-branch data; hourly repair and full-history migration are labels-only.
-  Delivery stages require authorized human evidence. Prow is issue-only descriptive
-  classification/negative hold control, not acceptance, assignment, review, or merge.
-- **Protected readers and Hive boundary:** Preserve native `needs-human`, independent
-  human/app gates, active catalog reader gates, and human-only preferences (a
-  maintainer may waive `human-only` by removing the label). Only the
-  lifecycle bot's automatic gate clears after eligible acceptance. Label presence
-  or Hive `ready` does not verify scheduling/admission for every worker; inaccessible
-  Hive settings remain unverified. Adoption adds no global API or credentials.
+- **Ownership:** the root `OWNERS` file lists who may `/approve`. It is generated
+  from `maintainers.yaml` in `projectbluefin/.project`; never edit it by hand.
+  Org-wide Prow config is `prow.yaml` in the same repository. Never write to
+  `ublue-os/*`.
 
 See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
@@ -159,11 +128,7 @@ and `dakota` simultaneously. Test locally where possible.
 
 ## Code ownership
 
-```
-system_files/shared/**   @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
-system_files/bluefin/**  @castrojo @hanthor @ahmedadan
-**/*.md                  @repires @KiKaraage @projectbluefin/maintainers
-```
+The root [`OWNERS`](OWNERS) file lists the approvers for the whole repository.
 
 ## Canonical sources
 
@@ -171,7 +136,7 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 |---|---|
 | Factory org structure | `docs/factory/README.md` |
 | Cross-repo agent hard rules | `docs/factory/agentic-model.md` |
-| Issue lifecycle / labels | `docs/skills/label-workflow.md` |
+| Issues, PRs, labels, Prow commands | `docs/skills/label-workflow.md` |
 | CI tooling / SHA pinning | `docs/skills/ci-tooling/SKILL.md` |
 | Image registry / tags | `docs/skills/image-registry.md` |
 | Skill improvement mandate | `docs/skills/skill-improvement.md` |

@@ -66,7 +66,7 @@ still exists, so they do not hit the `startup_failure` cascade.
 
 **Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` workflow refs, or SHA-pinning `projectbluefin/bonedigger` refs for any reason other than the lifecycle retention pins noted above. When a SHA predates the file's existence in the repo, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis. See [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27).
 
-**Trap: refs that do not contain the called file.** A valid tag or SHA does not guarantee that the requested workflow exists at that ref. Verify the exact repository, workflow path, and ref before using it. Opted-in Common and ChairLift call `projectbluefin/actions/.github/workflows/reusable-issue-lifecycle.yml@v1`; historical report-intake callers retain `projectbluefin/bonedigger` pins. See [label-workflow.md](../../label-workflow.md). Use the repository's supported managed tag rather than an old semver tag.
+**Trap: refs that do not contain the called file.** A valid tag or SHA does not guarantee that the requested workflow exists at that ref. Verify the exact repository, workflow path, and ref before using it. Historical report-intake callers retain `projectbluefin/bonedigger` pins. Use the repository's supported managed tag rather than an old semver tag.
 
 ---
 

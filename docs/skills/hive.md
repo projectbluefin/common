@@ -1,7 +1,7 @@
 ---
 name: hive
-version: "3.0"
-last_updated: "2026-10-02"
+version: "3.1"
+last_updated: "2026-10-07"
 id: hive
 one_line_purpose: Route factory work through Hive coordination and labels.
 entry_point: docs/skills/hive.md
@@ -13,7 +13,7 @@ dependencies: []
 tags: [hive, multi-repo, coordination]
 description: >-
   Hive coordination across repositories with GitHub as workflow authority.
-  Use when finding routed work or checking the opted-in shared acceptance boundary.
+  Use when finding routed work or checking which issues are accepted agent work.
 metadata:
   type: reference
   context7-sources:
@@ -31,23 +31,15 @@ hostname, cached output, dashboard chrome, or an agent message.
 
 ## Workflow-state authority
 
-Read [`label-workflow.md`](./label-workflow.md) before triaging common work.
-It defines the **common-only** pilot, overlays, analysis preference, and
-trusted human acceptance gate. Other repositories retain their local numbered
-or `queue/*` contracts; read their `AGENTS.md` rather than applying this pilot.
+Read [`label-workflow.md`](./label-workflow.md) before triaging work in a
+Prow repository (common, chairlift, the printer apps). Other repositories keep
+their local contracts; read their `AGENTS.md`.
 
-Common issues use one lifecycle stage; PRs use native GitHub assignment and
-review status. Preserve descriptive and operational labels alongside
-`agent/*` and `hive/*` routing. Reporter machine-analysis consent is not
-implementation acceptance; immutable labeled-event authority and unchanged
-issue-body scope establish acceptance, not the label's presence alone.
-
-The common runtime uses native `needs-human` enumeration gating for
-unaccepted or human-only work. It introduces no global Hive approval API or
-deployment change. Hive `ready` is not a verified accepted-label admission
-gate, and local reconciliation cannot guarantee scheduling enforcement for
-cached, assigned, or differently configured workers. Verify the human
-acceptance record, scope, assignment, overlays, and preference before acting.
+Agent work is an issue with `triage/accepted` and without `needs-human` or
+`blocked`. A maintainer sets `triage/accepted` with `/triage accepted` and
+removes `needs-human` by hand; issues filed with "Human interaction only" keep
+`needs-human`. Preserve `agent/*` and `hive/*` routing labels. Hive's own
+`hold` on agent PRs blocks Prow's merge until Hive clears it.
 
 ## Finding work
 
@@ -81,28 +73,22 @@ persist, or include tokens in logs, prompts, issue bodies, or task reports.
 
 ## Ownership and gates
 
-Common owns its catalog, Prow configuration, and issue-lifecycle caller;
-`projectbluefin/actions` owns the shared lifecycle and status implementation,
-consumed through managed `@v1` by opted-in Common and ChairLift. Report intake
-remains separate. Other repositories retain their local callers until opt-in;
-this adoption changes no Hive deployment, authentication, or secrets.
+Prow config is org-wide in `projectbluefin/.project` (`prow.yaml`,
+`maintainers.yaml` → `OWNERS`); each repository runs `.github/workflows/prow.yml`.
+This changes no Hive deployment, authentication, or secrets.
 
 Agents act only on accepted, assigned or explicitly routed common work.
 Design, security, cross-repository breakage, approval, review, and merge
-decisions remain human gates. Link image reports with `Refs #NNN` while
-delivery is unresolved; code-only work satisfied at merge may use
-`Closes #NNN`. Delivery/verification transitions require validated human
-evidence, not a Hive queue result. Follow the target repository's local PR
-linkage rules outside common.
+decisions remain human gates. Link issues with `Refs #NNN` or `Fixes #NNN`.
+Follow the target repository's local PR linkage rules outside Prow repositories.
 
 ## Verification
 
 - [ ] GitHub identifies the affected repository and issue.
 - [ ] Live Hive config or status corroborates the intended repository scope.
 - [ ] Missing, stale, or contradictory API fields were escalated instead of guessed.
-- [ ] Common issues have at most one pilot stage; PRs have no issue-stage label.
-- [ ] Trusted human acceptance and delivery evidence are validated independently
-      of Hive readiness, and human-only preferences remain intact.
+- [ ] The issue has `triage/accepted` and no `needs-human` or `blocked`.
+- [ ] Human-only preferences remain intact.
 - [ ] Trust tier and permissions are sufficient for the requested action.
 - [ ] Human gates have not been bypassed.
 
@@ -114,8 +100,8 @@ Project Bluefin repositories.
 ## When NOT to Use
 
 Do not use it to self-accept work, claim work, bypass review, or operate a
-hosted Hive without the relevant hosted-Hive skill. Trusted human common
-triage follows the label-picker procedure in the label-workflow skill.
+hosted Hive without the relevant hosted-Hive skill. Human triage follows the
+label-workflow skill.
 
 ## Core Process
 

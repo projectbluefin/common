@@ -64,8 +64,7 @@ across bluefin, bluefin-lts, aurora, and dakota (all consumers of
   without `gh` warns and runs unverified. `HIVE_CONTRIBUTE_NO_VERIFY=1` skips
   the check (outage escape hatch).
 - **Default hub.** `wss://hosted-projectbluefin-knuckle-gjvq.hive.hivecommons.dev/api/contribute/ws`
-  — projectbluefin's own hosted Hive (see
-  [`hive-automerge.md`](hive-automerge.md) for the same host). Override with
+  — projectbluefin's own hosted Hive. Override with
   `HIVE_CONTRIBUTE_HUB`.
 
 ## Overridable environment variables

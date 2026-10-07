@@ -63,9 +63,9 @@ old output or assume that an absent field means an empty queue.
 7. Escalate design, security, cross-repository breakage, approval, review, and
    merge decisions to a human.
 
-Priority terms such as P0 or P1 are evidence to investigate, not additional
-workflow labels. Use only the seven canonical labels documented by
-[label-workflow](./label-workflow.md).
+Priority terms such as P0 or P1 are evidence to investigate, not labels.
+In Prow repositories a maintainer sets priority with `/priority`; use only the
+labels documented by [label-workflow](./label-workflow.md).
 
 ## Advisory findings
 

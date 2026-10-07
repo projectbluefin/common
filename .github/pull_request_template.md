@@ -6,26 +6,16 @@
 
 ## Why?
 
-<!-- Link related issues with "Refs #NNN". Use "Closes #NNN" only for code-only
-     work whose acceptance criteria are satisfied at merge, or a report whose
-     delivery and verification are already complete. Image reports stay open
-     until delivery evidence and reporter verification are recorded. -->
+<!-- Link related issues with "Refs #NNN" or "Fixes #NNN". -->
 Refs #
 
-## PR pipeline
+## How this PR merges
 
-```
-opened ──▶ native review status ──▶ approved ──▶ merge queue ──▶ merged
-```
-
-> A maintainer reviews and approves; merge goes through the merge queue.
-> Select `blocked` or `hold` to pause the work.
-
-PRs use GitHub assignments, review requests, and review status, not issue-stage
-labels. Keep related image reports open after merge: record what must ship and
-which image or channel the reporter will need before requesting verification.
-Project-owned lifecycle posts state the status, next actor, specific next steps,
-and reporter action (or explicitly say none is needed).
+Prow requests two reviews from `OWNERS`. A reviewer who is not the author
+comments `/lgtm` (removed on every push), an `OWNERS` approver comments
+`/approve` or approves in GitHub, and Common also needs 2 approving GitHub
+reviews. With green checks, Prow puts the PR in the merge queue. `/hold`
+pauses it. See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
 
 ## Checklist
 

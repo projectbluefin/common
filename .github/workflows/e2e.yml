@@ -74,18 +74,9 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: read
       issues: write
-      pull-requests: read
     steps:
-      - name: Check out trusted issue policy
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
       - name: Open or update the tracking issue
-        id: incident
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -109,15 +100,15 @@ jobs:
           ## Maintainer
           - Open the failed matrix entry and logs at ${RUN_URL}.
           - Identify the owning repository and record the regression scope.
-          - Accept and assign the fix through the issue lifecycle; do not assume a new reference PR fixed it.
+          - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
 
           ## Reporter
           **Reporter action:** None unless a maintainer requests additional evidence."
             echo "Updated existing issue #${existing}"
           else
-            issue_url=$(gh issue create --repo "$REPO" --title "$TITLE" --body \
-          "<!-- report-type: bug -->
-          Post-merge E2E failed on \`${SHA:0:7}\`.
+            gh issue create --repo "$REPO" --title "$TITLE" \
+              --label needs-human,kind/bug --body \
+          "Post-merge E2E failed on \`${SHA:0:7}\`.
 
           Run: ${RUN_URL}
 
@@ -136,28 +127,8 @@ jobs:
           ## Maintainer
           - Open the failed matrix entry and logs at ${RUN_URL}.
           - Identify the owning repository and record the regression scope.
-          - Accept and assign the fix through the issue lifecycle; do not assume a new reference PR fixed it.
+          - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
 
           ## Reporter
-          **Reporter action:** None unless a maintainer requests additional evidence.")
-            existing="${issue_url##*/}"
+          **Reporter action:** None unless a maintainer requests additional evidence."
           fi
-          printf 'issue-number=%s\n' "$existing" >> "$GITHUB_OUTPUT"
-      # GITHUB_TOKEN writes do not trigger a second issue workflow.
-      # The issue is authoritative if pending/red main CI refuses reconciliation.
-      # After main CI is green, refresh this issue explicitly; hourly repair is labels-only.
-      - name: Reconcile the recorded incident and its exact next actions
-        id: policy
-        uses: projectbluefin/actions/issue-lifecycle@v1
-        with:
-          apply: 'true'
-          issue: ${{ steps.incident.outputs.issue-number }}
-      - name: Preserve migration snapshot
-        if: always() && steps.policy.outputs.backup-directory != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: common-e2e-intake-backup-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ steps.policy.outputs.backup-directory }}
-          if-no-files-found: ignore
-          include-hidden-files: true
-          retention-days: 30

@@ -9,7 +9,7 @@ Same dossier → verdict → stage → land loop, with issue verdicts:
 | Verdict | Effect |
 |---|---|
 | `close` | Close with the human's stated reason |
-| `label <name>` | Follow Common's shared five issue stages and preserve descriptive, operational, and routing labels — see [label-workflow](../../label-workflow.md). PRs use native review state, not issue stages or numbered queues. |
+| `label <name>` | Use the Prow command (`/kind`, `/triage accepted`, `/priority`, `/label blocked`) and preserve routing labels — see [label-workflow](../../label-workflow.md). PRs use `/lgtm`, `/approve`, `/hold`, not numbered queues. |
 | `assign` | Assign to a user or bot |
 | `dup <#>` | Close as duplicate, link to the original |
 | `wrongrepo <repo>` | Transfer or close with redirect |

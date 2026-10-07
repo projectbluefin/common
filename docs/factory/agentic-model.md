@@ -5,11 +5,10 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 
 ## Agent onboarding and self-repair
 
-The canonical downstream onboarding sequence is
-[`factory-onboarding.md`](../skills/factory-onboarding.md). Every agent starts
-with the target repository's `AGENTS.md` and local catalog, verifies its Hive
-and GitHub assignment, then loads common as a pinned shared-contract sidecar.
-Repositories should link to that procedure rather than copying common policy.
+Every agent starts with the target repository's `AGENTS.md` and local catalog,
+verifies its Hive and GitHub assignment, then loads common as a pinned
+shared-contract sidecar. Repositories should link to common's skills rather
+than copying common policy.
 
 Every task loop performs preflight, detects stale or contradictory guidance,
 repairs the nearest authoritative contract when safe and source-backed,
@@ -87,7 +86,7 @@ Humans decide when a new secret is needed. This is a security gate, not a conven
 
 ## What "autonomous" means for promotions
 
-Image build and promotion are automated in the flows described below. This is not end-to-end automation of common reports: implementation acceptance, delivery evidence, and outcome verification retain human gates. For bluefin, bluefin-lts, and dakota:
+Image build and promotion are automated in the flows described below. This is not end-to-end automation of issue reports: accepting work and verifying the outcome stay with humans. For bluefin, bluefin-lts, and dakota:
 
 1. Builds fire automatically (push to `testing` / Renovate digest bump / daily cron)
 2. Post-build E2E runs automatically (bluefin: required gate; bluefin-lts/dakota: advisory)
@@ -214,10 +213,10 @@ When you discover something broken or missing in the factory during a session:
 
 1. File a GitHub issue in `projectbluefin/common`
 2. Describe the gap in the issue body — scope, impact, and what "fixed" looks like
-3. **Do not** self-accept implementation — common acceptance requires a trusted human decision, distinct from analysis consent, assignment, or Hive readiness
+3. **Do not** self-accept implementation — a maintainer accepts with `/triage accepted`; analysis consent, assignment, or Hive readiness is not acceptance
 4. **Do not** add it to a static doc section — docs are operating procedure, not backlogs
 
-See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the common-only lifecycle; other repositories retain their local contracts.
+See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the Prow workflow; repositories without Prow keep their local contracts.
 
 ## PR comment policy
 
@@ -228,43 +227,32 @@ See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the commo
 - `@` mentions only when asking someone to do something specific. Never standalone.
 - When in doubt, post nothing.
 
-The project's common lifecycle workflow still posts actionable next-step
-notices. Each states status, next actor, specific next steps, and reporter
-action (or explicitly none). This is not permission for agents to duplicate
-native PR review or check status with informational review comments.
+## Issues and PRs (Prow)
 
-## Common issue and PR lifecycle
+Common, ChairLift, and the printer-app repositories run on Prow. Read
+[`label-workflow.md`](../skills/label-workflow.md) for the flow, labels, and
+`/commands`. Other repositories keep their local contracts.
 
-Read [`label-workflow.md`](../skills/label-workflow.md) for common's stages,
-overlays, human-only preference, and operator procedure. This pilot does not
-migrate other repositories or change their local lifecycle automation.
-Common PRs use native assignment and review state, not issue-stage labels.
-Preserve existing assignees, approvals, reviews, branches, merge queues,
-descriptive/operational labels, and `agent/*`/`hive/*` routing.
-
-Trusted human label-picker events and unchanged issue-body scope authorize
-implementation acceptance. Reporters reply normally; consent to machine
-analysis is not acceptance and no public lifecycle slash command is required.
-Link image reports with `Refs #NNN` until delivery and verification are
-evidenced. A merge is not proof that the reporter's image contains the fix.
-Code-only tasks satisfied at merge may use `Closes #NNN`; unresolved image
-reports stay open. Delivery stages require validated authorized-human evidence,
-not a release scraper or inferred downstream pickup.
-
-The runtime uses native `needs-human` enumeration gating for unaccepted or
-human-only common work. This changes no global Hive custom approval API,
-deployment, or credentials, and makes no universal worker scheduling guarantee.
+- New issues carry `needs-human` and a kind. A maintainer accepts with
+  `/triage accepted` and removes `needs-human` by hand when agents may take it.
+  Reporters reply normally; they need no labels or commands.
+- Agents work only on issues with `triage/accepted` and no `needs-human` or
+  `blocked`. Never set `triage/accepted`, `lgtm`, or `approved` yourself.
+- PRs merge through the merge queue once they have `lgtm` (from a non-author),
+  `approved` (an `OWNERS` approver), the repository's required GitHub approvals,
+  and green checks. `/hold` pauses the merge.
+- Link issues with `Refs #NNN` or `Fixes #NNN`. Preserve assignees, reviews,
+  and `agent/*`/`hive/*` routing labels.
 
 ## Finding work
 
-For common, inspect accepted-stage candidates, then verify the trusted human
-acceptance record, current scope, assignment, overlays, and analysis preference:
+In Prow repositories, start from accepted issues that a maintainer has opened
+to agents:
 
 ```bash
-gh issue list --repo projectbluefin/common --label "triage/accepted" --state open
+gh issue list --repo projectbluefin/common --state open \
+  --search 'label:triage/accepted -label:needs-human -label:blocked'
 ```
 
-Label presence is not verified Hive admission; Hive `ready` is not this pilot's
-acceptance gate. Outside common, use the target repository's local finding-work
-procedure. See [`label-workflow.md`](../skills/label-workflow.md) for the common
-contract.
+Outside Prow repositories, use the target repository's local finding-work
+procedure.

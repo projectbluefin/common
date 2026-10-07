@@ -8,9 +8,9 @@ closed_date: null
 
 ## Overview
 > **Historical Reference Note:** This draft specification references the retired `1-triage` label.
-> Under the active shared lifecycle, the initial triage stage is `needs-triage`.
+> Under Prow, new issues wait for a maintainer with `needs-human`.
 
-Human-authored issues can wait in `needs-triage` (formerly `1-triage`) while agent PR review consumes scarce maintainer time. This unadopted proposal was landed in [common#1195](https://github.com/projectbluefin/common/pull/1195) to complete [common#1067](https://github.com/projectbluefin/common/issues/1067); that issue's closure delivered a *proposal*, not an active response SLA. Maintainers must decide whether the proposed first-response target and triage-first allocation fit the live queue.
+Human-authored issues can wait for triage (`needs-human`, formerly `1-triage`) while agent PR review consumes scarce maintainer time. This unadopted proposal was landed in [common#1195](https://github.com/projectbluefin/common/pull/1195) to complete [common#1067](https://github.com/projectbluefin/common/issues/1067); that issue's closure delivered a *proposal*, not an active response SLA. Maintainers must decide whether the proposed first-response target and triage-first allocation fit the live queue.
 ## Requirements
 
 - [ ] **Measure a human's first response**

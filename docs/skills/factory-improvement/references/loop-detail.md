@@ -15,20 +15,18 @@ MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
 ```bash
 ~/src/hive-status
 
-# Everything awaiting triage (legacy repos: 1-triage; opted-in: needs-triage)
-gh search issues --label "needs-triage" --owner projectbluefin --state open \
+# Everything awaiting a human (legacy repos: 1-triage; Prow repos: needs-human)
+gh search issues --label "needs-human" --owner projectbluefin --state open \
   --json number,title,repository
 
-# Work already accepted (legacy repos: 3-clanker-queue; opted-in: triage/accepted)
+# Work already accepted (legacy repos: 3-clanker-queue; Prow repos: triage/accepted)
 gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> `projectbluefin/common` uses shared stages (`needs-triage`,
-> `triage/needs-information`, `triage/accepted`, `awaiting-release`,
-> `needs-verification`), not `1-triage` or `3-clanker-queue`. These queries exclude
-> common issues. To triage Common work, query its shared lifecycle directly —
-> see [`../../label-workflow.md`](../../label-workflow.md).
+> Common, ChairLift, and the printer apps use Prow labels (`needs-human`,
+> `triage/accepted`, `kind/*`, `priority/*`), not `1-triage` or
+> `3-clanker-queue` — see [`../../label-workflow.md`](../../label-workflow.md).
 
 ### TRIAGE
 
@@ -90,7 +88,7 @@ Each rule must exist in exactly ONE location. Other files should have a one-line
 | Rule | Canonical location |
 |---|---|
 | ublue-os prohibition | `common/AGENTS.md` |
-| Issue lifecycle table | `docs/skills/label-workflow.md` |
+| Issue/PR flow, labels, Prow commands | `docs/skills/label-workflow.md` |
 | PR comment policy | `docs/factory/agentic-model.md` |
 | Branch targets by repo | `docs/factory/agentic-model.md` |
 | Session start ritual | `common/AGENTS.md` (+ pointer in agentic-model.md) |
@@ -103,19 +101,18 @@ Each rule must exist in exactly ONE location. Other files should have a one-line
 Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this doc — they drift. Always query GitHub for the current state:
 
 ```bash
-# Everything awaiting triage (legacy repos: 1-triage; opted-in: needs-triage)
-gh search issues --label "needs-triage" --owner projectbluefin --state open \
+# Everything awaiting a human (legacy repos: 1-triage; Prow repos: needs-human)
+gh search issues --label "needs-human" --owner projectbluefin --state open \
   --json number,title,repository
 
-# Work already accepted (legacy repos: 3-clanker-queue; opted-in: triage/accepted)
+# Work already accepted (legacy repos: 3-clanker-queue; Prow repos: triage/accepted)
 gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> Common and ChairLift use the opted-in shared stages, not `1-triage` or
-> `3-clanker-queue`. The queries above exclude their issues. Query each
-> repository's current stages directly — see
-> [`../../label-workflow.md`](../../label-workflow.md).
+> Common, ChairLift, and the printer apps use Prow labels (`needs-human`,
+> `triage/accepted`, `kind/*`, `priority/*`), not `1-triage` or
+> `3-clanker-queue` — see [`../../label-workflow.md`](../../label-workflow.md).
 
 ---
 

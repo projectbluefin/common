@@ -3,11 +3,6 @@
 Agent entry point for `projectbluefin/common`. Find the skill that matches
 your task, load only that skill, then act.
 
-For agents entering another factory repository, use
-[`skills/factory-onboarding.md`](skills/factory-onboarding.md) to verify local
-authority, attach common as a shared-contract sidecar, and run the
-self-repair/self-improvement loop on every task.
-
 ## Read order
 
 1. [`AGENTS.md`](../AGENTS.md) — repo contract, build commands, boundaries.
@@ -23,21 +18,19 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | I need to... | Load |
 |---|---|
 | Set up a dev environment or clone a factory repo | [`onboarding.md`](skills/onboarding.md) |
-| Understand CODEOWNERS, triagers, or branch protection | [`governance.md`](skills/governance.md) |
+| Understand OWNERS, triagers, or branch protection | [`governance.md`](skills/governance.md) |
 | Run hive priority review at session start | [`hive-review.md`](skills/hive-review.md) |
 | Understand cross-repo agent rules | [`factory/agentic-model.md`](factory/agentic-model.md) |
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
-| Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
+| Understand how issues and PRs work (Prow, labels, `/commands`) | [`label-workflow.md`](skills/label-workflow.md) |
 | Draft or review a Spektacular specification and plan | [`spektacular-workflow.md`](skills/spektacular-workflow.md) |
 | Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
 | Run a monitored fix-and-land backlog sweep (`/bluefin-review`) | [`bluefin-review/SKILL.md`](skills/bluefin-review/SKILL.md) |
-| Queue a reviewed PR for Hive auto-merge-on-green | [`hive-automerge.md`](skills/hive-automerge.md) |
 | Read the static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
 | Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |
 | Improve factory automation or audit gaps | [`factory-improvement/SKILL.md`](skills/factory-improvement/SKILL.md) |
-| Onboard a new repo into the factory | [`factory-onboarding.md`](skills/factory-onboarding.md) |
 | Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
 | Change the Blur My Shell defaults or the rounded-blur library | [`gnome-rounded-blur.md`](skills/gnome-rounded-blur.md) |
 | Work on Bazaar config or hooks | [`bazaar.md`](skills/bazaar.md) |

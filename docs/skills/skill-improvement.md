@@ -132,11 +132,11 @@ Use the closest matching existing skill. Only create a new skill when the change
 | `.github/workflows/build.yml` | [ci-tooling](ci-tooling/SKILL.md) |
 | `.github/workflows/e2e*.yml`, test configs | [e2e-ci](e2e-ci/SKILL.md) |
 | `.github/workflows/release.yml` | [release-promotion](release-promotion/SKILL.md) |
-| Lifecycle automation | [label-workflow](label-workflow.md) or [bonedigger](bonedigger/SKILL.md) |
+| `.github/workflows/prow.yml`, issue templates, labels | [label-workflow](label-workflow.md) or [bonedigger](bonedigger/SKILL.md) |
 | `system_files/**` | [submodule-boundary](submodule-boundary.md) or [dconf-consistency](dconf-consistency.md) |
 | `Justfile` | The skill owning the changed recipe |
 | `Containerfile` | [containerfile](containerfile/SKILL.md) |
-| `.github/CODEOWNERS` | [governance](governance.md) |
+| `OWNERS` | [governance](governance.md) |
 
 When in doubt, file a GitHub issue in `projectbluefin/common` with the
 component, evidence, and agent-context gap described in the body. Do **not**

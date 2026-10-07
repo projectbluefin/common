@@ -1,6 +1,6 @@
 name: "Bug report"
 description: "Tell us what went wrong in Bluefin common and how to reproduce it."
-labels: ["needs-triage", "kind/bug"]
+labels: ["needs-human", "kind/bug"]
 body:
   - type: markdown
     attributes:
@@ -13,14 +13,11 @@ body:
 
         ## What happens next
 
-        This report starts in `needs-triage`. A maintainer will read it, ask for missing
-        information if needed, and decide whether to accept implementation work.
-        Welcoming machine analysis is **not** approval to implement a change.
+        A maintainer reads every report and may ask you for more details. Once a
+        maintainer accepts it, a contributor or agent can pick it up.
 
-        You do not need to choose labels or use commands in comments. Reply normally
-        when asked for details. A merged fix does not mean it has reached your image:
-        maintainers will record delivery evidence before asking you to update and verify.
-        See the [common issue lifecycle](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
+        You do not need labels or commands. Just reply normally in the comments.
+        See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
 
   - type: textarea
     id: what-happened
@@ -73,7 +70,7 @@ body:
     id: automation-preference
     attributes:
       label: "Automation preference"
-      description: "Choose how you want this report analyzed. Human interaction only asks us not to use machine analysis or agent implementation; routine status and label automation still runs. A maintainer must separately accept any implementation work."
+      description: "Choose \"Human interaction only\" if you do not want agents working on this report: maintainers keep the needs-human label on it, so agents never pick it up."
       options:
         - "Human interaction only"
         - "Machine analysis is welcome"

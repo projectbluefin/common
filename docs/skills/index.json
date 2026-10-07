@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04",
+  "generated_at": "2026-10-07",
   "schema_version": "1.0",
   "skills": [
     {
@@ -261,26 +261,9 @@
         "improvement"
       ],
       "description": "Self-improving factory loop for projectbluefin. Use when identifying automation gaps, proposing workflows, or auditing ACMM maturity.",
-      "version": "1.2",
-      "last_updated": "2026-10-03",
+      "version": "1.3",
+      "last_updated": "2026-10-07",
       "doc_type": "reference"
-    },
-    {
-      "id": "factory-onboarding",
-      "name": "factory-onboarding",
-      "one_line_purpose": "Onboard an opted-in repository to the shared issue lifecycle and constrained Prow controls.",
-      "entry_point": "docs/skills/factory-onboarding.md",
-      "category": "meta",
-      "status": "active",
-      "tags": [
-        "factory",
-        "onboarding",
-        "setup"
-      ],
-      "description": "Defines repository opt-in, authority inspection, shared callers, preview, migration, and release proof. Use when onboarding a factory repository or reviewing lifecycle and Prow adoption.",
-      "version": "2.0",
-      "last_updated": "2026-10-04",
-      "doc_type": "procedure"
     },
     {
       "id": "gnome-rounded-blur",
@@ -305,18 +288,18 @@
     {
       "id": "governance",
       "name": "governance",
-      "one_line_purpose": "Check repo-local CODEOWNERS, triager roles, and live branch rules.",
+      "one_line_purpose": "Check OWNERS approvers, triager roles, and live branch rules.",
       "entry_point": "docs/skills/governance.md",
       "category": "meta",
       "status": "active",
       "tags": [
         "governance",
         "issues",
-        "lifecycle"
+        "owners"
       ],
-      "description": "Repo-local triager roles, CODEOWNERS ownership, and live branch protection. Use when changing CODEOWNERS, granting triage permissions, or verifying repository review rules; no cross-repository sync is implied.",
-      "version": "1.2",
-      "last_updated": "2026-09-24",
+      "description": "Triager roles, OWNERS approvers synced from projectbluefin/.project, and live branch protection. Use when changing who approves, granting triage permissions, or verifying repository review rules.",
+      "version": "2.0",
+      "last_updated": "2026-10-07",
       "doc_type": "reference"
     },
     {
@@ -389,27 +372,9 @@
         "multi-repo",
         "coordination"
       ],
-      "description": "Hive coordination across repositories with GitHub as workflow authority. Use when finding routed work or checking the opted-in shared acceptance boundary.",
-      "version": "3.0",
-      "last_updated": "2026-10-02",
-      "doc_type": "reference"
-    },
-    {
-      "id": "hive-automerge",
-      "name": "hive-automerge",
-      "one_line_purpose": "Queue reviewed PRs for Hive's auto-merge-on-green sweep.",
-      "entry_point": "docs/skills/hive-automerge.md",
-      "category": "ci-ops",
-      "status": "active",
-      "tags": [
-        "hive",
-        "automerge",
-        "lgtm",
-        "merge-queue"
-      ],
-      "description": "The Hive \"Queue auto merge\" feature: merger-tier queue action applying the `lgtm` label plus an audit approval; a per-minute sweep squash-merges labelled PRs once CI is green. Use when queuing a reviewed PR or listing what the sweep will merge.",
-      "version": "1.1",
-      "last_updated": "2026-09-24",
+      "description": "Hive coordination across repositories with GitHub as workflow authority. Use when finding routed work or checking which issues are accepted agent work.",
+      "version": "3.1",
+      "last_updated": "2026-10-07",
       "doc_type": "reference"
     },
     {
@@ -539,18 +504,19 @@
     {
       "id": "label-workflow",
       "name": "label-workflow",
-      "one_line_purpose": "Operate opted-in Common and ChairLift issues with trusted acceptance, delivery, and constrained Prow.",
+      "one_line_purpose": "How issues and PRs move in projectbluefin repos with Prow, its labels and commands.",
       "entry_point": "docs/skills/label-workflow.md",
       "category": "meta",
       "status": "active",
       "tags": [
         "labels",
         "issues",
-        "workflow"
+        "workflow",
+        "prow"
       ],
-      "description": "Documents opted-in Common and ChairLift stages, human gates, Prow controls, delivery evidence, and notifications. Use when triaging issues, linking PRs, refreshing status, or reviewing lifecycle migration.",
-      "version": "5.0",
-      "last_updated": "2026-10-04",
+      "description": "The Prow workflow page for projectbluefin: how an issue gets accepted, how a pull request gets reviewed and merged, which labels mean something, and which /commands exist. Use when triaging issues, reviewing PRs, or changing labels.",
+      "version": "6.0",
+      "last_updated": "2026-10-07",
       "doc_type": "procedure"
     },
     {
@@ -659,8 +625,8 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.7",
-      "last_updated": "2026-09-25",
+      "version": "3.8",
+      "last_updated": "2026-10-07",
       "doc_type": "procedure"
     },
     {
@@ -852,8 +818,8 @@
         "reference"
       ],
       "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
-      "version": "2.3",
-      "last_updated": "2026-10-02",
+      "version": "2.4",
+      "last_updated": "2026-10-07",
       "doc_type": "reference"
     },
     {

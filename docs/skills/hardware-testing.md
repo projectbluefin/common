@@ -47,7 +47,7 @@ the test exposes a new defect. Include:
 - pstore/kdump evidence, pasted inline or linked
 - severity: `all-clear`, `degraded`, or `blocker`
 
-Common's forms initialize `needs-triage`; other repositories use their local
+Common's forms add `needs-human`; other repositories use their local
 intake. Maintainers record all-clear, degraded, or blocker outcomes in the issue.
 
 ## Promotion policy
@@ -75,10 +75,10 @@ A short pstore snippet, kdump backtrace, or gist link is enough to connect a rep
 
 ## Factory integration
 
-Hardware test reports enter the factory lifecycle queue and become promotion input once triaged.
+Hardware test reports are triaged like any issue and become promotion input once triaged.
 
-- Lifecycle: [`docs/skills/label-workflow.md`](./label-workflow.md)
-- Lifecycle background: [`docs/skills/governance.md`](./governance.md)
+- Issue flow: [`docs/skills/label-workflow.md`](./label-workflow.md)
+- Roles and branch rules: [`docs/skills/governance.md`](./governance.md)
 
 Real hardware testing does not replace CI. It closes the visibility gap for bug classes that CI running in VMs cannot see.
 
