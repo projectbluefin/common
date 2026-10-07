@@ -89,7 +89,7 @@ Put each command at the start of its own line in a new comment.
 | `/hold`, `/hold cancel` | pause or release a merge |
 | `/lgtm`, `/lgtm cancel` | review a PR (not your own) |
 | `/approve`, `/approve cancel` | approve a PR as an `OWNERS` approver |
-| `/assign @user`, `/cc @user` | assign people or request reviews |
+| `/assign @user`, `/unassign @user`, `/cc @user`, `/uncc @user` | assign or unassign people; request or withdraw reviews |
 | `/close`, `/close not-planned`, `/reopen` | close or reopen |
 | `/retest`, `/test <workflow>`, `/test all` | re-run failed or named CI runs on a PR |
 | `/ok-to-test` | run CI on a first-time contributor's fork PR |

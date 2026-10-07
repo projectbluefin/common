@@ -41,7 +41,7 @@ pinned to `d530767` (tag `v1`) are being
 wired into the four OCI printer forks (`ps-printer-app`, `hplip-printer-app`,
 `gutenprint-printer-app`, `ghostscript-printer-app`); see
 `projectbluefin/common#1224`. Use
-[`label-workflow.md`](../label-workflow.md) for the Prow issue and PR workflow
+[`label-workflow.md`](../label-workflow.md) for the opted-in shared lifecycle
 and [`hive.md`](../hive.md) for cross-repo coordination.
 
 ## Core Process

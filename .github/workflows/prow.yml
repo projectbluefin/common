@@ -51,7 +51,7 @@ jobs:
       actions: write
     uses: cncf/prow-github-actions/.github/workflows/prow.yml@187c5e3cd95a329c43448e1bdb3b1f5249232e44 # v3.0.1
     with:
-      prow-commands: /kind /triage /priority /label /hold /lgtm /approve /assign /cc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels
+      prow-commands: /kind /triage /priority /label /hold /lgtm /approve /assign /unassign /cc /uncc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels
 
   label-sync:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'

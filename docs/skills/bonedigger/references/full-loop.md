@@ -72,9 +72,10 @@ exact `ujust report --resume …` command. The visible `ujust report` report
 heading remains the intake compatibility marker rather than making issue
 creation depend on a label.
 
-Common uses Prow: do not request retired numbered queue labels there.
-Machine-analysis consent does not accept implementation; a maintainer accepts
-with `/triage accepted`. Legacy `bonedigger-queue-preference` markers on existing reports remain preference
+Common uses its own intake and acceptance contract: do not request retired
+numbered queue labels there. Machine-analysis consent does not accept
+implementation; the server initializes current stages and preserves preferences.
+Legacy `bonedigger-queue-preference` markers on existing reports remain preference
 data, not active queue labels. See [`label-workflow.md`](../../label-workflow.md).
 
 ### Confirm an existing issue
@@ -97,19 +98,20 @@ QR login is intentionally out of scope.
 
 ## bonedigger — what it does NOT do
 
-bonedigger does not own issue acceptance. Common, ChairLift, and the printer
-apps use Prow; Hive supplies assignment and scheduling. The historical
+bonedigger does not own trusted issue acceptance or the shared lifecycle engine.
+Opted-in Common and ChairLift call `projectbluefin/actions`' shared lifecycle
+through managed `@v1`; Hive supplies assignment and scheduling. The historical
 bonedigger `lifecycle.yml` remains at the full commit SHAs pinned by `bluefin`,
 `bluefin-lts`, `dakota`, and `knuckle` for their report-intake integrations.
 See § Integration status below.
 
-See [`label-workflow.md`](../../label-workflow.md) for the Prow workflow.
+See [`label-workflow.md`](../../label-workflow.md) for the full lifecycle reference.
 
 ## kubestellar-bot - what it does
 
 kubestellar-bot is the implementation agent layer. It:
 - Monitors eligible work under each repository's contract; `3-clanker-queue`
-  applies only where that local queue is used, not to Prow repositories (Common, ChairLift, the printer apps).
+  applies only where that local queue is used, not to opted-in Common or ChairLift.
 - Dispatches agents to claim and implement fixes
 - Manages the PR lifecycle from claim → ship
 - Reports progress back to the hive dashboard
@@ -136,6 +138,9 @@ pins drifted; the pre-commit floating-tag guard already exempts
 `projectbluefin/*`. The `bonedigger.yml` lifecycle retention pins above are the
 one deliberate exception. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) §
 Internal refs.
+
+Common's `issue-lifecycle.yml` calls the shared Actions runtime; preserve that
+caller rather than adding a second engine or assuming ownership from a filename.
 
 bonedigger's `sync-templates.yml` continues to propagate issue templates to factory repos.
 
