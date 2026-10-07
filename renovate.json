@@ -109,12 +109,13 @@
       "automerge": false
     },
     {
-      "description": "ChairLift bumps install a root-owned pkexec helper, so a human reviews each one: never automerge. ChairLift publishes prereleases only, so unstable versions must be offered.",
+      "description": "ChairLift publishes prereleases only, so unstable versions must be offered. Automerge when checks pass.",
       "matchDepNames": [
         "projectbluefin/chairlift"
       ],
       "ignoreUnstable": false,
-      "automerge": false
+      "automerge": true,
+      "platformAutomerge": true
     }
   ]
 }

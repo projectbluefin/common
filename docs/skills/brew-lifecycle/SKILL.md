@@ -126,9 +126,9 @@ schemas under `/usr/share/glib-2.0/schemas/` (0644). Downstream images need no
 ChairLift pin of their own; the composed image must run
 `glib-compile-schemas /usr/share/glib-2.0/schemas` after overlaying the shared
 files. To bump, change `ARG CHAIRLIFT_RELEASE`; there is no hash to copy.
-Renovate proposes that one-line PR and never automerges it, because it installs
-a new root helper. The build fails if the policy authorizes any helper path
-other than `/usr/bin/chairlift-helper`.
+Renovate proposes that one-line PR and automerges it when checks pass. The
+build fails if the policy authorizes any helper path other than
+`/usr/bin/chairlift-helper`.
 
 Bootc staging is authenticated and stage-only. ChairLift invokes the
 PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs plain
