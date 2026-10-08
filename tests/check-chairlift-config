@@ -47,7 +47,7 @@ import yaml
 #: ublue-os/tap's chairlift cask. Single source of truth for every
 #: upstream fetch below; bump it together with the cask version, never
 #: independently.
-CHAIRLIFT_SCHEMA_REF = "v26.09.0-alpha.2"
+CHAIRLIFT_SCHEMA_REF = "v26.10.2"
 
 UPSTREAM_RAW = (
     f"https://raw.githubusercontent.com/projectbluefin/chairlift/{CHAIRLIFT_SCHEMA_REF}"

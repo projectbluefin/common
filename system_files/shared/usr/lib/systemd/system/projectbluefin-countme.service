@@ -3,8 +3,12 @@ Description=Send daily active-system ping to Project Bluefin
 Documentation=https://docs.projectbluefin.io/analytics
 Wants=network-online.target
 After=network-online.target
-ConditionPathExists=/run/ostree-booted
-ConditionDirectoryNotEmpty=/home
+# Trigger conditions (|): run if /home is not empty OR the host is not
+# ostree-booted. Bluefin Server is a DDI without /run/ostree-booted and is
+# typically unattended (empty /home), so it is counted; bootc hosts (Dakota,
+# Utah) with an empty /home (live ISO, unattended host) are still skipped.
+ConditionDirectoryNotEmpty=|/home
+ConditionPathExists=|!/run/ostree-booted
 # Opt-out files honored by the previous bluefin-countme units.
 ConditionPathExists=!/etc/projectbluefin/countme/disabled
 ConditionPathExists=!/etc/bluefin-countme-opt-out

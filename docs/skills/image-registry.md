@@ -101,23 +101,33 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for details.
 
-## CountMe reporting (Dakota and Utah)
+## CountMe reporting (Dakota, Utah, and Server)
 
 `/usr/libexec/projectbluefin-countme` and `projectbluefin-countme.{service,timer}`
 ship from `system_files/shared` to every consumer; Dakota gets them through
-its pinned `elements/bluefin/common.bst`, Utah through `COMMON_IMAGE_SHA`. The
-script exits before any network call unless `image-info.json`'s `image-name`
-starts with `dakota` or `utah`, so Bluefin Classic and LTS never report.
+its pinned `elements/bluefin/common.bst`, Utah through `COMMON_IMAGE_SHA`, and
+Bluefin Server through its pinned `elements/bluefin-server/os-countme.bst`.
+The script exits before any network call unless `image-info.json`'s
+`image-name` starts with `dakota`, starts with `utah`, or is exactly `server`,
+so Bluefin Classic and LTS never report.
 
 The timer and service follow upstream
 [`eos-phone-home`](https://github.com/endlessm/eos-phone-home): run on
-activation and three hours after each run, skip machines with an empty
-`/home`. The script sends at most once per 24h (`/var/lib/projectbluefin-countme/last`),
-only `{"image": "<image-name>/<image-flavor>:<stream>"}` to
+activation and three hours after each run. The script sends at most once per
+24h (`/var/lib/projectbluefin-countme/last`), only
+`{"image": "<image-name>/<image-flavor>:<stream>"}` to
 `PUT countme.projectbluefin.io/v1/ping`. The stream is the booted ref's tag
-from `bootc status` (`stable`, `testing`, else `unknown`), never the baked
-`image-tag`. No booted bootc image means no report. A failed send exits 0 and
-the next timer run retries.
+from `bootc status` (`stable`, `testing`, `latest`, else `unknown`), never the
+baked `image-tag`. For Bluefin Server — a DDI updated by `systemd-sysupdate`
+with no bootc image — the stream is taken from `image-info.json`'s `image-tag`
+when no bootc ref is available (same `stable`/`testing`/`latest`, else
+`unknown` normalisation), but only for images that are not bootc images; the
+baked `image-tag` of a bootc image is the compose tag, not the stream it
+actually runs. The unit uses trigger conditions
+`ConditionDirectoryNotEmpty=|/home` and `ConditionPathExists=|!/run/ostree-booted`:
+bootc hosts with an empty `/home` (live ISO, unattended host) are skipped,
+while non-ostree hosts such as Server run regardless of `/home`. A failed
+send exits 0 and the next timer run retries.
 
 Opt out with `systemctl mask --now projectbluefin-countme.timer`. The previous
 opt-outs still block the service: the files `/etc/projectbluefin/countme/disabled`,

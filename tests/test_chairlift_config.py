@@ -329,8 +329,8 @@ def test_schema_validator_pins_the_shipped_chairlift_release():
     validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
 
     refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
-    assert refs == ["v26.09.0-alpha.2"], (
-        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.09.0-alpha.2, got {refs}"
+    assert refs == ["v26.10.2"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.10.2, got {refs}"
     )
 
     urls = re.findall(r"https://raw\.githubusercontent\.com/projectbluefin/chairlift/\S*", validator)

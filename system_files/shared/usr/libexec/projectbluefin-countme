@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # /usr/libexec/projectbluefin-countme
-# Anonymous daily active-system count for Dakota and Utah images. Sends only
-# "<image-name>/<image-flavor>:<stream>", at most once per day, to
+# Anonymous daily active-system count for Dakota, Utah, and Server images. Sends
+# only "<image-name>/<image-flavor>:<stream>", at most once per day, to
 # countme.projectbluefin.io (docs.projectbluefin.io/analytics).
 # Opt out: systemctl mask --now projectbluefin-countme.timer
 set -uo pipefail
@@ -10,17 +10,43 @@ info="${IMAGE_INFO:-/usr/share/ublue-os/image-info.json}"
 last="${STATE_DIRECTORY:-/var/lib/projectbluefin-countme}/last"
 
 # Only images the service counts; everything else never touches the network.
+# `server` is exact-matched because the DDI image-name is literally `server`
+# (server images carry the only DDI stream we accept today).
 name=$(jq -r '."image-name" // empty' "$info" 2>/dev/null)
-[[ $name == dakota* || $name == utah* ]] || exit 0
+case $name in
+        dakota*|utah*|server) ;;
+        *) exit 0 ;;
+esac
 
 [[ -e $last ]] && (( $(date +%s) - $(stat -c %Y "$last") < 86400 )) && exit 0
 
-# No booted bootc image (live ISO, installer, container): nothing to count.
+# Stream comes from the booted bootc ref when one is available. Digest suffix
+# is stripped; anything outside the known channels (`stable`, `testing`,
+# `latest`) becomes `unknown`.
 ref=$(bootc status --json 2>/dev/null | jq -r '.status.booted.image.image.image // empty' 2>/dev/null)
-[[ -n $ref ]] || exit 0
-ref=${ref%%@*}
-tag=${ref##*:}
-[[ $tag == stable || $tag == testing ]] || tag=unknown
+tag=""
+if [[ -n $ref ]]; then
+        ref=${ref%%@*}
+        case ${ref##*:} in
+                stable|testing|latest) tag=${ref##*:} ;;
+                *) tag=unknown ;;
+        esac
+else
+        # No booted bootc image: this is either a live ISO/installer (Dakota,
+        # Utah → nothing to count) or a non-bootc image like Bluefin Server
+        # (a stream declared in `image-tag` is the only signal we have, and
+        # never a fallback for bootc images — their baked tag is the compose
+        # tag, not the stream they actually run).
+        if [[ "$name" == server ]]; then
+                tag=$(jq -r '."image-tag" // empty' "$info" 2>/dev/null)
+                case $tag in
+                        stable|testing|latest|"") ;;
+                        *) tag=unknown ;;
+                esac
+        fi
+fi
+[[ -n $tag ]] || exit 0
+
 image="$name/$(jq -r '."image-flavor" // "main"' "$info"):$tag"
 
 # Like eos-phone-home, a failed send exits 0; the timer tries again later.
