@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-07",
+  "generated_at": "2026-10-08",
   "schema_version": "1.0",
   "skills": [
     {
@@ -297,9 +297,9 @@
         "issues",
         "owners"
       ],
-      "description": "Triager roles, OWNERS approvers synced from projectbluefin/.project, and live branch protection. Use when changing who approves, granting triage permissions, or verifying repository review rules.",
-      "version": "2.0",
-      "last_updated": "2026-10-07",
+      "description": "Prow triage-command roles, OWNERS approvers synced from projectbluefin/.project, and live branch protection. Use when changing who approves, configuring Prow triage, or verifying repository review rules.",
+      "version": "2.1",
+      "last_updated": "2026-10-08",
       "doc_type": "reference"
     },
     {
@@ -515,8 +515,8 @@
         "prow"
       ],
       "description": "The Prow workflow page for projectbluefin: how an issue gets accepted, how a pull request gets reviewed and merged, which labels mean something, and which /commands exist. Use when triaging issues, reviewing PRs, or changing labels.",
-      "version": "6.0",
-      "last_updated": "2026-10-07",
+      "version": "6.1",
+      "last_updated": "2026-10-08",
       "doc_type": "procedure"
     },
     {

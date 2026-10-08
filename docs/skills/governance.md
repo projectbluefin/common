@@ -1,7 +1,7 @@
 ---
 name: governance
-version: "2.0"
-last_updated: "2026-10-07"
+version: "2.1"
+last_updated: "2026-10-08"
 id: governance
 one_line_purpose: Check OWNERS approvers, triager roles, and live branch rules.
 entry_point: docs/skills/governance.md
@@ -12,9 +12,9 @@ status: active
 dependencies: []
 tags: [governance, issues, owners]
 description: >-
-  Triager roles, OWNERS approvers synced from projectbluefin/.project, and live
-  branch protection. Use when changing who approves, granting triage
-  permissions, or verifying repository review rules.
+  Prow triage-command roles, OWNERS approvers synced from projectbluefin/.project,
+  and live branch protection. Use when changing who approves, configuring
+  Prow triage, or verifying repository review rules.
 metadata:
   type: reference
 ---
@@ -31,20 +31,24 @@ metadata:
 
 ## Roles
 
-| Role | GitHub team | What they can do |
+| Role | Roster or GitHub team | What they can do |
 |---|---|---|
 | **Maintainers** | `@projectbluefin/maintainers` | Merge PRs, push to main, full admin |
-| **Triagers** | `@projectbluefin/triagers` (placeholder) + direct collaborator | Label/assign/close issues, approve `docs/**` and `*.md` PRs |
+| **Prow triagers** | `triage` in `projectbluefin/.project/maintainers.yaml` | Add/remove triage and priority labels through Prow; use generic label commands |
 
-Triagers are granted **triage** permission directly on each repo (not via team).
-Add a person: `gh api repos/projectbluefin/REPO/collaborators/USERNAME --method PUT --field permission=triage`
+To add or remove a Prow triager, edit the canonical YAML roster through a PR.
+The read-only authorization workflow reads that roster for each comment.
+This grants no GitHub organization membership, collaborator access, issue-closing
+authority, or PR approval rights. Area labels remain public. See
+[`label-workflow.md`](label-workflow.md) for the command boundary.
 
 ## OWNERS
 
 Each Prow repository has a root `OWNERS` file whose `approvers:` may `/lgtm`
 and `/approve` pull requests and receive review requests. It is generated from
-`maintainers.yaml` in `projectbluefin/.project`; a sync job opens a PR in each
-repository when that list changes.
+the `project-maintainers` team in `maintainers.yaml` in `projectbluefin/.project`;
+a sync job opens a PR in each repository when that list changes. The `triage`
+team is not copied into `OWNERS`.
 
 **To add/remove an approver:** change `maintainers.yaml` in
 `projectbluefin/.project` through its normal review. Never edit `OWNERS` by hand.

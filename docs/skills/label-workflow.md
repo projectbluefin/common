@@ -1,7 +1,7 @@
 ---
 name: label-workflow
-version: "6.0"
-last_updated: "2026-10-07"
+version: "6.1"
+last_updated: "2026-10-08"
 id: label-workflow
 one_line_purpose: How issues and PRs move in projectbluefin repos with Prow, its labels and commands.
 entry_point: docs/skills/label-workflow.md
@@ -17,6 +17,8 @@ description: >-
   /commands exist. Use when triaging issues, reviewing PRs, or changing labels.
 metadata:
   type: procedure
+  context7-sources:
+    - /websites/github_en_actions
 ---
 
 # How issues and PRs work here
@@ -29,9 +31,10 @@ Reporters never need labels or commands: just reply normally.
 
 1. **Filed.** The issue form adds `needs-human` and a kind (`kind/bug` or
    `kind/feature`). An issue with no kind gets `needs-kind` until someone sets one.
-2. **Read.** A maintainer reads it, asks questions if needed, and fixes the kind
-   (`/kind regression`), priority (`/priority important-soon`) or closes it (`/close`).
-3. **Accepted.** When the scope is clear, a maintainer comments `/triage accepted`.
+2. **Read.** A maintainer or triager reads it, asks questions if needed, and fixes
+   the kind (`/kind regression`) or priority (`/priority important-soon`). Issue
+   closing retains Prow's maintainer/collaborator or issue-author policy.
+3. **Accepted.** When the scope is clear, a maintainer or triager comments `/triage accepted`.
 4. **Open to agents.** If agents may take it, a maintainer removes `needs-human`
    by hand. Prow never removes it. Leave it on when the reporter chose
    "Human interaction only" or a person must do the work.
@@ -69,6 +72,7 @@ Only these labels mean something. Others are descriptive or belong to Hive
 | `kind/bug` | issue form or `/kind bug` | Hive priority boost |
 | `kind/regression`, `kind/security` | `/kind` | Hive: complex tier |
 | `kind/feature`, `kind/documentation`, `kind/cleanup` | issue form or `/kind` | satisfies `needs-kind` |
+| `area/desktop`, `area/flatpak`, `area/gaming`, `area/hardware`, `area/installer`, `area/dx` | public `/area` and `/remove-area` | Prow applies and syncs component classification |
 | `priority/critical-urgent`, `priority/important-soon` | `/priority` | Hive priority boost |
 | `blocked` | `/label blocked` | Hive skips it |
 | `help wanted`, `good first issue` | `/help`, `/good-first-issue` | Hive boost; GitHub contribute page |
@@ -83,6 +87,7 @@ Put each command at the start of its own line in a new comment.
 | Command | What it does |
 |---|---|
 | `/kind bug` (`regression`, `security`, `feature`, `documentation`, `cleanup`), `/remove-kind ...` | set or remove a kind |
+| `/area desktop` (`flatpak`, `gaming`, `hardware`, `installer`, `dx`), `/remove-area ...` | public component classification |
 | `/triage accepted`, `/remove-triage accepted` | accept or un-accept an issue |
 | `/priority critical-urgent` or `important-soon`, `/remove-priority ...` | set or remove a priority |
 | `/label blocked`, `/remove-label blocked` | mark or clear blocked |
@@ -96,10 +101,19 @@ Put each command at the start of its own line in a new comment.
 | `/help`, `/good-first-issue` | add `help wanted` / `good first issue` |
 | `/check-required-labels` | re-check `needs-kind` |
 
-Who may use each command: see the upstream
-[command reference](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md).
-Label commands (`/kind`, `/triage`, `/priority`, `/label`, `/hold`) work for
-anyone today; leave them to maintainers.
+Upstream policies apply unless the caller narrows the command list. Here,
+`/triage`, `/priority` and generic `/label` (including their removal aliases)
+are enabled for the `triage` and `project-maintainers` rosters, plus the matching
+`<repository>-triage` roster, in
+[`maintainers.yaml`](https://github.com/projectbluefin/.project/blob/main/maintainers.yaml).
+For example, `hplip-printer-app-triage` applies only to HPLIP, not other repositories.
+The read-only `prow-authorize.yml` workflow checks the actual comment author
+against the current canonical roster; a failed lookup blocks that comment run.
+Non-comment events and the scheduled merge backstop do not consult the roster.
+`/area`, `/remove-area`, `/kind` and `/hold` remain public. Triagers are not
+added to `OWNERS`, so this role does not grant `/lgtm`, `/approve`, GitHub
+repository permissions, or organization membership. Other commands retain the
+upstream [command policies](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md).
 
 ## Where the config lives
 
@@ -111,3 +125,13 @@ anyone today; leave them to maintainers.
   A sync job copies it into each repository's root `OWNERS` file through a PR;
   never edit `OWNERS` by hand.
 - **Workflow:** `.github/workflows/prow.yml` in each repository.
+
+## Verification
+
+- Deploy the canonical authorization workflow and roster before updating callers;
+  sync area labels afterward using each caller's label-sync dispatch.
+- Run the complete `.project` authorization test module, and validate the actual
+  roster with the same parser used at runtime.
+- Check all Prow callers together: explicit status checks must preserve
+  non-comment events when authorization is skipped; failed lookups must not
+  enable restricted commands. See the [Actions job dependency rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-jobs).

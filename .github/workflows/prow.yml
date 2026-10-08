@@ -6,6 +6,7 @@
 #   - permissions: {} at the top, write scopes granted per job
 #   - reusable workflow pinned to the v3.0.1 commit SHA
 #   - prow-commands limited to the commands whose labels exist in the org config
+#   - triage/priority and generic label commands require the canonical YAML roster
 # Docs: https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/installing.md
 name: Prow
 on:
@@ -41,8 +42,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  authorize:
+    if: github.event_name == 'issue_comment'
+    permissions:
+      contents: read
+    uses: projectbluefin/.project/.github/workflows/prow-authorize.yml@b9bc39596ad836f08dade24b454bd3356b5e179f
+
   prow:
-    if: github.event_name != 'workflow_dispatch' && github.event_name != 'push'
+    needs: authorize
+    # Explicit status check keeps non-comment events running when authorize is skipped.
+    # A failed roster lookup blocks execution rather than granting public triage access.
+    if: ${{ !cancelled() && (needs.authorize.result == 'success' || needs.authorize.result == 'skipped') && github.event_name != 'workflow_dispatch' && github.event_name != 'push' }}
     permissions:
       contents: write
       issues: write
@@ -51,7 +61,9 @@ jobs:
       actions: write
     uses: cncf/prow-github-actions/.github/workflows/prow.yml@187c5e3cd95a329c43448e1bdb3b1f5249232e44 # v3.0.1
     with:
-      prow-commands: /kind /triage /priority /label /hold /lgtm /approve /assign /unassign /cc /uncc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels
+      # Aliases inherit their base command: /remove-triage and /remove-priority are gated too.
+      # Keep generic /label gated so a verbatim allowlist cannot bypass the restriction.
+      prow-commands: /kind /area /hold /lgtm /approve /assign /unassign /cc /uncc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels ${{ needs.authorize.outputs.triage == 'true' && '/triage /priority /label' || '' }}
 
   label-sync:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
