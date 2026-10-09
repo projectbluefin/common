@@ -58,7 +58,7 @@ See [`references/build-stages.md`](references/build-stages.md) for the full stag
 - `checkout tags/...` or `--branch` in a Go builder stage — tags are mutable.
 - A `curl` block without an inline `sha256sum -c`.
 - Reintroducing a `just --completions | sed` generator for ujust completions, or shipping files at the ujust completion paths from `/out/shared/`, instead of editing the checked-in files under `system_files/shared/` — the `build` stage `RUN` gate fails the build.
-- Using `ghcr.io/projectbluefin/` for the wallpaper source (it is `ublue-os`).
+- Using `ghcr.io/ublue-os/` for the wallpaper source (it is now `ghcr.io/projectbluefin/`).
 
 ## Verification
 

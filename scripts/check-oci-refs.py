@@ -37,13 +37,10 @@ RETRY_BACKOFF_SECONDS = 2
 # ghcr.io/ublue-os/ must not appear in workflow files or docs.
 # Exception: build-time COPY sources in Containerfile (wallpapers) are allowed.
 UBLUE_PATTERN = re.compile(r"ghcr\.io/ublue-os/")
-UBLUE_EXCEPTIONS = {
-    "Containerfile",   # build-time COPY of wallpapers — not a runtime ref
-}
+UBLUE_EXCEPTIONS = set()
 # Legitimate read-only upstream ublue-os sources that are not migration targets.
 # These are build-time or upstream kernel dependencies, not projectbluefin images.
 UBLUE_ALLOWED_UPSTREAMS = {
-    "ghcr.io/ublue-os/bluefin-wallpapers-gnome",  # build-time wallpaper artwork source
     "ghcr.io/ublue-os/akmods-nvidia-open",         # upstream NVIDIA kernel modules
     "ghcr.io/ublue-os/akmods-extra",               # upstream extra kernel modules
 }
