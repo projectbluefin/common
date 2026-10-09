@@ -506,10 +506,6 @@ def test_fallback_parser_does_not_flag_head_ref_on_plain_pull_request(tmp_path: 
     assert fallback_scanner.check_workflow_file(wf) == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="fallback parser misses pull_request_target in a flow-sequence 'on:' list",
-)
 def test_fallback_parser_detects_pr_target_in_flow_list_trigger(tmp_path: Path, fallback_scanner):
     wf = tmp_path / "w.yml"
     wf.write_text("on: [push, pull_request_target]\npermissions: {}\njobs:\n  a:\n    steps:\n      - run: echo ${{ github.head_ref }}\n")
@@ -517,11 +513,15 @@ def test_fallback_parser_detects_pr_target_in_flow_list_trigger(tmp_path: Path, 
     assert any("Dangerous untrusted PR checkout" in m for _, m in msgs), msgs
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="USES_RE keeps YAML quotes, so a quoted SHA-pinned 'uses:' is reported as unpinned",
-)
 def test_quoted_sha_pinned_uses_is_accepted(tmp_path: Path, scanner):
     wf = tmp_path / "w.yml"
     wf.write_text(f'on: push\npermissions: {{}}\njobs:\n  a:\n    steps:\n      - uses: "actions/checkout@{PINNED_SHA}" # v7\n')
     assert scanner.check_workflow_file(wf) == []
+
+
+def test_quoted_tag_pinned_uses_is_still_rejected(tmp_path: Path, scanner):
+    # Stripping the quotes must not turn a tag ref into an accepted one.
+    wf = tmp_path / "w.yml"
+    wf.write_text("on: push\npermissions: {}\njobs:\n  a:\n    steps:\n      - uses: 'actions/checkout@v7'\n")
+    msgs = _messages(scanner.check_workflow_file(wf))
+    assert any("'actions/checkout'" in m and "pinned" in m for _, m in msgs), msgs

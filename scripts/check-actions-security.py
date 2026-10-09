@@ -133,7 +133,8 @@ def check_workflow_file(path: Path) -> List[SecurityIssue]:
         m = USES_RE.match(line)
         if not m:
             continue
-        full_ref = m.group(1).strip()
+        # YAML may quote the value; the quotes are not part of the ref.
+        full_ref = m.group(1).strip().strip("\"'")
         comment = m.group(2).strip()
 
         # Local workflow calls (e.g. ./.github/workflows/...) are exempt
@@ -188,7 +189,11 @@ def check_workflow_file(path: Path) -> List[SecurityIssue]:
             is_pr_target = True
     else:
         for line in lines:
-            if re.search(r"^\s*(?:on:\s*)?pull_request_target(?:\s*:|$)", line):
+            if re.search(
+                r"^\s*(?:on:\s*)?pull_request_target(?:\s*:|$)"
+                r"|^\s*on:\s*\[[^\]]*\bpull_request_target\b",
+                line,
+            ):
                 is_pr_target = True
                 break
 
