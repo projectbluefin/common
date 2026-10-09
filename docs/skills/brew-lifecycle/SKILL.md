@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
 version: "1.5"
-last_updated: "2026-09-27"
+last_updated: "2026-10-09"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -146,6 +146,14 @@ desktop file at `/usr/share/applications/io.projectbluefin.chairlift.desktop`
 (`Exec=/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`) and the three
 upstream icons under `/usr/share/icons/hicolor/`, so every user gets a
 launcher.
+
+The Custom Command Menu entry `Ask Bluefin` invokes the same wrapper with
+`--ask-bluefin`. That flag ships in ChairLift ≥ v26.10.2; on older releases
+GApplication rejects the unknown option and the menu click is a silent
+no-op. Older ChairLift pins must move to ≥ v26.10.2 (see ChairLift cask pin
+above) before any user-facing Ask Bluefin dispatcher is wired up. The
+absolute wrapper path is required because the menu runs each command through
+a non-interactive `bash -c` with no Homebrew on `PATH`.
 
 ### Hand ChairLift to a dedicated installer
 
