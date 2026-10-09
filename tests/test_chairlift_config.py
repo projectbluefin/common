@@ -883,6 +883,47 @@ ASK_BLUEFIN_SLOT = 11
 ASK_BLUEFIN_COMMAND = f"{CHAIRLIFT_WRAPPER} --ask-bluefin"
 
 
+def _split_gvariant_tuple_fields(body: str) -> list[str]:
+    """Split a GVariant tuple body on top-level commas.
+
+    GVariant text format quotes strings with single quotes and escapes an
+    embedded quote by doubling it (`''`). A bare `,` inside a quoted string
+    is part of the value, not a separator, so the 4-tuple assert below only
+    fires when a real field is missing -- not when a label or command happens
+    to contain a comma.
+    """
+    parts: list[str] = []
+    current: list[str] = []
+    in_string = False
+    i = 0
+    while i < len(body):
+        ch = body[i]
+        if in_string:
+            if ch == "'" and i + 1 < len(body) and body[i + 1] == "'":
+                current.append("''")
+                i += 2
+                continue
+            if ch == "'":
+                in_string = False
+            current.append(ch)
+            i += 1
+            continue
+        if ch == "'":
+            in_string = True
+            current.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            parts.append("".join(current).strip())
+            current = []
+            i += 1
+            continue
+        current.append(ch)
+        i += 1
+    parts.append("".join(current).strip())
+    return parts
+
+
 def _parse_custom_command_menu() -> tuple[dict[int, tuple[str, str, str, bool]], list[int]]:
     """Parse the dconf-style key=value entries into a slot map + the order list.
 
@@ -912,7 +953,7 @@ def _parse_custom_command_menu() -> tuple[dict[int, tuple[str, str, str, bool]],
         assert body.startswith("(") and body.endswith(")"), (
             f"unexpected tuple syntax in {CUSTOM_COMMAND_MENU.name}: {raw!r}"
         )
-        parts = [p.strip() for p in body[1:-1].split(",")]
+        parts = _split_gvariant_tuple_fields(body[1:-1])
         assert len(parts) == 4, (
             f"expected 4-tuple, got {len(parts)} in {CUSTOM_COMMAND_MENU.name}: {raw!r}"
         )
@@ -973,3 +1014,29 @@ def test_no_system_file_references_ask_projectbluefin_io():
         "these shipped files still reference ask.projectbluefin.io: "
         + ", ".join(str(o.relative_to(ROOT)) for o in offenders)
     )
+
+
+def test_split_gvariant_tuple_fields_keeps_commas_inside_quoted_strings():
+    """A bare `,` inside a GVariant string is part of the value. A future
+    menu command like `flatpak run org.gnome.Papers /usr/share/doc/foo,bar`
+    would have collapsed under the previous `body[1:-1].split(',')` and
+    tripped the 4-tuple assert. GVariant escapes an embedded `'` by doubling
+    it; the helper honours that too."""
+    assert _split_gvariant_tuple_fields("'a, b', 'c, d', '', true") == [
+        "'a, b'",
+        "'c, d'",
+        "''",
+        "true",
+    ]
+    assert _split_gvariant_tuple_fields("'it''s, ok', '', '', false") == [
+        "'it''s, ok'",
+        "''",
+        "''",
+        "false",
+    ]
+    assert _split_gvariant_tuple_fields("'a', 'b', 'c', true") == [
+        "'a'",
+        "'b'",
+        "'c'",
+        "true",
+    ]
