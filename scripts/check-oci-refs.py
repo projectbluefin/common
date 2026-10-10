@@ -35,9 +35,7 @@ RETRY_BACKOFF_SECONDS = 2
 # ── Check 1: no ublue-os refs ────────────────────────────────────────────────
 # The org migration from ublue-os to projectbluefin is complete.
 # ghcr.io/ublue-os/ must not appear in workflow files or docs.
-# Exception: build-time COPY sources in Containerfile (wallpapers) are allowed.
 UBLUE_PATTERN = re.compile(r"ghcr\.io/ublue-os/")
-UBLUE_EXCEPTIONS = set()
 # Legitimate read-only upstream ublue-os sources that are not migration targets.
 # These are build-time or upstream kernel dependencies, not projectbluefin images.
 UBLUE_ALLOWED_UPSTREAMS = {
@@ -69,8 +67,6 @@ def check_ublue_refs(root=None):
     for path in paths:
         rel = path.as_posix()
         if any(rel.startswith(str(root / d)) for d in UBLUE_SKIP_DIRS):
-            continue
-        if path.name in UBLUE_EXCEPTIONS:
             continue
         try:
             text = path.read_text()
