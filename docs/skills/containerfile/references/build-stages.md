@@ -57,7 +57,7 @@ points at the commit you want.
 Resolve a release tag to the SHA to pin:
 
 ```bash
-gh api repos/projectbluefin/uwelcome/git/refs/tags/v0.3.4 -q '.object.sha'
+gh api repos/projectbluefin/uwelcome/git/refs/tags/v0.4.1 -q '.object.sha'
 ```
 
 A tag-for-SHA swap is invisible to CI — the image still builds, because the tag
