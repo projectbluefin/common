@@ -52,10 +52,6 @@ a PR object, `mergeraptor[bot]` on a commit. The runner authenticates with
 `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY`. Minting an app token *from a
 fork* additionally needs `owner:` set to the repository owner — a fork's
 per-repo installation lookup 404s (fsdk-containers#331).
-> **Unrelated org-wide warning:** `Could not ensure issue ... integration-unauthorized`
-> (dependency dashboard) appears for ~20 org repos in the same run, forks and
-> non-forks alike. It is a runner app-permission condition, not a fork
-> installation gap, and does not block PR creation.
 
 ---
 
