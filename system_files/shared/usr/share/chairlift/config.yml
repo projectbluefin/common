@@ -71,8 +71,10 @@ features_page:
     enabled: false
 
 help_page:
+  # ChairLift titles these "Visit project website", "Report a problem", and
+  # "Browse documentation"; the third key is named chat for compatibility.
   help_resources_group:
     enabled: true
-    website: https://docs.projectbluefin.io/
+    website: https://projectbluefin.io/
     issues: https://issues.projectbluefin.io/
-    chat: https://ask.projectbluefin.io/
+    chat: https://docs.projectbluefin.io/
