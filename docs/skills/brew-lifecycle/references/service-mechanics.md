@@ -133,14 +133,18 @@ setup services, or brew lifecycle code.
 
 ChairLift treats unknown config keys as schema errors and disables the whole
 application. `tests/check-chairlift-config` fetches the page, group, and field
-schema from upstream `main` and fails closed when Bluefin's config drifts. It
-needs network, so it is **not** part of `just check`;
-`.github/workflows/validate-chairlift-config.yaml` owns it with a path filter and
-a weekly cron. `test_just_check_stays_hermetic` enforces that by walking the
-whole `check` recipe closure — the recipe body and every recipe it depends on,
-not just the header line — so wiring the validator anywhere under `check` fails
-the unit tests. Run the validator whenever the config or upstream schema
-assumptions change.
+schema from the ChairLift release the `ublue-os/tap` cask ships — it reads the
+cask's `version` at run time, so common carries no pin — and fails closed when
+Bluefin's config drifts. Validating against upstream `main` instead would
+false-green on a key the shipped binary rejects, which is the exact outcome
+the gate exists to prevent. It needs network, so it is **not** part of
+`just check`; `.github/workflows/validate-chairlift-config.yaml` owns it with a
+path filter and a weekly cron. `test_just_check_stays_hermetic` enforces that
+by walking the whole `check` recipe closure — the recipe body and every recipe
+it depends on, not just the header line — so wiring the validator anywhere
+under `check` fails the unit tests. Run the validator whenever the config or
+upstream schema assumptions change.
+
 Bootc staging is authenticated and stage-only. The image ships the fixed
 `/usr/libexec/bootc-update-stage` helper and a PolicyKit action requiring admin
 authentication. The helper runs plain `bootc upgrade` and nothing else:
@@ -172,6 +176,7 @@ user-scope artifacts are first-user-wins.
 | `/usr/share/applications/io.projectbluefin.chairlift.desktop` | upstream `data/io.projectbluefin.chairlift.desktop`, `Exec=` rewritten to the absolute wrapper path |
 | `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift.svg` | upstream, verbatim |
 | `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.chairlift-symbolic.svg` | upstream, verbatim |
+
 All three are vendored from ChairLift (GPL-3.0, `projectbluefin/chairlift`).
 The two icons are byte-identical to upstream, so the claim is checkable:
 

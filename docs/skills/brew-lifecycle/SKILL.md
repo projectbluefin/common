@@ -111,10 +111,12 @@ content or lifecycle code.
 ChairLift fails closed on schema drift: an unknown page, group, or field key in
 `config.yml` disables the whole application. Keep policy that has no upstream
 key in YAML comments, and verify with `python3 tests/check-chairlift-config`.
-The schema validator checks against upstream `main` (`tests/check-chairlift-config`).
+The validator reads the release from the `ublue-os/tap` cask's `version` at run
+time, so it checks the schema of the binary Bluefin ships, never upstream `main`.
 
 ChairLift is managed via Homebrew (`ublue-os/tap/chairlift`). Image content does
 not pin or vendor root helpers or release archives from ChairLift.
+
 Bootc staging is authenticated and stage-only. ChairLift invokes the
 PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs plain
 `bootc upgrade`: that queues a staged deployment which `ostree-finalize-staged`

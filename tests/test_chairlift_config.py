@@ -17,11 +17,11 @@ persistent configuration-error toast. So a typo in this config is not a
 cosmetic defect; it ships an empty app to every user.
 """
 
-import os
+import importlib.machinery
+import importlib.util
 from pathlib import Path
 import re
 import shlex
-import subprocess
 
 import pytest
 import yaml
@@ -318,18 +318,30 @@ def test_config_uses_only_upstream_schema_keys():
                 )
 
 
-def test_schema_validator_pins_the_shipped_chairlift_release():
-    """The drift gate checks upstream schema."""
-    validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
+def _load_validator():
+    loader = importlib.machinery.SourceFileLoader(
+        "check_chairlift_config", str(CHAIRLIFT_VALIDATOR)
+    )
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
 
-    refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
-    assert refs == ["main"], f"expected CHAIRLIFT_SCHEMA_REF pinned to main, got {refs}"
 
-    urls = re.findall(r"https://raw\.githubusercontent\.com/projectbluefin/chairlift/\S*", validator)
-    unpinned = [url for url in urls if "{CHAIRLIFT_SCHEMA_REF}" not in url]
-    assert not unpinned, (
-        f"upstream URLs bypass the pin: {unpinned}; build every URL from "
-        "CHAIRLIFT_SCHEMA_REF"
+def test_schema_validator_follows_the_cask_release():
+    """Validating against upstream main would false-green on a key the shipped
+    binary rejects, so the ref must come from the cask's version stanza."""
+    validator = _load_validator()
+    cask = 'cask "chairlift" do\n  arch arm: "arm64"\n\n  version "26.10.4"\n'
+    assert validator.cask_schema_ref(cask) == "v26.10.4"
+    with pytest.raises(ValueError):
+        validator.cask_schema_ref('cask "chairlift" do\nend\n')
+
+    source = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
+    urls = re.findall(r"https://raw\.githubusercontent\.com/projectbluefin/chairlift/\S*", source)
+    assert urls and all(url.endswith('/{ref}"') for url in urls), (
+        f"upstream URLs bypass the cask ref: {urls}; build every URL from "
+        "UPSTREAM_RAW.format(ref=...)"
     )
 
 
@@ -458,11 +470,11 @@ def test_just_recipe_closure_reaches_dependency_bodies():
     )
 
 
-def test_chairlift_drift_workflow_documents_the_pin():
+def test_chairlift_drift_workflow_documents_the_ref():
     workflow = CHAIRLIFT_WORKFLOW.read_text(encoding="utf-8")
-    assert "CHAIRLIFT_SCHEMA_REF" in workflow, (
-        "the drift workflow must say where the pin lives so the next editor "
-        "does not reintroduce a main-tracking fetch"
+    assert "cask" in workflow, (
+        "the drift workflow must say the schema ref comes from the cask so "
+        "the next editor does not reintroduce a main-tracking fetch"
     )
     assert "python3 tests/check-chairlift-config" in workflow
     assert "GITHUB_TOKEN" not in workflow, (
