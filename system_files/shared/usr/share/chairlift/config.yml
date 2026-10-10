@@ -75,4 +75,8 @@ help_page:
     enabled: true
     website: https://docs.projectbluefin.io/
     issues: https://issues.projectbluefin.io/
-    chat: https://ask.projectbluefin.io/
+    # ChairLift titles `chat` "Ask for help". The Ask Bluefin site is gone
+    # and `website` already covers the docs, so an explicit empty value
+    # hides the row; omitting the key would fall back to upstream's
+    # built-in default.
+    chat: ""

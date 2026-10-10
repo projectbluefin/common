@@ -774,11 +774,21 @@ def test_bundle_names_do_not_collide_with_other_discovered_brewfiles():
 
 def test_help_links_point_at_bluefin():
     resources = _load_config()["help_page"]["help_resources_group"]
-    for key in ("website", "issues", "chat"):
+    for key in ("website", "issues"):
         assert resources[key].startswith("https://"), f"{key} must be https"
         assert "projectbluefin.io" in resources[key], (
             f"{key} must point at a Bluefin resource"
         )
+
+
+def test_help_chat_link_is_explicitly_hidden():
+    """ChairLift titles `chat` "Ask for help"; with ask.projectbluefin.io gone
+    there is no target that does not duplicate `website`. The key must be
+    present and empty: a missing key falls back to upstream's built-in
+    default URL instead of hiding the row."""
+    resources = _load_config()["help_page"]["help_resources_group"]
+    assert "chat" in resources, "chat must be set explicitly so the default URL is not used"
+    assert resources["chat"] == "", "chat must be empty so ChairLift hides the row"
 
 
 def test_brewfile_taps_homebrew_tap_with_trust():
@@ -859,3 +869,139 @@ def test_chairlift_icons_ship_system_wide():
         assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
             f"{icon.relative_to(ROOT)} is not an SVG document"
         )
+
+
+# ---------------------------------------------------------------------------
+# Ask Bluefin menu entry — the dconf Custom Command Menu entry that launches
+# ChairLift's --ask-bluefin dispatcher.
+#
+# The Custom Command Menu runs each entry through a non-interactive `bash -c`
+# with no Homebrew on PATH, so the absolute wrapper path is load-bearing. The
+# label "Ask Bluefin" is ChairLift's identity key: its Agents-page switch
+# matches the entry by label + a known command, so renames break the switch's
+# hide/show behaviour for users who already configured it. The slot number is
+# pinned because Developer Mode writes user-layer overrides keyed by slot.
+#
+# See projectbluefin/common#1396.
+# ---------------------------------------------------------------------------
+
+CUSTOM_COMMAND_MENU = (
+    ROOT / "system_files/bluefin/etc/dconf/db/distro.d/04-bluefin-custom-command-menu"
+)
+ASK_BLUEFIN_LABEL = "Ask Bluefin"
+ASK_BLUEFIN_SLOT = 11
+ASK_BLUEFIN_COMMAND = f"{CHAIRLIFT_WRAPPER} --ask-bluefin"
+
+
+_GVARIANT_MENU_TUPLE = re.compile(
+    r"\(\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*(true|false)\s*\)"
+)
+
+
+def _parse_custom_command_menu(
+    path: Path = CUSTOM_COMMAND_MENU,
+) -> tuple[dict[int, tuple[str, str, str, bool]], list[int]]:
+    """Parse the dconf-style key=value entries into a slot map + the order list.
+
+    The file uses single-quoted GVariant strings and unquoted integers. The
+    menu's tuple shape is (label, command, accelerator, enabled).
+    """
+    entries: dict[int, tuple[str, str, str, bool]] = {}
+    order: list[int] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("menuoptions-setting"):
+            continue
+        if line.startswith("command-order="):
+            inner = line[len("command-order="):]
+            order = [int(x.strip()) for x in inner.strip("[]").split(",") if x.strip()]
+            continue
+        if line.startswith("menu"):
+            continue
+        if not line.startswith("command"):
+            continue
+        key, _, value = line.partition("=")
+        slot = int(key[len("command"):])
+        # GVariant tuple literal: ('label', 'command', 'accelerator', true)
+        body = value.strip()
+        assert body.startswith("(") and body.endswith(")"), (
+            f"unexpected tuple syntax in {CUSTOM_COMMAND_MENU.name}: {raw!r}"
+        )
+        # Match quoted fields so commas inside a command don't split the tuple.
+        match = _GVARIANT_MENU_TUPLE.fullmatch(body)
+        assert match, (
+            f"expected ('label', 'command', 'accel', bool) 4-tuple in "
+            f"{CUSTOM_COMMAND_MENU.name}: {raw!r}"
+        )
+        label, command, accelerator = (
+            re.sub(r"\\(.)", r"\1", g) for g in match.group(1, 2, 3)
+        )
+        enabled = match.group(4) == "true"
+        entries[slot] = (label, command, accelerator, enabled)
+    return entries, order
+
+
+def test_menu_parser_keeps_commas_and_escaped_quotes_inside_fields(tmp_path):
+    """Covers #1431: a comma in a quoted field must not split the tuple, and
+    GVariant's backslash-escaped quote (\\') must round-trip to a bare '."""
+    menu = tmp_path / "menu"
+    menu.write_text(
+        "command-order=[1]\n"
+        r"command1=('A, B', 'echo \'x, y\'', '', true)" "\n",
+        encoding="utf-8",
+    )
+    entries, order = _parse_custom_command_menu(menu)
+    assert order == [1]
+    assert entries[1] == ("A, B", "echo 'x, y'", "", True)
+
+
+def test_ask_bluefin_menu_entry_dispatches_via_chairlift_wrapper():
+    """The Custom Command Menu must launch the ChairLift --ask-bluefin
+    dispatcher at the absolute wrapper path. Bare `chairlift --ask-bluefin`
+    fails because Homebrew is not on PATH in the menu's bash -c context.
+    """
+    entries, _ = _parse_custom_command_menu()
+    assert ASK_BLUEFIN_SLOT in entries, (
+        f"slot {ASK_BLUEFIN_SLOT} is missing from {CUSTOM_COMMAND_MENU.relative_to(ROOT)}"
+    )
+    label, command, _, enabled = entries[ASK_BLUEFIN_SLOT]
+    assert label == ASK_BLUEFIN_LABEL, (
+        f"slot {ASK_BLUEFIN_SLOT} label must be {ASK_BLUEFIN_LABEL!r} "
+        f"(ChairLift's identity key), got {label!r}"
+    )
+    assert command == ASK_BLUEFIN_COMMAND, (
+        f"slot {ASK_BLUEFIN_SLOT} command must be {ASK_BLUEFIN_COMMAND!r} "
+        f"so the menu can find the wrapper on a PATH-less bash -c, got {command!r}"
+    )
+    assert enabled is True, (
+        f"slot {ASK_BLUEFIN_SLOT} must be enabled, got enabled={enabled}"
+    )
+
+
+def test_ask_bluefin_slot_is_listed_in_command_order():
+    """The slot number is part of command-order, or the menu hides the entry."""
+    _, order = _parse_custom_command_menu()
+    assert ASK_BLUEFIN_SLOT in order, (
+        f"slot {ASK_BLUEFIN_SLOT} must appear in command-order, got {order}"
+    )
+
+
+def test_no_system_file_references_ask_projectbluefin_io():
+    """ask.projectbluefin.io is being shut down; no shipped file should still
+    point at it. This test is the only gate enforcing that."""
+    offenders: list[Path] = []
+    for path in ROOT.glob("system_files/**/*"):
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if "ask.projectbluefin" in text:
+            offenders.append(path)
+    assert offenders == [], (
+        "these shipped files still reference ask.projectbluefin.io: "
+        + ", ".join(str(o.relative_to(ROOT)) for o in offenders)
+    )

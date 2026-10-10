@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
 version: "1.1"
-last_updated: "2026-09-23"
+last_updated: "2026-10-09"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -107,6 +107,18 @@ The E2E `common` suite validates dconf state post-merge.
 ## Shared launchers for GNOME menu items
 
 If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
+
+## Menu commands must use the absolute Homebrew wrapper path
+
+The Custom Command Menu (any `*-custom-command-menu` file under `system_files/bluefin/etc/dconf/db/distro.d/`) runs each entry through a non-interactive `bash -c` with no login environment, so Homebrew is **not** on `PATH`. Any menu entry that invokes a Homebrew-managed binary must name the absolute path to its Homebrew-shared wrapper:
+
+```
+/home/linuxbrew/.linuxbrew/bin/<binary>-wrapper
+```
+
+Bare `chairlift --ask-bluefin` fails: the menu cannot find the binary. The absolute wrapper path is the same one `system_files/shared/usr/share/applications/io.projectbluefin.chairlift.desktop` uses for `Exec=` and that `tests/test_chairlift_config.py` pins as `CHAIRLIFT_WRAPPER`.
+
+The `Ask Bluefin` menu label is ChairLift's identity key. ChairLift's Agents-page "Show Ask Bluefin in menu" switch matches entries with this label and a known command (`xdg-open <url>` or `chairlift-wrapper --ask-bluefin`). Renaming the label or the entry's slot breaks the switch's hide/show behaviour irreversibly for users who already configured it. Pin both.
 
 ## dconf profile lookup order and CI test interference
 
