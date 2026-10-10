@@ -40,12 +40,10 @@ Generated: 2026-10-08 · schema 1.0 · 47 skills
 | [nvidia](nvidia/SKILL.md) | test-authoring | active | Maintain NVIDIA GPU support architecture and update procedures. |
 | [oem-hardware-hooks](oem-hardware-hooks/SKILL.md) | test-authoring | active | Add OEM hardware first-boot setup hooks safely. |
 | [onboarding](onboarding.md) | meta | active | Set up a verified dev environment for projectbluefin repos. |
-| [pappl-scanning-boundary](pappl-scanning-boundary.md) | meta | active | Track upstream PAPPL scanning API status and the ownership boundary between PAPPL, SANE, and eSCL scanner tooling. |
 | [pr-review](pr-review/SKILL.md) | ci-ops | active | Run human-decides, agent-lands backlog review one card at a time. |
 | [qa](qa.md) | test-authoring | active | Run and understand the projectbluefin QA test coverage model. |
 | [queue-feed](queue-feed.md) | ci-ops | active | Read and validate the Project Bluefin static pull-request queue feed. |
 | [release-promotion](release-promotion/SKILL.md) | ci-ops | active | Cut releases and verify promotion/hotfix artifacts. |
-| [scanner-fixture](scanner-fixture/SKILL.md) | test-authoring | active | Test driverless scanning in CI without a physical scanner. |
 | [secrets-policy](secrets-policy.md) | meta | active | Keep existing workflow authentication inside the factory security boundary. |
 | [shell-scripts](shell-scripts/SKILL.md) | test-authoring | active | Write and test shell scripts under system_files/. |
 | [skill-drift](skill-drift.md) | meta | deprecated | Redirect old skill-drift links to current skill-update rules. |

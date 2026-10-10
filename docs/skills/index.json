@@ -592,26 +592,6 @@
       "doc_type": "reference"
     },
     {
-      "id": "pappl-scanning-boundary",
-      "name": "pappl-scanning-boundary",
-      "one_line_purpose": "Track upstream PAPPL scanning API status and the ownership boundary between PAPPL, SANE, and eSCL scanner tooling.",
-      "entry_point": "docs/skills/pappl-scanning-boundary.md",
-      "category": "meta",
-      "status": "active",
-      "tags": [
-        "scanner",
-        "pappl",
-        "sane",
-        "escl",
-        "upstream",
-        "architecture"
-      ],
-      "description": "Upstream tracking for michaelrsweet/pappl's scanning API (PR #425): merge/tag status, the maintainer-stated PAPPL vs. SANE ownership boundary, scanApp POC licensing posture, and the compatibility gate before a Scanner Application ships.",
-      "version": "0.1",
-      "last_updated": "2026-09-25",
-      "doc_type": "reference"
-    },
-    {
       "id": "pr-review",
       "name": "pr-review",
       "one_line_purpose": "Run human-decides, agent-lands backlog review one card at a time.",
@@ -679,25 +659,6 @@
       "description": "Promotion criteria, monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release, understanding the promotion pipeline, or verifying release artifacts.",
       "version": "1.1",
       "last_updated": "2026-08-08",
-      "doc_type": "reference"
-    },
-    {
-      "id": "scanner-fixture",
-      "name": "scanner-fixture",
-      "one_line_purpose": "Test driverless scanning in CI without a physical scanner.",
-      "entry_point": "docs/skills/scanner-fixture/SKILL.md",
-      "category": "test-authoring",
-      "status": "active",
-      "tags": [
-        "testing",
-        "scanner",
-        "escl",
-        "airscan",
-        "container"
-      ],
-      "description": "Hardware-free eSCL scanner fixture for common. Use when testing driverless scanning, sane-airscan, or eSCL/DNS-SD discovery without a physical scanner.",
-      "version": "1.0",
-      "last_updated": "2026-09-25",
       "doc_type": "reference"
     },
     {

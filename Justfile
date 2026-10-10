@@ -5,7 +5,7 @@ just := just_executable()
 # reason; tests/test_suite_registration.bats enforces that.
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_check_printer_app_versions.py tests/test_check_printing_junction.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py -v
+    python3 -m pytest tests/test_hooks.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py -v
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_bling.bats
@@ -48,7 +48,6 @@ test:
     bats tests/test_damask_service.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats
-    bats tests/test_escl_fixture.bats
     bats tests/test_pwquality.bats
     bats tests/test_projectbluefin_countme.bats
 
