@@ -90,14 +90,7 @@ KNOWN_GROUPS = {
         "channel_group",
         "bootc_status_group",
     },
-    "applications_page": {
-        "applications_installed_group",
-        "flatpak_user_group",
-        "flatpak_system_group",
-        "brew_group",
-        "brew_search_group",
-        "brew_bundles_group",
-    },
+    "applications_page": {"brew_group", "brew_bundles_group"},
     "maintenance_page": {
         "maintenance_cleanup_group",
         "maintenance_freespace_group",
@@ -329,8 +322,8 @@ def test_schema_validator_pins_the_shipped_chairlift_release():
     validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
 
     refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
-    assert refs == ["v26.10.2"], (
-        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.10.2, got {refs}"
+    assert refs == ["v26.10.4"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.10.4, got {refs}"
     )
 
     urls = re.findall(r"https://raw\.githubusercontent\.com/projectbluefin/chairlift/\S*", validator)
