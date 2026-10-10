@@ -111,24 +111,11 @@ content or lifecycle code.
 ChairLift fails closed on schema drift: an unknown page, group, or field key in
 `config.yml` disables the whole application. Keep policy that has no upstream
 key in YAML comments, and verify with `python3 tests/check-chairlift-config`.
-The schema validator pin must follow the release in the `ublue-os/tap` cask.
+The validator reads the release from the `ublue-os/tap` cask's `version` at run
+time, so it checks the schema of the binary Bluefin ships, never upstream `main`.
 
-The cask cannot install root-owned files, so common ships ChairLift's system
-files for every image that consumes it: the common `Containerfile` downloads
-the release archive for the build's `TARGETARCH` with the release's
-`checksums.txt`, verifies that file's Sigstore bundle with `cosign verify-blob`
-(signer: ChairLift's `release.yml` workflow for exactly that tag), checks the
-archive against its `checksums.txt` line with `sha256sum -c`, and installs
-`/usr/bin/chairlift-helper` (0755), its PolicyKit policy
-`/usr/share/polkit-1/actions/io.projectbluefin.chairlift.ublue.policy`, and the
-three `io.projectbluefin.chairlift.{livery,updates,firstrun}.gschema.xml`
-schemas under `/usr/share/glib-2.0/schemas/` (0644). Downstream images need no
-ChairLift pin of their own; the composed image must run
-`glib-compile-schemas /usr/share/glib-2.0/schemas` after overlaying the shared
-files. To bump, change `ARG CHAIRLIFT_RELEASE`; there is no hash to copy.
-Renovate proposes that one-line PR and never automerges it, because it installs
-a new root helper. The build fails if the policy authorizes any helper path
-other than `/usr/bin/chairlift-helper`.
+ChairLift is managed via Homebrew (`ublue-os/tap/chairlift`). Image content does
+not pin or vendor root helpers or release archives from ChairLift.
 
 Bootc staging is authenticated and stage-only. ChairLift invokes the
 PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs plain
@@ -231,8 +218,7 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
 - [ ] Linux casks use `arm64_linux:` / `x86_64_linux:` checksum keys
 - [ ] If adding a cask: it is recorded under `.casks` and removal uses `brew uninstall --cask`
-- [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes (networked; not part of `just check`)
-- [ ] If bumping the ChairLift cask: update `CHAIRLIFT_SCHEMA_REF`, the schema archive pin, and vendored desktop/icons together; compile GSettings schemas after merging shared files into the composed image
+- [ ] If touching ChairLift config: `python3 tests/check-chairlift-config` passes (networked; not part of `just check`)
 - [ ] Bundle and uninstall failures leave the previous state hash intact for retry
 - [ ] The systemd user unit remains ordered after `graphical-session.target`, in `background.slice`, and at reduced I/O weight
 - [ ] User units do not reference the system manager's `network-online.target`; network failures use the service retry policy

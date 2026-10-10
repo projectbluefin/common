@@ -129,10 +129,9 @@ Two consequences when adding a bundle:
 - Names must be unique and readable as a bundle label
   (`wallpaper-slideshow`, not `wallpaper_slideshow_v2`).
 
-The bundle only covers **install**. Uninstall is ChairLift's
-`flatpak_user_group` / `flatpak_system_group`; do not add an uninstall action
-for a bundle, and do not invent a group to express one — an unknown group key
-fails ChairLift's strict schema validation and disables the whole application.
+The bundle only covers **install**. Do not add an uninstall action for a
+bundle, and do not invent a group to express one — an unknown group key fails
+ChairLift's strict schema validation and disables the whole application.
 
 CI's `scripts/validate-brewfiles.sh` validator skips `flatpak` lines (it only
 validates `brew` and `cask` lines), so the unit tests in `test_chairlift_config.py`

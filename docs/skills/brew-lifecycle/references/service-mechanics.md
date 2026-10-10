@@ -133,8 +133,8 @@ setup services, or brew lifecycle code.
 
 ChairLift treats unknown config keys as schema errors and disables the whole
 application. `tests/check-chairlift-config` fetches the page, group, and field
-schema from the ChairLift release the cask pins — one constant,
-`CHAIRLIFT_SCHEMA_REF`, builds every upstream URL — and fails closed when
+schema from the ChairLift release the `ublue-os/tap` cask ships — it reads the
+cask's `version` at run time, so common carries no pin — and fails closed when
 Bluefin's config drifts. Validating against upstream `main` instead would
 false-green on a key the shipped binary rejects, which is the exact outcome
 the gate exists to prevent. It needs network, so it is **not** part of
@@ -142,8 +142,8 @@ the gate exists to prevent. It needs network, so it is **not** part of
 path filter and a weekly cron. `test_just_check_stays_hermetic` enforces that
 by walking the whole `check` recipe closure — the recipe body and every recipe
 it depends on, not just the header line — so wiring the validator anywhere
-under `check` fails the unit tests. Run the validator whenever the cask,
-config, or upstream schema assumptions change.
+under `check` fails the unit tests. Run the validator whenever the config or
+upstream schema assumptions change.
 
 Bootc staging is authenticated and stage-only. The image ships the fixed
 `/usr/libexec/bootc-update-stage` helper and a PolicyKit action requiring admin
@@ -177,13 +177,11 @@ user-scope artifacts are first-user-wins.
 | `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift.svg` | upstream, verbatim |
 | `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.chairlift-symbolic.svg` | upstream, verbatim |
 
-All three are vendored from ChairLift v26.09.0-alpha.2 (GPL-3.0,
-`projectbluefin/chairlift`) and must be refreshed from the tag the cask pins
-whenever it is bumped. The two icons are byte-identical to upstream, so the
-claim is checkable:
+All three are vendored from ChairLift (GPL-3.0, `projectbluefin/chairlift`).
+The two icons are byte-identical to upstream, so the claim is checkable:
 
 ```bash
-BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v26.09.0-alpha.2/data/icons/hicolor
+BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/main/data/icons/hicolor
 cd system_files/shared/usr/share/icons/hicolor
 for icon in scalable/apps/io.projectbluefin.chairlift.svg \
             symbolic/apps/io.projectbluefin.chairlift-symbolic.svg; do
@@ -199,52 +197,6 @@ newline and over the 500 KiB default. `Exec` points at
 Homebrew environment that a GDM-launched session PATH lacks, and `/var/home` is
 the real path (`/home` is a symlink on bootc systems). The per-user copies the
 cask still writes for the first user are harmless duplicates of the same entry.
-
-### Root-owned system files from the release archive
-
-ChairLift is distributed only through the cask, and a cask cannot install
-root-owned files. The pkexec helper, the PolicyKit policy that authorizes it,
-and the GSettings schemas therefore come from the image, and common is the
-shared layer every image consumes. The common `Containerfile` build stage
-downloads `chairlift_<version>_linux_${TARGETARCH}.tar.gz`, `checksums.txt` and
-`checksums.txt.sigstore.json` from the pinned release. `cosign verify-blob`
-(cosign copied from the digest-pinned `ghcr.io/sigstore/cosign/cosign` image)
-must accept the bundle for exactly this signer and issuer:
-
-```text
---certificate-identity  https://github.com/projectbluefin/chairlift/.github/workflows/release.yml@refs/tags/${CHAIRLIFT_RELEASE}
---certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
-
-Only then is the archive's own line (exact filename match) taken from
-`checksums.txt` and checked with `sha256sum -c`. The build extracts only these
-members and installs them into `/out/shared`:
-
-| Image path | Mode | Archive member |
-|---|---|---|
-| `/usr/bin/chairlift-helper` | 0755 | `chairlift-helper` |
-| `/usr/share/polkit-1/actions/io.projectbluefin.chairlift.ublue.policy` | 0644 | `data/io.projectbluefin.chairlift.ublue.policy` |
-| `/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.livery.gschema.xml` | 0644 | `data/io.projectbluefin.chairlift.livery.gschema.xml` |
-| `/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.updates.gschema.xml` | 0644 | `data/io.projectbluefin.chairlift.updates.gschema.xml` |
-| `/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.firstrun.gschema.xml` | 0644 | `data/io.projectbluefin.chairlift.firstrun.gschema.xml` |
-
-The build fails on a bad or foreign signature (including one made for a
-different tag), a checksum mismatch, a `checksums.txt` without exactly one
-entry for the archive, an architecture other than amd64/arm64, a missing
-archive member, and a policy whose `org.freedesktop.policykit.exec.path` names
-anything but `/usr/bin/chairlift-helper`. The GUI binary, the desktop file and
-icons (see above), the updex helper and its policy are not installed from the
-archive; the bootc policy ships from `system_files` with `bootc-update-stage`.
-The composed image runs `glib-compile-schemas /usr/share/glib-2.0/schemas` after
-overlaying the shared files so GSettings can load the schemas (`pr-e2e.yml`
-does the same). Downstream images carry no ChairLift pin of their own.
-
-To bump, change `ARG CHAIRLIFT_RELEASE`; nothing else. Renovate tracks it
-(`projectbluefin/chairlift`, prereleases included, regex versioning so
-`alpha.N` ordering is kept) and opens that one-line PR, which is never
-automerged because it installs a new root-owned helper. The cosign image is a
-`COPY --from=` pin that Renovate's built-in `dockerfile` manager keeps current.
-This pin is independent of `CHAIRLIFT_SCHEMA_REF`, which follows the cask.
 
 ---
 

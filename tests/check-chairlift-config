@@ -11,20 +11,20 @@ So a single invented key in our maintainer config does not degrade one
 feature: it ships an empty application to every Bluefin user. Bluefin
 preinstalls ChairLift silently at login, so nobody opts into that.
 
-Sources of truth, both read live from upstream at the PINNED tag:
-  * pages and groups -- upstream's own config.yml, which enumerates every
-    page and group and is kept in lockstep with defaultConfig().
+Sources of truth, all read live from upstream:
+  * the ChairLift release Bluefin ships -- the `version` in the
+    ublue-os/homebrew-tap chairlift cask. That binary's loader is the only
+    one whose opinion counts: validating against upstream's moving `main`
+    would false-green on a key the shipped binary rejects, which is exactly
+    the disabledConfig() outcome this script exists to prevent. Reading the
+    cask keeps that guarantee without a version pin in common.
+  * pages and groups -- upstream's own config.yml at that release, which
+    enumerates every page and group and is kept in lockstep with
+    defaultConfig().
   * group and action FIELD names -- the yaml struct tags on GroupConfig and
-    ActionConfig in internal/config/config.go. config.yml cannot supply
-    these, because it only exercises a subset of the optional fields.
-
-The tag matters. Bluefin ships whichever release ublue-os/tap's
-chairlift cask pins, so that binary's loader is the only one whose opinion
-counts.
-Validating against upstream's moving `main` would false-red on renames that
-never reach our users, and -- far worse -- false-green on a key the pinned
-binary rejects, which is exactly the disabledConfig() outcome this script
-exists to prevent. Bump CHAIRLIFT_SCHEMA_REF in the same change as the cask.
+    ActionConfig in internal/config/config.go at that release. config.yml
+    cannot supply these, because it only exercises a subset of the optional
+    fields.
 
 Do not update the expectations in this file from memory -- this script
 reads upstream directly, on purpose.
@@ -43,17 +43,12 @@ import urllib.request
 
 import yaml
 
-#: The ChairLift release Bluefin actually ships, pinned by
-#: ublue-os/tap's chairlift cask. Single source of truth for every
-#: upstream fetch below; bump it together with the cask version, never
-#: independently.
-CHAIRLIFT_SCHEMA_REF = "v26.10.2"
+#: The cask that installs ChairLift on Bluefin. Its `version` is the release
+#: every upstream fetch below validates against.
+CASK_URL = "https://raw.githubusercontent.com/ublue-os/homebrew-tap/main/Casks/chairlift.rb"
+CASK_VERSION_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
 
-UPSTREAM_RAW = (
-    f"https://raw.githubusercontent.com/projectbluefin/chairlift/{CHAIRLIFT_SCHEMA_REF}"
-)
-UPSTREAM_CONFIG_URL = f"{UPSTREAM_RAW}/config.yml"
-UPSTREAM_SCHEMA_URL = f"{UPSTREAM_RAW}/internal/config/config.go"
+UPSTREAM_RAW = "https://raw.githubusercontent.com/projectbluefin/chairlift/{ref}"
 
 ROOT = Path(__file__).resolve().parent.parent
 OUR_CONFIG = ROOT / "system_files/shared/usr/share/chairlift/config.yml"
@@ -71,9 +66,17 @@ def _fetch(url: str) -> str:
         return response.read().decode("utf-8")
 
 
-def fetch_upstream_schema() -> dict[str, set[str]]:
+def cask_schema_ref(cask: str) -> str:
+    """Return the upstream tag for the release a cask source pins."""
+    match = CASK_VERSION_RE.search(cask)
+    if not match:
+        raise ValueError("no version stanza in the chairlift cask")
+    return f"v{match.group(1)}"
+
+
+def fetch_upstream_schema(ref: str) -> dict[str, set[str]]:
     """Return upstream's canonical page -> {group} map."""
-    raw = _fetch(UPSTREAM_CONFIG_URL)
+    raw = _fetch(f"{UPSTREAM_RAW.format(ref=ref)}/config.yml")
     parsed = yaml.safe_load(raw)
     if not isinstance(parsed, dict) or not parsed:
         raise ValueError(f"upstream config.yml did not parse as a mapping: {raw[:200]}")
@@ -96,9 +99,9 @@ def _struct_fields(source: str, struct: str) -> set[str]:
     return fields
 
 
-def fetch_upstream_fields() -> tuple[set[str], set[str]]:
+def fetch_upstream_fields(ref: str) -> tuple[set[str], set[str]]:
     """Return (group field names, action field names) from upstream structs."""
-    source = _fetch(UPSTREAM_SCHEMA_URL)
+    source = _fetch(f"{UPSTREAM_RAW.format(ref=ref)}/internal/config/config.go")
     return _struct_fields(source, "GroupConfig"), _struct_fields(source, "ActionConfig")
 
 
@@ -107,11 +110,13 @@ def main() -> int:
         print(f"✗ missing {OUR_CONFIG.relative_to(ROOT)}")
         return 1
 
+    ref = "the cask's release"
     try:
-        upstream = fetch_upstream_schema()
-        group_fields, action_fields = fetch_upstream_fields()
+        ref = cask_schema_ref(_fetch(CASK_URL))
+        upstream = fetch_upstream_schema(ref)
+        group_fields, action_fields = fetch_upstream_fields(ref)
     except (urllib.error.URLError, ValueError, yaml.YAMLError) as err:
-        print(f"✗ could not read upstream ChairLift schema at {CHAIRLIFT_SCHEMA_REF}: {err}")
+        print(f"✗ could not read upstream ChairLift schema at {ref}: {err}")
         return 1
 
     ours = yaml.safe_load(OUR_CONFIG.read_text(encoding="utf-8"))
@@ -164,10 +169,7 @@ def main() -> int:
                                     f"{', '.join(sorted(action_fields))})"
                                 )
 
-    print(
-        f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} "
-        "(pinned by the ublue-os/tap cask):"
-    )
+    print(f"ChairLift schema @ {ref} (the release the ublue-os/tap cask ships):")
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")
     print(f"  group fields: {', '.join(sorted(group_fields))}")
