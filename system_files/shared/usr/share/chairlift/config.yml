@@ -37,16 +37,7 @@ updates_page:
   # app (see docs/skills/brew-lifecycle/SKILL.md).
 
 applications_page:
-  applications_installed_group:
-    enabled: true
-    app_id: io.github.kolunmi.Bazaar
-  flatpak_user_group:
-    enabled: true
-  flatpak_system_group:
-    enabled: true
   brew_group:
-    enabled: true
-  brew_search_group:
     enabled: true
   brew_bundles_group:
     enabled: true

@@ -90,14 +90,7 @@ KNOWN_GROUPS = {
         "channel_group",
         "bootc_status_group",
     },
-    "applications_page": {
-        "applications_installed_group",
-        "flatpak_user_group",
-        "flatpak_system_group",
-        "brew_group",
-        "brew_search_group",
-        "brew_bundles_group",
-    },
+    "applications_page": {"brew_group", "brew_bundles_group"},
     "maintenance_page": {
         "maintenance_cleanup_group",
         "maintenance_freespace_group",
