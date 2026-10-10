@@ -54,7 +54,7 @@ Anything with those kinds of dependencies stays on the image as an RPM.
 Homebrew 6.0.0 blocks untrusted taps — formulae/casks from them are silently
 unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
 and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
-Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
+Antigravity, Zed, Cursor, framework-tool, asusctl-linux.
 
 **In just recipes** that call `brew tap` before cask installs, trust is a
 **separate command** — `--trust` is not a valid `brew tap` flag and Homebrew

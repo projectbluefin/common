@@ -40,7 +40,7 @@ must re-run the hook to pick up a new payload.
 
 | Vendor | Packages | Logo |
 |---|---|---|
-| `Framework` | `framework_tool`, `framework-wallpapers` | `framework-logo-symbolic` |
+| `Framework` | `framework-tool`, `framework-wallpapers` | `framework-logo-symbolic` |
 | `ASUS` | `asusctl-linux`, `rog-control-center-linux` | `asus-rog-symbolic` |
 
 ### Version stamp

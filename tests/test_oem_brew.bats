@@ -9,6 +9,8 @@
 
 OEM_BREW_HOOK="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/user-setup.hooks.d/20-oem-brew.sh"
 LIBSETUP_REAL="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/ublue/setup-services/libsetup.sh"
+FRAMEWORK_BREWFILE="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/oem/Framework/packages.Brewfile"
+ASUS_BREWFILE="$BATS_TEST_DIRNAME/../system_files/shared/usr/share/ublue-os/oem/ASUS/packages.Brewfile"
 
 load helpers
 
@@ -196,4 +198,28 @@ _assert_brew_bundle() {
     run bash "$(_patched_script)"
     [ "${status}" -eq 0 ]
     [ ! -e "${WORKDIR}/brew.log" ]
+}
+
+@test "oem-brew: shipped Framework Brewfile references upstream cask tokens" {
+    # Regression guard for projectbluefin/common#1449 — the Framework OEM
+    # Brewfile must use the upstream cask tokens (`framework-tool`,
+    # `framework-wallpapers`) so `brew bundle` does not silently fail when
+    # the hook runs on a Framework chassis. The shipped Brewfile previously
+    # named the Framework system tool with an underscore (`framework_tool`)
+    # that does not exist in the `ublue-os/tap` cask index, which made
+    # `brew bundle` exit non-zero under `set -euo pipefail`, permanently
+    # skipping the dconf logo write and the wallpapers install.
+    grep -qFx 'tap "ublue-os/tap", trusted: true' "${FRAMEWORK_BREWFILE}"
+    grep -qFx 'cask "ublue-os/tap/framework-tool"' "${FRAMEWORK_BREWFILE}"
+    grep -qFx 'cask "ublue-os/tap/framework-wallpapers"' "${FRAMEWORK_BREWFILE}"
+    run ! grep -Eq 'cask[[:space:]]+"ublue-os/tap/framework_tool"' "${FRAMEWORK_BREWFILE}"
+}
+
+@test "oem-brew: shipped ASUS Brewfile references upstream cask tokens" {
+    # Sibling guard to the Framework check above: keep the OEM Brewfile
+    # cask names aligned with what the tap actually publishes, so a typo
+    # cannot regress ASUS first-boot the same way.
+    grep -qFx 'tap "ublue-os/tap", trusted: true' "${ASUS_BREWFILE}"
+    grep -qFx 'cask "ublue-os/tap/asusctl-linux"' "${ASUS_BREWFILE}"
+    grep -qFx 'cask "ublue-os/tap/rog-control-center-linux"' "${ASUS_BREWFILE}"
 }
