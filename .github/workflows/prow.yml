@@ -70,7 +70,7 @@ jobs:
     if: needs.authorize.outputs.triage == 'true' && github.event_name == 'issue_comment'
     permissions:
       issues: write
-    uses: projectbluefin/.project/.github/workflows/prow-transfer.yml@60f85e1310e9e723934bcf77a6af8b846db7d151
+    uses: projectbluefin/.project/.github/workflows/prow-transfer.yml@ae5ac56a5529b7a3d491c32d97a5416d40230b23
     with:
       authorized: ${{ needs.authorize.outputs.triage }}
     secrets:
