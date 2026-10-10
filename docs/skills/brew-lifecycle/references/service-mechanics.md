@@ -241,8 +241,8 @@ does the same). Downstream images carry no ChairLift pin of their own.
 
 To bump, change `ARG CHAIRLIFT_RELEASE`; nothing else. Renovate tracks it
 (`projectbluefin/chairlift`, prereleases included, regex versioning so
-`alpha.N` ordering is kept) and opens that one-line PR, which is never
-automerged because it installs a new root-owned helper. The cosign image is a
+`alpha.N` ordering is kept) and opens that one-line PR, which automerges
+once CI checks pass. The cosign image is a
 `COPY --from=` pin that Renovate's built-in `dockerfile` manager keeps current.
 This pin is independent of `CHAIRLIFT_SCHEMA_REF`, which follows the cask.
 
