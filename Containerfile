@@ -14,7 +14,7 @@ RUN go build -ldflags="-s -w" -o /uwelcome .
 
 FROM docker.io/library/alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS build
 
-COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:470572484d5b7b8f5ce422f8a7af4fbdbe66f6a7075a5ae425ce0658f3e3738c / /out/bluefin/usr/share
+COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:df4902d0db359d93bcbfd44bad98a2bfe62743b5189e11af5c221c2f5d1eb9a7 / /out/bluefin/usr/share
 
 RUN apk add just curl
 
@@ -71,7 +71,7 @@ RUN set -eu; \
 
 # Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
-  mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
+  mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.svg /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
   sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
 
 # Fetch game-devices-udev rules as individual raw files at a fixed commit SHA.

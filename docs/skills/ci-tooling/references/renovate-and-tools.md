@@ -6,7 +6,7 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Renovate for
 
 ## Renovate OCI digest tracking
 
-`Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest`).
+`Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest`).
 
 Renovate's built-in `dockerfile` manager natively parses `FROM` directives and directly-referenced `COPY --from=<image>` lines. The custom regex manager for `bluefin-wallpapers-gnome` in `renovate.json` explicitly pins and tracks wallpaper digest updates.
 

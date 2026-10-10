@@ -10,7 +10,7 @@
         "/^Containerfile$/"
       ],
       "matchStrings": [
-        "COPY --from=(?<depName>ghcr\\.io/ublue-os/bluefin-wallpapers-gnome):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "COPY --from=(?<depName>ghcr\\.io/projectbluefin/bluefin-wallpapers-gnome):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"

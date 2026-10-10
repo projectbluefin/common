@@ -67,14 +67,14 @@ class TestCheckUblueRefs:
         violations = check_ublue_refs(tmp_path)
         assert violations == []
 
-    def test_allows_wallpapers_upstream(self, tmp_path):
+    def test_flags_wallpapers_upstream_if_ublue(self, tmp_path):
         wf = tmp_path / ".github/workflows"
         wf.mkdir(parents=True)
         (wf / "build.yml").write_text(
             "COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest /tmp .\n"
         )
         violations = check_ublue_refs(tmp_path)
-        assert violations == []
+        assert len(violations) == 1
 
     def test_detects_ublue_ref_in_docs(self, tmp_path):
         (tmp_path / ".github/workflows").mkdir(parents=True)

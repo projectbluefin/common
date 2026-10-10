@@ -80,7 +80,7 @@ def test_wallpaper_custom_regex_manager():
         match = re.search(py_regex, content)
         if match:
             groups = match.groupdict()
-            assert groups.get("depName") == "ghcr.io/ublue-os/bluefin-wallpapers-gnome"
+            assert groups.get("depName") == "ghcr.io/projectbluefin/bluefin-wallpapers-gnome"
             assert groups.get("currentValue") == "latest"
             assert groups.get("currentDigest", "").startswith("sha256:")
             assert len(groups["currentDigest"]) == 71  # "sha256:" (7) + 64 hex chars
