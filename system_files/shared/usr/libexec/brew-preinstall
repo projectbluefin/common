@@ -65,7 +65,7 @@ eval "$("${BREW_BIN}" shellenv)"
 # installability before processing the Brewfile's own tap lines, so on a
 # system that has never seen the tap it skips the cask as "requires macOS"
 # and still exits 0 — the cask is silently never installed (first boot of
-# any image shipping a tap+cask pair, e.g. ublue-os/tap + chairlift).
+# any image shipping a tap+cask pair, e.g. projectbluefin/tap + chairlift).
 # Vendored taps are also trusted: brew refuses casks from untrusted taps,
 # and the Brewfile's own `trusted:` flag doesn't apply to an already-present
 # tap. This runs every boot, before the hash early-exit, because
