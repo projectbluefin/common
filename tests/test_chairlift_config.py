@@ -777,7 +777,7 @@ def test_help_links_point_at_bluefin():
 def test_brewfile_taps_homebrew_tap_with_trust():
     """Homebrew 6 blocks untrusted taps silently; trusted: true is load-bearing.
 
-    The cask must stay the rebranded upstream release: ublue-os/tap
+    The cask must stay the rebranded upstream release: projectbluefin/tap
     pins projectbluefin/chairlift, which is the source the schema gate in
     tests/check-chairlift-config validates against."""
     content = BREWFILE.read_text(encoding="utf-8")

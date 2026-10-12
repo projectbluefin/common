@@ -105,6 +105,18 @@ These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
 - `video-wallpaper.Brewfile` — Hidamari, video wallpaper
 - `wallpaper-slideshow.Brewfile` — Damask, wallpaper slideshow
 
+`artwork.Brewfile` installs `bluefin-wallpapers-extra` from
+`projectbluefin/tap`. `brew bundle` matches installed casks by bare token, so
+users who already have the `ublue-os/tap/bluefin-wallpapers-extra` cask get a
+no-op on re-bundle and keep the old artifact. Opt-in Brewfiles are outside the
+`brew-preinstall` migration, so this switch is intentionally not migrated
+automatically; to move an existing install to the projectbluefin cask, run:
+
+```bash
+brew uninstall --cask ublue-os/tap/bluefin-wallpapers-extra
+brew install --cask projectbluefin/tap/bluefin-wallpapers-extra
+```
+
 Bluefin-specific (in `system_files/bluefin/`):
 - `full-desktop.Brewfile` — GNOME Circle + community flatpaks
 
