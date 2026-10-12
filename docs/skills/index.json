@@ -104,8 +104,8 @@
         "pitfalls"
       ],
       "description": "CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
-      "version": "1.1",
-      "last_updated": "2026-09-26",
+      "version": "1.2",
+      "last_updated": "2026-10-12",
       "doc_type": "reference"
     },
     {

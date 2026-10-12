@@ -5,6 +5,7 @@ tag_exists_in_ghcr, and main are all callable functions). Tests exercise the
 logic in-process so coverage.py can instrument them.
 """
 
+import http.client
 import importlib.util
 import json
 import urllib.error
@@ -268,6 +269,32 @@ class TestTagExistsInGhcr:
             assert tag_exists_in_ghcr("bluefin", "stable") is False
             assert mock_urlopen.call_count == 2
             assert mock_sleep.call_count == 1
+
+    def test_dropped_connection_recovers_on_retry(self):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"[]"
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[
+                http.client.RemoteDisconnected(
+                    "Remote end closed connection without response"
+                ),
+                mock_resp,
+            ],
+        ) as mock_urlopen, patch("time.sleep") as mock_sleep:
+            assert tag_exists_in_ghcr("bluefin", "stable") is False
+            assert mock_urlopen.call_count == 2
+            assert mock_sleep.call_count == 1
+
+    def test_persistent_network_error_returns_none(self):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Temporary failure in name resolution"),
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
 
     def test_403_without_rate_limit_header_raises_http_error(self):
         """403 without rate limit headers indicates missing scope/permission and must raise immediately."""
