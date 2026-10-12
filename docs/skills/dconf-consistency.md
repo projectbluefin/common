@@ -119,15 +119,16 @@ system-db:site
 system-db:distro
 ```
 
-`local` has **higher priority than `distro`**. The testsuite's `e2e.yml` writes `/etc/dconf/db/local.d/00-ci-testing` before every VM boot:
+`local` has **higher priority than `distro`**. The testsuite's `e2e.yml` writes `/etc/dconf/db/local.d/00-ci-testing` before every VM boot. Since projectbluefin/testsuite#683 (pinned here from `7da50e5`), it sets only:
 
 ```ini
 [org/gnome/shell]
 allow-extension-installation=true
-enabled-extensions=['unsafe-mode@bluefin-test']
 ```
 
-This means any `gsettings get org.gnome.shell enabled-extensions` call in a test returns only `['unsafe-mode@bluefin-test']`, not the distribution's default from the gschema override. The CI override wins regardless of what is in `distro.d/` or the compiled schema.
+It no longer touches `enabled-extensions`, so the image's schema default survives into the test VM. After the GNOME session starts, the suite runs `gnome-extensions enable unsafe-mode@bluefin-test`, which writes `enabled-extensions` into the **user** database as the current effective list plus `unsafe-mode@bluefin-test`. So `gsettings get org.gnome.shell enabled-extensions` in a test returns the image default **plus** `unsafe-mode@bluefin-test`.
+
+Older testsuite pins (before projectbluefin/testsuite#683) also wrote `enabled-extensions=['unsafe-mode@bluefin-test']` into `local.d`, replacing the image default and making per-extension `ExtensionState` assertions fail (`state=6`/`state=99`). With the current pin, such failures point at the **image** (extension missing, broken, or not in the shipped default), not at testsuite.
 
 ### Testing the distribution default vs the effective value
 
@@ -143,7 +144,7 @@ This means any `gsettings get org.gnome.shell enabled-extensions` call in a test
 
 `enabled-extensions` for `org.gnome.shell` is set in `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` — this sets the schema DEFAULT. It is NOT in `distro.d/` and is not a locked key, so users can override it.
 
-The CI's `local.d/00-ci-testing` write overrides it in every test VM. Tests must use `get_default_value()` to validate this config, not `gsettings get`.
+In test VMs the effective value is this default plus `unsafe-mode@bluefin-test` (added to the user database by the suite). Tests that validate the shipped config should still use `get_default_value()` so the CI-only extension does not affect the assertion.
 
 ## Flatpak application defaults via GKeyfileSettingsBackend
 
