@@ -1479,6 +1479,46 @@ BREWFILE
     [[ "${output}" == *"migrating legacy chairlift"* ]]
 }
 
+@test "brew-preinstall: migrates a stranded ublue-os/tap chairlift even when Brewfiles unchanged" {
+    # After the move to projectbluefin/tap, ublue-os/tap is a legacy source
+    # too. A machine already stamped with the current hash must still get
+    # migrated, and ublue-os/tap must stay tapped for other Brewfiles.
+    write_rebranded_chairlift_brewfile
+    current_hash="$(sha256sum "${WORKDIR}/preinstall.d/chairlift.Brewfile" | cut -d' ' -f1)"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"%s","packages":[],"casks":["projectbluefin/tap/chairlift"]}\n' "${current_hash}" \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+    write_chairlift_brew_mock ublue-os/tap 26.10.5 26.10.5 "ublue-os/tap projectbluefin/tap"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"migrating legacy chairlift (installed tap: ublue-os/tap)"* ]]
+    grep -Fxq "brew uninstall --cask ublue-os/tap/chairlift" "${WORKDIR}/brew.log"
+    grep -q "brew bundle --file=${WORKDIR}/preinstall.d/chairlift.Brewfile" "${WORKDIR}/brew.log"
+    run grep -q "brew untap" "${WORKDIR}/brew.log"
+    [ "${status}" -eq 1 ]
+    stored_hash="$(jq -r '.hash' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
+    [ "${stored_hash}" = "${current_hash}" ]
+}
+
+@test "brew-preinstall: rollback reinstalls ublue-os/tap chairlift when bundle fails after migration" {
+    write_rebranded_chairlift_brewfile
+    current_hash="$(sha256sum "${WORKDIR}/preinstall.d/chairlift.Brewfile" | cut -d' ' -f1)"
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"%s","packages":[],"casks":["projectbluefin/tap/chairlift"]}\n' "${current_hash}" \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+    write_chairlift_brew_mock ublue-os/tap 26.10.5 26.10.5 "ublue-os/tap projectbluefin/tap" 0 1 0
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"restoring legacy ublue-os/tap/chairlift"* ]]
+    grep -Fxq "brew install --cask ublue-os/tap/chairlift" "${WORKDIR}/brew.log"
+    run grep -q "brew untap" "${WORKDIR}/brew.log"
+    [ "${status}" -eq 1 ]
+    stored_hash="$(jq -r '.hash' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
+    [ "${stored_hash}" = "${current_hash}" ]
+}
+
 @test "brew-preinstall: no legacy rollback when the rebranded chairlift installed and another Brewfile failed" {
     # Only an unrelated Brewfile failed; projectbluefin/tap/chairlift is now
     # installed, so reinstalling the legacy cask would fail on the
