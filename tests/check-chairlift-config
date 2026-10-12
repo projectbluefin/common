@@ -166,7 +166,7 @@ def main() -> int:
 
     print(
         f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} "
-        "(pinned by the ublue-os/tap cask):"
+        "(pinned by the projectbluefin/tap cask):"
     )
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")

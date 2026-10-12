@@ -781,8 +781,8 @@ def test_brewfile_taps_homebrew_tap_with_trust():
     pins projectbluefin/chairlift, which is the source the schema gate in
     tests/check-chairlift-config validates against."""
     content = BREWFILE.read_text(encoding="utf-8")
-    assert 'tap "ublue-os/tap", trusted: true' in content
-    assert 'cask "ublue-os/tap/chairlift"' in content
+    assert 'tap "projectbluefin/tap", trusted: true' in content
+    assert 'cask "projectbluefin/tap/chairlift"' in content
 
 
 # ---------------------------------------------------------------------------

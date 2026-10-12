@@ -108,23 +108,26 @@ ChairLift is a managed cask installed for every user from
 Keep both lines load-bearing:
 
 ```ruby
-tap "ublue-os/tap", trusted: true
-cask "ublue-os/tap/chairlift"
+tap "projectbluefin/tap", trusted: true
+cask "projectbluefin/tap/chairlift"
 ```
 
 Homebrew 6 requires `trusted: true` for the tap, and the cask must remain
-pinned upstream in `ublue-os/tap`, which tracks the rebranded
+pinned upstream in `projectbluefin/tap`, which tracks
 `projectbluefin/chairlift` releases.
 
-Machines upgrading from the pre-rebrand `frostyard/tap/chairlift` cask are
-migrated by `brew-preinstall` before it bundles. Detection must read
-*installed* state only (`brew info --json=v2 --installed`, which enumerates the
-Caskroom and resolves each entry from its own installed caskfile): once both
-taps are present, the bare token `chairlift` is ambiguous, so
-`brew info --cask chairlift` either errors or answers for the new, uninstalled
-cask. An inconclusive answer migrates rather than skips — the bundle that runs
-immediately afterwards repairs a redundant uninstall, while a skipped migration
-strands the user on v0.10.1 with the hash already stamped.
+Machines with ChairLift installed from a legacy tap (`frostyard/tap/chairlift`
+or `ublue-os/tap/chairlift`) are migrated by `brew-preinstall` before it
+bundles: it uninstalls the legacy cask by its qualified name and lets the
+bundle install `projectbluefin/tap/chairlift`. Only `frostyard/tap` is
+untapped afterwards; `ublue-os/tap` stays for other Brewfiles. Detection must
+read *installed* state only (`brew info --json=v2 --installed`, which
+enumerates the Caskroom and resolves each entry from its own installed
+caskfile): once several taps are present, the bare token `chairlift` is
+ambiguous, so `brew info --cask chairlift` either errors or answers for the
+new, uninstalled cask. An inconclusive answer migrates rather than skips — the
+bundle that runs immediately afterwards repairs a redundant uninstall, while a
+skipped migration strands the user on the legacy tap with the hash stamped.
 
 Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`
 (`system_files/shared/usr/share/chairlift/config.yml` in this repo). Admins own

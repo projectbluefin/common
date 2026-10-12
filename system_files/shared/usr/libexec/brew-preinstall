@@ -104,17 +104,18 @@ fi
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 bundle_failed=0
 
-# Migrate legacy frostyard/tap/chairlift before bundling new ublue-os tap cask.
-# Homebrew's cask_installed? matches on the un-namespaced token ("chairlift")
-# and skips upgrade across different taps, leaving users stranded on v0.10.1.
+# Migrate chairlift installed from a legacy tap (frostyard/tap, ublue-os/tap)
+# before bundling the projectbluefin/tap cask. Homebrew's cask_installed?
+# matches on the un-namespaced token ("chairlift") and skips upgrade across
+# different taps, leaving users on whatever the old tap last shipped.
 #
 # Gate on *installation*, not resolvability: the bare token resolves from any
 # tapped source, so a machine that merely has frostyard/tap tapped (ChairLift
 # never installed) would otherwise uninstall a non-installed cask, fail, and
 # retry the whole run every boot.
 #
-# Ask what is *installed*, never what the bare token resolves to: ublue-os/tap
-# was tapped above, so both taps now provide "chairlift" and
+# Ask what is *installed*, never what the bare token resolves to: the new tap
+# was tapped above, so several taps now provide "chairlift" and
 # `brew info --cask chairlift` either raises an ambiguity error or answers for
 # the new, still-uninstalled cask. Either answer would skip the migration,
 # brew bundle's token-matching cask_installed? would then see ChairLift as
@@ -128,19 +129,19 @@ bundle_failed=0
 # not repaired at all. Only images that actually bundle the rebranded cask
 # take part, so a Brewfile still pinning the old bare token is left alone.
 if [[ "${external_chairlift}" -eq 0 ]] \
-    && grep -qs "ublue-os/tap/chairlift" "${brewfiles[@]}" \
+    && grep -qs "projectbluefin/tap/chairlift" "${brewfiles[@]}" \
     && brew list --cask chairlift &>/dev/null; then
     installed_chairlift_tap=$(brew info --json=v2 --installed 2>/dev/null \
         | jq -r 'first(.casks[]? | select(.token == "chairlift") | .tap // empty) // empty' \
             2>/dev/null || true)
     # Fully qualified, so this lookup can never be ambiguous.
-    tapped_chairlift_version=$(brew info --cask --json=v2 ublue-os/tap/chairlift 2>/dev/null \
+    tapped_chairlift_version=$(brew info --cask --json=v2 projectbluefin/tap/chairlift 2>/dev/null \
         | jq -r 'first(.casks[]?.version // empty) // empty' 2>/dev/null || true)
     installed_chairlift_version=$(brew list --cask --versions chairlift 2>/dev/null \
         | awk 'NR == 1 { print $2 }' || true)
 
     chairlift_migrated=0
-    if [[ "${installed_chairlift_tap}" == "ublue-os/tap" ]]; then
+    if [[ "${installed_chairlift_tap}" == "projectbluefin/tap" ]]; then
         chairlift_migrated=1
     elif [[ -z "${installed_chairlift_tap}" \
         && -n "${tapped_chairlift_version}" \
@@ -153,18 +154,26 @@ if [[ "${external_chairlift}" -eq 0 ]] \
 
     if [[ "${chairlift_migrated}" -eq 0 ]]; then
         echo "brew-preinstall: migrating legacy chairlift (installed tap: ${installed_chairlift_tap:-unknown}) before bundle..."
-        # Name the legacy cask explicitly while its tap is still present;
-        # once it is gone the bare token is unambiguous again.
+        # Name the legacy cask explicitly while its tap is still present:
+        # the bare token is ambiguous whenever another tap also provides it.
+        tapped=$(brew tap 2>/dev/null || true)
         legacy_chairlift_token=chairlift
-        frostyard_tapped=0
-        if brew tap 2>/dev/null | grep -Fxq frostyard/tap; then
+        if [[ -n "${installed_chairlift_tap}" ]] \
+            && grep -Fxq "${installed_chairlift_tap}" <<< "${tapped}"; then
+            legacy_chairlift_token="${installed_chairlift_tap}/chairlift"
+        elif grep -Fxq frostyard/tap <<< "${tapped}"; then
             legacy_chairlift_token=frostyard/tap/chairlift
+        elif grep -Fxq ublue-os/tap <<< "${tapped}"; then
+            legacy_chairlift_token=ublue-os/tap/chairlift
+        fi
+        frostyard_tapped=0
+        if [[ "${legacy_chairlift_token}" == frostyard/tap/chairlift ]]; then
             frostyard_tapped=1
         fi
         if brew uninstall --cask "${legacy_chairlift_token}"; then
-            # Drop the frozen pre-rebrand tap so the bare token can never
-            # resolve back to it. Best-effort: a leftover tap is harmless
-            # once the cask is gone, and other casks may still need it.
+            # Drop the frozen pre-rebrand frostyard tap so the bare token can
+            # never resolve back to it. Best-effort: a leftover tap is harmless
+            # once the cask is gone. ublue-os/tap stays: other Brewfiles use it.
             if [[ "${frostyard_tapped}" -eq 1 ]]; then
                 brew untap frostyard/tap \
                     || echo "brew-preinstall: warning: could not untap frostyard/tap"
@@ -272,7 +281,8 @@ previous_casks=$(jq -r --argjson external "${external_chairlift}" '
     select($external == 0
         or (. != "chairlift"
             and . != "frostyard/tap/chairlift"
-            and . != "ublue-os/tap/chairlift"))
+            and . != "ublue-os/tap/chairlift"
+            and . != "projectbluefin/tap/chairlift"))
 ' "${STATE_FILE}" 2>/dev/null \
     | sort -u || true)
 
