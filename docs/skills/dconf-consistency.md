@@ -154,3 +154,27 @@ Key differences from host GSettings:
 - Schema separation: root application preferences are separated from plugin sources (e.g., `[app/drey/Damask]` vs `[app/drey/Damask/sources/slideshow]`).
 - Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` gated by `version-script-check <name> user <n> || exit 0` at the top of the hook and `version-script-commit <name> user <n>` at the end, so a failed pre-seed retries on the next boot.
 - Non-destructive activation: check `[[ ! -f "${KEYFILE}" ]]` before writing so existing user configurations are never overwritten, and set inactive or dormant defaults (e.g., `active-source='none'`) when activating by default would override host user desktop settings or timed wallpaper slideshows.
+
+### Damask's Homebrew artwork folder
+
+The Damask setup hook points new profiles at
+`file://${HOME}/.local/share/backgrounds/bluefin-extra`. This is one symlink to
+the installed `bluefin-wallpapers-extra` cask's existing flat `images` folder,
+not a copied collection. Resolve the cask root with `brew --caskroom` and its
+installed version with `brew info --json=v2 --cask`; refresh the pointer before
+the settings version gate so Homebrew upgrades do not put dates in app settings
+or strand the pointer on the previous version. Do not bundle, convert, or
+install artwork in this hook. If the cask is absent, skip without stamping.
+
+Grant Damask read-only access to that cask root: `xdg-data/backgrounds:ro` alone
+does not expose a symlink target in Homebrew's Caskroom. Keep existing keyfiles
+untouched and fresh profiles inactive. Damask 0.3.2 reads one directory
+nonrecursively, so the cask's nested `~/.local/share/backgrounds/bluefin` layout
+is not a usable collection root. The stock GNOME 50 Flatpak runtime decodes all
+13 installed SVG/JXL images directly; do not introduce build-time conversion.
+
+Sources: [Homebrew manpage](https://docs.brew.sh/Manpage), `--caskroom` and
+`info --json` (`/homebrew/brew`);
+[Damask Slideshow loader](https://gitlab.gnome.org/subpop/damask/-/blob/v0.3.2/src/sources/slideshow.vala);
+[Flatpak sandbox permissions](https://docs.flatpak.org/en/latest/sandbox-permissions.html),
+"Filesystem access" (`/flatpak/flatpak-docs`).
