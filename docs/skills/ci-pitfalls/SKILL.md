@@ -1,7 +1,7 @@
 ---
 name: ci-pitfalls
-version: "1.1"
-last_updated: "2026-09-26"
+version: "1.2"
+last_updated: "2026-10-12"
 id: ci-pitfalls
 one_line_purpose: Diagnose CI gotchas and silent workflow failures across repos.
 entry_point: docs/skills/ci-pitfalls/SKILL.md
@@ -76,6 +76,26 @@ installation, checksum-download, or desktop-runtime test. It never installs
 formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`
 and retain real Homebrew validation in CI.
 
+## Required checks must survive transient GitHub API failures
+
+A merge queue re-runs every required check for each group, and a failure
+ejects the PR and rebuilds the group, so flaky network calls multiply.
+
+- **Tool installers.** `extractions/setup-just` lists
+  `GET /repos/casey/just/releases` on every run, even with `just-version`
+  set (it only skips the API on a tool-cache hit, and hosted runners start
+  empty). Parallel merge groups exhausted the installation token's limit
+  (`API rate limit exceeded for installation`). Install `just` with
+  `taiki-e/install-action` (`tool: just`), which resolves from its bundled
+  manifest and never calls the REST API.
+- **Registry lookups.** `scripts/check-oci-refs.py` retries 429/5xx and
+  rate-limit 403s, and also connection errors (`URLError`,
+  `RemoteDisconnected`, timeouts). After retries it reports the ref as
+  unverified instead of failing; only a definite missing tag fails.
+
+Classify a red merge-group check by its log before re-queueing. An
+infrastructure failure gets a re-run of the failed job, not a code change.
+
 ## Red Flags
 
 - A PR targets `testing` but the branch was created from `main`
@@ -83,6 +103,7 @@ and retain real Homebrew validation in CI.
 - A `workflow_run`-triggered gate silently never fires (name mismatch)
 - A Renovate PR passes all checks but never merges (check `autoMergeRequest`)
 - A merge queue PR is stuck with no matching check name (ruleset check name drift)
+- A merge-group check fails in an install or network step on unrelated PRs at the same minute (API rate limit or transient disconnect)
 
 ---
 
