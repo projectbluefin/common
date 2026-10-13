@@ -3,7 +3,7 @@
 #   - system_files/shared/etc/profile.d/uwelcome.sh
 #   - system_files/shared/usr/share/fish/vendor_conf.d/fish_greeting.fish
 #   - toggle-user-motd compatibility recipe in default.just
-#   - etc/uwelcome/config.json and etc/ublue-os/tags.json
+#   - etc/uwelcome/config.json
 #
 # Behavioral contract:
 #   - uwelcome owns the opt-out decision. Its state lives at
