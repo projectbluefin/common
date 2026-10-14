@@ -37,7 +37,10 @@ clean-system:
         echo "Volumes that would be pruned:"
         /usr/bin/podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Podman images and volumes?"; then
-            /usr/bin/podman image prune -af
+            # prune -f, not -af: the preview above lists dangling images only,
+            # so prune the same set. -af would also delete named images pulled on
+            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
+            /usr/bin/podman image prune -f
             /usr/bin/podman volume prune -f
         fi
     fi
@@ -49,7 +52,10 @@ clean-system:
         echo "Volumes that would be pruned:"
         docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
         if gum confirm "Proceed with pruning Docker images and volumes?"; then
-            docker image prune -af
+            # prune -f, not -af: the preview above lists dangling images only,
+            # so prune the same set. -af would also delete named images pulled on
+            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
+            docker image prune -f
             docker volume prune -f
         fi
       fi
