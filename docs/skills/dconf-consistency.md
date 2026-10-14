@@ -91,6 +91,32 @@ Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot
 
 When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
 
+### Goose shortcuts
+
+The shipped defaults launch `/home/linuxbrew/.linuxbrew/bin/goose-desktop`
+directly from `custom3` (`<Control><Alt>BackSpace`) and `custom5`
+(`<Super><Shift>Return`, the Copilot+Enter combination on the configured
+keyboard). These are desktop defaults, not troubleshooting or Agent Mode
+switches. They do not install Goose; users need the `goose-linux` cask from
+`ujust install-ai-tools` or their existing Goose installation.
+
+Use the absolute Homebrew binary path: GNOME shortcut commands do not inherit
+a login shell's `PATH`. Keep the existing custom shortcut slots stable and
+register new slots in the schema override as well as defining them in dconf.
+User-set shortcut values and lists take precedence over these unlocked defaults.
+
+For a local verification, use `/usr/bin/gsettings` and compare its output with
+`dconf dump /org/gnome/settings-daemon/plugins/media-keys/`. Homebrew can shadow
+`gsettings` with a build that reports defaults or empty values rather than the
+host's active settings. Read back both the active path list and each entry's
+`binding`, `command`, and `name`; settings persistence alone does not prove
+physical-key delivery.
+
+For shipped-default verification, compile the media-keys override against host
+schemas and compile `02-bluefin-keybindings` into a temporary dconf database.
+Read both shortcuts through GSettings using an isolated profile and config
+directory, without writing to the live user's database.
+
 ## Validation
 
 `validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
