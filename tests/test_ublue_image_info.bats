@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 SCRIPT_UNDER_TEST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/bin/ublue-image-info.sh"
+BOOTED_IMAGE_BIN="${BATS_TEST_DIRNAME}/../system_files/shared/usr/libexec/ublue-booted-image"
 WORKDIR=""
 MOCKDIR=""
 FIXTURE=""
@@ -55,7 +56,10 @@ run_script() {
     local path_value="$2"
     local booted_image_file="${3:-${WORKDIR}/missing-booted-image}"
 
-    run env IMAGE_INFO_FILE="${image_info_file}" BOOTED_IMAGE_FILE="${booted_image_file}" PATH="${path_value}" /usr/bin/bash "${SCRIPT_UNDER_TEST}"
+    run env IMAGE_INFO_FILE="${image_info_file}" PATH="${path_value}" \
+        UBLUE_BOOTED_IMAGE_BIN="${BOOTED_IMAGE_BIN}" \
+        UBLUE_BOOTED_IMAGE_FILE="${booted_image_file}" \
+        /usr/bin/bash "${SCRIPT_UNDER_TEST}"
 }
 
 @test "ublue-image-info: prints image name and tag with fixture data" {
@@ -80,7 +84,7 @@ run_script() {
     [ "${output}" = "dakota:testing" ]
 }
 
-@test "ublue-image-info: falls back to BOOTED_IMAGE_FILE when bootc status is unavailable" {
+@test "ublue-image-info: falls back to the boot-time snapshot when bootc status is unavailable" {
     local booted_file="${WORKDIR}/booted-image"
     write_jq_mock
     write_bootc_mock 'exit 1'
