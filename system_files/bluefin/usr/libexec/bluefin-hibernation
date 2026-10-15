@@ -1,0 +1,191 @@
+#!/usr/bin/bash
+# Opt-in setup; never run this helper during image construction.
+set -euo pipefail
+
+fail() { echo "Hibernation: $*" >&2; exit 1; }
+
+init_paths() {
+    state=/var/lib/bluefin-hibernation
+    swapdir=/var/swap
+    swapfile=$swapdir/swapfile
+    unit=var-swap-swapfile.swap
+    unitfile=/etc/systemd/system/$unit
+    lid=/etc/systemd/logind.conf.d/60-bluefin-hibernation.conf
+    sleep=/etc/systemd/sleep.conf.d/60-bluefin-hibernation.conf
+    suspend=/etc/systemd/system/systemd-suspend.service.d/60-bluefin-hibernation.conf
+    meminfo=/proc/meminfo
+    power_state=/sys/power/state
+    cmdline=/proc/cmdline
+    efivars=/sys/firmware/efi/efivars
+}
+
+status() {
+    if [[ ! -d $state ]]; then
+        echo disabled
+    elif [[ -f $state/complete && -f $unitfile && -f $lid && -f $sleep ]] &&
+        { [[ ! -f $state/gnome ]] || [[ -f $suspend ]]; } &&
+        systemctl is-enabled --quiet "$unit" && systemctl is-active --quiet "$unit"; then
+        echo enabled
+    else
+        echo incomplete
+    fi
+}
+
+# Round up, never down: 2x RAM below 2 GiB, 1.5x below 8 GiB, RAM otherwise.
+swap_size() {
+    awk '/^MemTotal:/ { k=$2; n=(k<2097152 ? 2*k : k<8388608 ? 1.5*k : k);
+        printf "%dG\n", int((n+1048575)/1048576); found=1 }
+        END { if (!found) exit 1 }' "$meminfo"
+}
+
+preflight() {
+    local path
+    for path in "$state" "$swapdir" "$unitfile" "$lid" "$sleep" "$suspend"; do
+        [[ ! -e $path && ! -L $path ]] || fail "Refusing to overwrite $path."
+    done
+    [[ $(findmnt -n -o FSTYPE -T /var) == btrfs ]] || fail '/var must be on Btrfs.'
+    grep -qw disk "$power_state" || fail 'The kernel does not offer hibernation (check Secure Boot/lockdown).'
+    [[ -d $efivars && -w $efivars ]] || fail 'Writable UEFI variables are required for automatic resume.'
+    if grep -Eq '(^| )(noresume|resume=[^ ]*|resume_offset=[^ ]*)( |$)' "$cmdline"; then
+        fail 'Existing resume kernel arguments require manual configuration.'
+    fi
+    # Do not take ownership of an existing fstab entry or vendor swap unit.
+    if findmnt --fstab -n -o SOURCE | grep -Fx "$swapfile" >/dev/null; then
+        fail "An fstab entry already manages $swapfile."
+    fi
+    [[ $(systemctl show "$unit" -p LoadState --value) == not-found ]] ||
+        fail "An existing unit already manages $swapfile."
+    mkswap --help | grep -- '--file' >/dev/null || fail 'mkswap with --file support is required.'
+}
+
+enable() {
+    if [[ $(status) == enabled ]]; then
+        echo 'Hibernation is already configured.'
+        return
+    fi
+    [[ ! -e $state ]] || fail 'Setup is incomplete; run ujust hibernation disable before retrying.'
+    preflight
+    local size
+    size=$(swap_size)
+    echo "Creating a $size swapfile. Setup failures can be cleaned up with ujust hibernation disable."
+    mkdir -m 755 "$state"
+    # Mark ownership before creating resources, so interrupted setup is recoverable.
+    touch "$state/owned"
+    btrfs subvolume create "$swapdir"
+    chmod 700 "$swapdir"
+    chattr +C "$swapdir"
+    restorecon "$swapdir"
+    # mkswap sets swapfile_t itself; do not restorecon the swapfile afterwards.
+    mkswap --file --size "$size" "$swapfile"
+    chmod 600 "$swapfile"
+    # Btrfs validates the single-device/no-holes requirements before activation.
+    btrfs inspect-internal map-swapfile "$swapfile"
+    mkdir -p "$(dirname "$unitfile")"
+    cat > "$unitfile" <<UNIT
+[Unit]
+Description=Bluefin opt-in hibernation swap
+
+[Swap]
+What=$swapfile
+
+[Install]
+WantedBy=swap.target
+UNIT
+    systemctl daemon-reload
+    systemctl enable --now "$unit"
+    # Ask logind before changing suspend behavior; this catches policy/space failures.
+    local capability
+    for capability in CanHibernate CanSuspendThenHibernate; do
+        [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "$capability") == 's "yes"' ]] ||
+            fail "$capability is unavailable. Run ujust hibernation disable to clean up, then inspect the system journal."
+    done
+    mkdir -p "$(dirname "$lid")" "$(dirname "$sleep")"
+    cat > "$lid" <<'CONF'
+[Login]
+HandleLidSwitch=suspend-then-hibernate
+CONF
+    cat > "$sleep" <<'CONF'
+[Sleep]
+HibernateDelaySec=60min
+CONF
+    if command -v gnome-shell >/dev/null; then
+        touch "$state/gnome"
+        mkdir -p "$(dirname "$suspend")"
+        # GNOME still decides WHEN to suspend via its AC/battery power settings.
+        # Change only the operation performed by the existing suspend service.
+        cat > "$suspend" <<'CONF'
+[Service]
+ExecStart=
+ExecStart=/usr/lib/systemd/systemd-sleep suspend-then-hibernate
+CONF
+    fi
+    systemctl daemon-reload
+    touch "$state/complete"
+    echo 'Hibernation configured. Reboot to apply lid handling; save your work before testing resume.'
+}
+
+disable() {
+    if [[ ! -e $state ]]; then
+        echo 'Hibernation is not managed by this recipe; nothing to remove.'
+        return
+    fi
+    [[ -f $state/owned ]] || fail "No ownership marker in $state; refusing cleanup."
+    rm -f "$state/complete" "$lid" "$sleep"
+    if [[ -f $state/gnome ]]; then
+        rm -f "$suspend" "$state/gnome"
+    fi
+    systemctl daemon-reload
+    # Never remove an active swapfile if swapoff fails (e.g. insufficient RAM).
+    if [[ -f $unitfile ]]; then
+        systemctl disable --now "$unit"
+    fi
+    local active_swaps
+    active_swaps=$(swapon --show=NAME --noheadings --raw)
+    if grep -Fxq "$swapfile" <<< "$active_swaps"; then
+        swapoff "$swapfile"
+    fi
+    rm -f "$unitfile"
+    systemctl daemon-reload
+    if [[ -e $swapdir ]]; then
+        btrfs subvolume show "$swapdir" >/dev/null
+        # Refuse to recursively delete a directory that has acquired other data.
+        [[ -z $(find "$swapdir" -mindepth 1 -maxdepth 1 ! -name swapfile -print -quit) ]] ||
+            fail "$swapdir contains other files; leaving it for manual cleanup."
+        rm -f "$swapfile"
+        btrfs subvolume delete "$swapdir"
+    fi
+    rm -f "$state/owned"
+    rmdir "$state"
+    echo 'Recipe configuration removed. Reboot to restore previous lid handling.'
+}
+
+main() {
+    umask 022
+    init_paths
+    local action=${1:-}
+    case "$action" in
+        help|--help)
+            echo 'Usage: ujust hibernation [status|enable|disable]'
+            echo 'Opt-in Btrfs/UEFI hibernation with a 60-minute suspend delay.'
+            echo 'GNOME controls idle timeouts. Disable removes only recipe-managed setup.'
+            return ;;
+        status) status; return ;;
+        '')
+            echo "Hibernation: $(status)"
+            action=$(gum choose enable disable 'Exit without changes')
+            [[ $action != 'Exit without changes' ]] || return ;;
+        enable|disable) ;;
+        *) fail "Unknown action: $action" ;;
+    esac
+    if (( EUID != 0 )); then
+        exec sudo /usr/libexec/bluefin-hibernation "$action"
+    fi
+    # Serialize setup and cleanup, including creation of the ownership marker.
+    exec 9>/run/bluefin-hibernation.lock
+    flock -n 9 || fail 'Another hibernation setup is running.'
+    "$action"
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    main "$@"
+fi
