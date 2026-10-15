@@ -3,10 +3,12 @@
 setup() {
     export BONEDIGGER_SCRIPT="$BATS_TEST_DIRNAME/../system_files/bluefin/usr/libexec/bonedigger-report"
     export UBLUE_IMAGE_REPO_BIN="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/ublue-image-repo"
+    export UBLUE_BOOTED_IMAGE_BIN="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/ublue-booted-image"
     export WORKDIR="$BATS_TEST_DIRNAME/.bonedigger-report-test-${BATS_TEST_NUMBER}-${$}"
     export HOME="$WORKDIR/home"
     export XDG_STATE_HOME="$WORKDIR/state"
     export XDG_RUNTIME_DIR="$WORKDIR/runtime"
+    export UBLUE_BOOTED_IMAGE_FILE="$WORKDIR/booted-image"
 
     mkdir -p "$WORKDIR/bin" "$HOME" "$XDG_STATE_HOME" "$XDG_RUNTIME_DIR"
 }

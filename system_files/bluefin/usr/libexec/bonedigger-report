@@ -80,7 +80,8 @@ read_image_info() {
 }
 
 read_boot_status() {
-    local booted_ref
+    local booted_ref booted_tag booted_name
+    local booted_image_bin="${UBLUE_BOOTED_IMAGE_BIN:-/usr/libexec/ublue-booted-image}"
 
     BOOTC_JSON="$(bootc status --json 2>/dev/null || printf '{}')"
     BOOTC_STATUS="$(bootc status 2>/dev/null || printf 'Unavailable')"
@@ -88,38 +89,18 @@ read_boot_status() {
     if command -v jq &>/dev/null; then
         BOOTED_DIGEST="$(printf '%s' "$BOOTC_JSON" | \
             jq -r '.status.booted.imageDigest // "unknown"' 2>/dev/null || printf 'unknown')"
-        # The image-tag baked into image-info.json is whatever the build
-        # was tagged at compose time (always "latest"); promotion retags
-        # the same digest, so only bootc knows the followed tag.
-        booted_ref="$(printf '%s' "$BOOTC_JSON" | \
-            jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
-        # Unprivileged `bootc status` fails on bootc >= 1.14, so fall back to
-        # the boot-time snapshot written by ublue-booted-image.service on
-        # images that ship it (projectbluefin/dakota#1418).
-        if [[ -z "$booted_ref" && -r /run/ublue-os/booted-image ]]; then
-            read -r booted_ref < /run/ublue-os/booted-image || true
-        fi
+        # image-info.json is baked at compose time; the booted ref, tag and
+        # name come from the deployment itself (projectbluefin/common#1020,
+        # projectbluefin/common#1009, projectbluefin/dakota#1328). The
+        # derivation rules are owned by /usr/libexec/ublue-booted-image.
+        booted_ref="$("$booted_image_bin" ref 2>/dev/null || true)"
         if [[ -n "$booted_ref" ]]; then
-            # The baked image-ref is equally stale for rebased or locally
-            # built deployments (projectbluefin/dakota#1328).
             IMAGE_REF="$booted_ref"
-        fi
-        case "$booted_ref" in
-            *@*) ;; # digest-pinned ref, no tag to extract
-            *:*) IMAGE_TAG="${booted_ref##*:}" ;;
-        esac
-        if [[ -n "$booted_ref" ]]; then
-            # image-name from image-info.json is baked at build time and is
-            # equally stale after a rebase (e.g. bluefin -> dakota); derive
-            # it from the booted ref's repository basename so issue routing
-            # follows the live deployment, not the original build
-            # (projectbluefin/common#1009).
-            # Take the basename before stripping the tag: the first colon in
-            # a full reference can belong to a registry port
-            # (localhost:5000/bluefin:latest), not the tag.
-            local booted_repo="${booted_ref%%@*}"
-            local booted_name="${booted_repo##*/}"
-            booted_name="${booted_name%%:*}"
+            booted_tag="$("$booted_image_bin" tag 2>/dev/null || true)"
+            if [[ -n "$booted_tag" ]]; then
+                IMAGE_TAG="$booted_tag"
+            fi
+            booted_name="$("$booted_image_bin" name 2>/dev/null || true)"
             if [[ -n "$booted_name" ]]; then
                 IMAGE_NAME="$booted_name"
             fi
