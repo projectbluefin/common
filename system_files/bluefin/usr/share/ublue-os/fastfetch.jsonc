@@ -44,7 +44,7 @@
       "type": "command",
       "key": "󰔠",
       "keyColor": "#eed49f",
-      "text": "date -d$(ls -alct /var/log --time-style=full-iso|tail -1|awk '{print $6}') +'Forged on %b %d %G'",
+      "text": "date -d\"$(cat /var/lib/ublue-os/install-date 2>/dev/null || ls -alct /var/log --time-style=full-iso 2>/dev/null | tail -1 | awk '{print $6}')\" +'Forged on %b %d %G'",
       "shell": "/bin/bash"
     },
     "break",
