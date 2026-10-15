@@ -17,6 +17,7 @@ Source of truth for valid image names and tags:
 Do not update the allowed list below from memory. Read the workflow files.
 """
 from pathlib import Path
+import http.client
 import json
 import os
 import re
@@ -154,10 +155,28 @@ def tag_exists_in_ghcr(image: str, tag: str):
                 last_error = e
                 if attempt < MAX_RETRIES:
                     time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
+            except (
+                urllib.error.URLError,
+                ConnectionError,
+                TimeoutError,
+                http.client.HTTPException,
+                json.JSONDecodeError,
+            ) as e:
+                # Dropped connections, resets, DNS/socket timeouts, bodies
+                # cut off mid-transfer (IncompleteRead), and malformed
+                # bodies never reach an HTTP status; retry them like a 5xx.
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
 
         if last_error is not None:
+            reason = (
+                f"HTTP {last_error.code}"
+                if isinstance(last_error, urllib.error.HTTPError)
+                else f"{type(last_error).__name__}: {last_error}"
+            )
             print(
-                f"  \u26a0 GHCR packages API returned HTTP {last_error.code} for "
+                f"  \u26a0 GHCR packages API returned {reason} for "
                 f"{image} after {MAX_RETRIES + 1} attempts -- skipping existence "
                 "check for this ref (transient error, not a ref regression)."
             )
