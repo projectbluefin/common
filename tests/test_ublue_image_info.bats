@@ -31,10 +31,10 @@ write_jq_mock() {
 /usr/bin/jq "$@"'
 }
 
-write_rpm_ostree_mock() {
+write_bootc_mock() {
     local body="$1"
 
-    write_mock "rpm-ostree" "#!/usr/bin/bash
+    write_mock "bootc" "#!/usr/bin/bash
 ${body}"
 }
 
@@ -53,50 +53,62 @@ EOF
 run_script() {
     local image_info_file="$1"
     local path_value="$2"
+    local booted_image_file="${3:-${WORKDIR}/missing-booted-image}"
 
-    run env IMAGE_INFO_FILE="${image_info_file}" PATH="${path_value}" /usr/bin/bash "${SCRIPT_UNDER_TEST}"
+    run env IMAGE_INFO_FILE="${image_info_file}" BOOTED_IMAGE_FILE="${booted_image_file}" PATH="${path_value}" /usr/bin/bash "${SCRIPT_UNDER_TEST}"
 }
 
-@test "ublue-image-info: prints image name, tag, and locked status with fixture data" {
+@test "ublue-image-info: prints image name and tag with fixture data" {
     write_jq_mock
-    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_bootc_mock 'exit 1'
     write_image_info_fixture "bluefin" "latest"
 
-    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+    run_script "${FIXTURE}" "${MOCKDIR}"
 
     [ "${status}" -eq 0 ]
-    [ "${output}" = "bluefin:latest 🔐" ]
+    [ "${output}" = "bluefin:latest" ]
 }
 
-@test "ublue-image-info: shows unlocked status when rpm-ostree output lacks signed marker" {
+@test "ublue-image-info: prefers tag from bootc status when available" {
     write_jq_mock
-    write_rpm_ostree_mock 'echo "State: booted deployment"'
-    write_image_info_fixture "bluefin" "latest"
+    write_bootc_mock 'echo "{\"status\":{\"booted\":{\"image\":{\"image\":{\"image\":\"ghcr.io/projectbluefin/dakota:testing\"}}}}}"'
+    write_image_info_fixture "dakota" "latest"
 
-    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+    run_script "${FIXTURE}" "${MOCKDIR}"
 
     [ "${status}" -eq 0 ]
-    [ "${output}" = $'bluefin:latest \033[5m🔓\033[0m' ]
+    [ "${output}" = "dakota:testing" ]
+}
+
+@test "ublue-image-info: falls back to BOOTED_IMAGE_FILE when bootc status is unavailable" {
+    local booted_file="${WORKDIR}/booted-image"
+    write_jq_mock
+    write_bootc_mock 'exit 1'
+    write_image_info_fixture "dakota-nvidia-gaming" "latest"
+    printf 'ghcr.io/projectbluefin/dakota-nvidia-gaming:testing\n' > "${booted_file}"
+
+    run_script "${FIXTURE}" "${MOCKDIR}" "${booted_file}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "dakota-nvidia-gaming:testing" ]
 }
 
 @test "ublue-image-info: handles missing image-info.json without failing" {
     write_jq_mock
-    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_bootc_mock 'exit 1'
 
     run_script "${WORKDIR}/missing-image-info.json" "${MOCKDIR}:${PATH}"
 
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"${WORKDIR}/missing-image-info.json: No such file or directory"* ]]
-    [[ "${output}" == *" 🔐" ]]
 }
 
 @test "ublue-image-info: handles missing jq without failing" {
-    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_bootc_mock 'exit 1'
     write_image_info_fixture "bluefin" "latest"
 
     run_script "${FIXTURE}" "${MOCKDIR}"
 
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"jq: command not found"* ]]
-    [[ "${output}" == *" 🔐" ]]
 }
