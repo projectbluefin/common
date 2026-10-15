@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 SCRIPT_UNDER_TEST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/bin/ublue-image-info.sh"
+BOOTED_IMAGE_BIN="${BATS_TEST_DIRNAME}/../system_files/shared/usr/libexec/ublue-booted-image"
 WORKDIR=""
 MOCKDIR=""
 FIXTURE=""
@@ -54,7 +55,10 @@ run_script() {
     local image_info_file="$1"
     local path_value="$2"
 
-    run env IMAGE_INFO_FILE="${image_info_file}" PATH="${path_value}" /usr/bin/bash "${SCRIPT_UNDER_TEST}"
+    run env IMAGE_INFO_FILE="${image_info_file}" PATH="${path_value}" \
+        UBLUE_BOOTED_IMAGE_BIN="${BOOTED_IMAGE_BIN}" \
+        UBLUE_BOOTED_IMAGE_FILE="${WORKDIR}/booted-image" \
+        /usr/bin/bash "${SCRIPT_UNDER_TEST}"
 }
 
 @test "ublue-image-info: prints image name, tag, and locked status with fixture data" {
@@ -99,4 +103,31 @@ run_script() {
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"jq: command not found"* ]]
     [[ "${output}" == *" 🔐" ]]
+}
+
+@test "ublue-image-info: the booted tag from bootc replaces the baked compose tag" {
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_mock "bootc" '#!/usr/bin/bash
+printf "%s" "{\"status\":{\"booted\":{\"image\":{\"image\":{\"image\":\"ghcr.io/projectbluefin/dakota:testing\"}}}}}"'
+    write_image_info_fixture "dakota" "latest"
+
+    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "dakota:testing 🔐" ]
+}
+
+@test "ublue-image-info: falls back to the boot-time snapshot when bootc is unavailable to the user" {
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_mock "bootc" '#!/usr/bin/bash
+exit 1'
+    printf 'ghcr.io/projectbluefin/dakota:stable\n' > "${WORKDIR}/booted-image"
+    write_image_info_fixture "dakota" "latest"
+
+    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "dakota:stable 🔐" ]
 }
