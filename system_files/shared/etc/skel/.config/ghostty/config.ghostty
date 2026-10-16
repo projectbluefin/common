@@ -6,6 +6,10 @@ theme = Catppuccin Mocha
 # Run as a single GTK instance, consistent with GNOME app conventions
 gtk-single-instance = true
 
+# Style the header bar with Ghostty's theme colors so the top bar
+# blends with the terminal window
+window-theme = ghostty
+
 # Show current working directory in the window subtitle
 window-subtitle = working-directory
 
