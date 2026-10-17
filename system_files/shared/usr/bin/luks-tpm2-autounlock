@@ -64,13 +64,21 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
             export SET_PIN_ARG="--tpm2-with-pin=yes"
             ;;
         1)
+            echo "No PIN: the disk will unlock whenever this machine boots with Secure Boot in its current state."
             ;;
         *)
             exit 0
     esac
 
+    # Bind the enrollment to PCR 7 (Secure Boot policy). Bluefin boots through
+    # shim + GRUB with a separate kernel and initrd, so there is no systemd-stub
+    # signed PCR policy to fall back on: an empty PCR set would let any OS booted
+    # on this machine ask the TPM for the key. PCR 7 only changes when Secure
+    # Boot is toggled or the firmware certificate databases change, never on
+    # kernel or initrd updates; if it does change, the passphrase slot still
+    # works and re-running this toggle re-enrolls.
     # shellcheck disable=SC2086
-    if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs='' ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
-        echo "TPM2 LUKS auto-unlock configured for next reboot."
+    if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
+        echo "TPM2 LUKS auto-unlock configured for next reboot (bound to Secure Boot state, PCR 7)."
     fi
 fi

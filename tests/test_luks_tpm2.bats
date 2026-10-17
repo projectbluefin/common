@@ -155,6 +155,11 @@ teardown() {
     run bash "${LUKS_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -q "\-\-tpm2-device=auto" "${WORKDIR}/cryptenroll.log"
+    # Enrollment must be bound to Secure Boot state; an empty PCR set would let
+    # any OS booted on this machine unseal the key.
+    grep -q "\-\-tpm2-pcrs=7" "${WORKDIR}/cryptenroll.log"
+    ! grep -q "\-\-tpm2-pcrs= " "${WORKDIR}/cryptenroll.log"
+    ! grep -q "\-\-tpm2-pcrs=''" "${WORKDIR}/cryptenroll.log"
 }
 
 @test "luks: enroll with PIN passes --tpm2-with-pin=yes" {
@@ -171,4 +176,5 @@ teardown() {
     run bash "${LUKS_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -q "\-\-tpm2-with-pin=yes" "${WORKDIR}/cryptenroll.log"
+    grep -q "\-\-tpm2-pcrs=7" "${WORKDIR}/cryptenroll.log"
 }
