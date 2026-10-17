@@ -123,8 +123,9 @@ directory, without writing to the live user's database.
 Common ships the `compass` custom shortcut, the image-scoped
 `system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
 and `compass.service` plus its user preset. Preserve the other registered
-custom shortcut paths. Input-source switching uses `XF86Keyboard` and
-`<Shift>XF86Keyboard`, leaving Super+Space to `compass toggle`.
+custom shortcut paths. Input-source switching keeps `<Shift><Super>space`
+and adds `XF86Keyboard` (backward: `<Shift>XF86Keyboard`); it does not conflict
+with Super+Space, which goes to `compass toggle`.
 
 Dakota owns the Shell extension build and its higher-priority
 `zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
@@ -162,6 +163,11 @@ glib-compile-schemas --strict "$tmp"
 GSETTINGS_BACKEND=memory GSETTINGS_SCHEMA_DIR="$tmp" gsettings get org.gnome.shell enabled-extensions
 rm -r "$tmp"
 ```
+
+`tests/test_compass.bats` runs these compiled-schema and dconf checks for the
+Compass defaults, but only locally: the unit-tests CI job lacks GNOME schemas
+and dconf tooling, so it skips there. Run it on a GNOME host when changing
+these files.
 
 The E2E `common` suite validates dconf state post-merge.
 

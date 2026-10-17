@@ -38,7 +38,7 @@ switch-applications=['<Super>Tab']
 switch-applications-backward=['<Shift><Super>Tab']
 switch-windows=['<Alt>Tab']
 switch-windows-backward=['<Shift><Alt>Tab']
-switch-input-source=['XF86Keyboard']
+switch-input-source=['<Shift><Super>space', 'XF86Keyboard']
 switch-input-source-backward=['<Shift>XF86Keyboard']
 unmaximize=['<Super>Down']
 

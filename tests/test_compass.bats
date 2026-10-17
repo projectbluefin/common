@@ -3,6 +3,8 @@
 BLUEFIN="${BATS_TEST_DIRNAME}/../system_files/bluefin"
 
 @test "compiled GNOME defaults reserve Super+Space for Compass and preserve existing shortcuts" {
+    # Local-only: unit-tests.yml does not install GNOME schemas, dconf-cli or
+    # libglib2.0-bin, so CI skips this. Run `just test` on a GNOME host.
     for tool in glib-compile-schemas gsettings dconf; do
         command -v "$tool" >/dev/null || skip "$tool is required"
     done
@@ -22,7 +24,7 @@ BLUEFIN="${BATS_TEST_DIRNAME}/../system_files/bluefin"
     [[ "$output" != *search-light* ]]
     run gsettings get org.gnome.desktop.wm.keybindings switch-input-source
     [ "$status" -eq 0 ]
-    [ "$output" = "['XF86Keyboard']" ]
+    [ "$output" = "['<Shift><Super>space', 'XF86Keyboard']" ]
     run gsettings get org.gnome.desktop.wm.keybindings switch-input-source-backward
     [ "$status" -eq 0 ]
     [ "$output" = "['<Shift>XF86Keyboard']" ]
