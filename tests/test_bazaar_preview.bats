@@ -10,6 +10,8 @@
 # just's own interpolation, so these tests cover what the recipe does with a
 # checkout path, not how just passes the parameter in.
 
+bats_require_minimum_version 1.5.0
+
 SYSTEM_JUST="${BATS_TEST_DIRNAME}/../system_files/bluefin/usr/share/ublue-os/just/system.just"
 BAZAAR_FIXTURE="${BATS_TEST_DIRNAME}/../system_files/bluefin/etc/bazaar"
 
@@ -124,15 +126,15 @@ run_preview() {
     run_preview "${WORKDIR}/nowhere"
     [ "$status" -eq 1 ]
     [[ "$output" == *"Missing ${WORKDIR}/nowhere/system_files/bluefin/etc/bazaar/bazaar.yaml"* ]]
-    ! grep -q "^sudo" "${COMMAND_LOG}"
+    run ! grep -q "^sudo" "${COMMAND_LOG}"
 }
 
 @test "bazaar-preview: Bazaar not installed aborts before anything is installed" {
     MOCK_BAZAAR_MISSING=1 run_preview "${CHECKOUT}"
     [ "$status" -ne 0 ]
     [ ! -e "${FAKE_ROOT}/etc/bazaar" ]
-    ! grep -q "^sudo install" "${COMMAND_LOG}"
-    ! grep -q "^setsid" "${COMMAND_LOG}"
+    run ! grep -q "^sudo install" "${COMMAND_LOG}"
+    run ! grep -q "^setsid" "${COMMAND_LOG}"
 }
 
 @test "bazaar-preview: branding .jxl files are copied when bluefin-branding is present" {
@@ -150,7 +152,7 @@ run_preview() {
 @test "bazaar-preview: no branding directory means no .jxl install" {
     run_preview "${CHECKOUT}"
     [ "$status" -eq 0 ]
-    ! grep -q '\.jxl' "${COMMAND_LOG}"
+    run ! grep -q '\.jxl' "${COMMAND_LOG}"
     ! compgen -G "${FAKE_ROOT}/etc/bazaar/*.jxl"
 }
 
@@ -158,7 +160,7 @@ run_preview() {
     run_preview "${CHECKOUT}"
     [ "$status" -eq 0 ]
     grep -qx "systemctl --user restart bazaar.service" "${COMMAND_LOG}"
-    ! grep -q "systemctl --user start" "${COMMAND_LOG}"
+    run ! grep -q "systemctl --user start" "${COMMAND_LOG}"
     grep -qx "setsid -f flatpak run io.github.kolunmi.Bazaar" "${COMMAND_LOG}"
 }
 
