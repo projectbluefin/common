@@ -1,4 +1,9 @@
 # Keychron keyboard hardware enablement
 # Created on https://github.com/ublue-os/config/pull/153
 # Written by https://github.com/atimeofday
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0666", TAG+="uaccess", TAG+="udev-acl"
+#
+# This rule matches every hidraw node (keyboards, mice, touchpads, FIDO keys),
+# so it must not widen the mode: uaccess already grants the active seat user
+# an ACL, which is all usevia.app needs. A world-accessible mode would let any
+# other uid read raw keystrokes or drive security keys (#1503).
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", TAG+="uaccess", TAG+="udev-acl"
