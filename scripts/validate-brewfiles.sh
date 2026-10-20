@@ -33,12 +33,12 @@ main() (
     #
     # Only literal tap declarations are collected: the taps file IS evaluated as
     # Ruby by `brew bundle` (Homebrew::Bundle::Dsl#process instance_evals it), so
-    # a computed tap line — string interpolation (#{...}), trailing code after a
-    # ';', or a modifier like `if system(...)` — would execute in CI on a
-    # PR-controlled Brewfile. Reject anything that is not a quoted literal and
-    # fail closed before `brew bundle` ever sees it. The only accepted option is
-    # the documented trust flag.
-    tap_entry='^[[:space:]]*tap[[:space:]]+"[^{}"]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
+    # a computed tap line — string interpolation (#{...}, #$var, #@var),
+    # trailing code after a ';', or a modifier like `if system(...)` — would
+    # execute in CI on a PR-controlled Brewfile. Reject anything that is not a
+    # quoted literal and fail closed before `brew bundle` ever sees it. The only
+    # accepted option is the documented trust flag.
+    tap_entry='^[[:space:]]*tap[[:space:]]+"[^#{}"]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
     tap_single="^[[:space:]]*tap[[:space:]]+'[^']+'([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$"
     tap_declaration='^[[:space:]]*tap([^[:alnum:]_]|$)'
     : > "${workdir}/taps.Brewfile"
