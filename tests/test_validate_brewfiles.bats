@@ -70,16 +70,29 @@ teardown() {
     run ! grep -qE '^[[:space:]]*(brew|cask) ' "${TAPS}"
 }
 
+# Ruby interpolation fixtures must stay literal in the shell.
+# shellcheck disable=SC2016
 @test "computed tap lines fail closed without reaching brew bundle" {
-    printf 'tap "evil/#{"x"}/tap"\nbrew "ripgrep"\n' > "${FIXTURES}/interp.Brewfile"
-    printf 'tap "x/y" if system("id")\n' > "${FIXTURES}/trailer.Brewfile"
-    printf 'tap "x/y"; system("id")\n' > "${FIXTURES}/semicolon.Brewfile"
-    run bash "${SCRIPT}" "${FIXTURES}"
-    [ "${status}" -eq 1 ]
-    [[ "${output}" == *"expected a quoted literal tap declaration"* ]]
-    [[ "${output}" == *"refusing to evaluate non-literal tap lines"* ]]
-    run ! grep -q '^bundle|' "${CALLS}"
-    run ! grep -q '^info|' "${CALLS}"
+    # One run per fixture: the validator exits at the first non-literal tap.
+    local fixture
+    local -a cases=(
+        'tap "evil/#{"x"}/tap"'
+        'tap "x/y" if system("id")'
+        'tap "x/y"; system("id")'
+        'tap "x/#$0/tap"'
+        'tap "x/#@y/tap"'
+    )
+    for fixture in "${cases[@]}"; do
+        rm -rf "${FIXTURES}" && mkdir -p "${FIXTURES}"
+        : > "${CALLS}"
+        printf '%s\nbrew "ripgrep"\n' "${fixture}" > "${FIXTURES}/test.Brewfile"
+        run bash "${SCRIPT}" "${FIXTURES}"
+        [ "${status}" -eq 1 ]
+        [[ "${output}" == *"test.Brewfile:1: expected a quoted literal tap declaration: ${fixture}"* ]]
+        [[ "${output}" == *"refusing to evaluate non-literal tap lines"* ]]
+        run ! grep -q '^bundle|' "${CALLS}"
+        run ! grep -q '^info|' "${CALLS}"
+    done
 }
 
 @test "tap failure is fatal and preserves both output streams" {
