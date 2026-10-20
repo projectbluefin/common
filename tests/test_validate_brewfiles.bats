@@ -70,6 +70,18 @@ teardown() {
     run ! grep -qE '^[[:space:]]*(brew|cask) ' "${TAPS}"
 }
 
+@test "computed tap lines fail closed without reaching brew bundle" {
+    printf 'tap "evil/#{"x"}/tap"\nbrew "ripgrep"\n' > "${FIXTURES}/interp.Brewfile"
+    printf 'tap "x/y" if system("id")\n' > "${FIXTURES}/trailer.Brewfile"
+    printf 'tap "x/y"; system("id")\n' > "${FIXTURES}/semicolon.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"expected a quoted literal tap declaration"* ]]
+    [[ "${output}" == *"refusing to evaluate non-literal tap lines"* ]]
+    run ! grep -q '^bundle|' "${CALLS}"
+    run ! grep -q '^info|' "${CALLS}"
+}
+
 @test "tap failure is fatal and preserves both output streams" {
     printf 'tap "broken/tap", trusted: true\ncask "demo"\n' > "${FIXTURES}/test.Brewfile"
     MOCK_TAP_STATUS=17 run bash "${SCRIPT}" "${FIXTURES}"
