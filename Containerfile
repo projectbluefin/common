@@ -27,7 +27,7 @@ RUN apk add just curl
 # archive against its checksums.txt entry, so a bump changes CHAIRLIFT_RELEASE only.
 ARG CHAIRLIFT_RELEASE=v26.10.8
 ARG TARGETARCH
-COPY --from=ghcr.io/sigstore/cosign/cosign:v3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8 /ko-app/cosign /usr/local/bin/cosign
+COPY --from=ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d /ko-app/cosign /usr/local/bin/cosign
 RUN set -eu; \
     case "${TARGETARCH}" in \
       amd64|arm64) ;; \
