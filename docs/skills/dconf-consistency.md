@@ -81,7 +81,7 @@ Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot
    ```ini
    custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', ...]
    ```
-2. **Keybinding definition in dconf distro.d**: In `system_files/bluefin/etc/dconf/db/distro.d/02-bluefin-keybindings`, define the `binding`, `command`, and `name` under each path header:
+2. **Keybinding definition in dconf distro.d**: In `system_files/bluefin/etc/dconf/db/distro.d/02-keybindings`, define the `binding`, `command`, and `name` under each path header:
    ```ini
    [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
    binding='<Super>e'
