@@ -283,6 +283,33 @@ MOCK
     grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
 }
 
+# Regression contract for projectbluefin/common#1516: uupd.service has three
+# triggers. The switch must cover the resume timer as well as the 6-hourly
+# timer, and the AC-connect service must skip itself when uupd.timer is off.
+@test "toggle-updates: disabling uupd also disables uupd-resume.timer" {
+    MOCK_HAS_UUPD_TIMER=1 ACTION=disable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qxF "systemctl disable uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
+}
+
+@test "toggle-updates: enabling uupd also enables uupd-resume.timer" {
+    MOCK_HAS_UUPD_TIMER=1 MOCK_GUM_CHOICE="Enable" _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qxF "systemctl enable uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
+}
+
+@test "toggle-updates: rpm-ostreed fallback leaves uupd-resume.timer alone" {
+    ACTION=disable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qxF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    ! grep -qF "uupd-resume.timer" "${COMMAND_LOG}"
+}
+
+@test "uupd-on-ac.service: skips the AC trigger when uupd.timer is disabled" {
+    local unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/uupd-on-ac.service"
+    grep -qxF "ExecCondition=/usr/bin/systemctl is-enabled --quiet uupd.timer" "${unit}"
+}
+
 # Regression contract for projectbluefin/common#1332:
 # `bootc upgrade` must be invoked as a plain verb. Adding --transport
 # containers-storage (or any explicit transport) would force the broken

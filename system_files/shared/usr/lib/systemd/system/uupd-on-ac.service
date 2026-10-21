@@ -8,6 +8,9 @@ StartLimitIntervalSec=21600
 
 [Service]
 Type=oneshot
+# Follow the automatic-updates switch: skip when uupd.timer is disabled.
+# systemd runs ExecCondition before ExecStartPre, so no 60 s wait either.
+ExecCondition=/usr/bin/systemctl is-enabled --quiet uupd.timer
 # Wait for network to settle after AC connect before triggering updates
 ExecStartPre=/bin/sleep 60
 ExecStart=/usr/bin/systemctl start uupd.service
