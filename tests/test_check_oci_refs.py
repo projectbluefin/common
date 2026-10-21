@@ -344,6 +344,15 @@ class TestTagExistsInGhcr:
         with patch("urllib.request.urlopen", return_value=mock_resp):
             assert tag_exists_in_ghcr("bluefin", "stable") is False
 
+    def test_urlopen_receives_a_positive_timeout(self):
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_urlopen(["stable"])
+        ) as mock_urlopen:
+            tag_exists_in_ghcr("bluefin", "stable")
+        # A timeout must be passed so a stalled GHCR connection cannot hang CI.
+        assert mock_urlopen.call_args.kwargs["timeout"] == _mod.REQUEST_TIMEOUT_SECONDS
+        assert _mod.REQUEST_TIMEOUT_SECONDS > 0
+
 
 # ---------------------------------------------------------------------------
 # main (integration)
