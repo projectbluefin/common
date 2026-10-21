@@ -1,0 +1,4 @@
+# Default settings for the syncthing-toggle extension
+
+[org/gnome/shell/extensions/syncthing-toggle]
+start-stop-only=true

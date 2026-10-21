@@ -1,0 +1,4 @@
+# Default settings for the blur-my-shell extension
+
+[org/gnome/shell/extensions/blur-my-shell/popup]
+blur=true
