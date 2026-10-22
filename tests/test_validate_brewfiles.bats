@@ -178,7 +178,7 @@ teardown() {
     done
     grep -qFx 'cask "projectbluefin/tap/bluefin-wallpapers-extra"' "${shared}/artwork.Brewfile"
     grep -qFx 'tap "projectbluefin/tap", trusted: true' "${shared}/artwork.Brewfile"
-    grep -qFx 'cask "ublue-os/tap/zed-linux"' "${shared}/experimental-ide.Brewfile"
+    grep -qFx 'cask "zed"' "${shared}/experimental-ide.Brewfile"
     grep -qFx 'tap "ublue-os/tap", trusted: true' "${shared}/experimental-ide.Brewfile"
     run ! grep -q 'ublue-os/experimental-tap/zed-linux' "${shared}/experimental-ide.Brewfile"
 }

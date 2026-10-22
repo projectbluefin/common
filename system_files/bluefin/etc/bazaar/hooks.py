@@ -83,7 +83,7 @@ def handle_jetbrains():
 IDE_HOOKS = {
     'vscode':   (lambda appid: appid == 'com.visualstudio.code', 'ublue-os/tap/visual-studio-code-linux'),
     'vscodium': (lambda appid: appid == 'com.vscodium.codium',   'ublue-os/tap/vscodium-linux'),
-    'zed':      (lambda appid: appid.startswith('dev.zed.Zed'),  'ublue-os/tap/zed-linux'),
+    'zed':      (lambda appid: appid.startswith('dev.zed.Zed'),  'zed'),
 }
 
 def handle_ide(appid_matches, brew_pkg):
