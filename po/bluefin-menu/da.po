@@ -1,0 +1,34 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: da\n"
+
+msgid "About"
+msgstr "Om Systemet"
+
+msgid "System Monitor"
+msgstr "Systemovervågning"
+
+msgid "System Settings"
+msgstr "Systemindstillinger"
+
+msgid "Applications"
+msgstr "Programmer"
+
+msgid "Bazaar App Store"
+msgstr "Bazaar App Store"
+
+msgid "Extensions"
+msgstr "Udvidelser"
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "Help"
+msgstr "Hjælp"
+
+msgid "Documentation"
+msgstr "Dokumentation"
+
+msgid "Ask Bluefin"
+msgstr "Spørg Bluefin"
