@@ -29,6 +29,11 @@ globally via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`.
 Downstream repos do **not** need `systemctl --global enable` calls. The service
 only runs when brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
 
+A global enable also reaches GDM's user managers. GDM 49+ runs its greeter and
+initial-setup sessions as transient `gdm-*` accounts (HOME under
+`/run/gdm/home/`) that are not `@system` users and cannot write the shared
+prefix, so the script exits 0 for those sessions before any tap or bundle work.
+
 ### State file
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`
