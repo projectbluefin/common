@@ -150,6 +150,12 @@ To use the shipped Bluefin movie with Hidamari, follow the
 [Hidamari setup guide](docs/hidamari.md). It includes the required copy into
 your Videos folder so the Flatpak can find the movie.
 
+## Hibernation
+
+Hibernation is opt-in via `ujust hibernation`. See the
+[hibernation guide](docs/hibernation.md) for requirements, the unencrypted
+swap warning, and manual validation steps.
+
 ## Brewfiles
 The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/homebrew/`
 (desktop-specific Flatpaks) and `system_files/shared/usr/share/ublue-os/homebrew/`
