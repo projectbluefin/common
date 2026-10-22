@@ -4,7 +4,7 @@ msgstr ""
 "Language: da\n"
 
 msgid "About"
-msgstr "Om Systemet"
+msgstr "Om systemet"
 
 msgid "System Monitor"
 msgstr "Systemovervågning"
