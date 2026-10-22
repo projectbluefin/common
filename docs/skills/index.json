@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12",
+  "generated_at": "2026-10-20",
   "schema_version": "1.0",
   "skills": [
     {
@@ -86,8 +86,8 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.6",
-      "last_updated": "2026-10-12",
+      "version": "1.7",
+      "last_updated": "2026-10-20",
       "doc_type": "procedure"
     },
     {
@@ -104,8 +104,8 @@
         "pitfalls"
       ],
       "description": "CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
-      "version": "1.1",
-      "last_updated": "2026-09-26",
+      "version": "1.2",
+      "last_updated": "2026-10-20",
       "doc_type": "reference"
     },
     {

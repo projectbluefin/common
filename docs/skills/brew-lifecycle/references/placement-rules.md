@@ -1,6 +1,6 @@
 # Placement Rules — brew-lifecycle
 
-Part of [brew-lifecycle](../SKILL.md) — the no-rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust requirements, and Starship shell initialization details.
+Part of [brew-lifecycle](../SKILL.md) — the no-rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust requirements, and Starship/brew shell initialization details.
 
 ---
 
@@ -143,3 +143,46 @@ if command -q starship
 end
 ```
 Falls back to `vendor_functions.d/fish_prompt.fish` when starship is absent.
+
+## brew shellenv initialization
+
+Homebrew is on PATH only after `brew shellenv` runs. Per shell:
+
+| Shell | Where | Form |
+|---|---|---|
+| bash | `profile.d` (downstream repos) | `eval "$(brew shellenv)"` |
+| zsh | `bluefin/etc/zsh/zshrc` (here, `[[ -o interactive ]]` guard) | `eval "$(.../brew shellenv)"` |
+| fish | `usr/share/fish/vendor_conf.d/brew.fish` (here, `status is-interactive` guard) | `/home/linuxbrew/.linuxbrew/bin/brew shellenv fish \| source` |
+
+### `brew shellenv` takes a positional shell name — there is no `--shell` flag
+
+`brew shellenv` takes the shell as a *positional* argument (`brew shellenv
+fish`); the value lands in `HOMEBREW_SHELL_NAME="${1:-}"`. Passing
+`--shell=fish` is not an error either: the unrecognized word is used as the
+shell name, matches nothing, and falls through to the POSIX `export ...`
+branch, which fails when sourced by fish (verified on Homebrew 7.0.10).
+Never pass `--shell`.
+
+Without a positional name, `brew shellenv` auto-detects fish via
+`/bin/ps -p "${PPID}" -c -o comm=`, which Homebrew's own source annotates as
+"known to fail under some sandboxes"; on failure it falls back to
+`${SHELL##*/}` — and for fish sessions whose parent chain or `$SHELL` says
+bash (e.g. Ghostty opt-in where `chsh` was never run), that lands in the
+POSIX branch whose output is a fish syntax error on every interactive start.
+Shipped fish files must therefore pass the explicit positional form:
+`brew shellenv fish | source`.
+
+### fish guard rationale
+
+The `status is-interactive` guard keeps a `brew` subprocess out of every
+non-interactive `fish -c` / script session (`shellenv` is pure bash — it
+never loads Ruby), matching the zsh `[[ -o interactive ]]` pattern. The
+`test -x` check is the silent fallback: no-op until brew exists, so first
+sessions before/without brew stay clean — the same pattern as
+`starship.fish`.
+
+Idempotence comes primarily from `homebrew-shellenv` itself: it returns
+early when `HOMEBREW_PATH` already starts with
+`$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin`, so a fish started from a bash
+login shell that already ran brew shellenv is left untouched; fish PATH
+dedupe is a secondary layer.

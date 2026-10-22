@@ -369,6 +369,29 @@ def test_generate_skill_index_check_still_fails_on_real_drift(
     assert "index.json is stale" in captured.err
 
 
+def test_committed_skill_index_is_fresh() -> None:
+    """`just test` must catch a stale committed index the same way CI's
+    check-skill-catalog hook does.
+
+    Repo-state test complementing the tmp-tree drift tests above: pytest
+    previously passed while the committed index was stale after a SKILL.md
+    front-matter edit, and only pre-commit in CI caught it (found in PR
+    #1508).
+    """
+    result = subprocess.run(
+        [sys.executable, str(GENERATE_SKILL_INDEX), "--check"],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"committed docs/skills index is stale — regenerate with\n"
+        f"    python3 scripts/generate_skill_index.py --write\n"
+        f"stderr:\n{result.stderr}"
+    )
+
+
 def test_generate_skill_index_rejects_missing_entry_point(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

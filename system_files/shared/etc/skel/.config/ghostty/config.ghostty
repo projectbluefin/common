@@ -39,3 +39,12 @@ window-padding-y = 4
 # on first open instead of the legacy 80x24 default
 window-width = 132
 window-height = 36
+
+# Optional: fish inside Ghostty — fish is the shell this terminal opens while
+# bash stays the system default (other terminals and the GNOME session are
+# unaffected, and chsh is never involved). Requires the fish package to be
+# installed (`rpm -q fish`; Bluefin ships it, other images may not). The fish
+# basics (Homebrew PATH, starship prompt, greeting) load automatically via
+# /usr/share/fish/vendor_conf.d.
+# Uncomment to opt in:
+# command = /usr/bin/fish

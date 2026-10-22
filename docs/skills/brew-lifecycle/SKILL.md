@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.6"
-last_updated: "2026-10-12"
+version: "1.7"
+last_updated: "2026-10-20"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -259,4 +259,4 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 |---|---|
 | [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift managed cask, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, ChairLift brew bundles, shared/ vs bluefin/ placement rule |
 | [service-mechanics.md](references/service-mechanics.md) | How brew-preinstall.service works, state file format, login flow, ChairLift config ownership, long-time user removal scenario, bonedigger-report integration, merging order, path convention |
-| [placement-rules.md](references/placement-rules.md) | No rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust details, Starship shell initialization |
+| [placement-rules.md](references/placement-rules.md) | No rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust details, Starship shell initialization, per-shell `brew shellenv` init incl. the positional shell-name rule (never `--shell`) |

@@ -1,7 +1,7 @@
 ---
 name: ci-pitfalls
-version: "1.1"
-last_updated: "2026-09-26"
+version: "1.2"
+last_updated: "2026-10-20"
 id: ci-pitfalls
 one_line_purpose: Diagnose CI gotchas and silent workflow failures across repos.
 entry_point: docs/skills/ci-pitfalls/SKILL.md
@@ -75,6 +75,22 @@ explicitly. This is a metadata check, not a complete Ruby DSL, Flatpak,
 installation, checksum-download, or desktop-runtime test. It never installs
 formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`
 and retain real Homebrew validation in CI.
+
+## Local pytest green does not imply pre-commit green
+
+`just test` and `pre-commit run --all-files` guard overlapping but not
+identical sets. Case from PR #1508: after a SKILL.md front-matter edit,
+`tests/test_skill_docs.py` passed while the committed `docs/skills/index.{json,md}`
+were stale; only pre-commit's `check-skill-catalog` failed, five minutes into
+CI on the `validate` job.
+
+`tests/test_skill_docs.py::test_committed_skill_index_is_fresh` now closes
+that specific gap by running `--check` against the real checkout, but the
+general rule stands: before marking work done, run both `just check` and
+`just test` with the same tool versions CI uses, and when a skill
+front-matter changes, always rerun
+`python3 scripts/generate_skill_index.py --write` and commit the regenerated
+outputs in the same PR.
 
 ## Red Flags
 
