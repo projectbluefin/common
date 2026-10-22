@@ -38,8 +38,11 @@ main() (
     # execute in CI on a PR-controlled Brewfile. Reject anything that is not a
     # quoted literal and fail closed before `brew bundle` ever sees it. The only
     # accepted option is the documented trust flag.
-    tap_entry='^[[:space:]]*tap[[:space:]]+"[^#{}"]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
-    tap_single="^[[:space:]]*tap[[:space:]]+'[^']+'([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$"
+    # Backslashes are rejected inside both quote styles: an escaped quote (\" or
+    # \') ends the string later for Ruby than for these patterns, so a trailing
+    # "# comment" would be parsed as code.
+    tap_entry='^[[:space:]]*tap[[:space:]]+"[^#{}"\]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
+    tap_single="^[[:space:]]*tap[[:space:]]+'[^'\\]+'([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$"
     tap_declaration='^[[:space:]]*tap([^[:alnum:]_]|$)'
     : > "${workdir}/taps.Brewfile"
     for brewfile in "${brewfiles[@]}"; do

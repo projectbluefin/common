@@ -81,6 +81,10 @@ teardown() {
         'tap "x/y"; system("id")'
         'tap "x/#$0/tap"'
         'tap "x/#@y/tap"'
+        # An escaped quote ends the string later for Ruby than for the regex,
+        # so the "comment" after it is live code.
+        'tap "a\"# " ; system("id") #'
+        "tap 'x\\' # ' ; system(\"id\") #"
     )
     for fixture in "${cases[@]}"; do
         rm -rf "${FIXTURES}" && mkdir -p "${FIXTURES}"
