@@ -3,4 +3,4 @@
 # Translate Bluefin's custom menu labels using gettext.
 # Fall back to the original English label if no translation exists.
 
-exec gettext -d bluefin-menu "$1"
+exec gettext -d bluefin-menu "$*"
