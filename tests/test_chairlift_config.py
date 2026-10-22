@@ -869,7 +869,7 @@ def test_chairlift_icons_ship_system_wide():
 # ---------------------------------------------------------------------------
 
 CUSTOM_COMMAND_MENU = (
-    ROOT / "system_files/bluefin/etc/dconf/db/distro.d/04-custom-command-menu"
+    ROOT / "system_files/bluefin/etc/dconf/db/distro.d/04-bluefin-custom-command-menu"
 )
 ASK_BLUEFIN_LABEL = "Ask Bluefin"
 ASK_BLUEFIN_SLOT = 11
