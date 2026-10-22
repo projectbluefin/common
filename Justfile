@@ -42,6 +42,7 @@ test:
     bats tests/test_dynamic_wallpaper_hook.bats
     bats tests/test_damask_setup.bats
     bats tests/test_system_just.bats
+    bats tests/test_bazaar_preview.bats
     bats tests/test_brew_tap_trust.bats
     bats tests/test_apps_just.bats
     bats tests/test_image_repo.bats
