@@ -71,8 +71,10 @@ ambiguity, authentication, trust, network, and unavailable-cask errors into
 
 The validator accepts literal `brew`/`cask` declarations (both quote styles,
 indentation, comments, and inline options). Malformed or computed names fail
-explicitly. This is a metadata check, not a complete Ruby DSL, Flatpak,
-installation, checksum-download, or desktop-runtime test. It never installs
+explicitly. `tap` lines must also be literal names; `trusted: true|false` is
+the only accepted option, and anything else fails before `brew bundle` runs.
+This is a metadata check, not a complete Ruby DSL, Flatpak, installation,
+checksum-download, or desktop-runtime test. It never installs
 formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`
 and retain real Homebrew validation in CI.
 
