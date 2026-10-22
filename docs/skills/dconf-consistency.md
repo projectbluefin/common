@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.1"
-last_updated: "2026-10-09"
+version: "1.2"
+last_updated: "2026-10-18"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -107,6 +107,15 @@ The E2E `common` suite validates dconf state post-merge.
 ## Shared launchers for GNOME menu items
 
 If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
+
+For Flatpak applications, use `/usr/bin/flatpak run <app-id>` directly unless
+the helper is shipped for every consumer of common. Keep the existing
+`commandN` slot and `command-order` when replacing a launcher: user-layer
+overrides are keyed by slot.
+
+Before retiring a downstream menu override, compare it with common's merged,
+pinned source, not the upstream PR description. Planned launcher changes may
+have been reverted before merge.
 
 ## Menu commands must use the absolute Homebrew wrapper path
 
