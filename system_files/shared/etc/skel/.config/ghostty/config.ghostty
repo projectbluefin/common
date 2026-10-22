@@ -31,6 +31,11 @@ mouse-hide-while-typing = true
 notify-on-command-finish = unfocused
 notify-on-command-finish-action = no-bell,notify
 
+# Ghostty sets TERM=xterm-ghostty, which most remote hosts have no terminfo
+# entry for, so programs like htop and top fail over SSH. Send
+# TERM=xterm-256color to SSH sessions instead; local shells keep xterm-ghostty.
+shell-integration-features = ssh-env
+
 # More comfortable padding — default of 2pt is very tight
 window-padding-x = 8
 window-padding-y = 4
