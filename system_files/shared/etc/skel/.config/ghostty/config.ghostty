@@ -1,3 +1,10 @@
+# NOTE: The canonical Ghostty configuration for Project Bluefin has moved to Dakota:
+# https://github.com/projectbluefin/dakota/blob/main/files/ghostty/config.ghostty
+#
+# Dakota maintains and updates this configuration directly so fixes ship with the product.
+# Downstream variants (such as Utah) should consume the configuration from Dakota.
+# See: projectbluefin/utah#855 and projectbluefin/common#1527.
+
 # Bluefin GNOME profile for Ghostty
 # To override the theme, add `theme = <name>` to your config.
 # Run `ghostty +list-themes` to see all available themes.
