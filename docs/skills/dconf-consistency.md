@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.1"
-last_updated: "2026-10-09"
+version: "1.2"
+last_updated: "2026-10-18"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -17,6 +17,8 @@ description: >-
   override, or lock file in system_files/.
 metadata:
   type: reference
+  context7-sources:
+    - /systemd/systemd
 ---
 
 # dconf Consistency
@@ -91,16 +93,81 @@ Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot
 
 When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
 
+### Goose shortcuts
+
+The shipped defaults launch `/home/linuxbrew/.linuxbrew/bin/goose-desktop`
+directly from `custom3` (`<Control><Alt>BackSpace`) and `custom5`
+(`<Super><Shift>Return`, the Copilot+Enter combination on the configured
+keyboard). These are desktop defaults, not troubleshooting or Agent Mode
+switches. They do not install Goose; users need the `goose-linux` cask from
+`ujust install-ai-tools` or their existing Goose installation.
+
+Use the absolute Homebrew binary path: GNOME shortcut commands do not inherit
+a login shell's `PATH`. Keep the existing custom shortcut slots stable and
+register new slots in the schema override as well as defining them in dconf.
+User-set shortcut values and lists take precedence over these unlocked defaults.
+
+For a local verification, use `/usr/bin/gsettings` and compare its output with
+`dconf dump /org/gnome/settings-daemon/plugins/media-keys/`. Homebrew can shadow
+`gsettings` with a build that reports defaults or empty values rather than the
+host's active settings. Read back both the active path list and each entry's
+`binding`, `command`, and `name`; settings persistence alone does not prove
+physical-key delivery.
+
+For shipped-default verification, compile the media-keys override against host
+schemas and compile `02-bluefin-keybindings` into a temporary dconf database.
+Read both shortcuts through GSettings using an isolated profile and config
+directory, without writing to the live user's database.
+### Compass launcher
+
+Common ships the `compass` custom shortcut, the image-scoped
+`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
+and `compass.service` plus its user preset. Preserve the other registered
+custom shortcut paths. Input-source switching keeps `<Shift><Super>space`
+and adds `XF86Keyboard` (backward: `<Shift>XF86Keyboard`); it does not conflict
+with Super+Space, which goes to `compass toggle`.
+
+Dakota owns the Shell extension build and its higher-priority
+`zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
+override alone does not enable it there. Package the extension from the same
+release as the Homebrew engine and verify the versioned D-Bus contract when
+either changes. Compass v0.28.2's extension supports GNOME 50 and 51.
+
+A user preset is policy, not an enablement operation. The consuming image must
+apply it or ship the equivalent graphical-session wants link. The launcher is
+ordered after `brew-preinstall.service` so an initial package sync finishes
+before its binary condition is evaluated. Do not run systemctl in common's
+scratch `ctx` stage. Source: systemd `docs/PRESET.md`, "The Logic".
+
+Compass v0.28.2 exposes `serve --no-hotkey`, but `start --hidden` does not
+forward that option. An explicitly empty `launcher.hotkey` disables the
+launcher binding; other configured command shortcuts can still use the
+portal. Do not replace writable user settings with an immutable
+`COMPASS_CONFIG` file. Distribution-controlled startup without a launcher
+portal request requires an upstream `start` opt-out or system-default layer.
+Source: [Compass v0.28.2](https://github.com/tuna-os/compass/tree/a1bab693dc59124fbaecb79037f70882b72f74a7),
+`crates/compass/src/{cli,lib}.rs` and `crates/compass-core/src/global_shortcuts.rs`.
+
 ## Validation
 
 `validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
 
-When changing locked settings, still verify locally when possible:
+Compile against the actual schema XML definitions, not an override-only
+directory (which reports "No schema files found" and checks nothing):
 
 ```bash
-# Check the override compiles (requires glib2 tools)
-glib-compile-schemas --strict system_files/bluefin/usr/share/glib-2.0/schemas/
+tmp="$(mktemp -d)"
+cp /usr/share/glib-2.0/schemas/*.xml "$tmp/"
+cp system_files/bluefin/usr/share/glib-2.0/schemas/*.override "$tmp/"
+glib-compile-schemas --strict "$tmp"
+GSETTINGS_BACKEND=memory GSETTINGS_SCHEMA_DIR="$tmp" gsettings get org.gnome.shell enabled-extensions
+rm -r "$tmp"
 ```
+
+`tests/test_compass.bats` runs these compiled-schema and dconf checks for the
+Compass defaults, but only locally: the unit-tests CI job lacks GNOME schemas
+and dconf tooling, so it skips there. Run it on a GNOME host when changing
+these files.
 
 The E2E `common` suite validates dconf state post-merge.
 
