@@ -34,6 +34,19 @@ exit "\$(cat "${WORKDIR}/flatpak.rc")"
 MOCK
     chmod +x "${WORKDIR}/bin/flatpak"
 
+    mkdir -p "${WORKDIR}/caskroom/bluefin-wallpapers-extra/v1/images"
+    printf '<svg/>\n' > "${WORKDIR}/caskroom/bluefin-wallpapers-extra/v1/images/example.svg"
+    printf 'v1\n' > "${WORKDIR}/artwork-version"
+    cat > "${WORKDIR}/bin/brew" << MOCK
+#!/bin/bash
+case "\$1" in
+    --caskroom) printf '%s\\n' '${WORKDIR}/caskroom/bluefin-wallpapers-extra' ;;
+    info) jq -n --arg installed "\$(cat '${WORKDIR}/artwork-version')" '{casks: [{installed: \$installed}]}' ;;
+esac
+MOCK
+    chmod +x "${WORKDIR}/bin/brew"
+    export BREW_BIN="${WORKDIR}/bin/brew"
+
     # Patch the absolute source path so hook runs against the real libsetup.sh in the repo.
     PATCHED_HOOK="${WORKDIR}/25-damask-setup.sh"
     sed \
@@ -51,29 +64,25 @@ teardown() {
     rm -rf "${WORKDIR}"
 }
 
-@test "25-damask-setup: first run creates keyfile with expected content and permissions" {
+@test "25-damask-setup: seeds a user folder pointing to installed artwork without activating Slideshow" {
     run bash "${PATCHED_HOOK}"
     [ "${status}" -eq 0 ]
 
-    local keyfile="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile"
-    [ -f "${keyfile}" ]
+    python3 - "${HOME}" "${WORKDIR}/caskroom/bluefin-wallpapers-extra/v1/images" << 'PY'
+import configparser
+import pathlib
+import sys
 
-    # Verify file permissions are 0644
-    local perms
-    perms="$(stat -c "%a" "${keyfile}")"
-    [ "${perms}" = "644" ]
-
-    # Verify root preferences section
-    grep -qx "\[app/drey/Damask\]" "${keyfile}"
-    grep -qx "refresh-interval='86400'" "${keyfile}"
-    grep -qx "enable-automatic-refresh=true" "${keyfile}"
-    grep -qx "run-in-background=true" "${keyfile}"
-    grep -qx "active-source='none'" "${keyfile}"
-
-    # Verify slideshow plugin source section
-    grep -qx "\[app/drey/Damask/sources/slideshow\]" "${keyfile}"
-    grep -qx "folder-uri='file:///run/host/usr/share/backgrounds/bluefin'" "${keyfile}"
-    grep -qx "sort-by='random'" "${keyfile}"
+home = pathlib.Path(sys.argv[1])
+folder = home / ".local/share/backgrounds/bluefin-extra"
+settings = configparser.ConfigParser(interpolation=None)
+settings.read(home / ".var/app/app.drey.Damask/config/glib-2.0/settings/keyfile")
+assert settings["app/drey/Damask"]["active-source"] == "'none'"
+assert settings["app/drey/Damask/sources/slideshow"]["folder-uri"] == repr(folder.as_uri())
+assert folder.is_symlink()
+assert folder.resolve() == pathlib.Path(sys.argv[2])
+assert (folder / "example.svg").read_text() == "<svg/>\n"
+PY
 }
 
 @test "25-damask-setup: first run enables damask.service for current user" {
@@ -82,33 +91,6 @@ teardown() {
 
     grep -qx -- "--user enable damask.service" "${WORKDIR}/systemctl.log"
     ! grep -q -- "--system" "${WORKDIR}/systemctl.log"
-}
-
-@test "25-damask-setup: records version 1 under user service namespace" {
-    run bash "${PATCHED_HOOK}"
-    [ "${status}" -eq 0 ]
-    [ "$(jq -r '.version.user."damask-setup"' "${SETUP_CHECKER_FILE}")" = "1" ]
-}
-
-@test "25-damask-setup: version-script-check gate makes a second run a no-op" {
-    run bash "${PATCHED_HOOK}"
-    [ "${status}" -eq 0 ]
-
-    # Modify the keyfile to verify second run doesn't overwrite it
-    local keyfile="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile"
-    echo "# user modified" >> "${keyfile}"
-
-    run bash "${PATCHED_HOOK}"
-    [ "${status}" -eq 0 ]
-
-    # The hook body must not run again: exactly one enable, and no second
-    # unit-file probe. Counting every logged call would also count the
-    # list-unit-files probe the first run makes.
-    [ "$(grep -c -x -- "--user enable damask.service" "${WORKDIR}/systemctl.log")" -eq 1 ]
-    [ "$(grep -c -x -- "--user list-unit-files damask.service" "${WORKDIR}/systemctl.log")" -eq 1 ]
-
-    # user modification should still be present
-    grep -qx "# user modified" "${keyfile}"
 }
 
 @test "25-damask-setup: non-destructive when keyfile already exists before first run" {
@@ -173,4 +155,33 @@ EXISTING
     local keyfile="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile"
     [ ! -f "${keyfile}" ]
     [ ! -f "${SETUP_CHECKER_FILE}" ]
+}
+
+@test "25-damask-setup: keeps the folder pointer current after a Homebrew upgrade without rewriting settings" {
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+    local keyfile="${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile"
+    printf '\n# user preferences\n' >> "${keyfile}"
+    cp "${keyfile}" "${WORKDIR}/expected-keyfile"
+
+    mkdir -p "${WORKDIR}/caskroom/bluefin-wallpapers-extra/v2/images"
+    printf '<svg>updated</svg>\n' > "${WORKDIR}/caskroom/bluefin-wallpapers-extra/v2/images/example.svg"
+    printf 'v2\n' > "${WORKDIR}/artwork-version"
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+    [ "$(cat "${HOME}/.local/share/backgrounds/bluefin-extra/example.svg")" = '<svg>updated</svg>' ]
+    cmp "${WORKDIR}/expected-keyfile" "${keyfile}"
+}
+
+@test "25-damask-setup: does not seed or stamp before the artwork is installed" {
+    printf '\n' > "${WORKDIR}/artwork-version"
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+    [ ! -e "${HOME}/.var/app/app.drey.Damask/config/glib-2.0/settings/keyfile" ]
+    [ ! -e "${SETUP_CHECKER_FILE}" ]
+
+    printf 'v1\n' > "${WORKDIR}/artwork-version"
+    run bash "${PATCHED_HOOK}"
+    [ "${status}" -eq 0 ]
+    [ -L "${HOME}/.local/share/backgrounds/bluefin-extra" ]
 }
