@@ -1,7 +1,7 @@
 ---
 name: devmode
 version: "1.0"
-last_updated: "2026-09-23"
+last_updated: "2026-10-22"
 id: devmode
 one_line_purpose: Configure the Bluefin Developer Mode setup wizard.
 entry_point: docs/skills/devmode.md
@@ -76,7 +76,7 @@ This replicates the Windows WSL2 + Dev Containers workflow:
 | IDE | VS Code | `ublue-os/tap/visual-studio-code-linux` |
 | IDE | VSCodium | `ublue-os/tap/vscodium-linux` |
 | IDE | Antigravity | `ublue-os/tap/antigravity-linux` |
-| IDE | Zed | `ublue-os/tap/zed-linux` |
+| IDE | Zed | `zed` (homebrew/cask) |
 | IDE | JetBrains Toolbox | `ublue-os/tap/jetbrains-toolbox-linux` |
 | CLI Editors | Neovim | brew nvim |
 | CLI Editors | Helix | brew helix |
