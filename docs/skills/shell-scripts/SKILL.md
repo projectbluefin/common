@@ -86,6 +86,20 @@ Quick reference — full patterns with WRONG/CORRECT examples in
 Standard file layout, mocking, and pitfalls in
 [references/bats-patterns.md](references/bats-patterns.md).
 
+## Just recipe descriptions
+
+Keep maintainer notes above the user-facing description comment. `just --list`
+uses the last comment line before a recipe's attributes as its description, so
+a note about dependency pins can accidentally replace the help text. Separate
+the notes with a blank line, then put the description immediately above the
+recipe's attributes.
+
+Verify the displayed text without running the installer:
+
+```bash
+just --justfile system_files/shared/usr/share/ublue-os/just/apps.just --list
+```
+
 ## Shellcheck Reference
 
 Directive syntax, SC code notes, and quoting fix examples in
