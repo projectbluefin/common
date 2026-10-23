@@ -49,6 +49,25 @@ bluefin-branding → projectbluefin/branding (wallpapers, logos)
 
 Use `just overlay` to test `system_files/` changes as a systemd-sysext on a running Bluefin system, without building the full OCI image. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for the full recipe, SELinux requirements, and activation steps.
 
+## Verification: shared systemd service conditions
+
+When editing a shared service, validate its directives with systemd as well as
+checking any embedded shell logic. `ExecCondition=` belongs in `[Service]`;
+under `[Unit]` it is ignored, so a correct shell condition still cannot gate
+startup. Keep unit conditions such as `ConditionPathExists=` in `[Unit]`.
+
+For the Flatpak metadata refresh service, run on a host with Flatpak installed:
+
+```bash
+systemd-analyze verify system_files/shared/usr/lib/systemd/system/flatpak-appstream-refresh.service
+```
+
+Check diagnostics for ignored directives, not just the exit status. If the
+validation host lacks Flatpak, replace only `ExecStart=` with `/usr/bin/true`
+in a temporary copy before verifying; keep `ExecCondition=` intact.
+
+Source: [systemd.service, Options and ExecCondition](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#ExecCondition=).
+
 ## Dakota exclusion pattern
 
 `system_files/shared/` flows into **bluefin, bluefin-lts, and dakota** via the common OCI context. Dakota's `elements/bluefin/common.bst` does a plain `cp -r system_files/shared/usr/` — it receives everything.
