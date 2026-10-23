@@ -9,7 +9,9 @@ import importlib.util
 import http.client
 import json
 import urllib.error
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from threading import Event, Thread
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -343,6 +345,73 @@ class TestTagExistsInGhcr:
         mock_resp.__exit__ = MagicMock(return_value=False)
         with patch("urllib.request.urlopen", return_value=mock_resp):
             assert tag_exists_in_ghcr("bluefin", "stable") is False
+
+    @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
+    def test_timeout_recovers_on_retry(self, failure):
+        response = _mock_urlopen(["stable"])
+        if failure == "read":
+            response.read.side_effect = TimeoutError("read timed out")
+            error = response
+        elif failure == "wrapped":
+            error = urllib.error.URLError(TimeoutError("connect timed out"))
+        else:
+            error = TimeoutError("connect timed out")
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[error, _mock_urlopen(["stable"])],
+        ), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+
+    @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
+    def test_persistent_timeout_is_unknown_not_missing(self, failure, capsys):
+        response = _mock_urlopen(["stable"])
+        if failure == "read":
+            response.read.side_effect = TimeoutError("read timed out")
+            kwargs = {"return_value": response}
+        elif failure == "wrapped":
+            kwargs = {"side_effect": urllib.error.URLError(TimeoutError("connect timed out"))}
+        else:
+            kwargs = {"side_effect": TimeoutError("connect timed out")}
+        with patch("urllib.request.urlopen", **kwargs), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+        assert "skipping existence check" in capsys.readouterr().out
+
+    def test_stalled_response_body_times_out(self, monkeypatch):
+        release = Event()
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = b'[{"metadata":{"container":{"tags":["stable"]}}}]'
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                release.wait(1)
+                try:
+                    self.wfile.write(body)
+                except BrokenPipeError:
+                    pass
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        real_urlopen = _mod.urllib.request.urlopen
+
+        def local_urlopen(request, **kwargs):
+            return real_urlopen(f"http://127.0.0.1:{server.server_port}/", **kwargs)
+
+        monkeypatch.setattr(_mod, "REQUEST_TIMEOUT_SECONDS", 0.025)
+        monkeypatch.setattr(_mod, "MAX_RETRIES", 0)
+        monkeypatch.setattr(_mod.urllib.request, "urlopen", local_urlopen)
+        thread.start()
+        try:
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+        finally:
+            release.set()
+            server.shutdown()
+            thread.join()
+            server.server_close()
 
 
 # ---------------------------------------------------------------------------

@@ -32,6 +32,7 @@ import urllib.error
 TRANSIENT_HTTP_STATUSES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
+REQUEST_TIMEOUT_SECONDS = 30  # Per-request socket timeout.
 
 
 class UnexpectedResponseError(ValueError):
@@ -140,7 +141,7 @@ def tag_exists_in_ghcr(image: str, tag: str):
         last_error = None
         for attempt in range(MAX_RETRIES + 1):
             try:
-                with urllib.request.urlopen(req) as resp:
+                with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
                     versions = json.loads(resp.read())
                 if not isinstance(versions, list):
                     raise UnexpectedResponseError(

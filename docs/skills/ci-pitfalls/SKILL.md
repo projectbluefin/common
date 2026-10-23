@@ -76,6 +76,17 @@ installation, checksum-download, or desktop-runtime test. It never installs
 formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`
 and retain real Homebrew validation in CI.
 
+## Registry checks must handle socket timeouts
+
+`scripts/check-oci-refs.py` applies a 30-second per-request socket timeout.
+Both opening a connection and reading its response can time out; catch
+`URLError` and `TimeoutError` inside the existing retry loop. Exhausted
+transient retries return unknown (`None`), not missing (`False`); HTTP 401
+and non-rate-limit 403 still fail immediately. Run the complete
+`tests/test_check_oci_refs.py` module and exercise a stalled local HTTP server
+when changing this path. A test that only checks the timeout argument does
+not cover recovery or exhaustion.
+
 ## Red Flags
 
 - A PR targets `testing` but the branch was created from `main`
