@@ -32,7 +32,7 @@ import urllib.error
 TRANSIENT_HTTP_STATUSES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
-REQUEST_TIMEOUT_SECONDS = 30  # Per-request socket timeout; see comment below.
+REQUEST_TIMEOUT_SECONDS = 30  # Per-request socket timeout.
 
 
 class UnexpectedResponseError(ValueError):
