@@ -65,22 +65,30 @@ case "$1" in
     is-enabled)
         [[ "${3:-$2}" == "${MOCK_ENABLED_TIMER:-}" ]] && exit 0 || exit 1
         ;;
-    enable)
-        if [[ "${2:-}" == "--now" ]]; then
-            shift 2
-            for unit in "$@"; do
-                touch "${SYSTEMD_STATE}/${unit}.active"
-            done
+    enable|disable)
+        verb="$1"
+        now=0
+        shift
+        if [[ "${1:-}" == "--now" ]]; then
+            now=1
+            shift
         fi
+        for unit in "$@"; do
+            if [[ "${verb}" == "enable" ]]; then
+                touch "${SYSTEMD_STATE}/${unit}.enabled"
+                [[ "${now}" == "1" ]] && touch "${SYSTEMD_STATE}/${unit}.active"
+            else
+                rm -f "${SYSTEMD_STATE}/${unit}.enabled"
+                [[ "${now}" == "1" ]] && rm -f "${SYSTEMD_STATE}/${unit}.active"
+            fi
+        done
         exit 0
         ;;
-    disable)
-        if [[ "${2:-}" == "--now" ]]; then
-            shift 2
-            for unit in "$@"; do
-                rm -f "${SYSTEMD_STATE}/${unit}.active"
-            done
-        fi
+    start)
+        shift
+        for unit in "$@"; do
+            touch "${SYSTEMD_STATE}/${unit}.active"
+        done
         exit 0
         ;;
     stop)
@@ -259,11 +267,13 @@ MOCK
     ! grep -qF "brew upgrade" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: interactive Enable activates both uupd timers" {
+@test "toggle-updates: interactive Enable enables both uupd timers, starts only uupd.timer" {
     MOCK_HAS_UUPD_TIMER=1 MOCK_GUM_CHOICE="Enable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
+    [ -e "${SYSTEMD_STATE}/uupd.timer.enabled" ]
     [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
-    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
 @test "toggle-updates: legacy disable cancels its timer and enable reactivates it" {
@@ -300,7 +310,8 @@ MOCK
     MOCK_HAS_UUPD_TIMER=1 ACTION=ENABLE _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
     [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
-    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
 # Regression contract for projectbluefin/common#1516: disabling cancels armed
@@ -311,13 +322,19 @@ MOCK
         "${SYSTEMD_STATE}/uupd.service.active"
     MOCK_HAS_UUPD_TIMER=1 ACTION=disable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Updates have been disabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
     [ ! -e "${SYSTEMD_STATE}/uupd.timer.active" ]
     [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
     [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
     MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Updates have been enabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
     [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
-    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    # uupd-resume.timer is enabled for the next resume but not armed now.
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
     [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
 }
 
