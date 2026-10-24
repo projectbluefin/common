@@ -15,7 +15,7 @@ EXPECTED_DESCRIPTOR_SHA256 = (
     "16964493b6a989ec48d008276c62663bca29ed4d5a265c846235d89d1e0fa726"
 )
 EXPECTED_FILTER_SHA256 = (
-    "26a553620a18b4df26226c14d24eb38307a6beabf33942968992bc22c7d4a695"
+    "d5fb7e1ef7eca22f3184a22e2789b47dd1f92ac140fb4a345c6f6be0b130970f"
 )
 
 
@@ -53,7 +53,8 @@ def test_flatpark_filter_entries():
         for line in FILTER_PATH.read_text().splitlines()
         if line.strip() and not line.startswith("#")
     ]
-    assert len(lines) == 9
+    assert len(lines) == 10
+    assert "deny app/com.google.Chrome/*" in lines
     for line in lines:
         assert line.startswith("deny app/")
         assert line.endswith("/*")

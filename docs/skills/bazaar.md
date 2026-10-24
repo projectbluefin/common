@@ -58,7 +58,7 @@ metadata:
 Bazaar prioritizes Flathub by design:
 - `bz-entry.c` awards a +1000 point usefulness bonus to entries originating from a remote named `flathub`.
 - Secondary remotes (such as `flatpark`) provide complementary applications not present on Flathub without superseding Flathub as the #1 store.
-- Non-Flathub remotes use Flatpak ref filters (`Filter=/usr/share/flatpak/flatpark.filter`) to disallow exact application IDs that overlap with Flathub (`com.calibre_ebook.calibre`, `com.jianguoyun.Nutstore`, `com.longbridgeapp.LongbridgePro`, `com.tencent.wemeet`, `com.tradingview.tradingview`, `io.enpass.Enpass`, `me.hyliu.fluentreader`, `org.openshot.OpenShot`, `social.whalebird.WhalebirdDesktop`).
+- Non-Flathub remotes use Flatpak ref filters (`Filter=/usr/share/flatpak/flatpark.filter`) to disallow exact application IDs that overlap with Flathub (`com.calibre_ebook.calibre`, `com.google.Chrome`, `com.jianguoyun.Nutstore`, `com.longbridgeapp.LongbridgePro`, `com.tencent.wemeet`, `com.tradingview.tradingview`, `io.enpass.Enpass`, `me.hyliu.fluentreader`, `org.openshot.OpenShot`, `social.whalebird.WhalebirdDesktop`).
 - Note: Ref filters match exact IDs (`deny app/<id>/*`). Repackaged upstream vendor apps under non-standard IDs (such as `com.tencent.weixin` vs Flathub's `com.tencent.WeChat`) are not excluded by exact-ID filtering and require explicit filter lines or Bazaar blocklist entries if duplication is undesired.
 
 Both hook scripts must remain synchronized: `hooks.py` (host `/run/host/etc/bazaar/hooks.py`) and `bazaar-hook` (`/usr/libexec/bazaar-hook`) must implement identical hook IDs, stages, and package redirect actions.
