@@ -78,7 +78,7 @@ toggle-updates ACTION="prompt":
         TIMERS=(rpm-ostreed-automatic.timer)
     fi
     if [ "${SELECTED_OPTION}" == "Enable" ] ; then
-        sudo systemctl enable "${TIMERS[@]}"
+        sudo systemctl enable --now "${TIMERS[@]}"
         echo "Updates have been enabled"
     elif [ "${SELECTED_OPTION}" == "Disable" ] ; then
         sudo systemctl disable --now "${TIMERS[@]}"

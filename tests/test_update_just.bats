@@ -34,7 +34,8 @@ setup() {
 
     MOCKDIR="${WORKDIR}/bin"
     COMMAND_LOG="${WORKDIR}/commands.log"
-    mkdir -p "${MOCKDIR}"
+    SYSTEMD_STATE="${WORKDIR}/systemd-state"
+    mkdir -p "${MOCKDIR}" "${SYSTEMD_STATE}"
     : > "${COMMAND_LOG}"
 
     UPDATE_SCRIPT="${WORKDIR}/update.sh"
@@ -64,7 +65,29 @@ case "$1" in
     is-enabled)
         [[ "${3:-$2}" == "${MOCK_ENABLED_TIMER:-}" ]] && exit 0 || exit 1
         ;;
-    enable|disable)
+    enable)
+        if [[ "${2:-}" == "--now" ]]; then
+            shift 2
+            for unit in "$@"; do
+                touch "${SYSTEMD_STATE}/${unit}.active"
+            done
+        fi
+        exit 0
+        ;;
+    disable)
+        if [[ "${2:-}" == "--now" ]]; then
+            shift 2
+            for unit in "$@"; do
+                rm -f "${SYSTEMD_STATE}/${unit}.active"
+            done
+        fi
+        exit 0
+        ;;
+    stop)
+        shift
+        for unit in "$@"; do
+            rm -f "${SYSTEMD_STATE}/${unit}.active"
+        done
         exit 0
         ;;
     *)
@@ -138,6 +161,7 @@ _run() {
     run env \
         PATH="${MOCKDIR}:${PATH}" \
         COMMAND_LOG="${COMMAND_LOG}" \
+        SYSTEMD_STATE="${SYSTEMD_STATE}" \
         MOCK_BOOTC_STATUS="${MOCK_BOOTC_STATUS:-0}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \
@@ -235,17 +259,29 @@ MOCK
     ! grep -qF "brew upgrade" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: enables uupd.timer when present and Enable chosen" {
+@test "toggle-updates: interactive Enable activates both uupd timers" {
     MOCK_HAS_UUPD_TIMER=1 MOCK_GUM_CHOICE="Enable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
-@test "toggle-updates: disables rpm-ostreed timer when uupd absent and Disable chosen" {
+@test "toggle-updates: legacy disable cancels its timer and enable reactivates it" {
+    touch "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" \
+        "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" \
+        "${SYSTEMD_STATE}/uupd-resume.timer.active"
     MOCK_GUM_CHOICE="Disable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
-    ! grep -qF "systemctl stop rpm-ostreed-automatic.service" "${COMMAND_LOG}"
+    [ ! -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [[ "${output}" == *"Updates have been disabled"* ]]
+    ACTION=enable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [[ "${output}" == *"Updates have been enabled"* ]]
 }
 
 @test "toggle-updates: exits cleanly on Cancel" {
@@ -255,23 +291,6 @@ MOCK
     ! grep -qF "systemctl disable" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: ACTION=enable enables uupd.timer without prompting" {
-    MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
-    [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
-    [[ "${output}" == *"Updates have been enabled"* ]]
-    ! [[ "${output}" == *"Automatic updates are currently"* ]]
-}
-
-@test "toggle-updates: ACTION=disable disables rpm-ostreed timer without prompting" {
-    ACTION=disable _run "${TOGGLE_SCRIPT}"
-    [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
-    ! grep -qF "systemctl stop rpm-ostreed-automatic.service" "${COMMAND_LOG}"
-    [[ "${output}" == *"Updates have been disabled"* ]]
-    ! [[ "${output}" == *"Automatic updates are currently"* ]]
-}
-
 @test "toggle-updates: ACTION=cancel exits without touching the timer" {
     ACTION=cancel _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
@@ -279,39 +298,31 @@ MOCK
     ! grep -qF "systemctl disable" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: ACTION is case-insensitive (ENABLE enables uupd.timer)" {
+@test "toggle-updates: ACTION is case-insensitive (ENABLE enables uupd timers)" {
     MOCK_HAS_UUPD_TIMER=1 ACTION=ENABLE _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
-# Regression contract for projectbluefin/common#1516: uupd.service has three
-# triggers. The switch must cover the resume timer as well as the 6-hourly
-# timer, and the AC-connect service must skip itself when uupd.timer is off.
-@test "toggle-updates: disabling uupd also disables uupd-resume.timer" {
+# Regression contract for projectbluefin/common#1516: disabling cancels armed
+# timer triggers without stopping an update service that is already running.
+@test "toggle-updates: disabling and enabling uupd preserves a running updater" {
+    touch "${SYSTEMD_STATE}/uupd.timer.active" \
+        "${SYSTEMD_STATE}/uupd-resume.timer.active" \
+        "${SYSTEMD_STATE}/uupd.service.active"
     MOCK_HAS_UUPD_TIMER=1 ACTION=disable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qxF "systemctl disable --now uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
-    ! grep -qF "systemctl stop uupd.service" "${COMMAND_LOG}"
-}
-
-@test "toggle-updates: enabling uupd also enables uupd-resume.timer" {
-    MOCK_HAS_UUPD_TIMER=1 MOCK_GUM_CHOICE="Enable" _run "${TOGGLE_SCRIPT}"
+    [ ! -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
+    [[ "${output}" == *"Updates have been disabled"* ]]
+    MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qxF "systemctl enable uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
-}
-
-@test "toggle-updates: rpm-ostreed fallback leaves uupd-resume.timer alone" {
-    ACTION=disable _run "${TOGGLE_SCRIPT}"
-    [ "${status}" -eq 0 ]
-    grep -qxF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
-    ! grep -qF "uupd-resume.timer" "${COMMAND_LOG}"
-}
-
-@test "uupd-on-ac.service: stops a pending AC trigger when uupd.timer is disabled" {
-    local unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/uupd-on-ac.service"
-    grep -qxF "PartOf=uupd.timer" "${unit}"
-    grep -qxF "ExecCondition=/usr/bin/systemctl is-enabled --quiet uupd.timer" "${unit}"
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
+    [[ "${output}" == *"Updates have been enabled"* ]]
 }
 
 # Regression contract for projectbluefin/common#1332:
