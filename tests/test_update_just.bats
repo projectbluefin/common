@@ -338,6 +338,61 @@ MOCK
     [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
 }
 
+@test "uupd-on-ac: switch-off skips cleanly but wait failures remain errors" {
+    local unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/uupd-on-ac.service"
+    local enabled="${WORKDIR}/ac-enabled" delayed="${WORKDIR}/ac-delayed"
+    _write_mock "systemctl" <<'MOCK'
+#!/bin/bash
+[[ "$1" == "is-enabled" ]] || exit 99
+[[ -e "${AC_ENABLED_FILE}" ]]
+MOCK
+    _write_mock "sleep" <<'MOCK'
+#!/bin/bash
+touch "${AC_DELAYED_FILE}"
+if [[ "${AC_WAIT_EXIT:-0}" != "0" ]]; then
+    exit "${AC_WAIT_EXIT}"
+fi
+rm -f "${AC_ENABLED_FILE}"
+MOCK
+    cat > "${WORKDIR}/ac-condition.py" <<'PY'
+import configparser
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+unit = configparser.ConfigParser(interpolation=None)
+unit.read(sys.argv[1])
+command = shlex.split(unit["Service"]["ExecCondition"])
+replacements = {
+    "/usr/bin/systemctl": str(Path(sys.argv[2]) / "systemctl"),
+    "/bin/sleep": str(Path(sys.argv[2]) / "sleep"),
+}
+for index, argument in enumerate(command):
+    if argument in replacements:
+        command[index] = replacements[argument]
+    else:
+        for original, replacement in replacements.items():
+            argument = argument.replace(original, shlex.quote(replacement))
+        command[index] = argument
+raise SystemExit(subprocess.run(command, env=os.environ, check=False).returncode)
+PY
+    touch "${enabled}"
+    run env AC_ENABLED_FILE="${enabled}" AC_DELAYED_FILE="${delayed}" \
+        python3 "${WORKDIR}/ac-condition.py" "${unit}" "${MOCKDIR}"
+    # ExecCondition exit 1 means a skipped start, not a failed service.
+    [ "${status}" -eq 1 ]
+    [ -e "${delayed}" ]
+    [ ! -e "${enabled}" ]
+    touch "${enabled}"
+    run env AC_ENABLED_FILE="${enabled}" AC_DELAYED_FILE="${delayed}" \
+        AC_WAIT_EXIT=42 python3 "${WORKDIR}/ac-condition.py" "${unit}" "${MOCKDIR}"
+    # ExecCondition exit 255 preserves a real execution failure.
+    [ "${status}" -eq 255 ]
+    [ -e "${enabled}" ]
+}
+
 # Regression contract for projectbluefin/common#1332:
 # `bootc upgrade` must be invoked as a plain verb. Adding --transport
 # containers-storage (or any explicit transport) would force the broken
