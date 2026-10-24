@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12",
+  "generated_at": "2026-10-24",
   "schema_version": "1.0",
   "skills": [
     {
@@ -762,8 +762,8 @@
         "architecture"
       ],
       "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, or deciding where a system file change belongs.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-10-24",
       "doc_type": "reference"
     },
     {
