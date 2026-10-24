@@ -895,3 +895,231 @@ EOF
     [[ "$output" == *"No issue was created."* ]]
     [[ "$output" != *"bootc should not be called"* ]]
 }
+
+write_submission_stubs() {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+case "$1" in
+    choose) printf 'No preference\n' ;;
+    confirm) printf '%s\n' "$2" >> "$GUM_CONFIRMS" ;;
+    pager) cat ;;
+esac
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "$GH_CALLS"
+case "$1 $2" in
+    "auth status") exit 0 ;;
+    "gist create")
+        [[ -f "$GH_GIST_FAIL" ]] && exit 1
+        printf 'https://gist.github.com/reporter/abc123\n'
+        ;;
+    "issue create")
+        [[ -f "$GH_ISSUE_FAIL" ]] && exit 1
+        printf 'https://github.com/projectbluefin/common/issues/101\n'
+        ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/gum" "$WORKDIR/bin/gh"
+    export GH_CALLS="$WORKDIR/gh-calls"
+    export GUM_CONFIRMS="$WORKDIR/gum-confirms"
+    export GH_GIST_FAIL="$WORKDIR/gist-fails"
+    export GH_ISSUE_FAIL="$WORKDIR/issue-fails"
+}
+
+write_bug_draft() {
+    mkdir -p "$WORKDIR/draft"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
+    printf 'Short title\n' > "$WORKDIR/draft/title.txt"
+    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+    printf '# Networking\nredacted output\n' > "$WORKDIR/draft/networking.md"
+    printf 'networking.md\n' > "$WORKDIR/draft/profile-files.txt"
+}
+
+@test "parse_args rejects missing values, unknown flags, and --confirm with --resume" {
+    local args
+    for args in "--confirm" "--resume" "--bogus" "--confirm 5 --resume /tmp/draft"; do
+        # shellcheck disable=SC2086
+        run bash -c 'source "$1"; shift; parse_args "$@"' _ "$BONEDIGGER_SCRIPT" $args
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"Usage: ujust report"* ]]
+    done
+
+    run bash -c '
+        source "$1"
+        parse_args --resume "$2"
+        printf "%s|%s" "$CONFIRM_TARGET" "$RESUME_DIR"
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+    [ "$status" -eq 0 ]
+    [ "$output" = "|$WORKDIR/draft" ]
+}
+
+@test "choose_profiles keeps known profiles once and ignores unknown or cancelled picks" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+[[ -f "$GUM_CANCEL" ]] && exit 1
+printf 'Networking\nNetworking\nSomething else\nHardware\n'
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+    export GUM_CANCEL="$WORKDIR/gum-cancel"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        choose_profiles
+        printf "%s;" "${SELECTED_PROFILES[@]}"
+    ' _ "$BONEDIGGER_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "Networking;Hardware;" ]
+
+    : > "$GUM_CANCEL"
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        choose_profiles
+        printf "count=%s" "${#SELECTED_PROFILES[@]}"
+    ' _ "$BONEDIGGER_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "count=0" ]
+}
+
+@test "resume refuses an incomplete draft before contacting GitHub" {
+    write_submission_stubs
+    write_bug_draft
+    rm "$WORKDIR/draft/title.txt"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash "$BONEDIGGER_SCRIPT" --resume "$WORKDIR/draft"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Invalid report draft: $WORKDIR/draft"* ]]
+    [ ! -e "$GH_CALLS" ]
+    [ ! -e "$GUM_CONFIRMS" ]
+}
+
+@test "resume only reattaches well-formed profile files that exist inside the draft" {
+    write_bug_draft
+    printf 'outside\n' > "$WORKDIR/outside.md"
+    printf 'upper\n' > "$WORKDIR/draft/Hardware.md"
+    printf 'notes\n' > "$WORKDIR/draft/notes.txt"
+    printf '%s\n' networking.md ../outside.md notes.txt Hardware.md missing.md \
+        > "$WORKDIR/draft/profile-files.txt"
+
+    run bash -c '
+        source "$1"
+        RESUME_DIR="$2"
+        load_draft
+        printf "%s|" "$DRAFT_DIR"
+        printf "%s;" "${PROFILE_FILES[@]}"
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "$WORKDIR/draft|$WORKDIR/draft/networking.md;" ]
+}
+
+@test "publish_smart_logs does nothing when no profile was selected" {
+    write_submission_stubs
+    write_bug_draft
+    cp "$WORKDIR/draft/issue.md" "$WORKDIR/issue.before"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=()
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ ! -e "$GH_CALLS" ]
+    cmp "$WORKDIR/issue.before" "$WORKDIR/draft/issue.md"
+}
+
+@test "publish_smart_logs publishes the selected logs once and links them in the issue" {
+    write_submission_stubs
+    write_bug_draft
+    printf '# Hardware\nredacted output\n' > "$WORKDIR/draft/hardware.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md" "$2/hardware.md")
+        publish_smart_logs
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^gist create' "$GH_CALLS")" -eq 1 ]
+    grep -q -- "^gist create --public --desc ujust report smart logs .* $WORKDIR/draft/networking.md $WORKDIR/draft/hardware.md\$" "$GH_CALLS"
+    [ "$(cat "$WORKDIR/draft/gist-url.txt")" = "https://gist.github.com/reporter/abc123" ]
+    grep -qFx 'The selected, redacted logs are public at: https://gist.github.com/reporter/abc123' "$WORKDIR/draft/issue.md"
+    grep -qF '### Selected smart logs' "$WORKDIR/draft/issue.md"
+}
+
+@test "publish_smart_logs failure leaves the issue body and draft untouched" {
+    write_submission_stubs
+    write_bug_draft
+    : > "$GH_GIST_FAIL"
+    cp "$WORKDIR/draft/issue.md" "$WORKDIR/issue.before"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Could not publish the selected smart logs."* ]]
+    [ ! -e "$WORKDIR/draft/gist-url.txt" ]
+    cmp "$WORKDIR/issue.before" "$WORKDIR/draft/issue.md"
+}
+
+@test "consenting submission publishes logs, files the issue, keeps a local copy, and clears the draft" {
+    write_submission_stubs
+    write_bug_draft
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        submit_draft
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Report submitted successfully."* ]]
+    [[ "$output" == *"https://github.com/projectbluefin/common/issues/101"* ]]
+    grep -qFx 'Publish the selected smart logs publicly and create this issue?' "$GUM_CONFIRMS"
+    [ "$(grep -n '^gist create' "$GH_CALLS" | cut -d: -f1)" -lt \
+        "$(grep -n '^issue create' "$GH_CALLS" | cut -d: -f1)" ]
+    grep -qF "issue create --repo projectbluefin/common --title Short title --body-file $WORKDIR/draft/issue.md" "$GH_CALLS"
+    [ ! -e "$WORKDIR/draft" ]
+    grep -qF 'https://gist.github.com/reporter/abc123' "$XDG_STATE_HOME/ujust-report/last/summary.md"
+    grep -qFx '<!-- automation-preference: unspecified -->' "$XDG_STATE_HOME/ujust-report/last/summary.md"
+    [ -f "$XDG_STATE_HOME/ujust-report/last/networking.md" ]
+}
+
+@test "failed issue creation keeps the draft and resume reuses the published logs" {
+    write_submission_stubs
+    write_bug_draft
+    : > "$GH_ISSUE_FAIL"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        submit_draft
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
+    [ -f "$WORKDIR/draft/issue.md" ]
+    [ "$(cat "$WORKDIR/draft/gist-url.txt")" = "https://gist.github.com/reporter/abc123" ]
+
+    rm "$GH_ISSUE_FAIL"
+    run env PATH="$WORKDIR/bin:$PATH" bash "$BONEDIGGER_SCRIPT" --resume "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Report submitted successfully."* ]]
+    [ "$(grep -c '^gist create' "$GH_CALLS")" -eq 1 ]
+    [ "$(grep -c '^issue create' "$GH_CALLS")" -eq 2 ]
+    [ ! -e "$WORKDIR/draft" ]
+    grep -qF 'https://gist.github.com/reporter/abc123' "$XDG_STATE_HOME/ujust-report/last/summary.md"
+    [ "$(grep -c 'automation-preference' "$XDG_STATE_HOME/ujust-report/last/summary.md")" -eq 1 ]
+}
