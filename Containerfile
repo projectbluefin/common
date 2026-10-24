@@ -12,7 +12,7 @@ RUN apk add git && \
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
-FROM docker.io/library/alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS build
+FROM docker.io/library/alpine:latest@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35 AS build
 
 COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:75ca2d8886d91db508e6338786a9e7508066aab930089d06e83ad6f9bbf16925 / /out/bluefin/usr/share
 
