@@ -15,7 +15,7 @@
         "flatpak",
         "apps"
       ],
-      "description": "Use when editing Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
+      "description": "Documents Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions, and hooks. Use when editing Bazaar settings in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
       "last_updated": "2026-10-24",
       "doc_type": "procedure"

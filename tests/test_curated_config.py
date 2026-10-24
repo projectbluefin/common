@@ -49,7 +49,7 @@ def test_curated_uses_modern_schema_shape():
     assert "AI and Machine Learning" in section_titles
 
 
-def test_steam_is_blocklisted_and_steam_link_remains_available():
+def test_blocklisted_apps_stay_out_of_curated_content():
     blocklist = _load_yaml(BLOCKLIST)
     curated = _load_yaml(CURATED)
 
@@ -66,10 +66,9 @@ def test_steam_is_blocklisted_and_steam_link_remains_available():
         for appid in content.get("appids", {}).get("list", [])
     }
 
+    assert blocked_ids.isdisjoint(curated_ids)
     assert "com.valvesoftware.Steam" in blocked_ids
-    assert "com.valvesoftware.Steam" not in curated_ids
     assert "com.valvesoftware.SteamLink" in curated_ids
-    assert "com.valvesoftware.SteamLink" not in blocked_ids
 
 
 def test_bazaar_config_valid():

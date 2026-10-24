@@ -12,9 +12,9 @@ status: active
 dependencies: []
 tags: [bazaar, curated, flatpak, apps]
 description: >-
-  Use when editing Bazaar config, curated content, app blocklists, banner conversion,
-  systemd service definitions, or hooks in common. Covers modern rows schema, native JXL
-  banners, and local ujust preview workflows.
+  Documents Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions,
+  and hooks. Use when editing Bazaar settings in common. Covers modern rows schema, native JXL banners,
+  and local ujust preview workflows.
 metadata:
   type: procedure
   context7-sources:
@@ -48,7 +48,7 @@ metadata:
 | `system_files/bluefin/usr/lib/systemd/user/bazaar.service` | Background Bazaar service entrypoint |
 | `tests/test_hooks.py` | `hooks.py` state machine tests |
 | `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
-| `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
+| `tests/test_curated_config.py` | Curated/Bazaar config shape and app policy regression checks |
 
 Both hook scripts must remain synchronized: `hooks.py` (host `/run/host/etc/bazaar/hooks.py`) and `bazaar-hook` (`/usr/libexec/bazaar-hook`) must implement identical hook IDs, stages, and package redirect actions.
 
