@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
-version: "1.1"
-last_updated: "2026-10-09"
+version: "1.2"
+last_updated: "2026-10-24"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -72,6 +72,10 @@ Only step 1 above — do **not** add to the lock file.
 The numbered files in `system_files/bluefin/etc/dconf/db/distro.d/` set defaults and
 keybindings. They are merged in numeric order. Gaps in numbering are fine. Do not renumber
 existing files — it changes the merge order.
+Treat distro.d filenames as consumer interfaces too: downstream images may
+remove or assert an exact path. Preserve externally referenced names or migrate
+those consumers together. For example, Utah's `Containerfile` removes
+`/etc/dconf/db/distro.d/05-bluefin-searchlight-extension`.
 
 ## Custom keybindings and relocatable schemas
 
