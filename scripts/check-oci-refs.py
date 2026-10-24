@@ -17,6 +17,7 @@ Source of truth for valid image names and tags:
 Do not update the allowed list below from memory. Read the workflow files.
 """
 from pathlib import Path
+import http.client
 import json
 import os
 import re
@@ -31,6 +32,11 @@ import urllib.error
 TRANSIENT_HTTP_STATUSES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
+
+
+class UnexpectedResponseError(ValueError):
+    """A 200 from the packages API whose JSON body is not a versions array."""
+
 
 # ── Check 1: no ublue-os refs ────────────────────────────────────────────────
 # The org migration from ublue-os to projectbluefin is complete.
@@ -136,6 +142,10 @@ def tag_exists_in_ghcr(image: str, tag: str):
             try:
                 with urllib.request.urlopen(req) as resp:
                     versions = json.loads(resp.read())
+                if not isinstance(versions, list):
+                    raise UnexpectedResponseError(
+                        f"expected a JSON array, got {type(versions).__name__}"
+                    )
                 last_error = None
                 break
             except urllib.error.HTTPError as e:
@@ -154,10 +164,30 @@ def tag_exists_in_ghcr(image: str, tag: str):
                 last_error = e
                 if attempt < MAX_RETRIES:
                     time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
+            except (
+                urllib.error.URLError,
+                ConnectionError,
+                TimeoutError,
+                http.client.HTTPException,
+                json.JSONDecodeError,
+                UnexpectedResponseError,
+            ) as e:
+                # Dropped connections, resets, DNS/socket timeouts, bodies
+                # cut off mid-transfer (IncompleteRead), and malformed or
+                # non-array bodies never reach an HTTP status; retry them
+                # like a 5xx.
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
 
         if last_error is not None:
+            reason = (
+                f"HTTP {last_error.code}"
+                if isinstance(last_error, urllib.error.HTTPError)
+                else f"{type(last_error).__name__}: {last_error}"
+            )
             print(
-                f"  \u26a0 GHCR packages API returned HTTP {last_error.code} for "
+                f"  \u26a0 GHCR packages API returned {reason} for "
                 f"{image} after {MAX_RETRIES + 1} attempts -- skipping existence "
                 "check for this ref (transient error, not a ref regression)."
             )

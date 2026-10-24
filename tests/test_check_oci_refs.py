@@ -6,6 +6,7 @@ logic in-process so coverage.py can instrument them.
 """
 
 import importlib.util
+import http.client
 import json
 import urllib.error
 from pathlib import Path
@@ -281,6 +282,59 @@ class TestTagExistsInGhcr:
             with pytest.raises(urllib.error.HTTPError):
                 tag_exists_in_ghcr("bluefin", "stable")
             assert mock_urlopen.call_count == 1
+
+    def test_truncated_body_recovers_on_retry(self):
+        """IncompleteRead from resp.read() (connection dropped mid-body) retries."""
+        truncated = MagicMock()
+        truncated.read.side_effect = http.client.IncompleteRead(
+            partial=b'[{"metadata":', expected=128
+        )
+        truncated.__enter__ = lambda s: s
+        truncated.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[truncated, _mock_urlopen(["stable"])],
+        ) as mock_urlopen, patch("time.sleep") as mock_sleep:
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+            assert mock_urlopen.call_count == 2
+            assert mock_sleep.call_count == 1
+
+    def test_persistent_truncated_body_returns_none(self):
+        truncated = MagicMock()
+        truncated.read.side_effect = http.client.IncompleteRead(
+            partial=b'[{"metadata":', expected=128
+        )
+        truncated.__enter__ = lambda s: s
+        truncated.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=truncated
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
+    def test_malformed_json_body_returns_none(self):
+        """A 200 with a body that is not JSON retries, then reports unknown."""
+        garbage = MagicMock()
+        garbage.read.return_value = b"<html>proxy error</html>"
+        garbage.__enter__ = lambda s: s
+        garbage.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=garbage
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
+    def test_non_array_json_body_returns_none(self):
+        """A 200 whose JSON body is an object, not a versions array, retries."""
+        obj = MagicMock()
+        obj.read.return_value = b'{"message": "unexpected"}'
+        obj.__enter__ = lambda s: s
+        obj.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=obj
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
 
     def test_returns_false_on_empty_versions_list(self):
         mock_resp = MagicMock()
