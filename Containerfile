@@ -16,7 +16,23 @@ FROM docker.io/library/alpine:latest@sha256:71e9b7bae160ba167fa17414401b94cbcdaf
 
 COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:75ca2d8886d91db508e6338786a9e7508066aab930089d06e83ad6f9bbf16925 / /out/bluefin/usr/share
 
-RUN apk add just curl
+RUN apk add just curl gettext
+
+# Compile Bluefin menu translations.
+COPY po/bluefin-menu/ /tmp/bluefin-menu-po/
+
+RUN set -eu; \
+    for po in /tmp/bluefin-menu-po/*.po; do \
+        lang="$(basename "$po" .po)"; \
+        output="/out/bluefin/usr/share/locale/$lang/LC_MESSAGES/bluefin-menu.mo"; \
+        install -d "$(dirname "$output")"; \
+        msgfmt --check "$po" -o "$output"; \
+    done
+
+# Install the translation helper as an executable.
+COPY system_files/bluefin/usr/libexec/bluefin-menu-translate /tmp/bluefin-menu-translate
+RUN install -Dm0755 /tmp/bluefin-menu-translate \
+    /out/bluefin/usr/libexec/bluefin-menu-translate
 
 # ChairLift ships only as a user-scoped Homebrew cask, which cannot install
 # root-owned files. Install the pkexec helper, its PolicyKit policy and the
