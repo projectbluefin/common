@@ -81,6 +81,6 @@ toggle-updates ACTION="prompt":
         sudo systemctl enable "${TIMERS[@]}"
         echo "Updates have been enabled"
     elif [ "${SELECTED_OPTION}" == "Disable" ] ; then
-        sudo systemctl disable "${TIMERS[@]}"
+        sudo systemctl disable --now "${TIMERS[@]}"
         echo "Updates have been disabled"
     fi

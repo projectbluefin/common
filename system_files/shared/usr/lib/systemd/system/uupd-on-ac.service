@@ -2,6 +2,8 @@
 Description=Trigger system updates on AC power connect
 After=network-online.target
 Wants=network-online.target
+# Cancel a delayed AC trigger when uupd.timer is stopped.
+PartOf=uupd.timer
 ConditionACPower=true
 StartLimitBurst=1
 StartLimitIntervalSec=21600

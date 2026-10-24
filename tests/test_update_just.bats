@@ -244,7 +244,8 @@ MOCK
 @test "toggle-updates: disables rpm-ostreed timer when uupd absent and Disable chosen" {
     MOCK_GUM_CHOICE="Disable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    grep -qF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    ! grep -qF "systemctl stop rpm-ostreed-automatic.service" "${COMMAND_LOG}"
 }
 
 @test "toggle-updates: exits cleanly on Cancel" {
@@ -265,7 +266,8 @@ MOCK
 @test "toggle-updates: ACTION=disable disables rpm-ostreed timer without prompting" {
     ACTION=disable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    grep -qF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    ! grep -qF "systemctl stop rpm-ostreed-automatic.service" "${COMMAND_LOG}"
     [[ "${output}" == *"Updates have been disabled"* ]]
     ! [[ "${output}" == *"Automatic updates are currently"* ]]
 }
@@ -289,7 +291,8 @@ MOCK
 @test "toggle-updates: disabling uupd also disables uupd-resume.timer" {
     MOCK_HAS_UUPD_TIMER=1 ACTION=disable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qxF "systemctl disable uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
+    grep -qxF "systemctl disable --now uupd.timer uupd-resume.timer" "${COMMAND_LOG}"
+    ! grep -qF "systemctl stop uupd.service" "${COMMAND_LOG}"
 }
 
 @test "toggle-updates: enabling uupd also enables uupd-resume.timer" {
@@ -301,12 +304,13 @@ MOCK
 @test "toggle-updates: rpm-ostreed fallback leaves uupd-resume.timer alone" {
     ACTION=disable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qxF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    grep -qxF "systemctl disable --now rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
     ! grep -qF "uupd-resume.timer" "${COMMAND_LOG}"
 }
 
-@test "uupd-on-ac.service: skips the AC trigger when uupd.timer is disabled" {
+@test "uupd-on-ac.service: stops a pending AC trigger when uupd.timer is disabled" {
     local unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/uupd-on-ac.service"
+    grep -qxF "PartOf=uupd.timer" "${unit}"
     grep -qxF "ExecCondition=/usr/bin/systemctl is-enabled --quiet uupd.timer" "${unit}"
 }
 
