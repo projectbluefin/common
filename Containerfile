@@ -25,7 +25,7 @@ RUN apk add just curl
 # system_files. The release's checksums.txt is verified against its Sigstore
 # bundle, signed by ChairLift's release workflow for exactly this tag, and the
 # archive against its checksums.txt entry, so a bump changes CHAIRLIFT_RELEASE only.
-ARG CHAIRLIFT_RELEASE=v26.10.9
+ARG CHAIRLIFT_RELEASE=v26.10.10
 ARG TARGETARCH
 COPY --from=ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d /ko-app/cosign /usr/local/bin/cosign
 RUN set -eu; \
