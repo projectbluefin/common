@@ -1,9 +1,9 @@
 ---
 name: bazaar
 version: "1.1"
-last_updated: "2026-07-01"
+last_updated: "2026-10-24"
 id: bazaar
-one_line_purpose: Edit Bazaar curated schema, banner conversion, and local preview config.
+one_line_purpose: Edit Bazaar config, blocklists, curated content, banner conversion, hooks, and previews.
 entry_point: docs/skills/bazaar.md
 category: ci-ops
 mcp_compliance_level: partial
@@ -12,15 +12,16 @@ status: active
 dependencies: []
 tags: [bazaar, curated, flatpak, apps]
 description: >-
-  Use when editing Bazaar curated config, systemd service definitions, or hooks
-  in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.
+  Documents Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions,
+  and hooks. Use when editing Bazaar settings in common. Covers modern rows schema, native JXL banners,
+  and local ujust preview workflows.
 metadata:
   type: procedure
   context7-sources:
     - /flatpak/flatpak-docs
 ---
 
-# Bazaar — curated config and hook operations
+# Bazaar — config, blocklists, and hook operations
 
 ## When to use
 
@@ -47,7 +48,7 @@ metadata:
 | `system_files/bluefin/usr/lib/systemd/user/bazaar.service` | Background Bazaar service entrypoint |
 | `tests/test_hooks.py` | `hooks.py` state machine tests |
 | `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
-| `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
+| `tests/test_curated_config.py` | Curated/Bazaar config shape and app policy regression checks |
 
 Both hook scripts must remain synchronized: `hooks.py` (host `/run/host/etc/bazaar/hooks.py`) and `bazaar-hook` (`/usr/libexec/bazaar-hook`) must implement identical hook IDs, stages, and package redirect actions.
 
@@ -106,6 +107,8 @@ ujust bazaar-preview /path/to/common
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
 - Editing `system_files/bluefin/etc/bazaar/hooks.py` without applying the same hook handler to `system_files/bluefin/usr/libexec/bazaar-hook` leaves the in-image entry point out of sync.
+- Bazaar denylist entries go in `blocklist.yaml` under `blocklists[].block`,
+  using the exact Flatpak app ID; remove matching curated entries too.
 
 ## Red Flags
 

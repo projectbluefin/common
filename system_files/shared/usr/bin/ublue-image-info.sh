@@ -10,15 +10,13 @@ IMAGE_TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
 # in bootc. Fall back to the baked value when bootc is unavailable.
 BOOTED_REF="$(bootc status --json 2>/dev/null | \
 	jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null)"
+BOOTED_IMAGE_FILE="${BOOTED_IMAGE_FILE:-/run/ublue-os/booted-image}"
+if [[ -z "${BOOTED_REF}" && -r "${BOOTED_IMAGE_FILE}" ]]; then
+	read -r BOOTED_REF < "${BOOTED_IMAGE_FILE}" || true
+fi
 case "${BOOTED_REF}" in
 	*@*) ;; # digest-pinned ref, no tag to extract
 	*:*) IMAGE_TAG="${BOOTED_REF##*:}" ;;
 esac
 
 echo -n "${IMAGE_NAME}:${IMAGE_TAG}"
-
-if [[ "$(rpm-ostree status --booted)" =~ "signed" ]]; then
-	echo -n " 🔐"
-else
-	echo -n -e " \033[5m🔓\033[0m"
-fi

@@ -151,7 +151,6 @@ rows:
         pl: 'Protokół trzeci: Chronić pilota'
     appids:
       list:
-      - com.valvesoftware.Steam
       - com.heroicgameslauncher.hgl
       - com.discordapp.Discord
       - net.lutris.Lutris
