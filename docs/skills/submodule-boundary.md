@@ -1,7 +1,7 @@
 ---
 name: submodule-boundary
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-10-24"
 id: submodule-boundary
 one_line_purpose: Decide where a system_files change belongs across variants.
 entry_point: docs/skills/submodule-boundary.md
@@ -52,6 +52,14 @@ Use `just overlay` to test `system_files/` changes as a systemd-sysext on a runn
 ## Dakota exclusion pattern
 
 `system_files/shared/` flows into **bluefin, bluefin-lts, and dakota** via the common OCI context. Dakota's `elements/bluefin/common.bst` does a plain `cp -r system_files/shared/usr/` — it receives everything.
+
+### Dakota-specific Ghostty overrides
+
+Common owns the base profile at
+`system_files/shared/etc/skel/.config/ghostty/config.ghostty`. Dakota consumes
+common and applies `patches/common/0002-ghostty-dual-theme.patch` via
+`elements/bluefin/common.bst` to follow GNOME's Light/Dark setting. Treat it as
+a Dakota-specific override, not a separate canonical config.
 
 If you add a file to `system_files/shared/` that should **not** appear in dakota (e.g., a migration aid that only applies to users rebasing from legacy-rechunk images), add explicit `rm -f` lines to `dakota/elements/bluefin/common.bst` immediately after the copy block:
 
@@ -115,3 +123,15 @@ Do not remove the flock — concurrent sysusers runs can corrupt the file.
 **dakota** actively strips these files (see exclusion pattern above) since it is a fresh BuildStream image and the migration path does not apply.
 
 **Future agents:** If you need to change the rechunker service ordering or script behavior, edit only `system_files/shared/` in this repo. Check that no consuming repo (bluefin, bluefin-lts) has re-introduced a shadowing copy before declaring the fix applied.
+
+## Verification
+
+Re-derive Dakota's default branch and Ghostty patch application:
+
+```bash
+branch="$(gh api repos/projectbluefin/dakota --jq .default_branch)"
+gh api "repos/projectbluefin/dakota/contents/elements/bluefin/common.bst?ref=${branch}" \
+  --jq .content | base64 -d
+gh api "repos/projectbluefin/dakota/contents/patches/common/0002-ghostty-dual-theme.patch?ref=${branch}" \
+  --jq .content | base64 -d
+```
