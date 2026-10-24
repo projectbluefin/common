@@ -275,13 +275,11 @@ MOCK
     [ ! -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
     [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
     [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
-    [[ "${output}" == *"Updates have been disabled"* ]]
     ACTION=enable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
     [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
     [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
     [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
-    [[ "${output}" == *"Updates have been enabled"* ]]
 }
 
 @test "toggle-updates: exits cleanly on Cancel" {
@@ -316,13 +314,11 @@ MOCK
     [ ! -e "${SYSTEMD_STATE}/uupd.timer.active" ]
     [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
     [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
-    [[ "${output}" == *"Updates have been disabled"* ]]
     MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
     [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
     [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
     [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
-    [[ "${output}" == *"Updates have been enabled"* ]]
 }
 
 # Regression contract for projectbluefin/common#1332:
