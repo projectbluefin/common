@@ -8,6 +8,7 @@ StartLimitIntervalSec=21600
 
 [Service]
 Type=oneshot
-# Wait for network to settle after AC connect before triggering updates
-ExecStartPre=/bin/sleep 60
+# Skip without waiting when updates are disabled, and recheck after the delay.
+# A disabled switch skips cleanly; a failed wait must still fail the unit.
+ExecCondition=/usr/bin/bash -c '/usr/bin/systemctl is-enabled --quiet uupd.timer && { /bin/sleep 60 || exit 255; } && /usr/bin/systemctl is-enabled --quiet uupd.timer'
 ExecStart=/usr/bin/systemctl start uupd.service

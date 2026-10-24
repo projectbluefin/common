@@ -93,6 +93,8 @@ See each repo's AGENTS.md for repo-specific test commands. Common entry points:
 
 `tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
 
+The toggle-updates regression models timer triggers and a running updater: disabling cancels the armed timers while leaving the updater active, and enabling re-enables all selected timers but starts only the main one (`uupd-resume.timer` arms on resume, not on toggle). The AC-connect regression executes the unit's actual condition with a switch change during the delay: it must return a clean skip instead of starting an update. Keep checks before and after the wait; canceling a sleeping `ExecStartPre` through `PartOf` leaves a failed unit.
+
 ```bash
 # common
 just check              # lint + validate
