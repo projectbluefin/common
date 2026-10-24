@@ -7,7 +7,7 @@ Generated: 2026-10-24 · schema 1.0 · 45 skills
 
 | id | category | status | one-line purpose |
 |---|---|---|---|
-| [bazaar](bazaar.md) | ci-ops | active | Edit Bazaar runtime config, curated content, app blocklists, and hooks. |
+| [bazaar](bazaar.md) | ci-ops | active | Edit Bazaar config, blocklists, curated content, banner conversion, hooks, and previews. |
 | [bluefin-review](bluefin-review/SKILL.md) | ci-ops | active | Land the projectbluefin PR backlog under each repo's policy while a maintainer watches. |
 | [bonedigger](bonedigger/SKILL.md) | ci-ops | active | Operate bonedigger and kubestellar-bot issue/report automation. |
 | [bootc](bootc.md) | ci-ops | active | Work with bootc image build, update, and Containerfile mechanics. |

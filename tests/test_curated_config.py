@@ -1,4 +1,4 @@
-"""Regression checks for Bazaar curated config structure."""
+"""Regression checks for Bazaar curated config and app policy."""
 
 from pathlib import Path
 
@@ -7,6 +7,7 @@ import yaml
 ROOT = Path(__file__).parent.parent
 CURATED = ROOT / "system_files/bluefin/etc/bazaar/curated.yaml"
 BAZAAR = ROOT / "system_files/bluefin/etc/bazaar/bazaar.yaml"
+BLOCKLIST = ROOT / "system_files/bluefin/etc/bazaar/blocklist.yaml"
 
 
 def _load_yaml(path: Path):
@@ -46,6 +47,29 @@ def test_curated_uses_modern_schema_shape():
     assert "Desktop Development" in section_titles
     assert "Cloud Native Development" in section_titles
     assert "AI and Machine Learning" in section_titles
+
+
+def test_steam_is_blocklisted_and_steam_link_remains_available():
+    blocklist = _load_yaml(BLOCKLIST)
+    curated = _load_yaml(CURATED)
+
+    blocked_ids = {
+        appid
+        for group in blocklist["blocklists"]
+        for appid in group.get("block", [])
+    }
+    curated_ids = {
+        appid
+        for row in curated["rows"]
+        for content in row.values()
+        if isinstance(content, dict)
+        for appid in content.get("appids", {}).get("list", [])
+    }
+
+    assert "com.valvesoftware.Steam" in blocked_ids
+    assert "com.valvesoftware.Steam" not in curated_ids
+    assert "com.valvesoftware.SteamLink" in curated_ids
+    assert "com.valvesoftware.SteamLink" not in blocked_ids
 
 
 def test_bazaar_config_valid():

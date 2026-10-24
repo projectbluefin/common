@@ -3,7 +3,7 @@ name: bazaar
 version: "1.1"
 last_updated: "2026-10-24"
 id: bazaar
-one_line_purpose: Edit Bazaar runtime config, curated content, app blocklists, and hooks.
+one_line_purpose: Edit Bazaar config, blocklists, curated content, banner conversion, hooks, and previews.
 entry_point: docs/skills/bazaar.md
 category: ci-ops
 mcp_compliance_level: partial
@@ -12,8 +12,9 @@ status: active
 dependencies: []
 tags: [bazaar, curated, flatpak, apps]
 description: >-
-  Use when editing Bazaar config, curated content, app blocklists, service definitions,
-  or hooks in common. Covers modern rows schema and local preview workflows.
+  Use when editing Bazaar config, curated content, app blocklists, banner conversion,
+  systemd service definitions, or hooks in common. Covers modern rows schema, native JXL
+  banners, and local ujust preview workflows.
 metadata:
   type: procedure
   context7-sources:
