@@ -167,3 +167,7 @@ run_setup_hooks "user-hooks-directory" "/usr/share/ublue-os/user-setup.hooks.d"
 **Do not** reintroduce a private `get_config` or `for script in ...` loop in a wrapper — `tests/test_setup_scripts.bats` fails the build if you do. The three scripts were byte-identical copies before, which is how one dispatch-loop defect shipped three times over.
 
 **Test coverage:** `tests/test_setup_scripts.bats`. Run `just test` to verify.
+
+## Destructive cleanup previews
+
+For image cleanup, show every candidate the prune can remove before confirmation. Do not cap the candidate listing with `head` or `tail`; add a boundary test with more rows than the old cap and assert that the last candidate is visible.

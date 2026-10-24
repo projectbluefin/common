@@ -18,7 +18,7 @@ _clean_system_recipe() {
     [ "${status}" -eq 0 ]
     run grep -Fq "/usr/bin/podman volume ls" <<< "${recipe}"
     [ "${status}" -eq 0 ]
-    run grep -Fq "/usr/bin/podman image prune -af" <<< "${recipe}"
+    run grep -Fq "/usr/bin/podman image prune -f" <<< "${recipe}"
     [ "${status}" -eq 0 ]
     run grep -Fq "/usr/bin/podman volume prune -f" <<< "${recipe}"
     [ "${status}" -eq 0 ]
