@@ -5,7 +5,6 @@ tag_exists_in_ghcr, and main are all callable functions). Tests exercise the
 logic in-process so coverage.py can instrument them.
 """
 
-import http.client
 import importlib.util
 import http.client
 import json
