@@ -1,0 +1,61 @@
+#!/usr/bin/bash
+# ublue-booted-image — canonical reader for the identity of the booted deployment.
+#
+# image-info.json is baked at compose time: its image-tag is the compose tag
+# and its image-name/image-ref describe the original build, not a promoted or
+# rebased deployment. Only bootc knows what is actually booted, so every
+# consumer that needs the live ref, name or tag must route through here so the
+# derivation rules cannot drift per call site.
+#
+# Usage:
+#   ublue-booted-image [ref|name|tag]    (default: ref)
+#
+# Prints the requested field and exits 0. Exits 1 with no output when no
+# booted ref can be determined, so callers keep their image-info.json value.
+# `tag` prints nothing (exit 0) for a digest-pinned ref.
+
+set -euo pipefail
+
+field="${1:-ref}"
+case "$field" in
+    ref|name|tag) ;;
+    *)
+        printf 'Usage: %s [ref|name|tag]\n' "${0##*/}" >&2
+        exit 2
+        ;;
+esac
+
+BOOTED_IMAGE_FILE="${UBLUE_BOOTED_IMAGE_FILE:-/run/ublue-os/booted-image}"
+
+booted_ref="$(bootc status --json 2>/dev/null | \
+    jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
+# Unprivileged `bootc status` fails on bootc >= 1.14, so fall back to the
+# boot-time snapshot written by ublue-booted-image.service on images that ship
+# it (projectbluefin/dakota#1418).
+if [[ -z "$booted_ref" && -r "$BOOTED_IMAGE_FILE" ]]; then
+    read -r booted_ref < "$BOOTED_IMAGE_FILE" || true
+fi
+
+[[ -n "$booted_ref" ]] || exit 1
+
+case "$field" in
+    ref)
+        printf '%s\n' "$booted_ref"
+        ;;
+    tag)
+        case "$booted_ref" in
+            *@*) ;; # digest-pinned ref, no tag to extract
+            *:*) printf '%s\n' "${booted_ref##*:}" ;;
+        esac
+        ;;
+    name)
+        # Take the basename before stripping the tag: the first colon in a
+        # full reference can belong to a registry port
+        # (localhost:5000/bluefin:latest), not the tag.
+        booted_repo="${booted_ref%%@*}"
+        booted_name="${booted_repo##*/}"
+        booted_name="${booted_name%%:*}"
+        [[ -n "$booted_name" ]] || exit 1
+        printf '%s\n' "$booted_name"
+        ;;
+esac

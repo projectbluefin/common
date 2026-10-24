@@ -10,6 +10,8 @@
 #
 # Run: bats tests/test_luks_tpm2.bats
 
+bats_require_minimum_version 1.5.0
+
 LUKS_SCRIPT="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/luks-tpm2-autounlock"
 WORKDIR=""
 
@@ -155,6 +157,10 @@ teardown() {
     run bash "${LUKS_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -q "\-\-tpm2-device=auto" "${WORKDIR}/cryptenroll.log"
+    # Enrollment must be bound to Secure Boot state; an empty PCR set would let
+    # any OS booted on this machine unseal the key.
+    grep -q "\-\-tpm2-pcrs=7" "${WORKDIR}/cryptenroll.log"
+    run ! grep -q -- '--tpm2-pcrs= ' "${WORKDIR}/cryptenroll.log"
 }
 
 @test "luks: enroll with PIN passes --tpm2-with-pin=yes" {
@@ -171,4 +177,5 @@ teardown() {
     run bash "${LUKS_SCRIPT}"
     [ "${status}" -eq 0 ]
     grep -q "\-\-tpm2-with-pin=yes" "${WORKDIR}/cryptenroll.log"
+    grep -q "\-\-tpm2-pcrs=7" "${WORKDIR}/cryptenroll.log"
 }

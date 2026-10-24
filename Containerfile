@@ -1,20 +1,20 @@
-FROM docker.io/library/golang:alpine@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS umotd-build
+FROM docker.io/library/golang:alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS umotd-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/umotd /src && \
     git -C /src checkout c7433040b5dbc8dd2c35a99bd16293782409f120
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
-FROM docker.io/library/golang:alpine@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout 764a442dd594b7cb9f9c4a6a9154cc1b090dba2a
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
-FROM docker.io/library/alpine:latest@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35 AS build
+FROM docker.io/library/alpine:latest@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS build
 
-COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:75ca2d8886d91db508e6338786a9e7508066aab930089d06e83ad6f9bbf16925 / /out/bluefin/usr/share
+COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:820ec33dc2354e521bc915670625f8177a123d961121809b868e420f63c73ab8 / /out/bluefin/usr/share
 
 RUN apk add just curl
 
@@ -25,7 +25,7 @@ RUN apk add just curl
 # system_files. The release's checksums.txt is verified against its Sigstore
 # bundle, signed by ChairLift's release workflow for exactly this tag, and the
 # archive against its checksums.txt entry, so a bump changes CHAIRLIFT_RELEASE only.
-ARG CHAIRLIFT_RELEASE=v26.10.9
+ARG CHAIRLIFT_RELEASE=v26.10.10
 ARG TARGETARCH
 COPY --from=ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d /ko-app/cosign /usr/local/bin/cosign
 RUN set -eu; \

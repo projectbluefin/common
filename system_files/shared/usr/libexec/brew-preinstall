@@ -33,6 +33,16 @@ STATE_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-state.json"
 PENDING_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-pending.json"
 BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 
+# The unit is enabled globally, so GDM's user managers start it too. GDM 49+
+# runs the greeter and initial-setup sessions as transient gdm-* accounts with
+# HOME under /run/gdm/home; they cannot write the shared Homebrew prefix, and
+# the real user's login runs this anyway. Skip before any tap or bundle work.
+current_user="${USER:-$(id -un)}"
+if [[ "${current_user}" == gdm || "${current_user}" == gdm-* || "${HOME}" == /run/gdm/home/* ]]; then
+    echo "brew-preinstall: GDM session (${current_user}), skipping"
+    exit 0
+fi
+
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "brew-preinstall: brew not found at ${BREW_BIN}, skipping"
     exit 0

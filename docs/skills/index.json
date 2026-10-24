@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-12",
+  "generated_at": "2026-10-24",
   "schema_version": "1.0",
   "skills": [
     {
       "id": "bazaar",
       "name": "bazaar",
-      "one_line_purpose": "Edit Bazaar curated schema, banner conversion, and local preview config.",
+      "one_line_purpose": "Edit Bazaar config, blocklists, curated content, banner conversion, hooks, and previews.",
       "entry_point": "docs/skills/bazaar.md",
       "category": "ci-ops",
       "status": "active",
@@ -15,9 +15,9 @@
         "flatpak",
         "apps"
       ],
-      "description": "Use when editing Bazaar curated config, systemd service definitions, or hooks in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
+      "description": "Documents Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions, and hooks. Use when editing Bazaar settings in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
       "version": "1.1",
-      "last_updated": "2026-07-01",
+      "last_updated": "2026-10-24",
       "doc_type": "procedure"
     },
     {
@@ -211,7 +211,7 @@
       ],
       "description": "Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX, tool selection, or the canonical ujust devmode command.",
       "version": "1.0",
-      "last_updated": "2026-09-23",
+      "last_updated": "2026-10-22",
       "doc_type": "procedure"
     },
     {
@@ -464,7 +464,7 @@
       ],
       "description": "Ownership map for image-identity and variant metadata across the factory: which layer common owns, which each repo owns, and the field drift between them. Use when adding a variant or writing image-info.json.",
       "version": "1.0",
-      "last_updated": "2026-09-29",
+      "last_updated": "2026-10-15",
       "doc_type": "reference"
     },
     {
@@ -762,8 +762,8 @@
         "architecture"
       ],
       "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, or deciding where a system file change belongs.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-10-24",
       "doc_type": "reference"
     },
     {

@@ -1,3 +1,10 @@
+# Common owns this shared Ghostty profile; Dakota-specific overrides are
+# tracked in Dakota's BuildStream patch queue:
+# https://github.com/projectbluefin/dakota/blob/testing/patches/common/0002-ghostty-dual-theme.patch
+#
+# Dakota applies the linked patch to follow GNOME's Light/Dark mode. Keep
+# shared defaults below in common.
+
 # Bluefin GNOME profile for Ghostty
 # To override the theme, add `theme = <name>` to your config.
 # Run `ghostty +list-themes` to see all available themes.

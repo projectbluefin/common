@@ -1,7 +1,7 @@
 ---
 name: image-identity
 version: "1.0"
-last_updated: "2026-09-29"
+last_updated: "2026-10-15"
 id: image-identity
 one_line_purpose: Decide who owns image-identity and variant metadata across the org.
 entry_point: docs/skills/image-identity.md
@@ -72,6 +72,12 @@ are genuinely cross-repo and are what common's readers consume:
 - `usr/libexec/ublue-image-repo` — the name/tag → upstream repo resolver. Its
   header states it is the single source of truth for "which repository owns
   this booted image"; every consumer must route through it.
+- `usr/libexec/ublue-booted-image` — the booted-deployment reader. Prints the
+  `ref`, `name` or `tag` of what bootc actually booted (falling back to
+  `/run/ublue-os/booted-image` when unprivileged `bootc status` fails), and
+  exits 1 when nothing is booted so callers keep the baked value. Use it
+  instead of re-deriving the booted ref; `ublue-image-info.sh` and
+  `bonedigger-report` already route through it.
 - `usr/bin/ublue-image-info.sh` — the reader.
 - Consumers: `changelog.just`, `system.just`, `bonedigger-report`.
 
@@ -167,6 +173,9 @@ to do here — cite it as the pattern the other layers should reach.
 - **Adding a new `image-info.json` key in one repo only.** Layer 1 is shared;
   a new key is an org-level change. Amend this file in the same PR.
 - **Reading `image-tag` and trusting it.** Two of three writers hardcode it.
+  Ask `/usr/libexec/ublue-booted-image tag` first.
+- **Parsing `bootc status --json` for the booted ref in a new script.** That
+  derivation is owned by `ublue-booted-image`; a local copy drifts.
 - **Editing another repo's identity writer from a common PR.** common is an OCI
   layer, not a code generator; its writers are not ours to change. File the
   finding against the owning repo.

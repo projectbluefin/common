@@ -192,7 +192,7 @@ class TestJetbrainsHook:
 IDE_CASES = [
     ("vscode", "com.visualstudio.code", "com.vscodium.codium", "ublue-os/tap/visual-studio-code-linux"),
     ("vscodium", "com.vscodium.codium", "com.visualstudio.code", "ublue-os/tap/vscodium-linux"),
-    ("zed", "dev.zed.Zed", "org.mozilla.firefox", "ublue-os/tap/zed-linux"),
+    ("zed", "dev.zed.Zed", "org.mozilla.firefox", "zed"),
 ]
 
 

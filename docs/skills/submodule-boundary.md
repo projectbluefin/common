@@ -1,7 +1,7 @@
 ---
 name: submodule-boundary
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-10-24"
 id: submodule-boundary
 one_line_purpose: Decide where a system_files change belongs across variants.
 entry_point: docs/skills/submodule-boundary.md
@@ -49,9 +49,41 @@ bluefin-branding → projectbluefin/branding (wallpapers, logos)
 
 Use `just overlay` to test `system_files/` changes as a systemd-sysext on a running Bluefin system, without building the full OCI image. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for the full recipe, SELinux requirements, and activation steps.
 
+## PipeWire drop-ins
+
+Keep disabled PipeWire `.conf.d` overrides parseable. A comment-only file
+causes an `Invalid argument` load error at session startup. The shared
+`usr/share/pipewire/pipewire-pulse.conf.d/50-bluefin-bt-switch.conf` keeps an
+empty `pulse.cmd = [ ]` so automatic audio switching stays opt-in without
+the load error. Keep the `module-switch-on-connect` example commented out;
+enabling it by default would override the user's selected audio output again.
+
+Source: [PipeWire configuration, PulseAudio commands](https://docs.pipewire.org/page_man_pipewire-pulse_conf_5.html).
+
+### Verification
+
+With PipeWire's `pw-config` installed, run from the repository root:
+
+```bash
+pw-config -p "$PWD/system_files/shared/usr/share/pipewire/pipewire-pulse.conf.d" \
+  -n 50-bluefin-bt-switch.conf list
+```
+
+Confirm the file loads without an error. On a running image, check
+`journalctl --user -b -u pipewire-pulse` after restarting the user session;
+the drop-in must not produce a load warning or enable automatic switching.
+
 ## Dakota exclusion pattern
 
 `system_files/shared/` flows into **bluefin, bluefin-lts, and dakota** via the common OCI context. Dakota's `elements/bluefin/common.bst` does a plain `cp -r system_files/shared/usr/` — it receives everything.
+
+### Dakota-specific Ghostty overrides
+
+Common owns the base profile at
+`system_files/shared/etc/skel/.config/ghostty/config.ghostty`. Dakota consumes
+common and applies `patches/common/0002-ghostty-dual-theme.patch` via
+`elements/bluefin/common.bst` to follow GNOME's Light/Dark setting. Treat it as
+a Dakota-specific override, not a separate canonical config.
 
 If you add a file to `system_files/shared/` that should **not** appear in dakota (e.g., a migration aid that only applies to users rebasing from legacy-rechunk images), add explicit `rm -f` lines to `dakota/elements/bluefin/common.bst` immediately after the copy block:
 
@@ -115,3 +147,15 @@ Do not remove the flock — concurrent sysusers runs can corrupt the file.
 **dakota** actively strips these files (see exclusion pattern above) since it is a fresh BuildStream image and the migration path does not apply.
 
 **Future agents:** If you need to change the rechunker service ordering or script behavior, edit only `system_files/shared/` in this repo. Check that no consuming repo (bluefin, bluefin-lts) has re-introduced a shadowing copy before declaring the fix applied.
+
+## Verification
+
+Re-derive Dakota's default branch and Ghostty patch application:
+
+```bash
+branch="$(gh api repos/projectbluefin/dakota --jq .default_branch)"
+gh api "repos/projectbluefin/dakota/contents/elements/bluefin/common.bst?ref=${branch}" \
+  --jq .content | base64 -d
+gh api "repos/projectbluefin/dakota/contents/patches/common/0002-ghostty-dual-theme.patch?ref=${branch}" \
+  --jq .content | base64 -d
+```

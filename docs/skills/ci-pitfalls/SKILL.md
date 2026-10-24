@@ -96,6 +96,17 @@ ejects the PR and rebuilds the group, so flaky network calls multiply.
 Classify a red merge-group check by its log before re-queueing. An
 infrastructure failure gets a re-run of the failed job, not a code change.
 
+## Registry checks must handle socket timeouts
+
+`scripts/check-oci-refs.py` applies a per-request socket timeout (`REQUEST_TIMEOUT_SECONDS`).
+Both opening a connection and reading its response can time out; catch
+`URLError` and `TimeoutError` inside the existing retry loop. Exhausted
+transient retries return unknown (`None`), not missing (`False`); HTTP 401
+and non-rate-limit 403 still fail immediately. Run the complete
+`tests/test_check_oci_refs.py` module and exercise a stalled local HTTP server
+when changing this path. A test that only checks the timeout argument does
+not cover recovery or exhaustion.
+
 ## Red Flags
 
 - A PR targets `testing` but the branch was created from `main`

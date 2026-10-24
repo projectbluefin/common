@@ -34,7 +34,8 @@ setup() {
 
     MOCKDIR="${WORKDIR}/bin"
     COMMAND_LOG="${WORKDIR}/commands.log"
-    mkdir -p "${MOCKDIR}"
+    SYSTEMD_STATE="${WORKDIR}/systemd-state"
+    mkdir -p "${MOCKDIR}" "${SYSTEMD_STATE}"
     : > "${COMMAND_LOG}"
 
     UPDATE_SCRIPT="${WORKDIR}/update.sh"
@@ -65,6 +66,36 @@ case "$1" in
         [[ "${3:-$2}" == "${MOCK_ENABLED_TIMER:-}" ]] && exit 0 || exit 1
         ;;
     enable|disable)
+        verb="$1"
+        now=0
+        shift
+        if [[ "${1:-}" == "--now" ]]; then
+            now=1
+            shift
+        fi
+        for unit in "$@"; do
+            if [[ "${verb}" == "enable" ]]; then
+                touch "${SYSTEMD_STATE}/${unit}.enabled"
+                [[ "${now}" == "1" ]] && touch "${SYSTEMD_STATE}/${unit}.active"
+            else
+                rm -f "${SYSTEMD_STATE}/${unit}.enabled"
+                [[ "${now}" == "1" ]] && rm -f "${SYSTEMD_STATE}/${unit}.active"
+            fi
+        done
+        exit 0
+        ;;
+    start)
+        shift
+        for unit in "$@"; do
+            touch "${SYSTEMD_STATE}/${unit}.active"
+        done
+        exit 0
+        ;;
+    stop)
+        shift
+        for unit in "$@"; do
+            rm -f "${SYSTEMD_STATE}/${unit}.active"
+        done
         exit 0
         ;;
     *)
@@ -138,6 +169,7 @@ _run() {
     run env \
         PATH="${MOCKDIR}:${PATH}" \
         COMMAND_LOG="${COMMAND_LOG}" \
+        SYSTEMD_STATE="${SYSTEMD_STATE}" \
         MOCK_BOOTC_STATUS="${MOCK_BOOTC_STATUS:-0}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \
@@ -235,16 +267,29 @@ MOCK
     ! grep -qF "brew upgrade" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: enables uupd.timer when present and Enable chosen" {
+@test "toggle-updates: interactive Enable enables both uupd timers, starts only uupd.timer" {
     MOCK_HAS_UUPD_TIMER=1 MOCK_GUM_CHOICE="Enable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
+    [ -e "${SYSTEMD_STATE}/uupd.timer.enabled" ]
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
-@test "toggle-updates: disables rpm-ostreed timer when uupd absent and Disable chosen" {
+@test "toggle-updates: legacy disable cancels its timer and enable reactivates it" {
+    touch "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" \
+        "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" \
+        "${SYSTEMD_STATE}/uupd-resume.timer.active"
     MOCK_GUM_CHOICE="Disable" _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
+    [ ! -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    ACTION=enable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/rpm-ostreed-automatic.service.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
 }
 
 @test "toggle-updates: exits cleanly on Cancel" {
@@ -254,22 +299,6 @@ MOCK
     ! grep -qF "systemctl disable" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: ACTION=enable enables uupd.timer without prompting" {
-    MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
-    [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
-    [[ "${output}" == *"Updates have been enabled"* ]]
-    ! [[ "${output}" == *"Automatic updates are currently"* ]]
-}
-
-@test "toggle-updates: ACTION=disable disables rpm-ostreed timer without prompting" {
-    ACTION=disable _run "${TOGGLE_SCRIPT}"
-    [ "${status}" -eq 0 ]
-    grep -qF "systemctl disable rpm-ostreed-automatic.timer" "${COMMAND_LOG}"
-    [[ "${output}" == *"Updates have been disabled"* ]]
-    ! [[ "${output}" == *"Automatic updates are currently"* ]]
-}
-
 @test "toggle-updates: ACTION=cancel exits without touching the timer" {
     ACTION=cancel _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
@@ -277,10 +306,91 @@ MOCK
     ! grep -qF "systemctl disable" "${COMMAND_LOG}"
 }
 
-@test "toggle-updates: ACTION is case-insensitive (ENABLE enables uupd.timer)" {
+@test "toggle-updates: ACTION is case-insensitive (ENABLE enables uupd timers)" {
     MOCK_HAS_UUPD_TIMER=1 ACTION=ENABLE _run "${TOGGLE_SCRIPT}"
     [ "${status}" -eq 0 ]
-    grep -qF "systemctl enable uupd.timer" "${COMMAND_LOG}"
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+}
+
+# Regression contract for projectbluefin/common#1516: disabling cancels armed
+# timer triggers without stopping an update service that is already running.
+@test "toggle-updates: disabling and enabling uupd preserves a running updater" {
+    touch "${SYSTEMD_STATE}/uupd.timer.active" \
+        "${SYSTEMD_STATE}/uupd-resume.timer.active" \
+        "${SYSTEMD_STATE}/uupd.service.active"
+    MOCK_HAS_UUPD_TIMER=1 ACTION=disable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Updates have been disabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
+    [ ! -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
+    MOCK_HAS_UUPD_TIMER=1 ACTION=enable _run "${TOGGLE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Updates have been enabled"* ]]
+    ! [[ "${output}" == *"Automatic updates are currently"* ]]
+    [ -e "${SYSTEMD_STATE}/uupd.timer.active" ]
+    # uupd-resume.timer is enabled for the next resume but not armed now.
+    [ -e "${SYSTEMD_STATE}/uupd-resume.timer.enabled" ]
+    [ ! -e "${SYSTEMD_STATE}/uupd-resume.timer.active" ]
+    [ -e "${SYSTEMD_STATE}/uupd.service.active" ]
+}
+
+@test "uupd-on-ac: switch-off skips cleanly but wait failures remain errors" {
+    local unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/uupd-on-ac.service"
+    local enabled="${WORKDIR}/ac-enabled" delayed="${WORKDIR}/ac-delayed"
+    _write_mock "systemctl" <<'MOCK'
+#!/bin/bash
+[[ "$1" == "is-enabled" ]] || exit 99
+[[ -e "${AC_ENABLED_FILE}" ]]
+MOCK
+    _write_mock "sleep" <<'MOCK'
+#!/bin/bash
+touch "${AC_DELAYED_FILE}"
+if [[ "${AC_WAIT_EXIT:-0}" != "0" ]]; then
+    exit "${AC_WAIT_EXIT}"
+fi
+rm -f "${AC_ENABLED_FILE}"
+MOCK
+    cat > "${WORKDIR}/ac-condition.py" <<'PY'
+import configparser
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+unit = configparser.ConfigParser(interpolation=None)
+unit.read(sys.argv[1])
+command = shlex.split(unit["Service"]["ExecCondition"])
+replacements = {
+    "/usr/bin/systemctl": str(Path(sys.argv[2]) / "systemctl"),
+    "/bin/sleep": str(Path(sys.argv[2]) / "sleep"),
+}
+for index, argument in enumerate(command):
+    if argument in replacements:
+        command[index] = replacements[argument]
+    else:
+        for original, replacement in replacements.items():
+            argument = argument.replace(original, shlex.quote(replacement))
+        command[index] = argument
+raise SystemExit(subprocess.run(command, env=os.environ, check=False).returncode)
+PY
+    touch "${enabled}"
+    run env AC_ENABLED_FILE="${enabled}" AC_DELAYED_FILE="${delayed}" \
+        python3 "${WORKDIR}/ac-condition.py" "${unit}" "${MOCKDIR}"
+    # ExecCondition exit 1 means a skipped start, not a failed service.
+    [ "${status}" -eq 1 ]
+    [ -e "${delayed}" ]
+    [ ! -e "${enabled}" ]
+    touch "${enabled}"
+    run env AC_ENABLED_FILE="${enabled}" AC_DELAYED_FILE="${delayed}" \
+        AC_WAIT_EXIT=42 python3 "${WORKDIR}/ac-condition.py" "${unit}" "${MOCKDIR}"
+    # ExecCondition exit 255 preserves a real execution failure.
+    [ "${status}" -eq 255 ]
+    [ -e "${enabled}" ]
 }
 
 # Regression contract for projectbluefin/common#1332:

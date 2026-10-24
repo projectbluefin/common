@@ -70,15 +70,20 @@ toggle-updates ACTION="prompt":
             ;;
     esac
 
+    # uupd has a second trigger, uupd-resume.timer, that must follow the main
+    # timer. The AC-connect trigger (uupd-on-ac.service) checks uupd.timer itself.
+    # Only the main timer is started on enable: uupd-resume.timer is a
+    # post-suspend one-shot (OnActiveSec=20min) and must only arm on resume.
     if systemctl cat -- uupd.timer &> /dev/null; then
-        TIMER="uupd.timer"
+        TIMERS=(uupd.timer uupd-resume.timer)
     else
-        TIMER="rpm-ostreed-automatic.timer"
+        TIMERS=(rpm-ostreed-automatic.timer)
     fi
     if [ "${SELECTED_OPTION}" == "Enable" ] ; then
-        sudo systemctl enable "$TIMER"
+        sudo systemctl enable "${TIMERS[@]}"
+        sudo systemctl start "${TIMERS[0]}"
         echo "Updates have been enabled"
     elif [ "${SELECTED_OPTION}" == "Disable" ] ; then
-        sudo systemctl disable "$TIMER"
+        sudo systemctl disable --now "${TIMERS[@]}"
         echo "Updates have been disabled"
     fi
