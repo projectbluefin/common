@@ -52,8 +52,10 @@ containers fail to access GPUs because bootc does not use cgroup device delegati
   so all system Flatpaks are current after rebooting into a new NVIDIA image (not just the GL
   extension). Needed for Flatpak apps to use the GPU. Triggered by
   `ublue-nvidia-flatpak-runtime-sync.service` (TimeoutStartSec=900).
-- `system_files/nvidia/usr/lib/systemd/system-preset/80-nvidia-container-toolkit.preset` —
-  enables `nvidia-cdi-refresh.{path,service}` for CDI spec auto-generation.
+- `system_files/nvidia/README.md` — layer note.
+
+That is the whole layer. `common` ships **no** `80-nvidia-container-toolkit.preset`;
+`bluefin-lts` and `dakota` each ship their own (see below).
 
 Changes here flow into **all** nvidia-variant images at next build. Be surgical.
 

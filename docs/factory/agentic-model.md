@@ -5,37 +5,29 @@ Per-repo specifics live in that repo's `AGENTS.md` — start there, then load th
 
 ## Agent onboarding and self-repair
 
-The canonical downstream onboarding sequence is
-[`factory-onboarding.md`](../skills/factory-onboarding.md). Every agent starts
-with the target repository's `AGENTS.md` and local catalog, verifies its Hive
-and GitHub assignment, then loads common as a pinned shared-contract sidecar.
-Repositories should link to that procedure rather than copying common policy.
-
-Every task loop performs preflight, detects stale or contradictory guidance,
-repairs the nearest authoritative contract when safe and source-backed,
-validates the repair, and records durable learning and evidence. Silent
-fallback, wrong-repository work, repeated failures without a skill update, and
-unrecorded learnings are failures. Self-repair never bypasses design, security,
-cross-repository breakage, merge, or production human gates.
+The onboarding sequence, the fixture checklist, and the per-loop self-repair
+rule live once in
+[`factory-onboarding.md`](../skills/factory-onboarding.md). Repositories link
+to that procedure rather than copying common policy.
 
 ## Hard rules
 
 - **The standard is the codebase itself.** Use what is in production already. When making technical decisions (like choosing a GitHub Action or CLI tool), your first step is to grep the existing codebase. If a tool (e.g., `ublue-os/remove-unwanted-software`) is already heavily used across the org's repos, that is the standard. Use it.
 - **AGENTS.md is the per-repo contract.** Read it before touching anything.
-- **Project Bluefin MCP server is mandatory.** Query the org knowledge base via `projectbluefin` MCP (`https://mcp.projectbluefin.io/mcp`) before investigating, designing, or implementing:
-  - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions, and per-repository findings across `projectbluefin/*`. Always search relevant keywords first.
-  - `get_factory_status()` / `get_work_queue()` — live Hive factory state.
-  - `get_quickstart()` / `get_repository_map()` — factory standards and repo topology.
-  - Offline fallback: `~/agent.md`, refreshed by `~/.local/bin/sync-hive-kb` (search with `grep`, never load whole file into context).
-- **Standard agentic repo setup.** Every repository in the `projectbluefin` organization standardizes on these agentic fixtures:
-  - `.vscode/mcp.json` and `.cursor/mcp.json` pointing to `https://mcp.projectbluefin.io/mcp`.
-  - `.github/workflows/copilot-setup-steps.yml` (located under `.github/workflows/` so GitHub Actions and Copilot Cloud Agent detect it).
-  - `.github/copilot.yml` for repo-tailored file exclusion and indexing.
-  - Standard prompt templates under `.github/prompts/` (e.g. `conventional-commit.prompt.md`).
-  - Catalog index in `docs/skills/index.json` with a skill matcher CLI (`just skill <query>`).
-- **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
-- **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.
-- **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.
+- **Project Bluefin MCP server.** The org knowledge base is served over MCP at `https://mcp.projectbluefin.io/mcp` (wired in `.vscode/mcp.json` and `.cursor/mcp.json`). The server exposes exactly three tools:
+  - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions, and per-repository findings across `projectbluefin/*`.
+  - `get_factory_status()` — hub health, contributor counts, actionable-item count, per-tier contribution limits.
+  - `get_work_queue()` — live Hive queue and triage buckets.
+  - Offline fallback: `~/agent.md`, refreshed by `~/.local/bin/sync-hive-kb` (search with `grep`; never load the whole file into context).
+- **Standard agentic repo setup.** The fixture checklist lives once, in [`factory-onboarding.md`](../skills/factory-onboarding.md#what-a-factory-repo-needs). Do not restate it here or in a repo's own docs.
+- **Centralized org documentation authority.** `projectbluefin/common` is the centralized knowledge base and "org brain" for all factory-wide operating models, label taxonomy, onboarding rules, and cross-cutting skills. Downstream and peripheral repositories must not clone or duplicate these policies locally:
+  - Repositories import `common` as a pinned sidecar contract (optionally validated via `config/factory-contract.json`).
+  - Public documentation sites (such as `projectbluefin/documentation` and `projectbluefin/website`) link to `common` as the canonical authority, rather than declaring `actions` or local docs as the skills hub.
+  - Public documentation builders (e.g., Docusaurus) must exclude internal skill files (`skills/**`, `SKILL.md`, `superpowers/**`) from public rendering.
+  - Banned session artifacts (`NOTES.md`, `PLAN.md`, `TODO.md`, `docs/superpowers/{plans,specs}/**`, `CHANGELOG.md`) are strictly prohibited org-wide; session state lives in local agent session folders only.
+- **One agentic whole.** `common` provides the foundational layer for `dakota` and `utah`. `dakota` consumes it as a pinned git source through BuildStream (`elements/bluefin/common.bst`, `kind: git_repo`, `url: github:projectbluefin/common.git`). `bluefin` and `bluefin-lts` are archived in this repository; `ublue-os/bluefin` is Bluefin Classic. High blast radius across active downstream consumers.
+- **Org-wide automation lives in `projectbluefin/actions`.** `projectbluefin/housekeeping` is live and its GitHub description reads "Org-wide maintenance workflows for projectbluefin", but the repository ships zero workflows. Do not add maintenance automation there without a maintainer decision.
+- **Squash where the repo enforces it.** `common`'s `main` ruleset restricts merges to squash. `actions`, `testsuite`, and `iso` additionally permit merge commits and rebase, and `testsuite` and `iso` do not delete the branch on merge. Check the repo's settings before assuming squash-only.
 - **One PR per feature.** Never batch unrelated changes into a single PR. Each logical fix or feature gets its own branch and PR, even if the code changes are small. Reviewers should be able to review and revert independently.
 - **Check for existing PRs before opening.** Before creating a branch for any issue, run:
   `gh pr list --repo projectbluefin/<repo> --state open --search "<topic>"`
@@ -49,13 +41,10 @@ cross-repository breakage, merge, or production human gates.
   git diff --cached --name-only     # verify only intended files are staged
   ```
   Nested `.git` directories (worktrees, auxiliary clones) stage as gitlinks and silently corrupt history.
-- **Never push directly to a protected branch.** Always open a PR. PRs require approval from a human reviewer.
-- **Doc-only exception in `common`:** `docs/` edits and `AGENTS.md` changes may be pushed directly to `main` — no PR required. Before using this exception, confirm every changed path is under `docs/` or is `AGENTS.md`:
-  ```bash
-  git diff --cached --name-only  # must show only docs/* or AGENTS.md
-  ```
-- **CI gates protect the OCI image artifact.** A check earns `exit 1` only if failure means a broken or wrong image ships. Process conventions (attribution, skill files, doc formatting) are enforced at developer time by `pre-commit`; CI may re-run that suite as a single aggregate step, and that aggregate step is the only permitted place a process convention may fail a build. Never add a bespoke per-convention CI job — that is why `skill-drift.yml` was retired across the factory.
+- **Never push directly to `main`.** Always open a PR. `main` in `common` is covered by one active ruleset with no bypass actors, so every change — documentation included — goes through the merge queue. Required approvals and required checks are listed in [`governance.md`](../skills/governance.md#how-main-is-protected).
+- **CI gates protect the OCI image artifact.** A check earns `exit 1` only if failure means a broken or wrong image ships. Process conventions (attribution, skill files, doc formatting) are enforced at developer time by `pre-commit`; CI may re-run that suite as a single aggregate step, and that aggregate step is the only permitted place a process convention may fail a build. Never add a bespoke per-convention CI job.
 - **Attribution on every AI-authored commit (convention, not a CI gate):**
+  Standard across all factory repositories (do not invent per-repo alternatives like omitting Co-authored-by):
   ```
   Assisted-by: <Model> via GitHub Copilot
   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
@@ -92,30 +81,51 @@ Humans decide when a new secret is needed. This is a security gate, not a conven
 
 ## What "autonomous" means for promotions
 
-The factory is **fully automated** end-to-end. For bluefin, bluefin-lts, and dakota:
+Image build and promotion are automated. Triage is not. The live Hive queue
+holds 280 issues in `triaging` against 15 `ready`, 1 `implementing`, and 1
+`reviewing`, with 1 active contributor of 15 registered. Never describe the
+factory as automated end-to-end.
 
-1. Builds fire automatically (push to `testing` / Renovate digest bump / daily cron)
-2. Post-build E2E runs automatically (bluefin: required gate; bluefin-lts/dakota: advisory)
-3. `promote-testing-to-main.yml` opens/updates a squash PR automatically on every push to `testing` and on the daily cron
-4. The PR enters the merge queue and auto-merges once required checks pass (0 approvals required)
-5. `execute-release.yml` fires on `push: main` → skopeo-copies `:testing` → `:stable` → GitHub release
+For `bluefin` and `bluefin-lts`:
 
-**Releases are daily at 04:00 UTC** when `testing` differs from `main`. If there is nothing new, the promote workflow is a no-op.
+1. Builds fire automatically (push to `testing`, Renovate digest bump, or cron)
+2. Post-build E2E runs automatically
+3. `promote-testing-to-main.yml` opens or updates a squash PR. `bluefin`
+   triggers it on `push: testing` plus a daily cron; `bluefin-lts` triggers it
+   on completion of its "Post-Testing E2E" `workflow_run` plus the same cron
+4. The PR enters the merge queue and auto-merges once required checks pass
+5. `execute-release.yml` fires on `push: main` → skopeo-copies `:testing` to
+   `:stable` → GitHub release
 
-Do not report the factory as broken because a promotion PR is open — the merge queue processes it automatically.
+`dakota` has no `promote-testing-to-main.yml`; its `execute-release.yml` runs
+on its own cron instead.
+
+### Release cadences
+
+This table is the only place cadence is stated. Link here; do not restate.
+
+| Pipeline | Schedule | Source |
+|---|---|---|
+| `common` release | 1st of the month, 00:00 UTC — skipped if the last release was under 20 days ago, or if any PR against `main` carries `label:hold` | `.github/workflows/release.yml` (`cron: '0 0 1 * *'`, `workflow_dispatch`) |
+| `common` promotion-candidate E2E | Tuesday 03:00 UTC | `.github/workflows/promotion-candidate-e2e.yml` (`cron: '0 3 * * 2'`) |
+| `bluefin` / `bluefin-lts` promotion PR | daily 04:00 UTC, plus each repo's own event trigger (see above) | each repo's `.github/workflows/promote-testing-to-main.yml` (`cron: '0 4 * * *'`) |
+| `dakota` release | Mon/Wed/Fri 18:00 UTC | `dakota/.github/workflows/execute-release.yml` (`cron: '0 18 * * 1,3,5'`) |
+
+Do not report the factory as broken because a promotion PR is open — the merge
+queue processes it automatically.
 
 ## Branch targets
 
 | Repo | PR target | Notes |
 |---|---|---|
-| `common` | `main` | No testing branch — direct to main |
+| `common` | `main` | No testing branch — PRs target `main` and go through the merge queue |
 | `bluefin` | `testing` | Never `main` |
 | `bluefin-lts` | `testing` | Never `main` — testing-first model, same as bluefin and dakota |
-| `dakota` | `testing` | Never `main` — testing-first model, same as bluefin (PR 1004) |
-| `knuckle` | `main` | Installer — no testing branch |
-| `bootc-installer` | `dev` | Active work branch; `prod` triggers Flatpak release CI — never target `prod` directly |
+| `dakota` | `testing` | Never `main` — testing-first model, same as bluefin |
+| `knuckle` | `main` | Flatcar / CoreOS deployment TUI — no testing branch |
 | `testsuite` | `main` | Test repo — no testing branch |
 | `actions` | `main` | Shared actions — no testing branch |
+| `review` | `main` | Review appliance and Hive contributor worker — no testing branch |
 
 **Git workflow — three rules, no exceptions:**
 
@@ -191,7 +201,7 @@ Changes to these paths require maintainer review before merge:
 | `Justfile` | All repos |
 | `build_files/` | All repos |
 | `elements/` | `dakota` only |
-
+| `image/`, `deploy/` | `review` only |
 ## Human decision gates
 
 Agents implement autonomously **except** at the four named human gates:
@@ -239,4 +249,4 @@ See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full 
 gh search issues --label "3-clanker-queue" --owner projectbluefin --state open
 ```
 
-See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the seven-label contract.
+See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the label contract.

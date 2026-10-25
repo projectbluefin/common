@@ -1,7 +1,7 @@
 ---
 name: bootc
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-09-13"
 id: bootc
 one_line_purpose: Work with bootc image build, update, and Containerfile mechanics.
 entry_point: docs/skills/bootc.md
@@ -22,11 +22,11 @@ metadata:
 
 # bootc
 
-## MANDATORY: Read the docs first
+## Read the docs, not your training data
 
-This project is built on bootc. Before writing any Containerfile instruction,
-workflow step, or configuration that affects how images are built, delivered,
-or updated — look up the current bootc docs via Context7:
+bootc's flags, labels, and config options change between releases. Before
+writing any Containerfile instruction, workflow step, or config that affects how
+images are built, delivered, or updated, look them up:
 
 ```
 resolve-library-id: bootc
@@ -35,97 +35,58 @@ resolve-library-id: bootc
 → cite the section
 ```
 
-Do not rely on training data for bootc behavior, flags, labels, or config
-options. The bootc project evolves; training data is a snapshot. The docs are
-the source of truth.
+This skill is the worked example of the rule in
+[`context7.md`](context7.md): it deliberately holds only facts about *this
+repo*, and defers every general bootc question to upstream.
 
----
+## What `common` actually produces
 
-## What bootc is
+`common` does **not** build a bootc image. Its `Containerfile` ends in a
+`FROM scratch AS ctx` stage that assembles `system_files/` plus generated
+artifacts into an OCI layer. `bluefin` and `bluefin-lts` consume that layer and
+produce the bootable images; `iso` git-clones this repo at build time for the
+Brewfiles.
 
-bootc is an OCI-native transactional OS update system. An image built here is
-a standard OCI container image with a Linux root filesystem. bootc on the
-installed system pulls that image and applies it as the next boot entry.
+Consequences for anything you change here:
 
-The Containerfile in `projectbluefin/common` produces the shared base layer.
-Downstream repos (`bluefin`, `bluefin-lts`, `dakota`) extend it. The result is
-a bootc-compatible OCI image published to `ghcr.io/projectbluefin/`.
+- **There are no image labels to set.** `grep LABEL Containerfile` returns
+  nothing, by design — the scratch context image carries none. Label
+  requirements belong to the downstream repos.
+- **`bootc upgrade`/`switch` semantics are out of scope**, with one exception:
+  `shared/usr/libexec/bootc-update-stage` runs a bare `bootc upgrade` behind a
+  polkit action. Its flag prohibitions are documented in
+  [`brew-lifecycle/SKILL.md`](brew-lifecycle/SKILL.md).
+- **The build is owned elsewhere.** The reusable workflow is authoritative:
+  ```bash
+  gh api repos/projectbluefin/actions/contents/.github/workflows/reusable-build.yml \
+    --jq '.content' | base64 -d
+  ```
 
----
+## Kernel arguments — the declarative rule, and where this repo breaks it
 
-## Factory-relevant bootc patterns (read from source, not memory)
-
-### Image labels
-
-bootc images require specific OCI labels. The authoritative source for required
-labels is the bootc docs (resolve via Context7). Do not guess label names.
-
-To verify what labels the factory currently sets:
-
-```bash
-grep -r "LABEL\|org.opencontainers" common/Containerfile bluefin/Containerfile
-```
-
-### How the factory builds bootc images
-
-The reusable build workflow is the source of truth:
-
-```bash
-gh api repos/projectbluefin/actions/contents/.github/workflows/reusable-build.yml \
-  --jq '.content' | base64 -d
-```
-
-Do not describe the build process from memory. Read that file.
-
-### Kernel arguments
-
-bootc supports declarative kernel arguments via TOML files in `/usr/lib/bootc/kargs.d/`.
-When adding or modifying kernel arguments for the OS image, **always use declarative TOML files** instead of runtime `grubby` commands in setup scripts.
+bootc supports declarative kargs via TOML in `/usr/lib/bootc/kargs.d/`:
 
 ```toml
 # /usr/lib/bootc/kargs.d/my-feature.toml
 kargs = ["module_blacklist=my_module", "my_arg=1"]
 ```
 
-This ensures arguments are baked into the image, reproducible, and applied reliably without requiring runtime modification of the bootloader config.
-Source: bootc docs → "Kernel arguments" (resolve via Context7).
+Baked into the image, reproducible, applied without touching the bootloader at
+runtime. Use this for any new kernel argument.
 
-### Image structure rules
+**`common` ships no `kargs.d/` at all.** Its one karg manipulation is runtime
+and imperative: `system_files/shared/usr/share/ublue-os/system-setup.hooks.d/10-framework.sh`
+reads `rpm-ostree kargs` and calls
+`rpm-ostree kargs --delete-if-present=module_blacklist=hid_sensor_hub`. That is
+a *removal* of a karg an older image set, on matching Framework hardware only,
+which a static TOML cannot express — so it is a deliberate exception, not an
+oversight. Do not copy the pattern for *adding* a karg.
 
-bootc images have constraints on what goes where in the filesystem. Before
-adding files to `system_files/`, check the bootc docs for filesystem layout
-requirements. The wrong path can break the update applier silently.
+## Filesystem layout
 
-The three directories that matter most:
-- `/usr/` — read-only on the running system; bootc-managed
-- `/etc/` — mutable, overlaid; changes here survive updates
-- `/var/` — persistent user data; never reset by bootc
-
-Source: bootc docs → "Filesystem layout" (resolve via Context7).
-
-### Update and switch mechanics
-
-If a task involves `bootc update`, `bootc switch`, or how users move between
-image streams, read the bootc docs for the current flag set and behavior.
-These change between releases. Training data will be wrong.
-
----
-
-## What NOT to do
-
-- Do not copy bootc CLI flags from memory or another doc — verify via Context7
-- Do not describe bootc behavior without citing the docs section
-- Do not add Containerfile instructions that conflict with bootc's filesystem
-  layout without first checking the layout docs
-- Do not write image labels from memory — look them up
-
----
-
-## Where to find authoritative bootc information
-
-1. **Context7** — `resolve-library-id: bootc` → `get-library-docs: /bootc-dev/bootc`
-2. **Source code** — `gh api repos/bootc-dev/bootc/contents/docs` for the upstream doc tree
-3. **Existing Containerfiles** — read what the factory actually does before changing it
-
-The bootc project docs are comprehensive, well-maintained, and open source.
-There is no reason to guess.
+`/usr/` is read-only and bootc-managed, `/etc/` is mutable and overlaid, `/var/`
+is persistent and never reset. Where files in `system_files/` may go is
+constrained by that; the wrong path breaks the update applier silently. Check
+the bootc docs → "Filesystem layout" before adding a new top-level path, and see
+[`submodule-boundary.md`](submodule-boundary.md) for which overlay layer a file
+belongs in.

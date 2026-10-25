@@ -53,7 +53,7 @@ Use `just overlay` to test `system_files/` changes as a systemd-sysext on a runn
 
 ## Dakota exclusion pattern
 
-`system_files/shared/` flows into **bluefin, bluefin-lts, and dakota** via the common OCI context. Dakota's `elements/bluefin/common.bst` does a plain `cp -r system_files/shared/usr/` — it receives everything.
+`system_files/shared/` flows into active and legacy variants (`dakota`, `utah`, `bluefin`, `bluefin-lts`) via the common layer. Dakota's `elements/bluefin/common.bst` does a plain `cp -r system_files/shared/usr/` — it receives everything.
 
 If you add a file to `system_files/shared/` that should **not** appear in dakota (e.g., a migration aid that only applies to users rebasing from legacy-rechunk images), add explicit `rm -f` lines to `dakota/elements/bluefin/common.bst` immediately after the copy block:
 

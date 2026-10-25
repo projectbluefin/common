@@ -1,7 +1,7 @@
 ---
 name: factory-onboarding
-version: "1.1"
-last_updated: "2026-09-07"
+version: "2.0"
+last_updated: "2026-09-13"
 id: factory-onboarding
 one_line_purpose: Onboard repositories to the Project Bluefin factory model.
 entry_point: docs/skills/factory-onboarding.md
@@ -12,162 +12,162 @@ status: active
 dependencies: []
 tags: [factory, onboarding, setup]
 description: >-
-  How to onboard a repo into the Project Bluefin factory model. The
-  self-improvement mandate, what agents must do, and what is banned. Load
-  when setting up a new repo or auditing factory compliance.
+  How to onboard a repo into the Project Bluefin factory model, and the
+  measured state of adoption across the org. Load when setting up a new repo
+  or auditing factory compliance.
 metadata:
   type: reference
 ---
 
 # Factory Onboarding
 
-Project Bluefin is an agentic OS factory. Agents implement. Humans set direction and approve merges.
+This file holds the factory fixture checklist and the agent onboarding
+sequence. `agentic-model.md` and `factory-improvement/SKILL.md` link here;
+neither restates it.
 
-The factory gets smarter only if agents write back what they learn. Without that, every session starts from zero.
+## Agent onboarding sequence
 
----
-
-## Copyable Agent Onboarding
-
-Use this sequence when an agent enters a factory repository:
+Use this when an agent enters a factory repository:
 
 1. Read the target repository's `AGENTS.md`. It is authoritative for local
    paths, ownership, build commands, and branch targets.
-2. Read the target repository's `docs/SKILL.md` and, when published, its
-   catalog. Load only the skill pages relevant to the task.
+2. Read the target repository's `docs/SKILL.md` (or `.agents/skills/` router)
+   and its catalog (`docs/skills/index.json` where present). Load only the
+   skill pages relevant to the task.
 3. Resolve the Hive assignment and GitHub issue through their APIs. Verify the
    repository, issue, branch target, and requested scope before editing.
 4. Load `projectbluefin/common` as the pinned shared-contract sidecar. Common
    supplies factory-wide rules; it never overrides the target repository's
    local authority.
-5. Check ownership, canonical labels, credential rules, and named human gates.
-   Do not simulate workflow state or bypass approval boundaries.
-6. Create or update one compact task record containing the task ID, verified
-   repository and issue, catalog refs, skills loaded, evidence, confidence,
-   and learned facts.
-7. Make the smallest scoped change, validate it with the target repository's
+5. Check ownership, workflow-state labels, credential rules, and the named
+   human gates. Do not simulate workflow state or bypass approval boundaries.
+6. Make the smallest scoped change, validate it with the target repository's
    existing checks, and hand off the task record and evidence.
 
-Downstream repositories should link to this section rather than copying the
-entire common policy tree. A missing catalog is degraded mode, not permission
-to substitute arbitrary sibling checkouts or stale instructions.
+A missing catalog is degraded mode, not permission to substitute arbitrary
+sibling checkouts or stale instructions.
 
-## Every-Loop Self-Repair
+Every loop also self-repairs: verify preconditions, treat stale or
+contradictory guidance as a repair signal rather than silently falling back,
+fix the closest authoritative contract when the fix is safe and source-backed,
+revalidate, and record the learning. Stop for design, security,
+cross-repository breakage, merge, production, or unsupported-API decisions.
 
-Self-repair is part of every task loop, not an incident-only activity:
+## The two-output rule
 
-1. **Preflight:** verify repository, issue, catalog refs, branch target, and
-   loaded skills.
-2. **Detect:** treat stale, contradictory, missing, or failed guidance as a
-   repair signal; do not silently fall back.
-3. **Repair:** update the closest authoritative skill or contract when the
-   repair is safe, in scope, and source-backed. Keep implementation changes
-   separate from documentation learnings only when the repository contract
-   requires it.
-4. **Validate:** rerun the smallest relevant checks and confirm generated
-   catalogs, links, ownership, and workflow boundaries still agree.
-5. **Write back:** record durable learning, evidence, confidence, and any
-   remaining gap in the task handoff. Route cross-repository learning to the
-   owning repository or factory issue.
-6. **Escalate:** stop for design, security, cross-repository breakage, merge,
-   production, or unsupported API decisions. Autonomy repairs known failures;
-   it does not manufacture approval.
+Every agent session produces two outputs: the work, and the learning a future
+agent needs. The learning goes in `docs/skills/` in the same PR, not a
+follow-up. Output 1 without Output 2 means the factory does not improve.
 
-Red flags are wrong-repository edits, stale catalog use, silent fallback,
-repeated failure without a skill update, undocumented workarounds, and a task
-that ends without evidence or durable learning.
+Banned artifacts (changelogs, session notes, "append here" docs, local copies
+of factory contracts) are enumerated in
+[`agentic-model.md`](../factory/agentic-model.md#hard-rules). Delete them on
+sight.
 
-## The Two-Output Rule
+## What a factory repo needs
 
-Every agent session produces two outputs:
+This is the single copy of the fixture list.
 
-1. **The work** — the PR, fix, or feature
-2. **The learning** — what a future agent needs to know
+| Fixture | Purpose |
+|---|---|
+| `AGENTS.md` | The repo contract. Agents read it first. |
+| `docs/skills/` + `docs/SKILL.md` | Knowledge base and task→skill router. Minimum: `skill-improvement.md`. |
+| `docs/skills/index.json` + `just skill <query>` | Catalog and matcher CLI. |
+| `.vscode/mcp.json`, `.cursor/mcp.json` | Point at `https://mcp.projectbluefin.io/mcp`. |
+| `.github/copilot-instructions.md` | Thin pointer to `AGENTS.md` and nothing else. |
+| `.github/copilot.yml` | Repo-tailored file exclusion and indexing. |
+| `.github/workflows/copilot-setup-steps.yml` | Must live under `.github/workflows/` so Actions and Copilot Cloud Agent detect it. |
+| `.github/ISSUE_TEMPLATE/` | See below. |
+| `.pre-commit-config.yaml` | Developer-time convention enforcement. |
 
-Output 1 without Output 2 = factory does not improve.
+The MCP server exposes exactly three tools — `search_knowledge`,
+`get_factory_status`, `get_work_queue`. Nothing else is served; do not write
+code or docs against other tool names.
 
-The learning goes in `docs/skills/` — the same PR, not a follow-up.
+`AGENTS.md` must state the two-output rule, the human gates, and the banned
+artifacts explicitly. Agents read `AGENTS.md` first; if it is not there, they
+will not do it.
 
----
+### Issue intake
 
-## What Is Banned
+`common` ships two files in `.github/ISSUE_TEMPLATE/`: `report.yml`, the single
+unified intake form, and `config.yml`, the GitHub chooser configuration.
+`config.yml` is not a form and is not deprecated — every repo with issue forms
+needs one.
 
-These patterns actively harm the factory. Delete them when found.
+The one-form shape is not universal. `bluefin`, `dakota`, and `knuckle` each
+ship five forms (`bug-report`, `config`, `feature-request`,
+`help-this-project`, `pin`). `projectbluefin/.github` ships zero issue
+templates and zero workflows, so there are **no org-wide inherited defaults** —
+a repo with no `.github/ISSUE_TEMPLATE/` has no issue form at all.
 
-**Changelog files** (`IMPROVEMENTS.md`, `CHANGELOG.md`, `CHANGES.md`, `SESSION.md`, etc.)
-Agents append to them instead of updating skill files. The result: a stale changelog, skill files that never get updated. **Delete on sight.**
+### Skill layout and budget
 
-**"Append here" instructions**
-Any doc saying "append when you ship something" is a hallucination magnet. Route to `docs/skills/<file>.md` instead.
+Path, front-matter, and size rules live in
+[`write-a-skill.md`](write-a-skill.md). Commit attribution trailers are in
+[`agentic-model.md`](../factory/agentic-model.md#hard-rules).
 
-**Session logs committed to the repo** (`NOTES.md`, `PLAN.md`, `TODO.md`, progress files)
-These become stale context that misleads every future agent. Session state lives in the agent's session folder only, never committed.
+## Downstream sidecar pinning
 
----
+Downstream repositories can pin the `common` contracts they rely on. The
+pattern is live in `projectbluefin/utah-packages`:
 
-## What a Factory Repo Needs
+1. Place `config/factory-contract.json` in the repo:
+   ```json
+   {
+     "repository": "projectbluefin/common",
+     "commit": "<pinned-common-sha>",
+     "pinned_at": "YYYY-MM-DDTHH:MM:SSZ",
+     "contracts": {
+       "factory-onboarding": "docs/skills/factory-onboarding.md",
+       "agentic-model": "docs/factory/agentic-model.md",
+       "label-workflow": "docs/skills/label-workflow.md",
+       "review-appliance": "docs/skills/review-appliance.md",
+       "style-guide": "docs/contributing/style-guide.md"
+     }
+   }
+   ```
+2. Check it in pre-commit and CI: validate that local `AGENTS.md`,
+   `docs/SKILL.md`, and the banned-file rules still agree with upstream.
+3. Advance the SHA via Renovate or a regular promotion pass.
 
-### `docs/skills/`
+## Measured adoption
 
-Every repo needs a `docs/skills/` directory. This is the knowledge base. Agents read it; agents update it.
+Uniformity is a goal, not a description. Across 39 live org repositories
+(archived repos excluded), measured 2026-09-13:
 
-Minimum files:
-- `skill-improvement.md` — the two-output rule adapted for this repo
-- `docs/SKILL.md` — task→skill router and index
+- **11** carry all seven workflow-state labels plus `AGENTS.md` and
+  `CODEOWNERS`: `actions`, `bluefin`, `bluefin-lts`, `bluespeed`, `bonedigger`,
+  `chairlift`, `common`, `dakota`, `documentation`, `iso`, `knuckle`.
+- Only **5** of those also carry the `.github/copilot-instructions.md` pointer:
+  `actions`, `bluefin-lts`, `chairlift`, `common`, `documentation`. The pointer,
+  not the labels, is now the narrowest gap.
+- **17** carry none of the seven.
+- Per-label adoption is uniform at **22/39** — a repo has all seven or none,
+  following the Hive label sync. See [`label-workflow.md`](label-workflow.md).
+- `documentation` and `website` additionally run a `queue/*` + `needs-human/*` +
+  `size:*` + `priority/p*` dialect; `lab` runs both systems at once.
 
-Reference: [`projectbluefin/common/docs/skills/`](https://github.com/projectbluefin/common/blob/main/docs/skills/)
+Audit the specific repo before asserting what it has. See
+[`label-workflow.md`](label-workflow.md) for the label authority.
 
-### `AGENTS.md` — self-improvement section
+## Done when
 
-Every factory repo's `AGENTS.md` must state the two-output rule and the banned anti-patterns explicitly. Agents read `AGENTS.md` first. If it is not there, agents will not do it.
+- [ ] `docs/skills/` exists with `skill-improvement.md` and a `docs/SKILL.md` router
+- [ ] `AGENTS.md` states the self-improvement mandate, the human gates, and the banned list
+- [ ] `.vscode/mcp.json` and `.cursor/mcp.json` point at `https://mcp.projectbluefin.io/mcp`
+- [ ] `.github/copilot-instructions.md` is a thin pointer to `AGENTS.md`
+- [ ] `.github/workflows/copilot-setup-steps.yml` and `.github/copilot.yml` exist
+- [ ] `.github/ISSUE_TEMPLATE/` has an intake form and a `config.yml` chooser
+- [ ] `just skill <query>` is wired in the `Justfile`
+- [ ] The seven workflow-state labels exist on the repo
+- [ ] Onboarding points agents at local authority plus common as a sidecar,
+      optionally pinned via `config/factory-contract.json`
+- [ ] No changelog files, session notes, or `superpowers/` plans are committed
 
-Minimum block to include:
-
-```markdown
-## Self-Improvement
-
-Every session: ship the work AND update the relevant skill file in `docs/skills/`.
-Same PR. Not a follow-up.
-
-Banned:
-- No changelog files. Delete IMPROVEMENTS.md, CHANGELOG.md, SESSION.md if found.
-- No session notes committed to the repo.
-- No "append here" docs. Route to docs/skills/ instead.
-
-Before marking work done:
-- [ ] Discovered a workaround, pattern, or convention?
-- [ ] Skill file updated (or created)?
-- [ ] Committed in this same PR?
-```
-
-### Agentic & MCP Workspace Fixtures
-
-Every factory repo maintains standard agentic configurations:
-- `.vscode/mcp.json` and `.cursor/mcp.json` pointing to `https://mcp.projectbluefin.io/mcp` for instant agent access to org knowledge.
-- `.github/workflows/copilot-setup-steps.yml` located under `.github/workflows/` so GitHub Actions and GitHub Copilot Cloud Agent execute it before agent turns.
-- `.github/copilot.yml` path exclusions and language inclusions tailored to the repo.
-- `.github/prompts/conventional-commit.prompt.md` for consistent Conventional Commit formatting.
-- Skill catalog discovery via `docs/skills/index.json` and a `just skill <query>` recipe.
-
----
-
-## Done When
-
-- [ ] `docs/skills/` exists with `skill-improvement.md` and `docs/SKILL.md` task router
-- [ ] `AGENTS.md` includes self-improvement mandate and banned list
-- [ ] `.vscode/mcp.json` and `.cursor/mcp.json` configured for `https://mcp.projectbluefin.io/mcp`
-- [ ] `.github/workflows/copilot-setup-steps.yml` and `.github/copilot.yml` configured
-- [ ] Skill discovery CLI wired into `Justfile` (`just skill <query>`)
-- [ ] Downstream onboarding points agents to local authority plus common as a
-      shared sidecar
-- [ ] Every task loop includes preflight, self-repair, validation, and
-      durable learning
-- [ ] No changelog files in the repo
-
----
-
-## Cross-Repo Patterns
+## Cross-repo patterns
 
 Factory-wide learning → open an issue in `projectbluefin/common` with the
-learning, affected component, and evidence in its body.
-Never touch `ublue-os/*`. Tell the human to report upstream manually.
+learning, affected component, and evidence in the body.
+
+Never write to `ublue-os/*`. Tell the human to report upstream manually.

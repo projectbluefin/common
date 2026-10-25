@@ -13,8 +13,6 @@ MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
 ### MEASURE
 
 ```bash
-~/src/hive-status
-
 # Everything awaiting triage across the factory
 gh search issues --label "1-triage" --owner projectbluefin --state open \
   --json number,title,repository
@@ -24,11 +22,14 @@ gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
+`get_factory_status()` and `get_work_queue()` on the `projectbluefin` MCP
+server return the same hub health and triage buckets without authentication.
+
 ### TRIAGE
 
 For each open gap:
 - Human gate? → **SKIP** (log it, do not touch)
-- Doc gap? → **IMMEDIATE** (cheapest fix, push directly to main)
+- Doc gap? → **IMMEDIATE** (cheapest fix) — still via a PR; `main` has no direct-push path
 - CI/tooling gap? → file as a GitHub issue and let triage route it
 - Cross-repo gap? → assess blast radius before acting
 
@@ -69,9 +70,9 @@ If no → the skill is still incomplete.
 | Repo | Pre-merge | Post-merge | Promotion |
 |---|---|---|---|
 | common | `pr-e2e.yml` (composed + common suite) | `e2e.yml` | `promotion-candidate-e2e.yml` |
-| bluefin | PR smoke gate | post-merge common suite | Tuesday 06:00 UTC, N=7 floor, broad e2e suite |
+| bluefin | PR smoke gate | post-merge common suite | broad e2e suite; see [release cadences](../../../factory/agentic-model.md#release-cadences) |
 | bluefin-lts | PR validation (`pr-testsuite.yml`) + advisory e2e (`pr-e2e.yml`) | post-merge e2e | upgrade-test + failure issue reporting |
-| dakota | BST graph validation (`bst show`) | post-merge publish gate | Tuesday 06:00 UTC, N=7 floor, smoke+common e2e suite |
+| dakota | BST graph validation (`bst show`) | post-merge publish gate | smoke+common e2e suite; see [release cadences](../../../factory/agentic-model.md#release-cadences) |
 
 Gaps in this matrix = testing blind spots. File issues for missing gates.
 
@@ -83,41 +84,23 @@ Each rule must exist in exactly ONE location. Other files should have a one-line
 
 | Rule | Canonical location |
 |---|---|
-| ublue-os prohibition | `common/AGENTS.md` |
-| Issue lifecycle table | `docs/skills/label-workflow.md` |
+| ublue-os prohibition | `AGENTS.md` |
+| Label taxonomy and lifecycle | `docs/skills/label-workflow.md` |
+| How `main` is protected | `docs/skills/governance.md` |
 | PR comment policy | `docs/factory/agentic-model.md` |
 | Branch targets by repo | `docs/factory/agentic-model.md` |
-| Session start ritual | `common/AGENTS.md` (+ pointer in agentic-model.md) |
+| Release cadences | `docs/factory/agentic-model.md` |
+| Factory fixture checklist | `docs/skills/factory-onboarding.md` |
+| Hive host, endpoints, trust tiers | `docs/skills/hosted-hive.md` |
+| Skill front-matter and size rules | `docs/skills/write-a-skill.md` |
 | Task→skill routing | `docs/SKILL.md` |
 
 ---
 
 ## Finding Open Gaps
 
-Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this doc — they drift. Always query GitHub for the current state:
-
-```bash
-# Everything awaiting triage
-gh search issues --label "1-triage" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# Work admitted to the agent queue
-gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
-  --json number,title,repository
-```
-
----
-
-## Automation Audit — completed 2026-06-11
-
-All 7 automation phases deployed. The audit directory has been removed. Key outcomes:
-
-| Measure | Result |
-|---|---|
-| Workflow automation | ~97% (124 workflows, 7 repos) |
-| Human gates | 4 intentional (promotion review, actions merge, priority assignment, stale PR unclaim) |
-| Supply chain | Keyless OIDC + SBOM + SLSA L2 live ([common#595](https://github.com/projectbluefin/common/pull/595)) |
-| C1 reusable-promote | dakota ✅, bluefin-lts ✅, **bluefin pending** ([common#584](https://github.com/projectbluefin/common/issues/584)) |
+Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this
+doc — they drift. Use the MEASURE queries above against live GitHub.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: ci-tooling
-version: "2.3"
-last_updated: "2026-08-09"
+version: "2.4"
+last_updated: "2026-09-13"
 id: ci-tooling
 one_line_purpose: Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.
 entry_point: docs/skills/ci-tooling/SKILL.md
@@ -66,18 +66,31 @@ metadata:
 
 ## SHA pinning policy
 
-**All third-party `uses:` references must be pinned to a full commit SHA with a version comment.** Floating tags (`@v4`, `@main`, `@latest`) are rejected by the pre-commit hook.
+**Every `uses:` reference in `.github/workflows/` is pinned to a full 40-character commit SHA with a version comment — external and internal alike.** Floating tags (`@v4`, `@main`, `@latest`) are rejected by the `no-floating-action-tags` pre-commit hook.
 
 ```yaml
 # correct — full SHA + human-readable version comment
-uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+uses: projectbluefin/actions/bootc-build/scan-image@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
 
 # rejected by pre-commit
 uses: actions/checkout@v4
 uses: actions/checkout@main
 ```
 
-**Internal `projectbluefin/` refs use managed floating tags (`@main` or `@v1`), not SHA pins.** The `no-floating-action-tags` hook exempts all `projectbluefin/` refs. See [sha-pinning.md](references/sha-pinning.md) for the full policy and Floating-tag guard details.
+The hook exempts `projectbluefin/*`, but **nothing in this repo uses that exemption** — both internal refs are SHA pins that Renovate digest-tracks. See [sha-pinning.md](references/sha-pinning.md) for the pin inventory and the one outstanding inconsistency (`projectbluefin/actions`'s own README still advertises `@v1`).
+
+---
+
+## Which workflows exist
+
+Twelve files in `.github/workflows/`, enumerated with triggers and jobs in
+[workflow-map.md](../workflow-map.md). That table is the single source; do not
+restate it here. Confirm against the checkout before trusting any list:
+
+```bash
+ls .github/workflows/
+```
 
 ---
 
@@ -85,23 +98,9 @@ uses: actions/checkout@main
 
 - Auto-fix hooks **modify files and abort the commit**. Re-stage changed files and rerun before retrying.
 - AI-authored commits should carry both trailers (`Assisted-by:` + `Co-authored-by: Copilot`) — convention only, not a CI gate.
-- `.github/release-state.yaml` is validated with `check-jsonschema` against the pinned schema in `projectbluefin/actions`.
+- Four `language: system` docs-hygiene hooks guard the skill tree. Two other hooks select nothing here: `check-jsonschema` is scoped to `.github/release-state.yaml`, which does not exist in `common`, and the `projectbluefin/*` arm of `no-floating-action-tags` matches no ref.
 
-See [pre-commit-conventions.md](references/pre-commit-conventions.md) for the full auto-fix loop, AI attribution, schema validation, Skill drift detection, and Docs hygiene hooks.
-
----
-
-## Docs hygiene pre-commit checks
-
-The repo-level `.pre-commit-config.yaml` includes local hooks that protect the agent docs structure:
-
-| Hook | Script | What it checks |
-|---|---|---|
-| `Validate skill front-matter` | `scripts/check-skill-frontmatter.sh` | Every `docs/skills/*.md` has required front-matter keys and description ≤256 chars. |
-| `Validate docs/SKILL.md skill index` | `scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
-| `Validate internal markdown links` | `scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
-
-These are **hygiene gates**, not blocking CI workflow gates. The front-matter size budget is soft at 200 lines and hard at 500 lines; oversized legacy skills are a burn-down list — migrate them to the per-skill directory layout on sight.
+See [pre-commit-conventions.md](references/pre-commit-conventions.md) for the auto-fix loop, AI attribution, the full hook table, and the two no-op hooks.
 
 ---
 
@@ -110,14 +109,14 @@ These are **hygiene gates**, not blocking CI workflow gates. The front-matter si
 | Rationalization | Reality |
 |---|---|
 | "pre-commit fixed it, so the commit probably succeeded." | Auto-fix hooks modify files **and fail the run**; re-stage the files and rerun the hooks. |
-| "The regex already exempts `projectbluefin/actions`; subpaths will work too." | Reusable workflows add `/.github/workflows/...` before `@`; without an optional subpath, pygrep rules can still flag them. |
+| "The `# v1` comment after the SHA means the ref floats." | It is a comment. The ref is the 40-char SHA before it; a bump requires a commit. |
 | "This is only a process convention, so CI details are not worth documenting." | Factory CI policy is shared infrastructure; undocumented traps get rediscovered across multiple repos. |
 | "I know what this workflow publishes." | Read the workflow file. Project-internal CI facts drift faster than model memory. |
 
 ## Red Flags
 
 - A commit fails with `Files were modified by this hook` and you retry without `git add`-ing the changed files
-- A local floating-tag hook suddenly starts flagging internal reusable workflow refs
+- A Renovate config change is made in `.github/renovate.json5` — that file is dead; root `renovate.json` wins precedence
 - A doc about CI policy describes current workflow behavior without quoting or deriving it from source
 - A silent `startup_failure` is attributed to "GitHub being flaky" without checking caller `permissions:` or branch-from-target → see [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md)
 
@@ -135,6 +134,6 @@ These are **hygiene gates**, not blocking CI workflow gates. The front-matter si
 
 | File | Description |
 |---|---|
-| [references/sha-pinning.md](references/sha-pinning.md) | Full SHA pinning policy, how to find/update SHAs, internal refs, Floating-tag guard regex and exemptions, Renovate vs pre-commit. |
-| [references/pre-commit-conventions.md](references/pre-commit-conventions.md) | Pre-commit auto-fix loop, AI commit attribution, release-state.yaml schema validation, Skill drift detection, Docs hygiene hooks. |
-| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |
+| [references/sha-pinning.md](references/sha-pinning.md) | The pin inventory (external and internal), how to find/update SHAs, the floating-tag guard's real scope, and the `projectbluefin/actions` `@v1` inconsistency. |
+| [references/pre-commit-conventions.md](references/pre-commit-conventions.md) | Auto-fix loop, AI commit attribution, the four docs-hygiene hooks, the two no-op hooks, skill-drift retirement. |
+| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Which Renovate config governs, the four Containerfile OCI pins, Trivy scan-image archive input, multi-arch build matrix, shellcheck in validate.yml. |

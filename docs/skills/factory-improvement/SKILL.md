@@ -1,7 +1,7 @@
 ---
 name: factory-improvement
-version: "1.1"
-last_updated: "2026-08-08"
+version: "2.0"
+last_updated: "2026-09-13"
 id: factory-improvement
 one_line_purpose: Audit and propose factory self-improvement automation.
 entry_point: docs/skills/factory-improvement/SKILL.md
@@ -37,11 +37,9 @@ metadata:
 
 ## Mission
 
-**Full automation of everything that does not require a human judgment call.**
-
-The factory should be self-healing: issues flow through the pipeline, agents handle
-the mechanical work, and humans make only the decisions requiring accountability,
-context, or trust. Every manual step that *could* be automated is a reliability tax.
+Automate what does not require a human judgment call, and leave the rest
+visibly manual. Every manual step that *could* be automated is a reliability
+tax; every automated step that should have been a judgment call is a liability.
 
 ---
 
@@ -52,9 +50,9 @@ Never automate these. Never propose automating them without explicit maintainer 
 | Gate | Why it must be human |
 |---|---|
 | Admitting an issue to a queue (`3-human-queue` / `3-clanker-queue`) | Prioritization judgment; agent scope assignment |
-| PR merge approval (1 human reviewer per CODEOWNERS) | Accountability; trust for org-critical changes |
+| PR merge approval | Accountability. In `common` the ruleset requires 2 approving reviews; CODEOWNERS assigns reviewers but does not gate the merge. See [`governance.md`](../governance.md#how-main-is-protected) |
 | Release blocker calls during a promotion window | Release impact judgment |
-| Production promotion decisions (Tuesday 06:00 UTC, N=7 floor) | Final go/no-go for user-facing changes |
+| Production promotion decisions | Final go/no-go for user-facing changes. Schedules are in [`agentic-model.md`](../../factory/agentic-model.md#release-cadences) |
 | Reassigning or closing a stale PR | Judgment on abandoned vs. still-active work |
 | Any write or automated action to `ublue-os/*` namespace | Absolute prohibition — reads only. |
 
@@ -71,9 +69,6 @@ MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
 See [`references/loop-detail.md`](references/loop-detail.md) for the full MEASURE/TRIAGE/IMPLEMENT/CAPTURE/VERIFY commands and patterns.
 
 ```bash
-# Quick status
-~/src/hive-status
-
 # Everything awaiting triage
 gh search issues --label "1-triage" --owner projectbluefin --state open \
   --json number,title,repository
@@ -83,32 +78,61 @@ gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
+The `projectbluefin` MCP tools `get_factory_status()` and `get_work_queue()`
+return live hub health, contributor counts, and triage buckets without
+authentication.
+
 ---
 
 ## Pipeline Uniformity Checklist
 
-Each factory repo must have ALL of:
+The agentic fixture list (AGENTS.md, `mcp.json`, `copilot-instructions.md`,
+`copilot.yml`, `copilot-setup-steps.yml`, issue intake, skill catalog) lives
+once in
+[`factory-onboarding.md`](../factory-onboarding.md#what-a-factory-repo-needs).
+Do not restate it here.
+
+This skill adds only the checks that need a live API call.
+
+**Every factory repo:**
 
 | Requirement | Check command |
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
-| `bonedigger.yml` wired (image repos only) | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
-| Canonical lifecycle labels present | `gh label list --repo projectbluefin/{repo} \| grep -E '1-triage\|3-clanker-queue'` |
+| Workflow-state labels present | `gh label list --repo projectbluefin/{repo} \| grep -E '1-triage\|3-clanker-queue'` |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
-| Squash-only merge | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed` |
+| Merge methods match the repo's stated model | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed` |
 
----
+**Image repos only** (`bluefin`, `bluefin-lts`, `dakota`, `knuckle`):
 
-## What "Done" Looks Like
+| Requirement | Check command |
+|---|---|
+| `bonedigger.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
 
-- [ ] Every factory repo has identical infrastructure (AGENTS.md, the seven labels, pre-commit, squash-only)
-- [ ] Every pipeline stage has a gate: pre-merge CI, post-merge e2e, promotion smoke
-- [ ] All rules exist in exactly one canonical location with one-line pointers elsewhere
-- [ ] Renovate is running across all repos
-- [ ] Only the human gates listed above remain manual
-- [ ] ISO rebuilds are event-driven (triggered by stable promotion, not manual dispatch)
-- [ ] Supply chain: keyless signing + SBOM + SLSA L2 provenance on all image builds
-- [ ] Self-healing: retry + token health check on all workflows with external dependencies
+`common`, `actions`, and `testsuite` have no `bonedigger.yml` by design — they
+do not produce an image that files `ujust report` issues.
+
+Adoption is partial and measured, not assumed: of 39 live org repos, 11 carry
+all seven workflow-state labels plus `AGENTS.md` and `CODEOWNERS`, 17 carry
+none, and only 5 carry the `.github/copilot-instructions.md` pointer as well.
+Audit before asserting uniformity.
+
+## The largest unwired mechanism
+
+`projectbluefin/actions` ships
+`.github/workflows/reusable-design-enforcement.yml` ("Enforce the seven-label
+issue and review workflow"). It is the only automation in the org that
+implements the label contract, and exactly one repository calls it —
+`projectbluefin/finpilot/.github/workflows/label-enforcement.yml`. Not
+`bluefin`, not `dakota`, not `common`.
+
+```bash
+gh search code --owner projectbluefin "reusable-design-enforcement" \
+  --json repository,path
+```
+
+Adopting it is a one-file change per repo. Every other label rule in these
+docs is a convention nothing checks.
 
 ---
 
@@ -129,7 +153,7 @@ After each improvement session:
 2. For significant improvements shipped: update the relevant skill file in `docs/skills/`
 3. Would a fresh agent reading only the skills avoid the gap just closed? If no → the skill is still incomplete.
 
-Always `just check` + `pre-commit run --all-files` before commit.
+Run `just check` and `pre-commit run --all-files` before commit.
 
 ---
 

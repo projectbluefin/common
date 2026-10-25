@@ -1,7 +1,7 @@
 ---
 name: lab-testing
-version: "1.1"
-last_updated: "2026-07-29"
+version: "1.2"
+last_updated: "2026-09-13"
 id: lab-testing
 one_line_purpose: Boot images on the KubeVirt lab and collect test logs.
 entry_point: docs/skills/lab-testing/SKILL.md
@@ -31,15 +31,19 @@ real systemd unit activation, services that need device nodes, and cold-start ti
 | Signal you want | Use |
 |---|---|
 | Pre-merge: does this common change compose correctly? | `pr-e2e.yml` (PR gate) |
-| Post-merge: does the shared layer regress any variant? | `e2e.yml` (post-merge E2E) |
-| **Real systemd journal — any service failures?** | **Lab: `log-scan-*` workflows** |
+| Post-merge: does the shared layer regress a variant? | `e2e.yml` (post-merge, advisory) |
+| **Real systemd journal — any service failures?** | Lab: the `log-scan-*` **Argo** WorkflowTemplates on ghost |
 | Boot time, startup ordering, GNOME session smoke | Lab: `bluefin-qa-pipeline suites=smoke` |
 | System contract (bootc, read-only /usr, staged deploy) | Lab: `bluefin-qa-pipeline suites=system` |
 | Hardware-only bugs (suspend, USB-C, GPU PM) | Physical machines (exo-1 etc.) |
 
-GitHub Actions E2E (`e2e.yml`) uses QEMU on `ubuntu-latest` runners.
-The lab uses KubeVirt on `ghost` (Ryzen AI MAX+ 395, 64GB RAM, full KVM).
-Neither replaces the other. Lab tests run on demand; E2E runs on every push.
+**Nothing in `.github/workflows/` targets the lab.** Every job in this repo runs
+on `ubuntu-latest`, `ubuntu-24.04`, or `ubuntu-24.04-arm`; no workflow carries a
+`ghost` runner label, and `log-scan-*` is not a GitHub Actions workflow name. Lab
+runs are operator-initiated Argo submissions, always.
+
+GitHub Actions E2E uses QEMU on hosted runners. The lab uses KubeVirt on `ghost`
+(Ryzen AI MAX+ 395, 64GB RAM, full KVM). Neither replaces the other.
 
 ## Scope by changed path
 
@@ -103,8 +107,8 @@ common PR
     │
     ├─► [merge to main]
     │
-    ├─► e2e.yml  ───────────  post-merge: smoke+common on all 3 tags
-    │                         (QEMU, ubuntu-latest, ~15 min)
+    ├─► e2e.yml  ───────────  post-merge: `common` suite on 2 tags
+    │                         (bluefin:testing + dakota:testing, QEMU, ~15 min)
     │
     └─► lab (on demand) ───── real KVM boot, systemd journal, system suite
                               (KubeVirt on ghost, full OS boot)

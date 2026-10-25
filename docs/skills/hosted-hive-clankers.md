@@ -1,7 +1,7 @@
 ---
 name: hosted-hive-clankers
-version: "1.2"
-last_updated: "2026-07-29"
+version: "1.3"
+last_updated: "2026-09-13"
 id: hosted-hive-clankers
 one_line_purpose: Receive and verify authenticated Hive work via Clankers.
 entry_point: docs/skills/hosted-hive-clankers.md
@@ -29,9 +29,13 @@ issue before acting.
 
 ## Availability
 
-Use the operator-supplied relay origin. When the deployment exposes
-`GET /api/contribute/status`, inspect `hub`, `active_contributors`,
-`total_registered`, and `actionable_items` before treating the relay as ready.
+Use the operator-supplied relay origin; the org's hosted deployment host is
+named in [`hosted-hive.md`](./hosted-hive.md#deployment-host). When the
+deployment exposes `GET /api/contribute/status`, inspect `hub`,
+`active_contributors`, `total_registered`, and `actionable_items` before
+treating the relay as ready. The `projectbluefin` MCP tool
+`get_factory_status()` returns the same four fields without authentication.
+
 The checked-in direct hub accepts contributor WebSocket connections at
 `/contribute`; the checked-in proxy also forwards `/api/contribute/ws`. Use the
 endpoint the operator gives you. If reachability, path, or identity differs
@@ -68,21 +72,21 @@ Follow the checked-in request and message contract:
 
 ## Trust tiers and permissions
 
-The checked-in APIs recognize `newcomer`, `contributor`, `trusted`, `advisor`,
-and `revoked` trust tiers. The checked-in relay returns an explicit
-`permissions` list in `auth_ok`; trust that returned list over assumptions.
+The five tiers and their meaning live in
+[`hosted-hive.md`](./hosted-hive.md#trust-tiers). The relay returns an explicit
+`permissions` list in `auth_ok`; trust that returned list over the tier name.
 
-Source-backed minimums from the checked-in relay are:
+Source-backed minimums from the checked-in relay:
 
 - `newcomer`: at least `issues:read` and `issues:comment`;
-- higher non-revoked tiers: a broader set that includes `issues:write`,
-  `contents:write`, and `pulls:write`.
+- higher tiers: a broader set that includes `issues:write`, `contents:write`,
+  and `pulls:write`.
 
 Do not assume additional capabilities such as merge, review approval, or
-special checks access unless they are actually returned by the relay or
-separately established by checked-in source. The relay does not grant
-permission to bypass repository ownership, canonical labels, human gates,
-review, or merge policy.
+special checks access unless the relay actually returns them or checked-in
+source establishes them. The relay does not grant permission to bypass
+repository ownership, workflow-state labels, human gates, review, or merge
+policy.
 
 ## Credential safety
 
@@ -107,15 +111,6 @@ contributor relay.
 
 Do not use it as a queue authority, a replacement for GitHub verification, or
 an excuse to bypass repository and human gates.
-
-## Core Process
-
-1. Check relay reachability and, when available, `/api/contribute/status`.
-2. Register only through the documented API.
-3. Authenticate with the registration-token protocol.
-4. Inspect trust tier and returned permissions.
-5. Verify each assignment in GitHub before acting.
-6. Maintain liveness and stop on ambiguity.
 
 ## Common Rationalizations
 

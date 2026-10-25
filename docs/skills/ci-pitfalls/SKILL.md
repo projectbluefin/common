@@ -1,7 +1,7 @@
 ---
 name: ci-pitfalls
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-13"
 id: ci-pitfalls
 one_line_purpose: Diagnose CI gotchas and silent workflow failures across repos.
 entry_point: docs/skills/ci-pitfalls/SKILL.md
@@ -75,11 +75,16 @@ and retain real Homebrew validation in CI.
 
 ## Red Flags
 
-- A PR targets `testing` but the branch was created from `main`
-- A reusable workflow job shows `startup_failure` with no error output (check caller `permissions:`)
-- A `workflow_run`-triggered gate silently never fires (name mismatch)
+In `common`:
+
+- A merge queue PR is stuck with no matching check name (ruleset check-name drift) — the three required contexts are in [automerge-and-rulesets.md](references/automerge-and-rulesets.md)
 - A Renovate PR passes all checks but never merges (check `autoMergeRequest`)
-- A merge queue PR is stuck with no matching check name (ruleset check name drift)
+- A reusable-workflow job shows `startup_failure` with no error output (check caller `permissions:`)
+
+In the downstream image repos, which have `testing` branches and `workflow_run` triggers that `common` does not:
+
+- A PR targets `testing` but the branch was created from `main`
+- A `workflow_run`-triggered gate silently never fires (name mismatch)
 - `create-github-app-token` fails with `Invalid keyData` (owner + repositories scoping)
 
 ---
@@ -99,4 +104,4 @@ and retain real Homebrew validation in CI.
 | [pr-and-branch.md](references/pr-and-branch.md) | Branch-from-target rule, bulk SHA bump regex trap, actions PR consumer validation evidence format |
 | [permissions-and-triggers.md](references/permissions-and-triggers.md) | Caller-level permissions starvation, workflow_run name matching, merge_group + upload-sarif ref failure |
 | [build-and-push.md](references/build-and-push.md) | Rootless buildah vs root podman storage, GHCR login required before cosign signing |
-| [automerge-and-rulesets.md](references/automerge-and-rulesets.md) | Renovate automerge mechanics, renovate-automerge.yml merge queue, ruleset required status check names, create-github-app-token cross-repo scoping |
+| [automerge-and-rulesets.md](references/automerge-and-rulesets.md) | `platformAutomerge` mechanics under a zero-bypass merge queue, the single `main` ruleset and its exact required check names, create-github-app-token cross-repo scoping |

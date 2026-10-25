@@ -1,7 +1,7 @@
 ---
 name: human-gates
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-09-13"
 id: human-gates
 one_line_purpose: Decide when to stop for Design, Security, Breakage, or Merge review.
 entry_point: docs/skills/human-gates.md
@@ -65,7 +65,7 @@ Examples:
 
 ### 3. Breakage Gate
 
-**Stop when:** Your change removes or renames a public input, changes a default that consuming repos depend on, or could break `bluefin`, `bluefin-lts`, `dakota`, `aurora`, or `bazzite`.
+**Stop when:** Your change removes or renames a public input, changes a default that consuming repos depend on, or could break `bluefin`, `bluefin-lts`, `dakota`, or `iso`.
 
 Examples:
 - Renaming or removing a workflow input used by downstream callers
@@ -75,7 +75,7 @@ Examples:
 
 **Action:** Identify all affected consumers before opening the PR. List them in the PR description. Confirm no consumer will silently break. If cross-repo coordination is needed, note that explicitly.
 
-> ⚠️ `common` changes propagate to ALL downstream variants at next build. A broken `system_files/shared/` change breaks `bluefin`, `bluefin-lts`, AND `dakota` simultaneously.
+> ⚠️ All four consumers break differently. `bluefin` and `bluefin-lts` pull this layer as a build stage (`COMMON_IMAGE`), so a broken `system_files/shared/` change breaks both images on their next build. `iso` clones the repo for Brewfiles. `dakota` consumes it as a pinned git source through BuildStream (`elements/bluefin/common.bst`) and carries two local patches against this repo (`patches/common/0001-fastfetch-install-date.patch`, `0002-ghostty-dual-theme.patch`) — a `Containerfile` grep will not reveal that dependency, and changes to the fastfetch layout or Ghostty theming can break `dakota`'s build without touching anything it owns. `system_files/shared/` is no longer bound to the `aurorafin-shared` submodule; that dependency was severed (see `submodule-boundary.md`), so do not assume an automatic Aurora path either way.
 
 ---
 
@@ -83,9 +83,18 @@ Examples:
 
 **Stop when:** Your PR is ready for final review and merge.
 
-This gate is always human. CI passing plus an approving review from a human reviewer is required before merge. Auto-merge fires only after both conditions are met.
+This gate is enforced by GitHub, not by convention. The `main` ruleset
+requires **two** approving human reviews and three green required checks
+(`validate`, `Build and push image (x86_64)`, `Build and push image
+(aarch64)`), and merges run through the merge queue. There are no bypass
+actors, so no agent and no maintainer can skip it. Full parameters:
+[governance.md](governance.md#how-main-is-protected).
 
-Agents never self-merge, never bypass branch protection, and never force-push to a protected branch.
+Agents never self-approve and never self-merge. `--admin` requires an explicit
+human instruction for that specific PR.
+
+Note that `require_code_owner_review` is `false`: a CODEOWNERS match assigns a
+reviewer but is not one of the two required approvals.
 
 ---
 
@@ -103,26 +112,26 @@ When you hit a gate:
    My approach: [what you're proposing]
    Alternative approaches: [if any]
    ```
-3. Add the `blocked` label to the related issue (not a new PR comment).
+3. Apply the `blocked` label to the related issue and, in the same comment,
+   name the exact decision or dependency you are waiting on. A `blocked`
+   label without that sentence is not a signal — see
+   [label-workflow.md](label-workflow.md#agent-rules).
 4. Wait for explicit human approval before opening a PR.
 
 ---
 
 ## Verification Evidence Requirement
 
-Before removing draft status and requesting formal review, ALL of the following must be true:
+Before removing draft status and requesting formal review, both of these must
+be true:
 
-- [ ] CI is passing (link the run in the PR description)
-- [ ] If no automated test covers the change — describe how you manually verified it
-- [ ] Skill file update committed in **this same PR** (not a follow-up)
-- [ ] PR title follows Conventional Commits format (`feat:`, `fix:`, `docs:`, etc.)
-- [ ] Both attribution trailers present on every AI-authored commit:
-  ```
-  Assisted-by: <Model> via GitHub Copilot
-  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-  ```
+- [ ] CI is passing — link the run in the PR description.
+- [ ] If no automated test covers the change, describe how you verified it by
+      hand.
 
-Do not request review until all five are checked. A PR without evidence is not ready.
+The PR title, commit trailers, and skill-doc requirements are in
+[`.github/pull_request_template.md`](../../.github/pull_request_template.md)
+and `AGENTS.md`. A PR without evidence is not ready.
 
 ---
 

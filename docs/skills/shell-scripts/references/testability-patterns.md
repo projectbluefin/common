@@ -17,6 +17,11 @@ python3 -m pytest tests/test_hooks.py --cov=tests --cov-fail-under=80
 python3 -m pytest tests/test_hooks.py --cov=system_files/bluefin/etc/bazaar --cov-fail-under=80
 ```
 
+`.github/workflows/unit-tests.yml` gets this right. The `Justfile`'s `test`
+recipe does not — it still passes `--cov=tests`, so the coverage number it
+prints locally is meaningless. Fixing the `Justfile` is a code change, not a
+doc change.
+
 ---
 
 ### flock FD ordering — mkdir-p must precede the subshell

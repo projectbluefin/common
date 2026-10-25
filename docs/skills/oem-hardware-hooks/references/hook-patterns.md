@@ -79,7 +79,15 @@ Without this check, a common hook that removes the file will break AMD Framework
 
 ## colormgr — preferred subcommands for ICC profile hooks
 
-When writing user-session hooks that assign ICC profiles via `colormgr`:
+`common` ships two ICC profiles —
+`system_files/shared/usr/share/color/icc/colord/framework13.icc` and
+`framework16.icc` — but **no hook assigns them**: `colormgr` appears nowhere in
+`system_files/`. A `12-framework-color.sh` hook that did this once existed and
+is gone; the profiles were left behind. Either re-add a hook using the pattern
+below, or delete the two `.icc` files. Until one of those happens the profiles
+are dead weight in every image.
+
+When writing a user-session hook that assigns ICC profiles via `colormgr`:
 
 ```bash
 # Find the built-in display device (first display device)

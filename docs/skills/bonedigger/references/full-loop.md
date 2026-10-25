@@ -88,12 +88,10 @@ QR login is intentionally out of scope.
 
 ## bonedigger — what it does NOT do
 
-bonedigger does not own the seven-label workflow. It provides a slim
-`lifecycle.yml` scoped to ujust-report intake, which `bluefin`, `bluefin-lts`,
-`dakota`, and `knuckle` call through their own `bonedigger.yml`. `common` has no
-lifecycle caller.
+bonedigger does not own the workflow-state labels. It publishes one slim
+reusable `lifecycle.yml` (see Integration status below) and nothing more.
 
-See [`label-workflow.md`](../../label-workflow.md) for the full lifecycle reference.
+See [`label-workflow.md`](../../label-workflow.md) for the label authority.
 
 ## kubestellar-bot - what it does
 
@@ -107,18 +105,29 @@ kubestellar-bot does NOT make design or security decisions. Those hit a human ga
 
 ## Integration status
 
-The factory has two lifecycle workflows serving different purposes:
+`projectbluefin/bonedigger` publishes one reusable workflow,
+`.github/workflows/lifecycle.yml`, scoped to `ujust report` intake,
+confirmation tracking, and the agent-donation fast-track. `bluefin`,
+`bluefin-lts`, `dakota`, and `knuckle` call it from their own
+`.github/workflows/bonedigger.yml`. `common` has no caller.
 
-| Workflow | Location | Called by | Purpose |
-|---|---|---|---|
-| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
-| bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
+Internal `projectbluefin/` refs are SHA-pinned in practice, with the version
+or branch in a trailing comment:
 
-All internal `projectbluefin/` workflow refs use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. See [`ci-tooling.md`](../../ci-tooling/SKILL.md) § Internal refs.
+| Caller | Pinned ref |
+|---|---|
+| `bluefin`, `bluefin-lts` | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@d53076732c23203efd7856eaee7c502742897603 # v1` |
+| `dakota` | the same workflow at `@aa3185566171de43106976cd5a0ac72ee3106868 # clanker-queue-rollout` |
+| `common` (`run-testsuite.yml`) | `projectbluefin/testsuite/.github/workflows/e2e.yml@8d9ca0b35a25a9c2072067fcdc145268f7e08be5 # main` |
 
-There is no `lifecycle-caller.yml` in the factory. If you find one, it is stale — delete it.
+The `no-floating-action-tags` pre-commit hook
+(`entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'`) *exempts*
+`projectbluefin/*` from the floating-tag ban — it permits `@main` on internal
+refs, it does not require it. Match the caller you are editing; do not convert
+a SHA pin to `@main`.
 
-bonedigger's `sync-templates.yml` continues to propagate issue templates to factory repos.
+There is no `lifecycle-caller.yml` in the factory. If you find one, it is
+stale — delete it.
 
 ## Template sync
 

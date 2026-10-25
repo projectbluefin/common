@@ -1,7 +1,7 @@
 ---
 name: shell-scripts
 version: "1.1"
-last_updated: "2026-08-08"
+last_updated: "2026-09-13"
 id: shell-scripts
 one_line_purpose: Write and test shell scripts under system_files/.
 entry_point: docs/skills/shell-scripts/SKILL.md
@@ -23,9 +23,10 @@ metadata:
 
 # Shell Scripts — authoring and testability
 
-> Split from [`ci-tooling.md`](../ci-tooling/SKILL.md) on 2026-06-24. This file holds shell script authoring patterns, testability idioms, and the mandatory touch-points when removing a script. [`ci-tooling.md`](../ci-tooling/SKILL.md) retains CI policy and config; [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) retains the incident log.
-
-<!-- TODO(context7): verify shellcheck directive syntax (SC1072/SC1073, SC1091, SC2148, SC2207) and bats setup/teardown semantics against upstream docs. These were documented from live test debugging, not from Context7 lookups. -->
+This file holds shell script authoring patterns, testability idioms, and the
+mandatory touch-points when removing a script. [`ci-tooling.md`](../ci-tooling/SKILL.md)
+holds CI policy and config; [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) holds the
+incident log.
 
 ## When to Use
 
@@ -41,16 +42,29 @@ metadata:
 
 ---
 
-## Removing a shell script from common — 4 mandatory touch-points
+## Removing a shell script from common — the mandatory touch-points
 
-When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
+Executables live in two places per layer, and neither is `usr/bin/` only:
+
+- `system_files/shared/usr/bin/` — 11 user-facing entry points
+- `system_files/shared/usr/libexec/` — 4 helpers invoked by units and polkit
+- `system_files/bluefin/usr/libexec/` — 5 Bluefin-only helpers
+- `system_files/nvidia/usr/libexec/` — 1
+
+There is no `system_files/bluefin/usr/bin/`. When deleting any of the above,
+check all five:
 
 | File | What to remove |
 |---|---|
-| `.github/workflows/unit-tests.yml` | The script path from the shellcheck `run:` block |
-| `.github/workflows/validate.yml` | The `shellcheck` step that invokes it (if script-specific) **and** any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
-| `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
-| `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and any related skill links + all cross-references |
+| `Justfile` | The `bats tests/test_<name>.bats` line from the `test` recipe |
+| `tests/test_<name>.bats` | The test file itself |
+| `.github/workflows/unit-tests.yml` | The script path from the explicit extensionless-script shellcheck list, if it is named there |
+| `.github/workflows/validate.yml` | Any `candidates.append(Path("..."))` entry in the Python OCI-ref guard. The shellcheck step itself is a blanket `find system_files -name '*.sh'` and names no script, so there is nothing script-specific to delete there |
+| `system_files/bluefin/usr/share/ublue-os/just/system.just` (or the owning `.just`) | The `just` target and all aliases |
+| `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and all cross-references |
+
+If the script had a systemd unit or preset, remove those too — a preset that
+enables a missing unit fails at first boot.
 
 ### Dead apt step hazard
 
@@ -60,9 +74,9 @@ If the `validate.yml` shellcheck step was the **only** consumer of `Install shel
 
 After deleting the script and its skill file, run:
 ```bash
-grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
+grep -rn "<script-name>" docs/ --include="*.md" --include="*.json"
 ```
-Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `specs/` JSON chunks.
+Common survivors: `devmode.md` advisories, `image-registry.md` section headers, skill index metadata.
 
 ---
 
@@ -99,7 +113,7 @@ Directive syntax, SC code notes, and quoting fix examples in
 - A bats test overrides `HOME` but not `XDG_CONFIG_HOME` — leaks to the real runner config dir
 - A shellcheck `disable=` directive has an inline comment after it (SC1072/SC1073)
 - A script's main flow runs on `source` (no `BASH_SOURCE` guard) — breaks bats loading
-- `--cov=tests` in a pytest invocation — measures test files, not source under test
+- `--cov=tests` in a pytest invocation — measures the test files, not the source under test. **The `Justfile`'s `test` recipe does exactly this today**; it should be `--cov=system_files --cov=scripts`. Do not copy the pattern, and do not trust the local coverage percentage until it is fixed.
 
 ---
 
@@ -109,7 +123,7 @@ Directive syntax, SC code notes, and quoting fix examples in
 - [ ] `just test` passes locally (bats + pytest)
 - [ ] If a shellcheck directive was added, verify its syntax against Context7 (shellcheck library) and confirm the SC code is correct
 - [ ] If a bats test uses env-var overrides, confirm the script uses `${VAR:-default}` at the read site — the override does nothing without it
-- [ ] If a script was removed, all 4 touch-points were checked and the cross-reference sweep returned no survivors
+- [ ] If a script was removed, every touch-point in the table above was checked and the cross-reference sweep returned no survivors
 
 ---
 

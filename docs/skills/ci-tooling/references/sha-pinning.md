@@ -6,7 +6,7 @@ Part of [ci-tooling](../SKILL.md) — Full SHA pinning rules, how to look up and
 
 ## SHA pinning policy
 
-**All third-party `uses:` references must be pinned to a full commit SHA with a version comment.** Floating tags (`@v4`, `@main`, `@latest`) are rejected by the pre-commit hook.
+**Every `uses:` reference in `.github/workflows/` is pinned to a full 40-character commit SHA with a version comment — external and internal alike.** Floating tags (`@v4`, `@main`, `@latest`) are rejected by the `no-floating-action-tags` pre-commit hook for external refs, and are not used for internal refs either.
 
 ### Why
 
@@ -16,14 +16,16 @@ Floating tags are a supply chain attack vector. Any upstream action can be compr
 
 ```yaml
 # correct — full SHA + human-readable version comment
-uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-uses: taiki-e/install-action@be26d15a6e9c3a1e0696f6f1f5e56b4e46d08c29 # v2.47.0
+uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+uses: projectbluefin/actions/bootc-build/scan-image@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c # v1
 
 # rejected by pre-commit
 uses: actions/checkout@v4
 uses: actions/checkout@main
 uses: taiki-e/install-action@latest
 ```
+
+The trailing comment names the tag the SHA came from. It is documentation, not the ref — `# v1` and `# main` after a SHA do not mean the workflow floats.
 
 ### How to find the SHA for an action
 
@@ -39,72 +41,57 @@ gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.sha'
 
 1. Look up the new tag's SHA (command above)
 2. Update the `uses:` line: `@<new-sha> # <new-version>`
-3. Renovate handles most updates automatically once pins are tracked
+3. Renovate handles most updates automatically — root `renovate.json` automerges `digest` updates, which is how `projectbluefin/actions` bumps land
 
-### Internal `projectbluefin/` refs — managed tags, not SHA pins
+---
 
-**All `projectbluefin/` internal workflow refs use managed floating tags (`@main` or `@v1`), not SHA pins.**
+## Internal `projectbluefin/` refs are SHA-pinned too
 
-The `no-floating-action-tags` pre-commit hook exempts all `projectbluefin/` refs via a negative lookahead. External refs (`actions/`, `docker/`, `taiki-e/`, etc.) are still required to be SHA-pinned.
+Both internal refs in this repo are full SHA pins, and Renovate digest-tracks them:
 
-SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: every commit to `projectbluefin/actions` requires manual SHA bumps in all consumers (common, bluefin, bluefin-lts, dakota). Worse, a stale pin silently broke when the pinned commit predated the called file's existence, emitting only `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis (June 2026, bonedigger#27). The failure mode is worse than the risk of managed-tag drift. See [`ci-pitfalls.md`](../../ci-pitfalls/SKILL.md) for the full incident.
+| Caller file | Ref | Comment |
+|---|---|---|
+| `build.yml` (5 steps) | `projectbluefin/actions/bootc-build/{setup-runner,scan-image,push-image,create-manifest,sign-and-publish}@e2ccd51b41d9bb3abd9caeac626fb15c95589c3c` | `# v1` |
+| `run-testsuite.yml` | `projectbluefin/testsuite/.github/workflows/e2e.yml@8d9ca0b35a25a9c2072067fcdc145268f7e08be5` | `# main` |
 
-**Current state (post June 2026 cleanup):**
+`run-testsuite.yml` is the only place the testsuite pin appears; `e2e.yml`, `pr-e2e.yml`, and `promotion-candidate-e2e.yml` all call it through the local `./.github/workflows/run-testsuite.yml` path.
 
-| Caller file | Repo(s) | Calls | Ref |
-|---|---|---|---|
-| `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | `@v1` |
-| `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@main` |
+### The outstanding inconsistency
 
-**Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` or `projectbluefin/bonedigger` workflow refs. When a SHA predates the file's existence in the repo, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis. See [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27).
+Two artifacts still describe the old managed-floating-tag model, and neither is enforced:
 
-**Trap: bad semver tags.** The `v1.1.0` tag in `projectbluefin/actions` was cut from commit `95dc404b` (May 31 2026), which predates `lifecycle.yml` being added to that repo (June 10). Anyone who pinned to `v1.1.0` got a broken caller. Always verify a tag commit actually contains the file you're calling before pinning to it. Use `v1` (the managed floating tag).
+1. The `no-floating-action-tags` hook **exempts** `projectbluefin/*` via a negative lookahead — but **no ref in this repo relies on that exemption.** The exemption is dead permission: removing it would not fail a single line here.
+2. `projectbluefin/actions`'s own `README.md` still tells adopters "Pin to `@v1` for stability. Renovate manages updates in consuming repos," and its examples use `@v1`. That is the opposite of what its largest consumer does.
+
+Do not resolve this by loosening `common`. If you touch either artifact, tighten toward SHA pins.
+
+### Why SHA-pinning internal refs used to be discouraged
+
+A stale internal pin fails obscurely: when the pinned commit predates the called file's existence, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` and nothing else (June 2026, [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27)). The mitigation is not floating tags — it is Renovate keeping the digest current, which is what root `renovate.json` does. See [`ci-pitfalls`](../../ci-pitfalls/SKILL.md) for the incident.
+
+**Trap: bad semver tags.** The `v1.1.0` tag in `projectbluefin/actions` was cut from commit `95dc404b` (May 31 2026), which predates `lifecycle.yml` being added to that repo (June 10). Anyone who pinned to `v1.1.0` got a broken caller. Verify a tag's commit actually contains the file you are calling before taking its SHA.
 
 ---
 
 ## Floating-tag guard
 
-**Scope:** shared pre-commit hook active in `common`, `bluefin`, `bluefin-lts`, `dakota`, `actions`. Parity work pending in other repos.
+**Hook:** `no-floating-action-tags`, defined locally in `.pre-commit-config.yaml`.
 
 **Regex:** `uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])`
 
-The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. All `projectbluefin/` refs are exempted via negative lookahead — they use managed floating tags by design. All external refs are subject to the hook.
+**Scope:** `types: [yaml]`, `files: '\.github/workflows/'` — it is a pygrep hook, so it only ever sees this repo's workflow files. Any claim about it being "active in bluefin, bluefin-lts, dakota, actions" is a claim about *those* repos' own `.pre-commit-config.yaml`, not about anything in this one.
 
-### If you narrow the exemption, include reusable-workflow subpaths
-
-If the exemption is narrowed from `projectbluefin/.*` to specific internal repos (for example `actions|bonedigger`), the negative lookahead must allow an optional subpath before `@`:
-
-```regex
-uses:(?!.*projectbluefin\/(?:actions|bonedigger)(?:\/[^@]*)?@).*@(main|master|latest|v[0-9]+)\b
-```
-
-The key fragment is `(?:\/[^@]*)?`. Without it, reusable workflow refs such as `projectbluefin/actions/.github/workflows/lifecycle.yml@main` or `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@v1` can be falsely matched as forbidden floating tags.
-
-### What the floating-tag hook blocks
-
-Third-party actions must be pinned to a full commit SHA with a human-readable version comment. These floating refs are rejected:
-
-```yaml
-uses: actions/checkout@v4
-uses: actions/checkout@main
-uses: taiki-e/install-action@latest
-uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # CORRECT — internal ref, exempt from the hook
-```
-
-### Repos with managed tags (exempt)
-
-All `projectbluefin/` internal refs are exempt from the hook. Current usage:
-- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
-- `projectbluefin/bonedigger` — `@v1` maintained by bonedigger release process
-- `projectbluefin/testsuite` — `@main` (managed floating tag, same policy as all internal refs)
-
-External actions (everything outside `projectbluefin/`) must use full SHA pins.
+Current state in `common`: zero violations, and zero refs depend on the `projectbluefin/` exemption.
 
 ### Renovate vs pre-commit
 
 These two protections do different jobs:
 
 - **The pre-commit hook** prevents new floating tags from entering the codebase
-- **Renovate** updates existing SHA pins automatically once they are tracked
+- **Renovate** updates existing SHA pins automatically once they are tracked — see [renovate-and-tools.md](renovate-and-tools.md) for which config file actually governs
 
 Use both. The hook enforces that refs are pinned at commit time. Renovate keeps them fresh.
+
+### Known pin inconsistency inside this repo
+
+`copilot-setup-steps.yml` pins `actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7`; every other workflow pins `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7`. Both carry the same `# v7` comment. Align `copilot-setup-steps.yml` the next time you touch it.

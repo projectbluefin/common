@@ -1,7 +1,7 @@
 ---
 name: pr-review
-version: "3.5"
-last_updated: "2026-08-08"
+version: "3.6"
+last_updated: "2026-09-13"
 id: pr-review
 one_line_purpose: Run human-decides, agent-lands backlog review one card at a time.
 entry_point: docs/skills/pr-review/SKILL.md
@@ -47,20 +47,24 @@ The loop: **dossier → verdict → land.**
 
 For "let's review <repo> PRs" the agent assembles the list from three sources, in order:
 
-1. **Queue feed** (cheap first pass, non-authoritative):
+1. **Queue feed / Review appliance** (cheap first pass, non-authoritative):
    ```bash
    curl --fail --silent --show-error --location --max-time 20 \
      https://projectbluefin.github.io/review/queue.json |
      jq -r '.items[] | select(.repository == "projectbluefin/<repo>") | [.recommended_action, .number, .title] | @tsv'
    ```
-   `ready-for-human-merge` items go first. Verify every fact live — the feed is a snapshot, not authority. See [queue-feed.md](../queue-feed.md).
-2. **Auto-merge-armed scan** — PRs a human already queued with `gh pr merge --auto` (or the Hive sweep label):
+   `ready-for-human-merge` items go first. The feed is a snapshot — it has been
+   observed a week stale — so verify every fact live. Staleness traps and the
+   interactive `bluefin review` appliance: [review-appliance.md](../review-appliance.md).
+2. **Armed and labelled PRs** (already moving; still need a human verdict):
    ```bash
    gh pr list --repo projectbluefin/<repo> --json number,title,autoMergeRequest \
      --jq '.[] | select(.autoMergeRequest != null) | "\(.number)\t\(.title)"'
    gh pr list --repo projectbluefin/<repo> --label lgtm --json number,title,mergeStateStatus
    ```
-   Armed/labelled PRs still show up in the review queue: the human verdict is the only real gate (required approvals are 0 — see [references/merge-queue.md](references/merge-queue.md)). For the Hive sweep contract, see [hive-automerge.md](../hive-automerge.md).
+   An armed PR is not a merged PR: `main` requires two approvals and three
+   green checks, with no bypass ([references/merge-queue.md](references/merge-queue.md)).
+   For the Hive sweep contract, see [hive-automerge.md](../hive-automerge.md).
 3. **Live GitHub state** — the dossier fetch below is the authority.
 
 ### Cadence: stream, don't batch
@@ -130,7 +134,7 @@ queue state reading, branch update, and fork PR rebase.
 - Agent approves, merges, closes, or labels without an explicit human verdict.
 - `queue` verdict applied to the human's own PR (Hive self-merge ban).
 - `lgtm` added without the exact audit approval body — the sweep skips it.
-- `--admin` merge used without explicit human instruction.
+- `--admin` merge attempted — the ruleset has no bypass actors, so it fails.
 - `--delete-branch` used (hard-fails with merge queue).
 - `system_files/shared/` change treated as trivial or fast-laned.
 - Batch executed before the human confirms the staged plan.
@@ -148,7 +152,7 @@ queue state reading, branch update, and fork PR rebase.
 
 - [ ] Every `gh pr merge` / `gh pr close` was preceded by an explicit human verdict.
 - [ ] No approval judgment or recommendation appears in dossier cards.
-- [ ] `--admin` was used only when the human explicitly said so.
+- [ ] No `--admin` merge was attempted.
 - [ ] `system_files/shared/` PRs were flagged as ALL-variant blast radius.
 - [ ] The four [human decision gates](../human-gates.md) were respected.
 - [ ] Competing pairs detected and resolved before staging merges.
@@ -175,11 +179,11 @@ queue state reading, branch update, and fork PR rebase.
 
 ## See Also
 
-- [queue-feed.md](../queue-feed.md) — optional cheap first-pass source list (non-authoritative; verify every fact live)
+- [review-appliance.md](../review-appliance.md) — Bluefin Review appliance (`bluefin review`, Textual dashboard, and Hive contributor worker)
+- [apptainer-sif/SKILL.md](../apptainer-sif/SKILL.md) — Homebrew wrappers and Apptainer SIF container execution for `bluefin review`
 - [hive-automerge.md](../hive-automerge.md) — Hive "Queue auto merge" sweep contract (`lgtm` label + audit approval)
 - [human-gates.md](../human-gates.md) — the four human decision gates
-- [label-workflow.md](../label-workflow.md) — canonical label lifecycle
-- [governance.md](../governance.md) — branch protection and ownership
+- [governance.md](../governance.md) — teams, CODEOWNERS, and the live `main` ruleset
 - [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
 - [ci-tooling/SKILL.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
 - [lab-testing/SKILL.md](../lab-testing/SKILL.md) — lab verification

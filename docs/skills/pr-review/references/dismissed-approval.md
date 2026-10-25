@@ -1,8 +1,14 @@
 # Dismissed-Approval Regression Check
 
-A `DISMISSED` review is not merely a stale approval to be re-collected. The
-dismissal exists **because the head moved**, and the commits that moved it can
-undo the very thing the reviewer approved.
+The `main` ruleset sets `dismiss_stale_reviews_on_push: false`, so GitHub does
+**not** dismiss an approval when the head moves. A `DISMISSED` review here is
+therefore a deliberate act — a reviewer or an admin withdrew it — and the
+reason usually sits in commits that landed after the approval.
+
+The corollary is sharper: because approvals survive a push, an approval whose
+`commit_id` is far behind the current head is still counted toward the two
+required approvals. Diffing from that SHA is the only way to see what nobody
+reviewed.
 
 ## Why CI does not catch this
 

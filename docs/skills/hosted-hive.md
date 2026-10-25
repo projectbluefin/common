@@ -1,7 +1,7 @@
 ---
 name: hosted-hive
-version: "1.3"
-last_updated: "2026-07-29"
+version: "1.4"
+last_updated: "2026-09-13"
 id: hosted-hive
 one_line_purpose: Operate hosted Hive APIs with routing and trust safeguards.
 entry_point: docs/skills/hosted-hive.md
@@ -22,8 +22,26 @@ metadata:
 
 # Hosted Hive
 
-Use the operator-supplied `HIVE_URL`. The hostname identifies a deployment,
-not a repository. Read the live API before making any decision.
+This file is the single home for the hosted Hive deployment host, its HTTP
+endpoint contract, and its trust tiers. `hive.md`, `hive-review.md`,
+`hive-automerge.md`, and `hosted-hive-clankers.md` link here instead of
+restating any of it.
+
+## Deployment host
+
+The org runs one hosted Hive:
+
+```
+https://hosted-projectbluefin-knuckle-gjvq.hive.hivecommons.dev
+```
+
+`~/.local/bin/sync-hive-kb` reads `/api/v1/knowledge` on that host. The
+hostname identifies a deployment, not a repository — never infer repository
+scope from it. Prefer an operator-supplied `HIVE_URL` when you are given one.
+
+The zero-auth path to the same live numbers is the `projectbluefin` MCP
+server's `get_factory_status()` and `get_work_queue()` tools; the HTTP API
+below requires the deployment's own authentication.
 
 ## Authority and authentication
 
@@ -31,7 +49,7 @@ Read the relevant record before acting:
 
 | Request | Intent | Evidence to inspect | Verify after mutation |
 |---|---|---|---|
-| `GET /api/health` | confirm basic reachability | `status` such as `ok` or `starting` when the endpoint is exposed | not a mutation |
+| `GET /api/health`, `GET /api/health/deep` | confirm reachability and readiness | `status` such as `ok` or `starting`; deep health also returns a `checks` and `fails` map | not a mutation |
 | `GET /api/config` | confirm Hive identity and repository scope | common checked-in fields include `org` and `primaryRepo`; some deployments also expose `projectName`, `repos`, `hive_id`, `hub_url`, `github_base_url`, `eval_interval_s`, or `dashboardTitle` | re-read if scope is part of the decision you just made |
 | `GET /api/status` | inspect live governor, agent, and repository state | `governor`, `agents`, `repos`, and any returned `timestamp`, `health`, `hold`, `acmmLevel`, contributor, or alert data | re-read after any operational mutation |
 | `GET /api/config/governor` | inspect governor thresholds, labels, budget, health, repo list, and sensing settings | `thresholds`, `labels`, `budget`, `health`, `repos`, and `sensing` when present | re-read the same record after any governor mutation |
@@ -39,6 +57,7 @@ Read the relevant record before acting:
 | `GET /api/config/agent/{name}/prompt` | inspect the effective prompt text | checked-in implementations return prompt text under `prompt`; some also include source metadata such as `agent` or `sourceFiles` | re-read after any prompt change |
 | `GET /api/summaries` | inspect task, progress, and result evidence | the returned summary object for the specific agent or work item | re-read after a kick or config change that should alter task state |
 | `POST /api/kick/{agent}` | request a transient agent kick | request body may include optional `prompt`; success is `ok: true` with `output` text | always re-read `/api/status` and `/api/summaries` |
+| `GET /api/gh-auth`, `GET /api/gh-rate-limits` | confirm the deployment's GitHub access and quota alerts | `ok`, `lastChecked`, and current `alerts` | re-read if a write failed on auth or quota |
 
 Authenticate using the deployment's supported bearer, cookie, or session
 mechanism. Never print, persist, echo, or place tokens in JSON, prompts,
@@ -54,8 +73,9 @@ permission, or mutation behavior you need, stop and escalate.
 Use live `repos` and `primaryRepo` data only to understand Hive scope. Findings
 belong to the repository named by the evidence, not automatically to the
 primary repository. Verify the target repository and issue in GitHub before
-creating or changing anything. Use only the canonical seven workflow labels;
-descriptive details belong in the issue body or Hive metadata.
+creating or changing anything. Workflow state goes in the numbered workflow
+labels defined by [`label-workflow.md`](./label-workflow.md); descriptive
+details belong in the issue body or Hive metadata.
 
 If repository scope, issue identity, or authorization is ambiguous, stop and
 escalate rather than guessing.
@@ -75,6 +95,17 @@ stop and ask a maintainer.
 Do not change ACMM autonomy, merge policy, hold behavior, GitHub App
 permissions, trust tiers, or repository scope without an explicit maintainer
 decision.
+
+## Trust tiers
+
+Live `get_factory_status()` reports five tiers, each with its own contribution
+limit: `newcomer`, `contributor`, `trusted`, `merger`, `advisor`. `merger` is
+the tier the queue-automerge action in
+[`hive-automerge.md`](./hive-automerge.md) requires.
+
+The relay returns an explicit `permissions` list at authentication time. Trust
+that returned list over any inference from the tier name, and never assume
+merge, review-approval, or checks access that the deployment did not return.
 
 ## Advisory refresh boundary
 
@@ -103,13 +134,6 @@ HTTP API.
 
 Do not use it to invent undocumented endpoints, change permissions, or treat a
 hostname as repository scope.
-
-## Core Process
-
-1. Read health, configuration, status, and summaries.
-2. Verify repository and issue identity in GitHub.
-3. Confirm authorization before any mutation.
-4. Re-read the affected API record and escalate contradictions.
 
 ## Common Rationalizations
 

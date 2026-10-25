@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
 version: "1.4"
-last_updated: "2026-08-18"
+last_updated: "2026-09-13"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -29,8 +29,6 @@ How to add, remove, and manage system-default Homebrew packages across
 the Bluefin factory. Covers the brew-preinstall service, the preinstall.d
 pattern, and the rules for what can and cannot move to brew.
 
----
-
 ## When to Use
 
 - Adding or removing a package from `preinstall.d/system-cli.Brewfile`
@@ -39,15 +37,13 @@ pattern, and the rules for what can and cannot move to brew.
 - Pinning architecture-specific checksums for a Linux cask
 - Debugging a failed or skipped `brew-preinstall.service`
 - Deciding whether a new tool belongs on the image or in a Brewfile
-- Auditing image diet (removing dead-weight packages from bluefin/lts/dakota)
+- Auditing image diet (removing dead-weight packages from active downstream images)
 
 ## When NOT to Use
 
 - Installing system-level packages (udev rules, kernel modules, daemons, firmware): those stay on the image as RPMs regardless
 - `rpm-ostree install` is never the answer — see [placement-rules.md](references/placement-rules.md)
 - Adding user-installed (opt-in) packages: those go in the opt-in Brewfiles (`cli.Brewfile`, `cncf.Brewfile`, etc.), not `preinstall.d/`
-
----
 
 ## Adding and removing packages — the exact steps
 
@@ -65,10 +61,23 @@ pattern, and the rules for what can and cannot move to brew.
    are unaffected. State records the desired set, not who originally installed
    each package, so a manually installed package can later become managed.
 
-Bluefinctl is no longer provisioned by common. Removing its dedicated Brewfile
-uses this existing lifecycle to uninstall state-tracked copies; no separate
-cleanup script is needed. Native `ujust` recipes must not delegate to `bctl`,
-even if an untracked copy remains installed.
+#### Removal is not instant, and the guards are load-bearing
+
+A package leaves a user's system only when `brew-preinstall` runs on login and sees it in the previous state file but not in any active Brewfile.
+
+`bluefinctl` is the worked example (retired and replaced by the ChairLift cask). Three guards prevent reintroduction and ensure cleanup:
+
+| Guard | Asserts |
+|---|---|
+| `tests/test_brew_preinstall.bats` | the uninstall is emitted and the name never returns to the state file |
+| `tests/test_native_recipes.bats` | no `bctl`/`bluefinctl` string survives anywhere in `system_files/`, and no `preinstall.d/bluefinctl.Brewfile` exists |
+| mock `bctl` in `test_changelog.bats`, `test_update_just.bats`, `test_native_recipes.bats` | exits 99 if any shipped recipe still invokes it |
+
+**Do not delete these as dead references to a retired tool.** They are the only
+thing preventing a reintroduction, and removing the uninstall assertion would
+strand `bluefinctl` on every machine that already has it. The same reasoning
+applies to any future package removal: keep the guard until the removal has
+demonstrably reached the fleet.
 
 ### Add or remove a cask
 
@@ -126,22 +135,23 @@ desktop file at `/usr/share/applications/org.frostyard.ChairLift.desktop`
 upstream icons under `/usr/share/icons/hicolor/`, so every user gets a
 launcher.
 
+### Contributor tooling is not shipped from here
+
+The `bluefin` and `bluefin-contribute` host CLIs are packaged by a Homebrew
+formula in `ublue-os/homebrew-experimental-tap` and are not part of any image
+this repo builds. Nothing in `common` ships, references, or tests them. See
+[`apptainer-sif/SKILL.md`](../apptainer-sif/SKILL.md) — and note that the
+skill documents a sibling repo.
+
 ### Add a tap + package from a non-core tap
 
-Homebrew 6.0 syntax — `trusted: true` is required:
-```ruby
-tap "frostyard/tap", trusted: true
-cask "chairlift"
-```
-Without `trusted: true` the tap is blocked and the formula is silently
-unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).
+Homebrew 6.0 requires `trusted: true` on the `tap` declaration in the Brewfile (or an explicit `brew trust <tap>` after `brew tap` in procedural scripts). Without this, the tap is blocked and formulas are unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).
 
 ### Brewfile placement rule
 
-Any package that installs on ALL variants must live in `system_files/shared/preinstall.d/`,
-not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/package-set.md#brewfile-scope-shared-vs-bluefin-for-all-variant-packages).
-
----
+Any package that installs on ALL variants belongs in
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, never under
+`system_files/bluefin/`. See [package-set.md](references/package-set.md#brewfile-scope-shared-vs-bluefin-for-all-variant-packages).
 
 ## Red Flags
 
@@ -156,7 +166,7 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
   path is administrator-owned override state
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
 - Writing lifecycle code that advances the state hash after a failed bundle or uninstall — failures must leave state unchanged so the next login retries
-- Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
+- Editing `preinstall.d/` in downstream repos for packages that belong in `common` — common ships to all variants
 - Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`
 - Removing `After=graphical-session.target` from `brew-preinstall.service` — target units automatically order themselves after wanted units unless the wanted unit explicitly supplies the inverse ordering, which would put this oneshot back on GNOME's application-launch critical path
 
@@ -174,7 +184,7 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] The systemd user unit remains ordered after `graphical-session.target`, in `background.slice`, and at reduced I/O weight
 - [ ] User units do not reference the system manager's `network-online.target`; network failures use the service retry policy
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
-- [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
+- [ ] `just test` passes — the brew-relevant files are `tests/test_brew_preinstall.bats`, `tests/test_validate_brewfiles.bats`, `tests/test_oem_brew.bats`, and `tests/test_brew_tap_trust.bats`
 - [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login
 - [ ] Merging order followed if the change spans repos: common → bluefin → bluefin-lts → dakota
 

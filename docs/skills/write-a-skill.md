@@ -1,7 +1,7 @@
 ---
 name: write-a-skill
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-13"
 id: write-a-skill
 one_line_purpose: Author a new skill doc following front-matter and size rules.
 entry_point: docs/skills/write-a-skill.md
@@ -22,9 +22,10 @@ metadata:
 
 # Writing a Skill
 
-A skill is an agent-facing markdown file in `docs/skills/*.md` that records how
-to work safely in a specific domain. Every agent session that introduces a new
-domain or discovers a durable pattern must write or update one.
+A skill is an agent-facing markdown file — `docs/skills/<name>.md` or
+`docs/skills/<name>/SKILL.md` — recording how to work safely in one domain.
+Every session that introduces a new domain or discovers a durable pattern must
+write or update one.
 
 ## When to create a new skill
 
@@ -42,7 +43,7 @@ skill or canonical source.
 
 ## Required front-matter
 
-Every `docs/skills/*.md` file must start with:
+Every skill file must start with:
 
 ```yaml
 ---
@@ -81,71 +82,79 @@ metadata:
   compatibility with MCP tooling, not yet load-bearing.
 - `status`: `active` unless the skill is being phased out (`deprecated`) or
   documents something not yet built (`reserved`).
-- `dependencies`: list of other skill `id`s this one assumes are loaded first.
-  Usually `[]`.
+- `dependencies`: another forward-compatibility placeholder; nothing reads it.
+  Use `[]`.
 - `tags`: 3-6 lowercase keywords.
 - `description`: ≤256 characters, third person, capability first sentence,
   "Use when ..." second sentence.
 - `metadata.type`: one of `procedure`, `reference`, `runbook`, `policy`.
 
-All of the above (except `metadata`) are validated against
-`docs/skills/index.schema.json` and compiled into `docs/skills/index.json` /
-`index.md` by `scripts/generate_skill_index.py`. After adding or editing a
-skill, run:
+All of the above except `mcp_compliance_level`, `optimization_status`, and
+`dependencies` are compiled into `docs/skills/index.json` / `index.md` by
+`scripts/generate_skill_index.py` and validated against
+`docs/skills/index.schema.json`. After adding or editing a skill, run:
 
 ```bash
 python3 scripts/generate_skill_index.py --write
 ```
 
 and commit the regenerated `index.json`/`index.md` alongside your change.
-`scripts/generate_skill_index.py --check` runs in pre-commit and CI and fails
-if the catalog is stale.
+
+## What actually validates a skill
+
+Four `local` hooks in `.pre-commit-config.yaml`:
+
+| Hook | Script | What it rejects |
+|---|---|---|
+| `check-skill-frontmatter` | `scripts/check-skill-frontmatter.sh` | missing key, `name` ≠ `id`, wrong `entry_point`, bad `category`/`status`, empty `tags`, `one_line_purpose` over 120 chars, `description` over 256, file over 500 lines (warns over 200) |
+| `check-skill-index` | `scripts/check-skill-index.sh` | a skill with no row in `docs/SKILL.md` |
+| `check-doc-links` | `scripts/check-doc-links.sh` | a relative `.md` link under `docs/` that points at nothing |
+| `check-skill-catalog` | `scripts/generate_skill_index.py --check` | an `index.json` that does not match the front matter on disk |
+
+All four run at commit time and again on every pull request, because
+`.github/workflows/validate.yml` runs `pre-commit run --all-files` as a single
+aggregate step. Nothing runs after merge: there is no post-merge catalog
+automation and no skill-specific CI job.
 
 ## Description rules
 
-The description is the only text an agent sees when choosing a skill. Make it
-specific enough to trigger loading:
+The description is the only text an agent sees when choosing a skill.
+`Documents X. Use when editing Y or debugging Z.` triggers a load;
+`Helps with X.` does not. Keep the body coverage if you shorten it.
 
-- **Good:** `Documents ... . Use when editing ... or debugging ... .`
-- **Bad:** `Helps with ... .`
+## Size budget and layout conventions
 
-Keep it under 256 characters. Preserve the original body coverage if you
-shorten the description.
-
-## Size budget
-
-- **Soft max:** 200 lines.
+- **Soft max:** 200 lines per `SKILL.md` or flat skill file.
 - **Hard max:** 500 lines.
+- **Layout:** Factory repos accept either `docs/skills/<name>.md` (flat) or
+  per-skill directories `docs/skills/<name>/SKILL.md` + `references/*.md` (or
+  `.agents/skills/<name>/SKILL.md` in repos standardizing on root-agent
+  toolchains).
 - **Migrate on sight.** Any session that touches an oversized or
   legacy-format skill must migrate it to the per-skill directory layout
   (`SKILL.md` + `references/`) in the same change. The size budget applies
   uniformly to every skill — no exemptions, no deferral list.
+- **Banned artifacts.** Do not commit session notes (`PLAN.md`, `TODO.md`,
+  `NOTES.md`, `docs/superpowers/**`) or changelogs (`CHANGELOG.md`). Session state
+  belongs in the local agent session folder only.
 
-If a draft exceeds 200 lines, split rarely-needed detail into a separate
-`references/` file and link to it.
+If a draft exceeds 200 lines, split rarely-needed detail into a `references/`
+file and link to it.
 
 ### Per-skill directory migration (migrate on sight)
 
-When you encounter a skill that outgrows a single flat file — whether you were
-sent to migrate it or you merely touched it for another reason — migrate it to
-`docs/skills/<name>/SKILL.md` + `docs/skills/<name>/references/*.md` as part of
-that same change:
+When a skill outgrows a flat file, move it to `docs/skills/<name>/SKILL.md` +
+`references/*.md` in the same change that touched it:
 
-- `SKILL.md` keeps the front matter, `## When to Use`, core workflow, and a
-  table pointing to each reference file with a one-line description of what's
-  in it.
-- Each `references/*.md` file gets its own `# Title`, a short intro linking
-  back to `../SKILL.md`, and (if over 300 lines, per the Anthropic Agent
-  Skills convention) a `## Contents` table of contents.
-- Update every inbound link across the repo (`docs/SKILL.md`'s router table,
-  any other skill that references it) from `skills/<name>.md` to
-  `skills/<name>/SKILL.md`.
-- `scripts/check-skill-frontmatter.sh` and `scripts/check-skill-index.sh` both
-  recognize `docs/skills/*/SKILL.md` alongside flat `docs/skills/*.md` — no
-  script changes needed for a new migration.
+- `SKILL.md` keeps the front matter, `## When to Use`, the core workflow, and a
+  table pointing at each reference file.
+- Each `references/*.md` gets a `# Title` and a link back to `../SKILL.md`.
+- Update every inbound link, including the `docs/SKILL.md` row, from
+  `skills/<name>.md` to `skills/<name>/SKILL.md`.
 
-See [`lab-testing/SKILL.md`](./lab-testing/SKILL.md) for a worked example
-(migrated 2026-07-29 from a 910-line flat file).
+Both `check-skill-frontmatter.sh` and `check-skill-index.sh` already accept
+either layout. See [`lab-testing/SKILL.md`](./lab-testing/SKILL.md) for a
+worked example.
 
 ## Link to canonical sources
 
@@ -154,8 +163,8 @@ docs. Instead, record how to derive the fact:
 
 - Project-internal facts: add a `## Verification` section with the exact
   command to re-derive the fact (`gh api`, `grep`, `skopeo inspect`, etc.).
-- External tools: record the Context7 library ID in
-  `metadata.context7-sources`, then link to the section in the upstream docs.
+- External tools: read the upstream docs, cite the section, and record where
+  you read it in `metadata.context7-sources` — see [`context7.md`](./context7.md).
 
 See [`image-registry.md`](./image-registry.md) for the reference
 implementation of a verification section.
@@ -164,7 +173,7 @@ implementation of a verification section.
 
 A well-formed skill contains:
 
-1. `## When to Use` — specific triggers andscopes.
+1. `## When to Use` — specific triggers and scopes.
 2. `## Core Process` or `## What this covers` — the agent workflow.
 3. `## Red Flags` — mistakes that violate repo policy.
 4. `## Verification` — commands to self-check project-internal facts.
@@ -172,25 +181,19 @@ A well-formed skill contains:
 ## The skill-update mandate
 
 Every implementation PR must include a matching skill update in the same PR.
-
-There is no CI check for this. The `skill-drift.yml` workflow was retired
-across the factory because it never enforced anything — see
-[`skill-drift.md`](./skill-drift.md). The obligation is enforced by review, by
-`pre-commit`, and by the self-repair loop.
-
-- Why: [`skill-improvement.md`](./skill-improvement.md)
-- Why the CI check was retired: [`skill-drift.md`](./skill-drift.md)
+No CI check enforces this; review, `pre-commit`, and the self-repair loop do.
+Why, and why the retired `skill-drift.yml` is not coming back:
+[`skill-improvement.md`](./skill-improvement.md).
 
 ## Verification
 
 Before committing a new or updated skill:
 
-- [ ] Front-matter includes all required keys and `description` ≤256 chars.
-- [ ] `metadata.type` is appropriate for the content.
-- [ ] Body has `When to Use`, process/reference content, `Red Flags`, and
+- [ ] `bash scripts/check-skill-frontmatter.sh` — no errors, and no soft-max
+      warning for your file.
+- [ ] `python3 scripts/generate_skill_index.py --write`, with the regenerated
+      `docs/skills/index.json`/`index.md` committed.
+- [ ] `docs/SKILL.md` has a row linking to the skill.
+- [ ] Body has `When to Use`, process or reference content, `Red Flags`, and
       `Verification` sections.
-- [ ] Project-internal facts include a verification command.
-- [ ] `bash scripts/check-skill-frontmatter.sh` passes with no errors.
-- [ ] File is under 200 lines (soft) or under 500 lines (hard max).
-- [ ] `python3 scripts/generate_skill_index.py --write` run and the
-      regenerated `docs/skills/index.json`/`index.md` are committed.
+- [ ] Project-internal facts carry a command that re-derives them.

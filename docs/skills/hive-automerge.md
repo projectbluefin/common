@@ -1,7 +1,7 @@
 ---
 name: hive-automerge
-version: "1.0"
-last_updated: 2026-08-08
+version: "1.1"
+last_updated: 2026-09-13
 id: hive-automerge
 one_line_purpose: Queue reviewed PRs for Hive's auto-merge-on-green sweep.
 entry_point: docs/skills/hive-automerge.md
@@ -31,9 +31,9 @@ identify it.
 
 1. **Queue action** — dashboard button or API call
    `POST /api/prs/{owner}/{repo}/{number}/queue-automerge` on the hosted Hive
-   (`hosted-projectbluefin-knuckle-gjvq.hive.kubestellar.io`). Requires
-   merger/owner role; the repo must be managed by the hive; the queuer must
-   not be the PR author.
+   (host in [`hosted-hive.md`](hosted-hive.md#deployment-host)). Requires the
+   `merger` or owner tier; the repo must be managed by the hive; the queuer
+   must not be the PR author.
 2. **What queuing does** — the Hive GitHub App posts an `APPROVE` review with
    the exact body `Approved by @<user> for Hive auto-merge on green CI.` and
    adds the `lgtm` label (configurable via `governor.labels.automerge`;
@@ -84,9 +84,9 @@ independent. Once a PR actually enters a GitHub merge queue,
 - **The sweep squash-merges directly**, bypassing any GitHub merge queue.
   Watch the first sweep merge in a merge-queue repo before relying on both
   mechanisms in the same repo.
-- **`lgtm` is not one of the seven canonical workflow labels.** It is a
-  merge-queue marker owned by the sweep; do not use it to express triage
-  intent.
+- **`lgtm` is not a workflow-state label.** It is a merge-queue marker owned by
+  the sweep; do not use it to express triage intent. See
+  [`label-workflow.md`](label-workflow.md).
 - Treat "sweep merged" as merged only after confirming on GitHub — the sweep
   logs, it does not report back into issue state.
 
@@ -108,7 +108,7 @@ independent. Once a PR actually enters a GitHub merge queue,
 
 ## See Also
 
-- [hive.md](hive.md) — Hive coordination and the seven canonical labels
+- [hive.md](hive.md) — Hive coordination and the workflow-state labels
 - [pr-review/references/merge-queue.md](pr-review/references/merge-queue.md) —
   GitHub merge queue defaults and `gh` traps
 - [hosted-hive.md](hosted-hive.md) — hosted Hive API operations

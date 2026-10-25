@@ -1,7 +1,26 @@
 {
-  "generated_at": "2026-09-07",
+  "generated_at": "2026-09-21",
   "schema_version": "1.0",
   "skills": [
+    {
+      "id": "apptainer-sif",
+      "name": "apptainer-sif",
+      "one_line_purpose": "Build, distribute, and execute Apptainer SIF container appliances.",
+      "entry_point": "docs/skills/apptainer-sif/SKILL.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "apptainer",
+        "sif",
+        "containers",
+        "brew",
+        "kvm"
+      ],
+      "description": "Build, distribute, and execute Apptainer SIF container appliances via Homebrew wrappers. Use when working with SIF image creation, apptainer execution, AppArmor unprivileged userns profiles, or brew CLI wrappers.",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
+      "doc_type": "procedure"
+    },
     {
       "id": "bazaar",
       "name": "bazaar",
@@ -50,8 +69,8 @@
         "ostree"
       ],
       "description": "bootc \u2014 foundational OS image tool. Use when working on Containerfiles, image build workflows, update mechanics, or OS image structure.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -68,7 +87,7 @@
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
       "version": "1.4",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-09-13",
       "doc_type": "procedure"
     },
     {
@@ -85,8 +104,8 @@
         "pitfalls"
       ],
       "description": "Incident log of CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -102,8 +121,8 @@
         "github-actions"
       ],
       "description": "CI policy and tooling \u2014 SHA pinning, pre-commit guards, Renovate digest tracking, and workflow config. Use when editing .github/workflows/ files.",
-      "version": "2.3",
-      "last_updated": "2026-08-09",
+      "version": "2.4",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -126,7 +145,7 @@
     {
       "id": "context7",
       "name": "context7",
-      "one_line_purpose": "Look up external tool docs via Context7 before asserting facts.",
+      "one_line_purpose": "Verify external tool behaviour against upstream docs before asserting it.",
       "entry_point": "docs/skills/context7.md",
       "category": "meta",
       "status": "active",
@@ -136,9 +155,9 @@
         "verification",
         "tooling"
       ],
-      "description": "Mandatory first-lookup policy for external tools. Use before asserting anything about bootc, cosign, skopeo, buildah, just, GitHub Actions, or Renovate.",
-      "version": "1.0",
-      "last_updated": "2026-07-19",
+      "description": "How to verify external tool behaviour before asserting it, and what the Context7 lookup path actually is in this repo. Use before documenting or relying on a flag, label, config key, or API shape for bootc, cosign, buildah, GitHub Actions, or Renovate.",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -155,7 +174,7 @@
       ],
       "description": "GSettings override and dconf lock file parity rules \u2014 must edit both files together for locked settings. Use when changing any GSettings key, dconf override, or lock file in system_files/.",
       "version": "1.0",
-      "last_updated": "2026-06-23",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -188,8 +207,8 @@
         "botkube"
       ],
       "description": "Documents Discord ChatOps integration for the Bluefin factory, including Botkube lifecycle commands and release notifications. Use when configuring Discord webhooks, Botkube, or Discord-driven factory commands.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "procedure"
     },
     {
@@ -205,8 +224,8 @@
         "ci"
       ],
       "description": "Pre/post-merge E2E CI for common. Use when debugging E2E failures, understanding the PR gate flow, or diagnosing masked brew-setup issues.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -222,8 +241,8 @@
         "improvement"
       ],
       "description": "Self-improving factory loop for projectbluefin. Use when identifying automation gaps, proposing workflows, or auditing ACMM maturity.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -238,15 +257,15 @@
         "onboarding",
         "setup"
       ],
-      "description": "How to onboard a repo into the Project Bluefin factory model. The self-improvement mandate, what agents must do, and what is banned. Load when setting up a new repo or auditing factory compliance.",
-      "version": "1.1",
-      "last_updated": "2026-09-07",
+      "description": "How to onboard a repo into the Project Bluefin factory model, and the measured state of adoption across the org. Load when setting up a new repo or auditing factory compliance.",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
       "id": "governance",
       "name": "governance",
-      "one_line_purpose": "Manage CODEOWNERS, triager roles, and governance sync.",
+      "one_line_purpose": "Manage CODEOWNERS, triager roles, and governance policies.",
       "entry_point": "docs/skills/governance.md",
       "category": "meta",
       "status": "active",
@@ -255,9 +274,9 @@
         "issues",
         "lifecycle"
       ],
-      "description": "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos. Use when managing CODEOWNERS, adding/removing triager permissions, or syncing governance policy across repos.",
-      "version": "1.1",
-      "last_updated": "2026-08-06",
+      "description": "Org team membership, CODEOWNERS structure, and the live ruleset that gates `main` in projectbluefin/common. Use when managing CODEOWNERS, granting triage permission, or reasoning about what actually blocks a merge.",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -289,9 +308,9 @@
         "multi-repo",
         "coordination"
       ],
-      "description": "KubeStellar Hive coordination, Trust the Machines routing, and the canonical seven-label workflow. Use when finding or routing factory work.",
-      "version": "2.2",
-      "last_updated": "2026-07-29",
+      "description": "KubeStellar Hive coordination and the seven numbered workflow-state labels. Use when finding or routing factory work across projectbluefin repositories.",
+      "version": "3.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -308,8 +327,8 @@
         "merge-queue"
       ],
       "description": "The Hive \"Queue auto merge\" feature: merger-tier queue action applying the `lgtm` label plus an audit approval; a per-minute sweep squash-merges labelled PRs once CI is green. Use when queuing a reviewed PR or listing what the sweep will merge.",
-      "version": "1.0",
-      "last_updated": "2026-08-08",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -325,8 +344,8 @@
         "code-review"
       ],
       "description": "Review live Hive and GitHub state for urgent work, advisory findings, and agent-ready issues without relying on derived local state.",
-      "version": "1.2",
-      "last_updated": "2026-07-29",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -345,8 +364,8 @@
         "clankers"
       ],
       "description": "Manage a hosted Hive through its authenticated API while preserving repository routing, trust tiers, credential redaction, and human gates.",
-      "version": "1.3",
-      "last_updated": "2026-07-29",
+      "version": "1.4",
+      "last_updated": "2026-09-13",
       "doc_type": "runbook"
     },
     {
@@ -363,8 +382,8 @@
         "github"
       ],
       "description": "Receive authenticated Hive work through the Clankers contributor WebSocket while verifying task identity, trust-tier permissions, and credentials.",
-      "version": "1.2",
-      "last_updated": "2026-07-29",
+      "version": "1.3",
+      "last_updated": "2026-09-13",
       "doc_type": "runbook"
     },
     {
@@ -380,8 +399,8 @@
         "security"
       ],
       "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -397,8 +416,8 @@
         "images"
       ],
       "description": "projectbluefin OCI image registry reference \u2014 all production images published at ghcr.io/projectbluefin/. Use when looking up image paths, tags, or registry structure.",
-      "version": "1.0",
-      "last_updated": "2026-06-29",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -414,8 +433,8 @@
         "kubevirt"
       ],
       "description": "KubeVirt lab testing for common. Use when testing a common PR against bluefin, bluefin-lts, or dakota on ghost.",
-      "version": "1.1",
-      "last_updated": "2026-07-29",
+      "version": "1.2",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -430,9 +449,9 @@
         "issues",
         "workflow"
       ],
-      "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
-      "version": "2.0",
-      "last_updated": "2026-07-28",
+      "description": "The single label authority for the projectbluefin org: the seven canonical workflow-state labels, their measured adoption, and the other label families that coexist with them. Use when triaging, routing, or reviewing work.",
+      "version": "3.0",
+      "last_updated": "2026-09-13",
       "doc_type": "procedure"
     },
     {
@@ -468,7 +487,7 @@
       ],
       "description": "NVIDIA GPU support architecture and update procedures. Use when editing nvidia files in system_files/nvidia/, bluefin scripts, or dakota elements.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -487,7 +506,7 @@
       ],
       "description": "OEM hardware first-boot setup hooks in projectbluefin/common. Use when adding hardware-specific setup, understanding hook directories and versioning contract, or applying shellcheck requirements.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -502,9 +521,9 @@
         "setup",
         "getting-started"
       ],
-      "description": "Verified setup commands, correct pip/npm flags, and PR branch targets for all projectbluefin repos. Use when setting up a new development environment or writing contributor documentation.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "description": "Setup commands and PR branch targets for projectbluefin repos, limited to what is verified against the live repositories. Use when setting up a dev environment or writing contributor documentation.",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -521,8 +540,8 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.5",
-      "last_updated": "2026-08-08",
+      "version": "3.6",
+      "last_updated": "2026-09-13",
       "doc_type": "procedure"
     },
     {
@@ -539,26 +558,8 @@
       ],
       "description": "QA model, test coverage matrix, promotion gates by repo, hardware gap, and how to run the test suite for projectbluefin factory repos. Use when understanding QA coverage, running tests, or checking promotion gate status.",
       "version": "1.0",
-      "last_updated": "2026-06-23",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
-    },
-    {
-      "id": "queue-feed",
-      "name": "queue-feed",
-      "one_line_purpose": "Read and validate the Project Bluefin static pull-request queue feed.",
-      "entry_point": "docs/skills/queue-feed.md",
-      "category": "ci-ops",
-      "status": "active",
-      "tags": [
-        "queue",
-        "pull-requests",
-        "json",
-        "redirects"
-      ],
-      "description": "Reads the Project Bluefin static pull-request queue as validated JSON. Use when inspecting queue.projectbluefin.io, filtering its queue items, or verifying its root redirect targets queue.json.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
-      "doc_type": "procedure"
     },
     {
       "id": "release-promotion",
@@ -572,9 +573,28 @@
         "promotion",
         "staging"
       ],
-      "description": "Promotion criteria, monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release, understanding the promotion pipeline, or verifying release artifacts.",
+      "description": "Monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release or verifying signed artifacts.",
+      "version": "2.0",
+      "last_updated": "2026-09-13",
+      "doc_type": "reference"
+    },
+    {
+      "id": "review-appliance",
+      "name": "review-appliance",
+      "one_line_purpose": "Operate and integrate the Bluefin Review appliance and Hive worker.",
+      "entry_point": "docs/skills/review-appliance.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "review",
+        "appliance",
+        "dashboard",
+        "hive",
+        "contribute"
+      ],
+      "description": "Operate and integrate the projectbluefin/review appliance and Hive worker. Use when running `bluefin review`, using the review-queue dashboard, or configuring contributor worker images.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -590,8 +610,8 @@
         "ci"
       ],
       "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-09-13",
       "doc_type": "policy"
     },
     {
@@ -610,24 +630,7 @@
       ],
       "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
       "version": "1.1",
-      "last_updated": "2026-08-08",
-      "doc_type": "reference"
-    },
-    {
-      "id": "skill-drift",
-      "name": "skill-drift",
-      "one_line_purpose": "Record why the skill-drift CI check was retired and what replaced it.",
-      "entry_point": "docs/skills/skill-drift.md",
-      "category": "meta",
-      "status": "deprecated",
-      "tags": [
-        "skills",
-        "drift",
-        "ci"
-      ],
-      "description": "Retirement record for the skill-drift CI check. Use when you find a stale reference to skill-drift.yml, or are tempted to add a per-convention CI gate for skill documentation.",
-      "version": "2.0",
-      "last_updated": "2026-08-01",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -643,8 +646,8 @@
         "documentation"
       ],
       "description": "The skill-improvement mandate \u2014 every agent session must produce a skill file update alongside the work. Use when completing a task and deciding whether to write a skill update, or when creating or updating a skill file.",
-      "version": "1.3",
-      "last_updated": "2026-09-07",
+      "version": "1.4",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -677,8 +680,8 @@
         "reference"
       ],
       "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
-      "version": "2.2",
-      "last_updated": "2026-08-02",
+      "version": "3.0",
+      "last_updated": "2026-09-13",
       "doc_type": "reference"
     },
     {
@@ -694,8 +697,8 @@
         "documentation"
       ],
       "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-update mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
-      "version": "1.1",
-      "last_updated": "2026-08-08",
+      "version": "1.2",
+      "last_updated": "2026-09-13",
       "doc_type": "procedure"
     }
   ]

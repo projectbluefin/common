@@ -1,7 +1,7 @@
 ---
 name: nvidia
 version: "1.1"
-last_updated: "2026-08-08"
+last_updated: "2026-09-13"
 id: nvidia
 one_line_purpose: Maintain NVIDIA GPU support architecture and update procedures.
 entry_point: docs/skills/nvidia/SKILL.md
@@ -39,10 +39,23 @@ metadata:
 
 | Repo | Base OS | Driver source | NCT installed | CDI preset |
 |---|---|---|---|---|
-| `projectbluefin/common` | shared overlay | — | — | ✅ `system_files/nvidia/…/80-nvidia-container-toolkit.preset` |
-| `projectbluefin/bluefin` | Fedora | `ublue-os/akmods-nvidia-open` OCI | ✅ (build script) | inherits from common |
+| `projectbluefin/common` | shared overlay | — | — | ✗ — common ships no preset |
+| `projectbluefin/bluefin` | Fedora | `ublue-os/akmods-nvidia-open` OCI | ✅ (build script) | not from common — check `bluefin`'s own build script |
 | `projectbluefin/bluefin-lts` | CentOS Stream 10 | `ublue-os/akmods-nvidia-open` OCI | ✅ (nvidia build overlay) | ✅ `system_files_overrides/gdx/…/80-nvidia-container-toolkit.preset` |
 | `projectbluefin/dakota` | GNOME OS (BST) | `.run` installer, open kmod | ✅ (built from source) | ✅ `elements/bluefin-nvidia/nvidia-container-toolkit-preset.bst` |
+
+**What `common` actually ships in `system_files/nvidia/`** — three files, no more:
+
+| File | Purpose |
+|---|---|
+| `usr/libexec/ublue-nvidia-flatpak-runtime-sync` | Installs/refreshes the Flatpak `org.freedesktop.Platform.GL.nvidia-*` runtime matching the loaded kernel module |
+| `usr/lib/systemd/system/ublue-nvidia-flatpak-runtime-sync.service` | Runs it; `TimeoutStartSec=900` because the runtime download is large |
+| `README.md` | Layer note |
+
+`80-nvidia-container-toolkit.preset` is **not** in this repo. Each downstream
+image ships its own. Do not add a CDI preset to `common` — the `nvidia/` layer
+is applied to NVIDIA variants of every downstream, and the preset's unit names
+differ per base OS.
 
 **dakota is the reference implementation.** When in doubt about the correct approach for
 nvidia-related changes, read `elements/bluefin-nvidia/` in dakota first.
@@ -80,7 +93,7 @@ Do **not** install `nvidia-container-runtime`, `libnvidia-container1`, `libnvidi
 
 ## Red Flags
 
-- Removing the `80-nvidia-container-toolkit.preset` CDI preset
+- Removing the `80-nvidia-container-toolkit.preset` CDI preset **in a downstream repo** (bluefin-lts, dakota) — common has none to remove
 - Removing the `golang-github-nvidia-container-toolkit` exclusion from the bluefin build script
 - Installing `nvidia-container-runtime` or the full `nvidia-container-toolkit` package
 - `TimeoutStartSec` in `ublue-nvidia-flatpak-runtime-sync.service` drops below 900
@@ -93,8 +106,8 @@ Before closing any nvidia-related PR:
 
 - [ ] Changes to `system_files/nvidia/` tested to not break non-nvidia builds (shared layer affects all variants)
 - [ ] No `ublue-os/*` repos were written to
-- [ ] CDI preset not accidentally removed — `80-nvidia-container-toolkit.preset` still enables `nvidia-cdi-refresh.{path,service}`
-- [ ] If editing `ublue-nvidia-flatpak-runtime-sync`: both `check` and `sync` branches are consistent
+- [ ] If the change is in `bluefin-lts` or `dakota`: the CDI preset still enables `nvidia-cdi-refresh.{path,service}`. Nothing to check in `common`.
+- [ ] If editing `ublue-nvidia-flatpak-runtime-sync`: both `check` and `sync` branches are consistent, and `bats tests/test_nvidia_flatpak_sync.bats` passes
 - [ ] `golang-github-nvidia-container-toolkit` exclusion in bluefin build script is still present
 - [ ] `TimeoutStartSec` in `ublue-nvidia-flatpak-runtime-sync.service` is >= 900
 - [ ] `just check` and `pre-commit run --all-files` pass clean

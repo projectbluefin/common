@@ -1,7 +1,7 @@
 ---
 name: image-registry
-version: "1.0"
-last_updated: "2026-06-29"
+version: "1.1"
+last_updated: "2026-09-13"
 id: image-registry
 one_line_purpose: Look up projectbluefin OCI image registry paths and tags.
 entry_point: docs/skills/image-registry.md
@@ -28,7 +28,7 @@ All Bluefin images are published to `ghcr.io/projectbluefin/`. The org migration
 
 ## Registry paths
 
-> **There is no `:latest` tag on any projectbluefin image.** Source: `execute-release.yml` in each repo.
+> **Tags differ by repo — `common` and the product images do not share a tag vocabulary.** The product images (`bluefin`, `bluefin-lts`, `dakota`) publish stream tags only; `common` publishes `latest` plus a date and a short SHA. Derive both from the workflow files, never from memory.
 
 ### bluefin (from `projectbluefin/bluefin`)
 
@@ -58,11 +58,23 @@ Release promotes `:testing` → `:lts`; `:stable` is a floating alias for `:lts`
 | `ghcr.io/projectbluefin/dakota` | ✅ pre-promotion | ✅ released |
 | `ghcr.io/projectbluefin/dakota-nvidia` | ✅ pre-promotion | ✅ released |
 
-### common
+### common (from `projectbluefin/common`)
 
-| Image | Status |
+`build.yml`'s `manifest` job creates one multi-arch manifest and applies three tags to it:
+
+| Tag | Value | Source |
+|---|---|---|
+| `latest` | always the most recent merge to `main` | `build.yml` `create-manifest` `tags:` |
+| `YYYYMMDD` | build date | `build.yml` step `manifest-tags` output `date` |
+| `<sha7>` | short commit SHA | `build.yml` step `manifest-tags` output `sha_short` |
+
+The per-arch `build_push` jobs additionally push `<sha7>-amd64` and `<sha7>-arm64`; those are manifest inputs, not consumption targets. `pr-e2e.yml` pushes ephemeral `e2e-pr-<n>-<sha7>` / `e2e-merge-group-<sha7>` composed test images.
+
+| Image | Tags |
 |---|---|
-| `ghcr.io/projectbluefin/common` | ✅ Shared OCI layer consumed by all variants |
+| `ghcr.io/projectbluefin/common` | `latest`, `YYYYMMDD`, `<sha7>` |
+
+`:latest` is what downstream actually consumes: `bluefin/Containerfile` defaults `ARG COMMON_IMAGE="ghcr.io/projectbluefin/common:latest"`, `bluefin-lts/Justfile` defaults `common_image := env("COMMON_IMAGE", "ghcr.io/projectbluefin/common:latest")`, and `track-common.yml` in both repos resolves the digest with `skopeo inspect docker://ghcr.io/projectbluefin/common:latest`.
 
 ## Image flavor naming
 
@@ -101,22 +113,27 @@ The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpap
 
 ## CountMe telemetry reporting
 
-Our images participate in Fedora's weekly CountMe telemetry to track installation statistics anonymously:
-- **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, Bluefin LTS uses a dnf-based helper service (`bluefin-lts-countme.service` running `dnf makecache`; dnf5 is unpackaged on CS10/EPEL10 and the dnf CLI is unaffected by the libdnf4 metalink-expansion bug).
-- **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it utilizes a custom weekly systemd service/timer (`bluefin-countme.timer` triggering `/usr/libexec/dakota-countme`).
-  - It generates and maintains an installation epoch cookie in `/var/lib/dakota-countme-epoch` to mimic Fedora's week-based age buckets.
-  - It performs a weekly query to Fedora's metalink using a `libdnf5`-format User Agent with `os_name="Dakota"` (e.g. `libdnf5/5.2.9 (Dakota;${VERSION_ID};${ARCH}) hawkey`).
+Project Bluefin tracks Dakota installations labeled as "Bluefin" directly through its first-party CountMe service at `https://countme.projectbluefin.io/metalink`. Upstream Fedora bluefin numbers are maintained separately as the legacy "Bluefin Classic" chart from `ublue-os/bluefin`.
 
-### Dashboard processing dependency
+### What we count
 
-The results of Fedora's public CountMe dataset are parsed and processed by the pipeline inside the **`ublue-os/countme`** repository.
+Source: `system_files/shared/usr/libexec/bluefin-countme`, run weekly by
+`bluefin-countme.timer`. Every client sends one anonymous GET to
+`https://countme.projectbluefin.io/metalink` with these query parameters:
 
-To make Dakota show up on the public active users count badges and charts:
-1. **`data_processing.py`** in `ublue-os/countme` must have `"Dakota"` added to the `os_groups["universal_blue"]` list.
-2. **`generate_badge_data.py`** in `ublue-os/countme` must have `"dakota"` defined in `project_mappings`.
+1. **`repo`:** `dakota` for Dakota images (`dakota*`), labeled and rendered as "Bluefin" by the first-party CountMe deployment. Other images (such as LTS) do not report via this script.
+2. **`tag`:** the runtime stream, read from `/run/ublue-os/booted-image` when present (never just the build-time compose tag in `image-info.json`), then normalised to a primary stream.
+3. **`flavor`:** `image-flavor` from `image-info.json`, default `main`.
+4. **`gamemode`:** `1` when a gamescope/Steam session or gaming flavor is detected, else `0`.
+5. **`arch`:** machine architecture.
+6. **`countme`:** Fedora-style age bucket computed locally (1: week 1, 2: weeks 2–4, 3: weeks 5–24, 4: >24 weeks).
 
-Because of the **Absolute Prohibition** against write operations on `ublue-os/*` repositories, these updates cannot be automated or programmatically committed by agents, and must be submitted manually as a PR by a human maintainer.
+Opt-out is any of `/etc/projectbluefin/countme/disabled`, `/etc/bluefin-countme-opt-out`, or `/etc/dakota-countme/disabled`; the systemd unit and timer also carry `ConditionPathExists=!/etc/dakota-countme/disabled`.
 
+### Policy on Upstream Counts
+- **Never use Fedora / EPEL / `ublue-os/countme` numbers for Bluefin LTS or any other Project Bluefin image.** The single permitted exception is the legacy upstream `ublue-os/bluefin:stable` chart, published as "Bluefin Classic" to track the migration.
+- Upstream pipelines undercount bootc, drop CS10/EPEL metalinks, and do not track modern streams or game mode status.
+- The Cloudflare Worker and D1 database behind `countme.projectbluefin.io` are the single source of truth for first-party Project Bluefin telemetry, dashboards, and shields badges.
 ## Runtime repository selection
 
 Repository routing for booted images is canonically resolved by
@@ -140,6 +157,9 @@ re-derive from the actual workflow files.** Do not use training data or copy fro
 other docs — they may be stale.
 
 ```bash
+# common: what tags does the manifest job apply?
+grep -A6 'Create multi-arch manifest' .github/workflows/build.yml
+
 # bluefin: what images and tags does execute-release.yml publish?
 gh api 'repos/projectbluefin/bluefin/contents/.github/workflows/execute-release.yml' \
   --jq '.content' | base64 -d | grep -A2 '"image"'
@@ -157,10 +177,8 @@ gh api 'orgs/projectbluefin/packages/container/bluefin/versions' \
   --jq '.[].metadata.container.tags[]' | grep -v '^[0-9a-f]\{64\}$' | sort -u
 ```
 
-This is how the current table was derived. Run it, compare, update if anything differs.
+This is how the tables above were derived. Run it, compare, update if anything differs.
 
-### Incident log
-
-| Date | What was wrong | Root cause | Fix |
-|---|---|---|---|
-| 2026-06-19 | `bluefin:latest`, `bluefin-nvidia:latest`, `ublue-os/` refs in this file | Agent wrote from training data without reading workflow files | Read `execute-release.yml` and `build-image-testing.yml`; removed non-existent tags |
+`scripts/check-oci-refs.py`, run by `validate.yml`, resolves every
+`ghcr.io/projectbluefin/IMAGE:TAG` written anywhere under `docs/` against live
+GHCR. A tag you invent in this file fails the PR gate.

@@ -1,6 +1,14 @@
-# Troubleshooting the testing→main Squash Promotion
+# Troubleshooting the testing→main Squash Promotion (downstream repos)
 
-Part of [release-promotion](../SKILL.md) — Diagnosis and resolution for common promotion failures: gate stuck, UD conflicts, merge queue blocked, branch divergence, zombie publish runs, and actions branch policy.
+Part of [release-promotion](../SKILL.md) — diagnosis and resolution for promotion failures: gate stuck, UD conflicts, merge queue blocked, branch divergence, zombie publish runs, and actions branch policy.
+
+> **Scope: `projectbluefin/common` has no squash promotion.** It has no `testing`
+> branch, no promotion PR, and no `promote-testing-to-main.yml`. That workflow
+> exists in `bluefin` and `bluefin-lts` only (`dakota` promotes through
+> `execute-release.yml` instead), and `reusable-promote-squash.yml` /
+> `reusable-release-gate.yml` live in `projectbluefin/actions`. Every check
+> name, ruleset, and path below belongs to one of those repos. Do not apply any
+> of it to a `common` PR.
 
 ## Contents
 - [How the squash works](#how-the-squash-works)
@@ -95,7 +103,7 @@ After rebuilding the squash branch, if `enqueuePullRequest` fails with:
 Required status check "PR Validation — testsuite/validate (pull_request)" is expected.
 ```
 
-The PR's CI checks have not yet completed against the new squash-branch HEAD. Wait for the `PR Validation — testsuite` workflow run to finish, then retry the enqueue.
+That check context comes from `bluefin`'s `pr-validation.yml`, whose `name:` is `PR Validation — testsuite` and whose `validate` job supplies `PR Validation — testsuite/validate (pull_request)`. The PR's CI has not completed against the new squash-branch HEAD. Wait for that run to finish, then retry the enqueue. (`common` has no such check — its three required contexts are `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)`.)
 
 If the error is `At least 1 approving review is required`:
 

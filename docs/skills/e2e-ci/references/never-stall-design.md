@@ -1,6 +1,13 @@
-# E2E CI — Promotion Gate Never-Stall Design
+# E2E CI — Promotion Gate Never-Stall Design (downstream repos)
 
-Part of [e2e-ci](../SKILL.md) — the `reusable-release-gate.yml` never-stall design: E2E on testing branch, feedback trigger, jq selector, and bluefin bootstrap.
+Part of [e2e-ci](../SKILL.md) — the `reusable-release-gate.yml` never-stall design: E2E on the testing branch, feedback trigger, jq selector, and bluefin bootstrap.
+
+> **Scope: none of this exists in `projectbluefin/common`.** `common` has no
+> `workflow_run` trigger in any workflow, no `testing` branch, and no promotion
+> gate. `reusable-release-gate.yml` and `reusable-promote-squash.yml` live in
+> `projectbluefin/actions`; `promote-testing-to-main.yml` and
+> `post-testing-e2e.yml` live in `bluefin` and `bluefin-lts` (`dakota` has
+> neither). Read this to review a downstream PR.
 
 ## Promotion gate — never-stall design
 

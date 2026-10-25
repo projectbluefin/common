@@ -1,7 +1,7 @@
 ---
 name: discord-chatops
-version: "1.0"
-last_updated: "2026-07-20"
+version: "1.1"
+last_updated: "2026-09-13"
 id: discord-chatops
 one_line_purpose: Configure Discord ChatOps, Botkube, and release notifications.
 entry_point: docs/skills/discord-chatops.md
@@ -53,18 +53,20 @@ Category: `/usr/factory` (ID: `1519241025254592617`)
 | `factory-ci` | `#factory` | `1519233290643705936` | `DISCORD_FACTORY_WEBHOOK` |
 | releases-notify | `#releases` | `1519239518752870470` | `DISCORD_RELEASES_WEBHOOK` |
 
-Human must create `#releases` forum channel (Discord UI: Server Settings > Channels > + > Forum > name: releases),
-then create a webhook on it and store the URL as `DISCORD_RELEASES_WEBHOOK` in GitHub org secrets.
+Both webhooks exist and both org secrets are provisioned —
+`DISCORD_RELEASES_WEBHOOK` is in the approved-secrets list enforced by
+`pat-ban.yml`. See [secrets-policy.md](secrets-policy.md).
 
 ## MCP server (agent Discord management)
 
-Config lives in `~/.copilot/mcp-config.json`. Token stored there — never in code or docs.
+Config lives in `~/.copilot/mcp-config.json`, which is untracked. The bot token
+is stored there and nowhere else.
 
 ```json
 {
   "discord": {
     "type": "local",
-    "command": "/var/home/jorge/.local/share/pi-node/current/bin/npx",
+    "command": "npx",
     "args": ["-y", "mcp-discord"],
     "env": { "DISCORD_TOKEN": "<from ~/.copilot/mcp-config.json>" },
     "tools": ["*"]
@@ -72,8 +74,8 @@ Config lives in `~/.copilot/mcp-config.json`. Token stored there — never in co
 }
 ```
 
-Tools available (next session after reload): create/edit channels, roles, webhooks,
-forum posts, threads, message sending, permissions.
+The server exposes channel, role, webhook, forum-post, thread, message, and
+permission management.
 
 Bot name: **Bluefin** | App ID: `1519228970032169050`
 Server: Project Bluefin (`1345470678408626206`)
@@ -134,8 +136,8 @@ Store PEM key with `--from-file=privateKey=bluefin-botkube.pem` — never `--fro
 
 ## Upgrading Botkube
 
-Edit `targetRevision` in `testing-lab/argocd/botkube-app.yaml`, update plugin index URL
-to match version, commit. ArgoCD handles the rest.
+Edit `targetRevision` in `lab/argocd/botkube-app.yaml`, update the plugin index
+URL to match the version, commit. ArgoCD handles the rest.
 
 ## Adding a new repo to failure notifications
 
@@ -145,28 +147,11 @@ Add a GitHub webhook in repo settings:
 
 No code changes needed.
 
-## Implementation status
-
-| Task | Status | Notes |
-|---|---|---|
-| Discord bot app created | Done | Bot: Bluefin#0600, App ID: 1519228970032169050 |
-| `#factory` text channel | Done | ID: 1519233261438631936 |
-| `factory-ci` webhook | Done | ID: 1519233290643705936, store URL as `DISCORD_FACTORY_WEBHOOK` in org secrets |
-| `#releases` Forum channel | Done | ID: 1519239480526110761, webhook ID: 1519239518752870470 |
-| `Maintainer` role | Pending human | Discord Server Settings > Roles > Create Role |
-| GitHub App "Bluefin Botkube" | Pending human | github.com/organizations/projectbluefin/settings/apps |
-| k8s secrets on ghost | Pending human | See Secrets section above |
-| GitHub native webhooks | Pending human | Wire each repo to #factory and #releases (see "Adding a new repo") |
-| Botkube ArgoCD manifests | PR open | projectbluefin/testing-lab feat/botkube-chatops |
-| `discord-release-notify` action | PR open | projectbluefin/actions feat/discord-release-notify |
-| Restrict github-dispatch to Maintainer | Pending human | Discord Developer Portal > App Commands > Permissions |
-| `DISCORD_RELEASES_WEBHOOK` org secret | Pending human | URL: https://discord.com/api/webhooks/1519239518752870470/<token> — store in GitHub org secrets |
-
 ## Where each file lives
 
 | File | Repo |
 |---|---|
-| `argocd/botkube-app.yaml` | `projectbluefin/testing-lab` |
-| `botkube/values.yaml` | `projectbluefin/testing-lab` |
+| `argocd/botkube-app.yaml` | `projectbluefin/lab` |
+| `botkube/values.yaml` | `projectbluefin/lab` |
 | `.github/actions/discord-release-notify/action.yml` | `projectbluefin/actions` |
 | This skill file | `projectbluefin/common/docs/skills/discord-chatops.md` |

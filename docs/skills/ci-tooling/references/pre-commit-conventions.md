@@ -1,6 +1,6 @@
 # Pre-Commit Conventions
 
-Part of [ci-tooling](../SKILL.md) — Pre-commit auto-fix loop, AI commit attribution, release-state.yaml schema validation, Skill drift detection, and Docs hygiene hooks.
+Part of [ci-tooling](../SKILL.md) — the auto-fix loop, AI commit attribution, the docs-hygiene hooks, and the two hooks in `.pre-commit-config.yaml` that currently guard nothing.
 
 ---
 
@@ -36,68 +36,37 @@ Note: `pi`-authored commits use `Assisted-by: <Model> via pi`. The `Co-authored-
 
 ---
 
-## release-state.yaml schema validation
+## Docs hygiene pre-commit checks
 
-`.github/release-state.yaml` should be validated with the `check-jsonschema` pre-commit hook against the shared schema in `projectbluefin/actions`.
+`.pre-commit-config.yaml` defines four `language: system` local hooks that protect the agent docs structure. All four are `always_run: true` with `pass_filenames: false`.
 
-### Pin both the hook and the schema source
+| Hook id | Entry | What it checks |
+|---|---|---|
+| `check-skill-frontmatter` | `bash scripts/check-skill-frontmatter.sh` | Front-matter keys and values. The authoritative list of what it enforces is [`write-a-skill.md`](../../write-a-skill.md) § What actually validates a skill; do not restate it here. |
+| `check-skill-index` | `bash scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
+| `check-doc-links` | `python3 scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
+| `check-skill-catalog` | `python3 scripts/generate_skill_index.py --check` | `docs/skills/index.json` is regenerable-clean from the files on disk. |
 
-Use an immutable hook revision **and** an immutable raw schema URL pinned to the `actions` commit that introduced the schema:
+`scripts/check-doc-links.sh` is a Python script despite the `.sh` name — that is why its entry is `python3`, not `bash`. Do not "fix" the entry to `bash`.
 
-```yaml
-- repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: <commit-sha> # <version>
-  hooks:
-    - id: check-jsonschema
-      files: ^\.github/release-state\.yaml$
-      args:
-        - --schemafile
-        - https://raw.githubusercontent.com/projectbluefin/actions/<commit-sha>/docs/schemas/release-state.schema.json
-```
+These are **hygiene gates**, not blocking CI workflow gates, consistent with the factory rule that process conventions are agent-enforced. The front-matter size budget is soft at 200 lines and hard at 500 lines; oversized legacy skills are a burn-down list — migrate them to the per-skill directory layout (`docs/skills/<name>/SKILL.md` + `references/`) in the same change that touches them. See `write-a-skill.md`.
 
-Pinning the raw URL to a commit avoids silent schema drift on the next pre-commit run if `actions/main` changes. The hook is file-scoped, so `pre-commit run --all-files` is a no-op in repos that do not currently carry `.github/release-state.yaml`.
+---
+
+## Two hooks that currently guard nothing
+
+Both are configured and both are permanent no-ops in this repo. Know this before you cite either as enforcement.
+
+**`check-jsonschema` / "Validate release-state.yaml"** is scoped `files: ^\.github/release-state\.yaml$`. There is no `.github/release-state.yaml` in `common` — so the hook never selects a file and `pre-commit run --all-files` never invokes it. If you ever add that file, the schema is pinned by immutable raw URL to a specific `projectbluefin/actions` commit (`e39c9470…`), which is the right shape: pin both the hook `rev` and the schema URL so `actions/main` cannot drift the schema underneath a green run.
+
+**`no-floating-action-tags`** exempts `projectbluefin/*` via negative lookahead, and no ref in this repo uses that exemption. See [sha-pinning.md](sha-pinning.md).
 
 ---
 
 ## Skill drift detection
 
-**Retired across the factory. Do not re-add it in any repo.**
-
-`skill-drift.yml` never enforced anything. It called the reusable workflow
-`projectbluefin/actions/.github/workflows/skill-drift-check.yml`, whose real
-logic was removed in `actions@001ae97` and replaced with a compatibility stub
-in `actions@a7c230c`. The stub echoed `"Skill drift check removed. Delete
-skill-drift.yml from consumer repo."` and exited successfully without
-inspecting a single changed path.
-
-Five repos (bluefin, bluefin-lts, dakota, knuckle, testsuite) called that stub
-on every PR and received a silent green result regardless of what changed.
-`common` never wired it up. The callers and the stub have since been deleted.
-
-Skill-update discipline is enforced at developer time by `pre-commit` and by
-the self-repair loop in [`skill-improvement.md`](../../skill-improvement.md) — not
-by a CI exit code. Per [`agentic-model.md`](../../../factory/agentic-model.md), the
-aggregate `pre-commit` step is the only place a process convention may fail a
-build; bespoke per-convention CI jobs are banned.
-
-Retirement record: [`skill-drift.md`](../../skill-drift.md)
-
----
-
-## Docs hygiene pre-commit checks
-
-The repo-level `.pre-commit-config.yaml` includes local hooks that protect the
-agent docs structure:
-
-| Hook | Script | What it checks |
-|---|---|---|
-| `Validate skill front-matter` | `scripts/check-skill-frontmatter.sh` | Every `docs/skills/*.md` has required front-matter keys (`name`, `version`, `last_updated`, `tags`, `description`, `metadata.type`) and description ≤256 chars. |
-| `Validate docs/SKILL.md skill index` | `scripts/check-skill-index.sh` | `docs/SKILL.md` links to every skill file in `docs/skills/`. |
-| `Validate internal markdown links` | `scripts/check-doc-links.sh` | Every relative `.md` link in `docs/` resolves to an existing file. |
-
-These are **hygiene gates**, not blocking CI workflow gates, consistent with the
-factory rule that process conventions are agent-enforced. The front-matter size
-budget is soft at 200 lines and hard at 500 lines; oversized legacy skills are a
-burn-down list — migrate them to the per-skill directory layout on sight
-(`docs/skills/<name>/SKILL.md` + `references/`), in the same change that touches
-them. See `write-a-skill.md`.
+**Retired across the factory. Do not re-add `skill-drift.yml` in any repo.** The
+retirement record — the stub reusable that returned a fake green tick to five
+repos, and why bespoke per-convention CI jobs are banned — lives in
+[`skill-improvement.md`](../../skill-improvement.md#why-there-is-no-ci-gate)
+§ Why there is no CI gate. `common` never wired it up.

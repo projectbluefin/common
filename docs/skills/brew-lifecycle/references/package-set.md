@@ -68,8 +68,8 @@ uninstalled on next login after update.**
 - Hardware-specific tools (`nvtop` — not everyone has a GPU)
 - Tool-specific workflows (`ykman` — not everyone has a YubiKey, but it stays
   for now as a low-cost dep carrier; revisit if `python@3.14` becomes a problem)
-- Anything that is naturally opt-in (`k8s-tools`, `cncf`, `ide`, etc.) — those
-  go in the other Brewfiles and are only installed when the user runs `ujust bbrew`
+- Anything naturally opt-in (`k8s-tools`, `cncf`, `ide`, …) — those go in the
+  opt-in Brewfiles below
 - Packages already on the image (`fastfetch`, `gum`, `just`, `gcc`) — no need
   to duplicate them in brew
 
@@ -84,39 +84,74 @@ non-interactive recipes.
 
 ---
 
-## Opt-in Brewfiles (ujust bbrew)
+## Opt-in Brewfiles
 
 These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
-`preinstall.d/`) and are only installed when the user explicitly runs
-`ujust bbrew` and picks from the menu:
+`preinstall.d/`). **There is no `ujust bbrew` recipe** — the string `bbrew`
+appears nowhere in the `Justfile` or in `system_files/`. Only two of these
+Brewfiles have a recipe at all:
 
-- `ai-tools.Brewfile`
-- `artwork.Brewfile`
-- `cli.Brewfile`
-- `cncf.Brewfile`
-- `experimental-ide.Brewfile`
-- `fonts.Brewfile`
-- `fonts-dev.Brewfile`
-- `ide.Brewfile`
-- `k8s-tools.Brewfile`
-- `swift.Brewfile`
+| Brewfile | Install path |
+|---|---|
+| `cli.Brewfile` | `ujust bluefin-cli` (`system.just:39`) |
+| `cncf.Brewfile` | `ujust cncf` (`apps.just:55`) |
+| `ai-tools.Brewfile` | none |
+| `artwork.Brewfile` | none |
+| `experimental-ide.Brewfile` | none |
+| `fonts.Brewfile` | none |
+| `fonts-dev.Brewfile` | none |
+| `ide.Brewfile` | none |
+| `k8s-tools.Brewfile` | none |
+| `swift.Brewfile` | none |
 
-Bluefin-specific (in `system_files/bluefin/`):
-- `full-desktop.Brewfile` — GNOME Circle + community flatpaks
+The eight with no recipe are installed only by running `brew bundle` by hand:
 
-These are validated by the `validate-brewfiles.yaml` CI workflow on every PR
-that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
+```bash
+brew bundle --file=/usr/share/ublue-os/homebrew/k8s-tools.Brewfile
+```
+
+They are shipped, validated, and otherwise unreachable. Either give them a
+recipe or stop shipping them; do not document a menu that does not exist.
+
+Bluefin-specific, in `system_files/bluefin/usr/share/ublue-os/homebrew/`:
+
+| Brewfile | Install path |
+|---|---|
+| `system-flatpaks.Brewfile` | `ujust install-system-flatpaks` (`system.just:299`) |
+| `full-desktop.Brewfile` | none |
+| `system-dx-flatpaks.Brewfile` | none — orphaned by the `-dx` retirement; see [`devmode.md`](../../devmode.md) |
+
+### `cli.Brewfile` overlaps the managed set
+
+`cli.Brewfile` declares `starship`, which every user already has from
+`preinstall.d/system-cli.Brewfile`. Running `ujust bluefin-cli` re-declares a
+package the OS manages. Harmless to Homebrew, but it means `bluefin-cli` no
+longer describes a purely opt-in set. `mise` is the genuinely new entry — it is
+what `bling.sh` activates when present (honouring `MISE_BASH_AUTO_ACTIVATE=0`
+and `MISE_ZSH_AUTO_ACTIVATE=0`).
+
+### Validation scope
+
+`scripts/validate-brewfiles.sh` and the `validate-brewfiles.yaml` workflow
+default to `system_files/shared/usr/share/ublue-os/homebrew`. The three
+Brewfiles under `system_files/bluefin/` are **not** validated. Offline
+regression suite: `bats tests/test_validate_brewfiles.bats`.
 
 ---
 
 ## Brewfile scope: shared/ vs bluefin/ for all-variant packages
 
-**Rule:** Any package that should install on ALL variants (bluefin, bluefin-lts, dakota) must live in `system_files/shared/preinstall.d/`, not `system_files/bluefin/preinstall.d/`.
+**Rule:** any package that should install on ALL variants (bluefin, bluefin-lts,
+dakota) belongs in
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, never in a
+`preinstall.d/` under `system_files/bluefin/`.
 
-`system_files/bluefin/` is included by bluefin and bluefin-lts. Dakota also includes it via its `common.bst` element. However, the semantic intent of `bluefin/` is bluefin-family only. When a package is placed there with a comment like "bluefin + bluefin-lts only", it creates ambiguity about whether Dakota gets it.
+`system_files/bluefin/` is consumed by bluefin and bluefin-lts, and dakota also
+pulls it in via its `common.bst` element — so a package placed there *does*
+reach dakota, despite the directory name implying otherwise. That ambiguity is
+the whole problem. Putting it under `shared/` states the intent unambiguously.
 
-**Resolution:** `shared/preinstall.d/` is the unambiguous home for any package that is factory-wide. `bluefin/preinstall.d/` should only contain packages that are intentionally absent from Dakota.
-
-**Concrete example:** `chairlift.Brewfile` lives in
-`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, making its
-all-variant provisioning explicit.
+As of today there is no `preinstall.d/` under `system_files/bluefin/` at all,
+and both managed Brewfiles — `system-cli.Brewfile` and `chairlift.Brewfile` —
+live under `shared/`. Keep it that way unless a package must be genuinely
+absent from dakota.

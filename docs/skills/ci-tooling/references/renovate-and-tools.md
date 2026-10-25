@@ -1,34 +1,58 @@
 # Renovate, Trivy, Build Matrix, and Shellcheck
 
-Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, and Renovate versioned-binary tracking.
+Part of [ci-tooling](../SKILL.md) — which Renovate config actually governs, OCI digest tracking, Trivy scan-image archive input, the multi-arch build matrix, and shellcheck in `validate.yml`.
 
 ---
 
-## Renovate OCI digest tracking
+## Which Renovate config governs this repo
 
-`Containerfile` has two OCI image pins tracked by Renovate:
+**Root `renovate.json` is the live config. `.github/renovate.json5` is dead.**
 
-1. `docker.io/library/alpine:latest@sha256:...` via Renovate's built-in `dockerfile` manager
-2. `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` via a custom regex manager in `.github/renovate.json5`
+Renovate resolves its config file in a fixed precedence order and stops at the first hit; root `renovate.json` is ahead of `.github/renovate.json5`, so nothing in the json5 file is ever read. That includes its `schedule` (`* 0-3 * * 1`), its `enabledManagers`, and both of its `customManagers` (the wallpapers `COPY --from=` digest manager and the `BONEDIGGER_VERSION` manager). Those two managers are therefore **not** running, and those pins are **not** being tracked.
 
-### Why both managers exist
+What root `renovate.json` actually contains:
 
-- `FROM docker.io/library/alpine:latest@sha256:...` is a standard Dockerfile dependency — the built-in `dockerfile` manager handles it
-- `COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:...` is not covered by the default parser — a custom regex manager tracks it
+```json
+{
+  "extends": ["local>projectbluefin/renovate-config"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["digest", "pin", "patch", "minor"],
+      "automerge": true,
+      "platformAutomerge": true
+    }
+  ]
+}
+```
 
-### Rule when adding OCI pins
+Everything else — managers, schedule, host rules — comes from the org preset `local>projectbluefin/renovate-config`, which is not in this checkout. Do not restate its contents from memory; read that repo.
 
-If you add new OCI image pins to `Containerfile`, also update `.github/renovate.json5` so Renovate can keep them current. Applies to both `FROM` and `COPY --from=` references. An untracked pin silently goes stale.
+The live self-hosted bot inherits the preset via `inheritConfigRepoName: '{{parentOrg}}/renovate-config'`. The copy of that setting in `projectbluefin/.github` is stale and still points at `ublue-os/renovate-config`.
 
-### Org-wide Renovate runner
-
-The factory runs self-hosted Renovate from `projectbluefin/renovate-config` (not from each image repo). It runs every 3 hours. To trigger immediately:
+To trigger a run immediately:
 
 ```bash
 gh workflow run renovate.yml --repo projectbluefin/renovate-config
 ```
 
-Image repos do **not** have their own `renovate.yml` caller workflow — Renovate runs org-wide from the central config repo using `RENOVATE_APP_ID` + `RENOVATE_PRIVATE_KEY` secrets (separate from `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY`).
+`common` has no repo-local `renovate.yml` caller workflow — Renovate runs org-wide from the central config repo.
+
+**If you add an OCI pin or a versioned binary that needs tracking,** put the custom manager in root `renovate.json` or in the org preset. Adding it to `.github/renovate.json5` silently does nothing.
+
+---
+
+## OCI image pins in Containerfile
+
+`Containerfile` carries four digest-pinned refs:
+
+| Line | Ref | Covered by |
+|---|---|---|
+| 1 | `docker.io/library/golang:alpine@sha256:cf6fca66…` (`umotd-build` stage) | built-in `dockerfile` manager |
+| 8 | `docker.io/library/golang:alpine@sha256:cf6fca66…` (`uwelcome-build` stage, same digest) | built-in `dockerfile` manager |
+| 15 | `docker.io/library/alpine:latest@sha256:28bd5fe8…` (`build` stage) | built-in `dockerfile` manager |
+| 17 | `ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:47057248…` (`COPY --from=`) | **nothing** — the only manager written for it lives in the dead `.github/renovate.json5` |
+
+`COPY --from=` is not covered by Renovate's default Dockerfile parser, so the wallpapers digest goes stale until the custom manager is moved into a config Renovate actually reads.
 
 ---
 
@@ -51,13 +75,13 @@ with:
   input: /tmp/scan-image.tar
 ```
 
-**Do not** use `image: docker-archive:/tmp/scan-image.tar` with the current `build.yml` v1 pin (`e39c947...`). That path gets forwarded to `trivy image`, which then tries docker/containerd/podman/remote lookup instead of reading the tarball directly and fails on hosted runners.
+**Do not** use `image: docker-archive:/tmp/scan-image.tar` with the `projectbluefin/actions` pin `build.yml` currently carries (`e2ccd51b…`). That path gets forwarded to `trivy image`, which then tries docker/containerd/podman/remote lookup instead of reading the tarball directly and fails on hosted runners.
 
 ---
 
 ## Multi-arch build matrix in build.yml
 
-`build.yml` (as of [common#598](https://github.com/projectbluefin/common/pull/598)) runs parallel per-arch jobs:
+`build.yml` runs parallel per-arch jobs ([common#598](https://github.com/projectbluefin/common/pull/598)):
 
 ```yaml
 strategy:
@@ -71,31 +95,30 @@ strategy:
         arch_suffix: arm64
 ```
 
+The job is named `Build and push image (${{ matrix.arch }})`, which is where the ruleset's two required check names come from — see [workflow-map.md](../../workflow-map.md).
+
 Each job:
 1. Builds the image with `buildah-build` tagged `<image>:<sha>-<arch_suffix>`
 2. Exports to `/tmp/scan-image.tar` with `buildah push ... docker-archive:...`
 3. Scans via `scan-image` with `input: /tmp/scan-image.tar`
 4. On non-PR: pushes the arch-specific image and writes digest to `/tmp/digests/<arch_suffix>.txt`
 
-A separate `manifest` job then downloads both digest artifacts, creates the multi-arch manifest, signs with keyless OIDC, and generates SBOM + SLSA L2 attestations.
+A separate `manifest` job then downloads both digest artifacts, creates the multi-arch manifest, signs with keyless OIDC, and generates SBOM + SLSA L2 attestations. The tags it publishes are in [image-registry.md](../../image-registry.md).
 
 ---
 
 ## Shellcheck in validate.yml
 
-`validate.yml` runs shellcheck on all `.sh` files under `system_files/` plus the non-extension helper `ublue-rollback-helper`.
-
-### The expand pattern
+`validate.yml` runs exactly one shellcheck line:
 
 ```yaml
 - name: Shellcheck all shell scripts
   shell: bash
   run: |
     find system_files -name "*.sh" -print0 | xargs -0 shellcheck -e SC2207
-    shellcheck -e SC2207 system_files/bluefin/usr/bin/ublue-rollback-helper
 ```
 
-`ublue-rollback-helper` has no `.sh` extension so it is not caught by `find` — it needs an explicit second line.
+Extensionless scripts are **not** covered here — `unit-tests.yml` shellchecks those by explicit path (`ublue-system-setup`, `ublue-user-setup`, `ublue-privileged-setup`, …). If you add an extensionless script under `system_files/`, add it to `unit-tests.yml`, not to `validate.yml`.
 
 ### Profile.d files — SC2148 (no shebang)
 
@@ -123,18 +146,6 @@ This applies per-source-line, not to the whole file.
 
 ### SC2207 (global suppress)
 
-SC2207 (arrays from command output) is suppressed globally in the shellcheck step with `-e SC2207`. This was intentional for `ublue-rollback-helper` which parses skopeo tag lists — tag names contain no spaces so word splitting is safe there. Evaluate case by case before adding new array-from-command patterns.
+SC2207 (arrays from command output) is suppressed globally in the `validate.yml` shellcheck step with `-e SC2207`. Evaluate case by case before adding new array-from-command patterns.
 
 > **See also:** [`shell-scripts.md`](../../shell-scripts/SKILL.md) for shellcheck directive pitfalls (SC1072/SC1073 inline notes, SC2086 quoting fixes, SC1091 suppression patterns in test contexts).
-
----
-
-## Renovate versioned-binary tracking
-
-`.github/renovate.json5` tracks versioned binaries downloaded in the build stage via custom regex managers:
-
-| Binary | Source | Renovate pattern |
-|---|---|---|
-| `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
-
-When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json5` so the version stays current automatically.

@@ -1,6 +1,6 @@
 # Automerge and Rulesets — ci-pitfalls
 
-Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the merge-queue-aware renovate-automerge.yml, ruleset required status check names, and create-github-app-token cross-repo scoping failure.
+Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the single `main` ruleset and its required check names, and the `create-github-app-token` cross-repo scoping failure.
 
 ---
 
@@ -12,18 +12,14 @@ Part of [ci-pitfalls](../SKILL.md) — Renovate automerge mechanics, the merge-q
 auto-merge API when it opens an eligible PR (digest/pin/patch/minor). GitHub's auto-merge
 enqueues the PR into the merge queue once all required checks pass — no separate workflow needed.
 
-**Why `platformAutomerge` instead of a workflow:** `common/main` has a merge queue ruleset.
-`github-actions[bot]` cannot bypass the merge queue, so any workflow attempting a direct
-`--squash` merge would fail. `platformAutomerge` avoids this: Renovate is a bypass actor in the
-PR review ruleset (actor_id 2740, bypass_mode: pull_request) and uses GitHub's own auto-merge
-API, which the merge queue respects natively.
+**Why `platformAutomerge` instead of a workflow:** `common/main` is governed by a merge queue
+ruleset with `bypass_actors: []` — **nobody bypasses it, Renovate included.** Any workflow
+attempting a direct `--squash` merge is rejected with `The merge strategy for main is set by the
+merge queue`. `platformAutomerge` sidesteps this by using GitHub's own auto-merge API, which the
+merge queue respects natively: the PR enqueues itself once its required checks are green and the
+approval requirement is satisfied.
 
 **Eligible update types:** `digest`, `pin`, `patch`, `minor`. Major bumps require human review.
-
-**Bypass actors in the PR review ruleset:**
-- OrganizationAdmin — `bypass_mode: always`
-- Renovate (actor_id 2740) — `bypass_mode: pull_request`
-- Mergeraptor (actor_id 3069633) — `bypass_mode: pull_request`
 
 **Stuck Renovate PR (required checks passed but PR not merging):** Check that auto-merge is
 enabled on the PR (`gh pr view <N> --json autoMergeRequest`). If null, Renovate hasn't enabled
@@ -40,25 +36,9 @@ intentionally does NOT ignore `.github/workflows/**` so required Build checks al
 PRs and the merge queue can satisfy them. The `push` trigger DOES ignore `.github/workflows/**`
 to avoid redundant post-merge rebuilds.
 
----
-
-## renovate-automerge.yml — merge queue on main requires --auto, not direct merge
-
-<!-- TODO(context7): verify merge queue ruleset bypass actor behavior and gh pr merge --auto semantics against GitHub REST API docs -->
-
-`common/main` has a **merge queue ruleset** (`main — merge queue`). `github-actions[bot]` is not a bypass actor for that ruleset. Calling `gh pr merge --squash` directly is rejected with:
-
-```
-The merge strategy for main is set by the merge queue
-```
-
-The reusable `reusable-renovate-automerge.yml` uses direct `--squash` merge (correct for `testing` branches which have no merge queue). Do **not** use it for `common`. The caller `renovate-automerge.yml` is intentionally inlined and uses `--auto --squash` to enqueue the PR. Since the workflow fires after a successful build, checks have already passed and the queue processes immediately.
-
-**Symptom when broken:** The automerge workflow logs show `✅ Merged PR #N` but the PR remains open. The `||` catch in the merge command suppresses the real error; the success echo runs unconditionally after it.
-
-**Fix already in place:** `renovate-automerge.yml` inlines the PR-find + enqueue logic with `gh pr merge --auto --squash` (PR #782). The reusable is not used here.
-
-Do not "simplify" this back to the reusable — it will silently break again.
+> There is no `renovate-automerge.yml` in this repo — it was deleted in
+> [#783](https://github.com/projectbluefin/common/pull/783) and must not be re-added. See
+> [workflow-map.md](../../workflow-map.md).
 
 ---
 
@@ -66,18 +46,25 @@ Do not "simplify" this back to the reusable — it will silently break again.
 
 <!-- TODO(context7): verify ruleset required status check matching semantics against GitHub branch protection / rulesets docs -->
 
-The two branch rulesets on `main` must use the **exact** job names from `build.yml`. Wrong names silently block the merge queue — checks never arrive, queue waits forever.
+`main` has **one** ruleset and no classic branch protection (`/branches/main/protection` returns
+404). Its required checks must be the **exact** job `name:` values from `validate.yml` and
+`build.yml`; a wrong name silently blocks the merge queue, because a check that never arrives is
+indistinguishable from one still running.
 
-Correct names (as of 2026-06-22):
+| Ruleset | id | Required checks |
+|---|---|---|
+| `main — merge queue` | 17513003 | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
 
-| Ruleset | Required checks |
-|---|---|
-| `main — merge queue` (ID 17513003) | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
-| `main-review-required-with-renovate-bypass` (ID 17070417) | *(no required status checks — bypass actors cover Renovate/mergeraptor; merge queue ruleset handles build gate)* |
+**Past breakage:** a second ruleset once required `"Build and push image"` with no arch suffix — it
+never matched any actual check and blocked every Renovate PR. That ruleset is gone; only 17513003
+remains.
 
-**Past breakage:** ruleset 17070417 had `"Build and push image"` (no arch suffix) — never matched any actual check, blocked every Renovate PR. Fixed 2026-06-22 by removing the check entirely from the review ruleset and using correct names in the merge queue ruleset.
+Re-derive before trusting the table:
+```bash
+gh api repos/projectbluefin/common/rulesets --jq '.[] | "\(.id) \(.name) \(.enforcement)"'
+```
 
-If `build.yml` job names change, update both rulesets immediately via:
+If `build.yml` or `validate.yml` job names change, update the ruleset in the same PR:
 ```bash
 gh api --method PUT repos/projectbluefin/common/rulesets/17513003 --input ruleset.json
 ```
@@ -100,15 +87,6 @@ with:
 
 Use the token without `owner`/`repositories` restrictions — the mergeraptor app is installed org-wide and the default token already has access.
 
-### notify-downstream token in common/build.yml
-
-The `notify-downstream` job in `build.yml` uses `secrets.MERGERAPTOR_APP_ID` + `secrets.MERGERAPTOR_PRIVATE_KEY`. These secrets must be accessible to the `common` repo. If they are not, the job fails with:
-
-```
-The 'client-id' (or deprecated 'app-id') input must be set to a non-empty string.
-```
-
-Note: `vars.MERGERAPTOR_APP_ID` (variable, not secret) does **not** resolve in common — do not use it here. The correct ref is `secrets.MERGERAPTOR_APP_ID`. Verify at:
-https://github.com/organizations/projectbluefin/settings/secrets/actions
-
-The job has `continue-on-error: true` — build stays green while dispatches fail. Downstream tracking falls back to Renovate (bluefin/bluefin-lts) and dakota's daily cron.
+There is no `notify-downstream` job in `build.yml` — it was removed because cross-repo token
+dispatch failed silently. How a merged `common` change actually reaches downstream is in
+[downstream-propagation.md](../../release-promotion/references/downstream-propagation.md).

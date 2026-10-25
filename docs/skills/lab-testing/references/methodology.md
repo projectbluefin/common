@@ -67,10 +67,10 @@ The live toggle test is the correct methodology because:
 ### Live toggle workflow pattern
 
 Inspect the deployed `toggle-testing-rebase` WorkflowTemplate before using it
-with stable as the starting point. Templates that still invoke `bctl` or
-substitute a direct `bootc switch` after recipe failure need updating in their
-owning repository. They do not prove the native recipe works. The requirements
-below do not imply that the deployed template has already been updated:
+with stable as the starting point. Templates that substitute a direct `bootc switch`
+after recipe failure need updating in their owning repository. They do not prove the
+native recipe works. The requirements below do not imply that the deployed template
+has already been updated:
 
 ```yaml
 # Bluefin: stable → testing → stable (production user flow)
@@ -164,12 +164,17 @@ toggle-live-lts        bluefin-lts:lts → bluefin-lts:lts-testing → lts
 toggle-live-lts-hwe    bluefin-lts-hwe:stable → testing → stable
 ```
 
-**`lts-hwe` status:** The HWE variant is published as its own image package:
-`ghcr.io/projectbluefin/bluefin-lts-hwe:{stable,testing}`. It does **not** use
-`bluefin-lts:lts-hwe` or `:lts-hwe-testing` tags. Use the dedicated image name
-when exercising the HWE toggle flow. Monitor:
+**`lts-hwe` status:** The HWE variant is its own image package,
+`ghcr.io/projectbluefin/bluefin-lts-hwe`. It does **not** use
+`bluefin-lts:lts-hwe` or `:lts-hwe-testing` tags — use the dedicated image name
+when exercising the HWE toggle flow. Its stream tags are listed in
+[`image-registry.md`](../../image-registry.md); as of 2026-09-13 GHCR carries
+`testing`, `lts`, `stable`, plus `stream10` and `10`. Re-derive rather than
+trusting either doc:
 ```bash
-ghcr.io/projectbluefin/bluefin-lts  # check available tags
+TOK=$(curl -s "https://ghcr.io/token?scope=repository:projectbluefin/bluefin-lts-hwe:pull&service=ghcr.io" | jq -r .token)
+curl -s -H "Authorization: Bearer $TOK" \
+  "https://ghcr.io/v2/projectbluefin/bluefin-lts-hwe/tags/list?n=2000" | jq -r '.tags[]'
 ```
 
 These run alongside `bluefin-qa-pipeline` (smoke+developer suites) and `dakota-qa-pipeline`

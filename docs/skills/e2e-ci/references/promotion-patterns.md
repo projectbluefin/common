@@ -1,10 +1,14 @@
-# E2E CI — Promotion Pipeline Gate Patterns
+# E2E CI — Promotion Pipeline Gate Patterns (downstream repos)
 
-Part of [e2e-ci](../SKILL.md) — patterns for wiring E2E as a gate before publishing stream tags across any image repo.
+Part of [e2e-ci](../SKILL.md) — patterns for wiring E2E as a gate before publishing stream tags.
 
-## Promotion pipeline e2e gate patterns
-
-These patterns apply when wiring e2e as a gate before publishing stream tags across any image repo.
+> **Scope: none of this exists in `projectbluefin/common`.** There is no
+> `promote-to-testing` job, no `post-testing-e2e.yml`, and no stream-tag
+> promotion of any kind in this repo — `common` publishes `latest` on every
+> merge and never retags. These patterns belong to `bluefin` and `bluefin-lts`,
+> which each ship `post-testing-e2e.yml` and `promote-testing-to-main.yml`.
+> `dakota` ships neither. Read them here to review a downstream PR; do not
+> port them into `common`.
 
 ### Never publish :testing at build time
 

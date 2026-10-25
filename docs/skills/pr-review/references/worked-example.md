@@ -1,6 +1,7 @@
 # Worked Example — Backlog Review Session
 
-> Based on the open backlog as of 2026-08-06.
+> An illustrative session, not current state. The backlog shown is from
+> 2026-08-06.
 
 ## Dossier (batch 1 of 2)
 
@@ -10,7 +11,7 @@ Files: `.github/workflows/unit-tests.yml`, `Justfile`, `docs/SKILL.md`,
 `system_files/bluefin/usr/libexec/bonedigger-report`,
 `tests/test_bonedigger_report.bats`
 Blast radius: bluefin only + CI + docs
-CI: validate=STALE-RED(pre-#937) · build(x86_64)=pass · test=pass
+CI: validate=STALE-RED (branch predates the fix on `main`) · build(x86_64)=pass · test=pass
 Mergeable: BEHIND · Linked issue: —
 Summary: Preserves caller-supplied queue preference in the bonedigger report script.
 
@@ -18,7 +19,7 @@ Summary: Preserves caller-supplied queue preference in the bonedigger report scr
 Author: kylerankin · Age: 1d · Size: +5 / -0 · Effort: **trivial**
 Files: `system_files/shared/usr/bin/ublue-fastfetch`
 Blast radius: **ALL variants** (`system_files/shared/`)
-CI: validate=STALE-RED(pre-#937) · build(x86_64)=pass
+CI: validate=STALE-RED (branch predates the fix on `main`) · build(x86_64)=pass
 Mergeable: BEHIND · Linked issue: #550
 Summary: Adds a `command -v fastfetch` guard so the script exits cleanly.
 

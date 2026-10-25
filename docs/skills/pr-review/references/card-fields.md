@@ -39,11 +39,6 @@ command; never present `UNKNOWN` as if it were a definitive state.
 
 | Kind | Detection | Action |
 |---|---|---|
-| **stale-red** | `validate` failure + run timestamp < PR #937 merge (2026-08-07 00:41 UTC) | `gh pr update-branch <N>` (NOT `gh run rerun` — that re-executes the buggy branch copy) |
-| **fork-expected** | `Compose PR test image` red + PR author is from a fork | Expected — Actions token cannot push to `ghcr.io/projectbluefin/*` from fork context |
+| **stale-red** | `validate` failure on a branch that predates the fix now on `main` | `gh pr update-branch <N>` — the branch carries its own copy of the broken script, so `gh run rerun` reproduces the same failure |
+| **fork-expected** | `Compose PR test image` red + PR author is from a fork | Expected — the Actions token cannot push to `ghcr.io/projectbluefin/*` from fork context |
 | **real failure** | Anything else | Report to human as blocking |
-
-> **Why not `gh run rerun` for stale-red?** The branch's own copy of
-> `scripts/generate_skill_index.py` still contains the `date.today()` bug that
-> #937 fixed. Re-running reproduces the same failure. The branch must ingest
-> main first via `gh pr update-branch`.

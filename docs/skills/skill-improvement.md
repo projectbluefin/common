@@ -1,7 +1,7 @@
 ---
 name: skill-improvement
-version: "1.3"
-last_updated: "2026-09-07"
+version: "1.4"
+last_updated: "2026-09-13"
 id: skill-improvement
 one_line_purpose: Capture durable agent learnings in maintained skill docs.
 entry_point: docs/skills/skill-improvement.md
@@ -54,16 +54,6 @@ handoff:
 This loop is the factory's self-repair mechanism. It applies even when the
 implementation succeeds: a successful task still checks for reusable learning
 and documentation drift before completion.
-
-## Contents
-- [Before You Mark Work Complete](#before-you-mark-work-complete)
-- [What Counts as a Learning Worth Writing Back](#what-counts-as-a-learning-worth-writing-back)
-- [Where to Write It](#where-to-write-it)
-- [Which Skill File to Update](#which-skill-file-to-update)
-- [How to Commit It](#how-to-commit-it)
-- [See Also](#see-also)
-
----
 
 ## Before You Mark Work Complete
 
@@ -159,32 +149,51 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 There is no CI gate for this. Skill-update discipline is enforced by
 `pre-commit`, by review, and by this self-repair loop — see
-[`skill-drift.md`](./skill-drift.md) for why the CI check was retired. Treat
-the obligation as a hard requirement regardless.
+[Why there is no CI gate](#why-there-is-no-ci-gate). Treat the obligation as a
+hard requirement regardless.
 
 ---
 
 ## Self-audit against canonical skill standards
 
-Before finalizing a skill update, verify it matches the canonical patterns surfaced by Context7 (highest-rated conventions as of 2026-07-20):
+Conventions come from this file's `metadata.context7-sources`:
+`/anthropics/skills` (frontmatter, progressive disclosure),
+`/addyosmani/agent-skills` (Red Flags and Verification structure),
+`/vercel-labs/agent-skills` (`SKILL.md` + `references/` layout).
 
-| Source | Relevance |
-|---|---|
-| `/anthropics/skills` (benchmark 80.59) | SKILL.md schema, YAML frontmatter rules, bundled resources layout, progressive disclosure model. |
-| `/addyosmani/agent-skills` (benchmark 85.67) | Highest-rated skill-improvement source; target structure for Red Flags and Verification sections. |
-| `/vercel-labs/agent-skills` (benchmark 84.36) | `skills/{name}/SKILL.md` + `scripts/` + `references/` directory convention. |
+- [ ] Front-matter and size budget match [`write-a-skill.md`](./write-a-skill.md).
+- [ ] The description alone is enough for an agent to decide to load the skill.
+- [ ] Body has `## When to Use`, process content, `## Red Flags`, and
+      `## Verification`.
+- [ ] External-tool behaviour came from upstream docs, not memory — see
+      [`context7.md`](./context7.md).
 
-Checklist:
-- [ ] Frontmatter includes `name`, `description` with "Use when" triggers, `version`, `last_updated`, `tags`, and `metadata.type`.
-- [ ] Description is specific enough that an agent can decide to load the skill from the description alone.
-- [ ] Skill body has `## When to Use`, `## Core Process`, `## Red Flags`, and `## Verification` sections (or equivalent).
-- [ ] Any library/framework API examples were verified via Context7 first and the `libraryId` is recorded in `metadata.context7-sources`.
-- [ ] Files over 200 lines (soft max) are split into a per-skill directory with `references/` or `scripts/` per the Anthropic/Vercel convention — legacy oversized skills are migrated on sight, in the same change that touches them (see `write-a-skill.md`).
+---
 
-## See Also
+## Why there is no CI gate
 
-- [`docs/skills/skill-drift.md`](./skill-drift.md) — why the CI check was retired and what replaced it
-- Canonical skill conventions (verified via Context7):
-  - `/anthropics/skills` — YAML frontmatter, bundled resources, progressive disclosure.
-  - `/addyosmani/agent-skills` — skill-improvement and audit structure.
-  - `/vercel-labs/agent-skills` — per-skill directory layout with `scripts/` and `references/`.
+`skill-drift.yml` used to warn when a pull request changed implementation files
+without touching the matching skill doc. It is gone from every factory repo,
+`common` never ran it, and it must not come back.
+
+It was retired because it never enforced anything. The reusable workflow it
+called, `projectbluefin/actions/.github/workflows/skill-drift-check.yml`, lost
+its logic in `actions@001ae97` and was replaced by a no-op stub in
+`actions@a7c230c` that echoed a removal notice and exited zero without reading
+a single changed path. Five repos — bluefin, bluefin-lts, dakota, knuckle,
+testsuite — kept calling the stub and kept collecting a green tick. A check
+that cannot fail is worse than no check: the green tick reads as evidence that
+a skill update was not needed.
+
+The policy outlasts the incident. Per
+[`agentic-model.md`](../factory/agentic-model.md), a CI check earns `exit 1`
+only when failure means a broken or wrong image ships. Skill drift ships
+nothing, so it is enforced at developer time by `pre-commit` and by review,
+never by a bespoke per-convention CI job.
+
+## Red Flags
+
+- Re-adding `skill-drift.yml`, or any CI job whose only purpose is enforcing a
+  documentation or process convention.
+- Treating a green CI run as evidence that a skill update was unnecessary.
+- Promising the skill update as a follow-up pull request.

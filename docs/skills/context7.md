@@ -1,9 +1,9 @@
 ---
 name: context7
-version: "1.0"
-last_updated: "2026-07-19"
+version: "1.1"
+last_updated: "2026-09-13"
 id: context7
-one_line_purpose: Look up external tool docs via Context7 before asserting facts.
+one_line_purpose: Verify external tool behaviour against upstream docs before asserting it.
 entry_point: docs/skills/context7.md
 category: meta
 mcp_compliance_level: partial
@@ -12,86 +12,85 @@ status: active
 dependencies: []
 tags: [context7, docs, verification, tooling]
 description: >-
-  Mandatory first-lookup policy for external tools. Use before asserting
-  anything about bootc, cosign, skopeo, buildah, just, GitHub Actions, or
-  Renovate.
+  How to verify external tool behaviour before asserting it, and what the
+  Context7 lookup path actually is in this repo. Use before documenting or
+  relying on a flag, label, config key, or API shape for bootc, cosign,
+  buildah, GitHub Actions, or Renovate.
 metadata:
   type: reference
 ---
 
-# Context7 — mandatory first-lookup policy
+# External tool docs — verify before you assert
+
+## What this repo actually configures
+
+`.cursor/mcp.json` and `.vscode/mcp.json` each register exactly one MCP server:
+
+```json
+{ "projectbluefin": { "url": "https://mcp.projectbluefin.io/mcp" } }
+```
+
+That server exposes three tools — `search_knowledge`, `get_factory_status`,
+`get_work_queue`. All three are about this factory. None of them look up
+external tool documentation.
+
+**This repo does not configure a Context7 server.** Whether
+`resolve-library-id` and `get-library-docs` exist in your session depends on
+the runtime you happen to be in, not on anything in this checkout. Check your
+own tool list before planning around them.
 
 ## The rule
 
-**Before using any external tool in this repo, look up its current docs via
-Context7 first. Always. No exceptions.**
+Never assert an external tool's flag, default, label, config key, or API shape
+from memory. Read the current upstream docs, implement from them, cite the
+section you implemented from.
 
-This is repo-wide policy, restated from `AGENTS.md`. It applies to every agent
-working in `projectbluefin/common`, regardless of runtime (Copilot, Claude, pi,
-etc.). If your runtime does not expose the Context7 MCP tools, you cannot
-satisfy this rule in that session — escalate to a human or switch runtimes
-rather than guessing.
+Training data is a snapshot and these tools move:
 
-## Why
-
-Training data is a snapshot. The tools this factory depends on evolve
-constantly:
-
-- bootc adds/removes CLI flags and labels between releases
+- bootc adds and removes CLI flags and labels between releases
 - GitHub Actions changes `actions/checkout`, `upload-artifact`, app-token APIs
-- pre-commit hook semantics and the floating-tag guard depend on current behavior
-- Renovate automerge and digest-tracking behavior shifts across versions
+- pre-commit hook semantics and the floating-tag guard depend on current behaviour
+- Renovate automerge and digest-tracking behaviour shifts across versions
 - cosign keyless signing attestation format changes
 
-Asserting a flag, label, config key, or API shape from memory has caused silent
-CI failures and `startup_failure` cascades in this factory. The fix is always
-the same: read the live docs, then implement, then cite the section.
+Guessing here has produced silent CI failures and `startup_failure` cascades in
+this factory.
 
-## The pattern
+## How to look it up
 
-```
-1. resolve-library-id: <tool name>
-   → returns the Context7 library ID (e.g. /bootc-dev/bootc)
-2. query-docs: <library ID>
-   → returns the current authoritative docs
-3. implement from the docs
-4. cite the doc section you implemented from (in the code comment, commit
-   message, or skill file you update)
-```
+Use the first of these that is available to you:
 
-## What counts as "using a tool"
+1. **Context7**, if your runtime exposes it: `resolve-library-id: <tool>` then
+   `get-library-docs: <library ID>`.
+2. **The upstream docs site or the project's own docs tree**, read directly —
+   e.g. `gh api repos/bootc-dev/bootc/contents/docs`.
+3. **The tool's own `--help` or man page**, run in the container the factory
+   actually builds with.
 
-You must run the Context7 lookup **before** any of these:
+If none of the three is reachable, say so and leave the claim out. A gap is
+cheaper than an unverified sentence about tool behaviour.
 
-- Writing a `Containerfile` instruction, `LABEL`, `RUN`, or `COPY`
-- Writing a `.github/workflows/*.yml` step that calls an action or CLI
-- Writing a `just` recipe that shells out to a tool
-- Writing a pre-commit hook config
-- Asserting a tool's flag, default, or behavior in a skill file, issue, or PR
-- Debugging a CI failure where a tool's behavior is in question
+## When this applies
 
-## What does NOT require Context7
+Before writing a `Containerfile` instruction, a workflow step that calls an
+action or CLI, a `just` recipe that shells out, a pre-commit hook config, or
+any sentence in a skill, issue, or PR that describes a tool's behaviour. Also
+when debugging a CI failure where a tool's behaviour is in question.
 
-- Reading this repo's own source (`read`, `bash`, `gh api`) — source is truth
-- Editing prose, reorganizing docs, fixing links
-- Project-internal facts (image names, tags, registry paths) — those come from
-  this repo's own workflows, see `image-registry.md`
+It does not apply to this repo's own source. Image names, tags, registry
+paths, and workflow outputs come from this repo's files — see
+[`image-registry.md`](image-registry.md). Prose and link edits need no lookup.
 
-If a task is purely about this repo's own files and no external tool behavior is
-in question, Context7 is not required. When in doubt, look it up.
+## Recording the source
 
-## Recording what you looked up
-
-When you implement from Context7 docs, record the library ID and the section
-you used, in the place the change lands:
-
-| Change location | Where to record the Context7 source |
+| Change location | Where to record it |
 |---|---|
-| Skill file edit | `metadata.context7-sources` frontmatter + inline `Source: <tool> docs → "<section>"` citations |
-| `Containerfile` / workflow / recipe | Inline comment citing the doc section |
-| Commit message | Mention the library ID if the change's correctness depends on doc behavior |
+| Skill file | `metadata.context7-sources` front matter, plus inline `Source: <tool> docs → "<section>"` |
+| Containerfile / workflow / recipe | Inline comment naming the doc section |
+| Commit message | Name the source when the change's correctness depends on doc behaviour |
 
-Example frontmatter (see `bootc.md` for a real one):
+Fifteen skill files carry `metadata.context7-sources` today. The field is a
+citation record; no script reads it, and the generated catalog drops it.
 
 ```yaml
 metadata:
@@ -100,28 +99,43 @@ metadata:
     - /bootc-dev/bootc
 ```
 
-## Known library IDs used in this repo
+## Library IDs seen in this repo
 
-This list is a starting point, not a substitute for `resolve-library-id`.
-Library IDs can change; always resolve fresh.
+Starting points, not a substitute for resolving fresh — IDs change.
 
-| Tool | Library ID (last confirmed) | Used for |
+| Tool | Library ID | Used for |
 |---|---|---|
 | bootc | `/bootc-dev/bootc` | image build, kargs, filesystem layout |
 | WirePlumber | `/websites/pipewire_pages_freedesktop_wireplumber` | OEM hook config fragments |
 
-Add rows here as you confirm new IDs during sessions, with the date.
+## Red flags
 
-## Red flags — you are violating this policy if
+- Writing a Containerfile instruction or an action input name from memory.
+- Copying a flag out of another doc, or out of training data.
+- "I think this flag does X."
+- Mandating a Context7 lookup in a session whose runtime has no Context7
+  tools. Check first, then fall back down the list above.
 
-- You write a `Containerfile` instruction from memory without checking bootc docs
-- You assert an action's input name without checking the action's docs
-- You copy a flag from another doc or from training data
-- You describe a tool's behavior without citing the doc section
-- You say "I think this flag does X" — that is a guess; look it up
+## Verification
+
+```bash
+# The only MCP server this repo configures
+jq -r '.mcpServers | keys[]' .cursor/mcp.json
+jq -r '.servers | keys[]' .vscode/mcp.json
+
+# Its tool surface: search_knowledge, get_factory_status, get_work_queue
+curl -sS -X POST https://mcp.projectbluefin.io/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | sed -n 's/^data: //p' | jq -r '.result.tools[].name'
+
+# Skill files recording where an external fact came from
+grep -rl context7-sources docs/skills | wc -l
+```
 
 ## See also
 
-- [`bootc.md`](bootc.md) — the canonical example of this policy in action
-- [`ci-pitfalls/SKILL.md`](ci-pitfalls/SKILL.md) — CI traps that Context7 lookups prevent
-- [`skill-improvement.md`](skill-improvement.md) — record Context7 sources in skill frontmatter
+- [`bootc.md`](bootc.md) — the canonical example of citing upstream docs
+- [`ci-pitfalls/SKILL.md`](ci-pitfalls/SKILL.md) — CI traps these lookups prevent
+- [`skill-improvement.md`](skill-improvement.md) — where the source gets recorded

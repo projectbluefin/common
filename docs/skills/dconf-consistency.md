@@ -1,7 +1,7 @@
 ---
 name: dconf-consistency
 version: "1.0"
-last_updated: "2026-06-23"
+last_updated: "2026-09-13"
 id: dconf-consistency
 one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
 entry_point: docs/skills/dconf-consistency.md
@@ -51,12 +51,13 @@ These two files must be edited together. Editing one without the other produces:
 2. Add the key path to `locks/01-bluefin-locked-settings`
 3. Verify locally: `gschema.override` format requires `[schema]` section header, key = value
 
-## Default rule for future agents
+## Where first-boot user behavior goes instead
 
-- For image-default desktop settings: edit `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`
-- For settings that must be immutable by users: edit both the override and `system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings`
-- For first-boot user-session behavior: use the existing hooks in `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/` rather than adding new config files ad hoc
-- Do not create a new schema override file for a single setting when the existing Bluefin override already exists
+A GSettings *default* belongs in the override file above. A one-time
+*first-boot action* for the current user belongs in an existing hook under
+`system_files/shared/usr/share/ublue-os/user-setup.hooks.d/` — see
+[`oem-hardware-hooks/SKILL.md`](oem-hardware-hooks/SKILL.md). Do not add a new
+config file ad hoc for either case.
 
 ## Removing a locked setting
 
@@ -75,7 +76,7 @@ existing files — it changes the merge order.
 
 ## Validation
 
-`validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
+`validate.yml` runs an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`. `validate` is a required status check, so a lock/override mismatch blocks the merge queue.
 
 When changing locked settings, still verify locally when possible:
 
@@ -88,7 +89,13 @@ The E2E `common` suite validates dconf state post-merge.
 
 ## Shared launchers for GNOME menu items
 
-If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
+If a custom-command-menu entry and a desktop file should launch the same thing,
+put a shared helper in `system_files/bluefin/usr/libexec/` instead of
+duplicating inline shell in both places. That is where Bluefin-layer
+helpers live (`bluefin-dynamic-wallpaper`, `bonedigger-report`,
+`ensure-libvirt-session-config`, `get-geoclue-latitude`); there is no
+`system_files/bluefin/usr/bin/`. Update the dconf entry and the `.desktop` file
+together so the shell menu and app launcher stay in sync.
 
 ## dconf profile lookup order and CI test interference
 

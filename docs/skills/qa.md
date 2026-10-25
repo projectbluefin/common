@@ -1,7 +1,7 @@
 ---
 name: qa
 version: "1.0"
-last_updated: "2026-06-23"
+last_updated: "2026-09-13"
 id: qa
 one_line_purpose: Run and understand the projectbluefin QA test coverage model.
 entry_point: docs/skills/qa.md
@@ -22,55 +22,47 @@ metadata:
 
 # QA Model — projectbluefin Factory
 
-## Test coverage by repo
+## Test gates by repo
 
-| Repo | Existing gates | Critical gaps |
-|---|---|---|
-| **bluefin** | lint, PR build+smoke, post-merge e2e, upgrade test, weekly pre-promotion | Installability gate, real-hardware gate, Bazaar/Flatpak test |
-| **bluefin-lts** | PR validation, PR smoke, post-merge e2e | testing→stable gate, upgrade gate, installability gate |
-| **common** | PR composed-image gate, just/brewfile validation, post-merge suite | installability gate, hardware gate |
-| **dakota** | validate/build, PR smoke, publish gate | Installability gate, hardware gate |
-| **knuckle** | unit/race/lint/vuln/coverage/BATS/headless/VM e2e | Bare-metal installer validation |
+Workflow filenames, read from each repo's `.github/workflows/`. These are the
+checkable facts; the prose interpretation below them is not.
 
-## Known gaps (tracked)
+| Repo | Gate workflows |
+|---|---|
+| **common** | `validate`, `unit-tests`, `pr-e2e`, `e2e`, `promotion-candidate-e2e`, `run-testsuite`, `validate-brewfiles`, `validate-chairlift-config`, `build`, `release`, `scorecard` |
+| **bluefin** | `pr-validation`, `build-image-testing`, `post-testing-e2e`, `run-testsuite`, `promote-testing-to-main`, `execute-release`, `bonedigger`, `vulnerability-scan`, `scorecard`, `nightly`, `lab-check` |
+| **bluefin-lts** | `merge-queue-validate`, `unit-tests`, `pr-e2e`, `pr-testsuite`, `post-testing-e2e`, `post-testing-e2e-nvidia`, `run-testsuite`, `promote-testing-to-main`, `execute-release`, `bonedigger`, `vulnerability-scan`, `lab-check` |
+| **dakota** | `validate`, `build`, `build-aarch64`, `boot-test-aarch64`, `e2e`, `publish-smoke`, `publish`, `run-testsuite`, `execute-release`, `rollback-stable`, `bonedigger`, `codeql`, `vulnerability-scan`, `scorecard` |
+| **knuckle** | `ci`, `post-merge-smoke`, `vm-e2e`, `nightly`, `security`, `bonedigger`, `release` |
 
-| Issue | Gap | Priority | Status |
-|---|---|---|---|
-| [#419](https://github.com/projectbluefin/common/issues/419) | software.feature tests GNOME Software, not Bazaar | P0 | open |
-| [#420](https://github.com/projectbluefin/common/issues/420) | No regression contract across streams | P1 | open |
-| [#422](https://github.com/projectbluefin/common/issues/422) | Hardware-only bug classes invisible to gate | P1 | open |
-| [#424](https://github.com/projectbluefin/common/issues/424) | bonedigger not wired into promotion | P1 | open |
-| [#421](https://github.com/projectbluefin/common/issues/421) | No pre-merge composition gate for common | P0 | ✅ closed |
-| [#423](https://github.com/projectbluefin/common/issues/423) | No installability gate before promotion | P1 | ✅ closed |
-| [#425](https://github.com/projectbluefin/common/issues/425) | bluefin-lts testing→stable gate too weak | P1 | ✅ closed |
+Only `common`'s required checks are stated anywhere in this repo — see
+[`docs/TESTING.md`](../TESTING.md#coverage-targets). A workflow existing does
+not mean it is required; check the ruleset before claiming a gate blocks.
 
-## Promotion quality gates (current state)
+The gap every repo shares: all of the above run in VMs or containers. See
+"Hardware coverage gap" below.
 
-### bluefin (strongest)
-1. PR: build + smoke e2e
-2. Post-merge: common suite + upgrade test
-3. Weekly: broader e2e before latest/stable promotion
+## Known gaps
 
-### bluefin-lts (weak)
-1. PR: validation + smoke (targets `:lts-testing` tag, not PR image)
-2. No post-merge gate
-3. scheduled-lts-release.yml promotes without defined pass/fail criteria
+Do not maintain a gap table here — every row of the previous one pointed at an
+issue that has since closed. Query instead:
 
-### common (moderate)
-1. PR: build + just/brewfile validation
-2. Post-merge: e2e against production tags (not PR-composed image)
+```bash
+gh search issues --owner projectbluefin --state open 'label:quality'
+gh issue list --repo projectbluefin/common --state open --label quality
+```
 
-### dakota (moderate)
-1. PR: bst show (validate only)
-2. Post-merge: PR image pushed to `:testing` with smoke gate
-3. Weekly: testing promotion to latest/stable
+## Promotion
 
-### knuckle (strong for installer)
-1. Unit + race + lint + vuln scan + coverage
-2. BATS tests
-3. Headless ISO smoke
-4. VM e2e
+Every repo moves images `testing` → `stable` through a
+`promote-testing-to-main` or `publish`/`rollback-stable` workflow, with a
+post-merge e2e suite in front of it. Do not restate per-repo promotion
+sequences here — they drift with every workflow edit. Read the workflow:
 
+```bash
+gh api repos/projectbluefin/<repo>/contents/.github/workflows/promote-testing-to-main.yml \
+  --jq '.content' | base64 -d
+```
 ## Hardware coverage gap
 
 Testing-lab uses KubeVirt VMs only. The following bug classes are **invisible** to the required gate:
@@ -87,69 +79,25 @@ Testing-lab uses KubeVirt VMs only. The following bug classes are **invisible** 
 
 ## Running tests
 
-See each repo's AGENTS.md for repo-specific test commands. Common entry points:
+| Repo | Command |
+|---|---|
+| **common** | `just test` (pytest + bats), then `pre-commit run --all-files`. `just check` is `just-fmt --check` only — it lints no shell, validates no YAML, and runs no test. |
+| **bluefin / bluefin-lts** | `just check` |
+| **dakota** | `bst show elements/...` |
+| **knuckle** | `go test ./...`, `just bats` |
 
-### Testing `update.just` on GitHub Actions
-
-`tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
-
-```bash
-# common
-just check              # lint + validate
-
-# bluefin/bluefin-lts
-just check              # pre-commit + validate
-
-# dakota
-bst show elements/...   # validate BST elements
-
-# knuckle
-go test ./...           # unit tests
-just bats               # BATS integration tests
-```
+For common, the full testing contract — what must be tested, the exemption
+list, the hardware-mock boundaries, and which checks actually gate a merge —
+is [`docs/TESTING.md`](../TESTING.md). Bats authoring patterns are in
+[`shell-scripts/SKILL.md`](shell-scripts/SKILL.md).
 
 ## bonedigger integration
 
-bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger/SKILL.md](bonedigger/SKILL.md).
+bonedigger crash/panic detection is not wired into the promotion workflow. See [docs/skills/bonedigger/SKILL.md](bonedigger/SKILL.md).
 
-## libsetup.sh — setup versioning
+## Setup services
 
-`version-script` in `system_files/shared/usr/lib/ublue/setup-services/libsetup.sh` is the idempotency guard for all first-boot setup scripts.
-
-**Pattern for callers:**
-```bash
-source /usr/lib/ublue/setup-services/libsetup.sh
-version-script my-service user 1 || exit 0
-# ... setup steps here, run exactly once per version bump ...
-```
-
-**Protections built into `version-script`:**
-- **Concurrent execution safe:** uses `flock -x` (fd 200 on a `.lock` file adjacent to the state file) so that user-setup and privileged-setup starting simultaneously on first boot cannot both read before either writes — each call is serialised.
-- **Malformed state file safe:** validates JSON with `jq` before reading. If `setup_versioning.json` is corrupted, resets to `{}` with a warning rather than silently skipping setup.
-- **Temp file cleanup:** uses `trap 'rm -f "${tmp}"' EXIT` inside the subshell so no orphaned temp files remain on error.
-
-**State file:** `~/.local/share/ublue/setup_versioning.json` (user-scoped, not global).
-
-**Test coverage:** `tests/test_libsetup.bats` — 9 tests. Run `just test` to verify.
-
-## hookrunner.sh — setup hook dispatch
-
-`system_files/shared/usr/lib/ublue/setup-services/hookrunner.sh` is the single source of truth for how the three setup services discover and run their hooks. `ublue-system-setup`, `ublue-user-setup` and `ublue-privileged-setup` are thin wrappers over it — each supplies only its `/etc/ublue-os/setup.json` key and its default directory:
-
-```bash
-HOOKRUNNER="${HOOKRUNNER:-/usr/lib/ublue/setup-services/hookrunner.sh}"
-source "${HOOKRUNNER}"
-run_setup_hooks "user-hooks-directory" "/usr/share/ublue-os/user-setup.hooks.d"
-```
-
-| Wrapper | Config key | Default directory |
-| --- | --- | --- |
-| `ublue-system-setup` | `system-hooks-directory` | `/usr/share/ublue-os/system-setup.hooks.d` |
-| `ublue-user-setup` | `user-hooks-directory` | `/usr/share/ublue-os/user-setup.hooks.d` |
-| `ublue-privileged-setup` | `privileged-hooks-directory` | `/usr/share/ublue-os/privileged-setup.hooks.d` |
-
-`$HOOKRUNNER` is overridable so the wrappers can be exercised from a source checkout, matching the `$LIBSETUP` convention used by the OEM hardware hooks.
-
-**Do not** reintroduce a private `get_config` or `for script in ...` loop in a wrapper — `tests/test_setup_scripts.bats` fails the build if you do. The three scripts were byte-identical copies before, which is how one dispatch-loop defect shipped three times over.
-
-**Test coverage:** `tests/test_setup_scripts.bats` and `tests/test_privileged_setup.bats`. Run `just test` to verify.
+`libsetup.sh`'s `version-script` idempotency guard and the `hookrunner.sh`
+dispatcher shared by `ublue-system-setup`, `ublue-user-setup` and
+`ublue-privileged-setup` are documented once, in
+[`oem-hardware-hooks/SKILL.md`](oem-hardware-hooks/SKILL.md#the-version-script-contract).

@@ -4,23 +4,31 @@ Part of [pr-review](../SKILL.md) — merge queue settings, branch update command
 
 ## Merge Queue Defaults
 
+Live parameters of ruleset `main — merge queue` (id `17513003`), the only
+ruleset on `common`. Full rule dump: [governance.md](../../governance.md#how-main-is-protected).
+
 | Setting | Value |
 |---|---|
-| Merge method | Squash only (`allow_rebase_merge: false`) |
-| Grouping strategy | `ALLGREEN` ("only merge non-failing pull requests") |
+| Merge method | Squash only (`allowed_merge_methods: ["squash"]`) |
+| Grouping strategy | `ALLGREEN` |
 | Max entries to build | 5 |
+| Check response timeout | 90 minutes |
 | Required checks | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
-| Required approvals | **0** — and no code-owner review |
+| Required approvals | **2** |
+| Code-owner review | not required |
+| Bypass actors | **none** |
 
-> ⚠️ The ruleset is named `main-review-required-with-renovate-bypass`, but the
-> live rule requires **no** approval and **no** code-owner review. Never infer
-> approval behavior from the ruleset name — read the live parameters.
+Two human approvals are enforced by GitHub. The human verdict in this loop is
+what produces them; it is not a substitute for them, and nobody can bypass the
+ruleset.
 
-Because approvals are not enforced, the human verdict in this loop is the only
-real review gate on `main`. Treat it accordingly.
+E2E checks are **informational** — they do not block merging. Only the three
+required checks above gate a merge. Unit Tests, Validate Brewfiles, Validate
+ChairLift Config, and Scorecard are likewise non-required.
 
-E2E checks are **informational** — they do not block merging. Only the required
-checks listed above gate a merge.
+Docs-only PRs are not stuck: `build.yml` path-ignores `docs/**`, `*.md`, and
+`AGENTS.md`, so both Build checks are skipped rather than pending and
+`validate` alone carries the PR.
 
 Default landing command:
 
@@ -32,13 +40,9 @@ gh pr merge <N> --squash --auto
 > ⚠️ Do NOT use `--delete-branch` — the repo has `deleteBranchOnMerge: true`
 > and the flag **hard-fails** when a merge queue is enabled.
 
-`--admin` bypasses the queue and merges immediately. It requires **explicit
-human instruction** per PR — never default to it.
-
-```bash
-# Admin merge — ONLY when the human explicitly says so
-gh pr merge <N> --squash --admin
-```
+`--admin` does **not** work here. Ruleset bypass is granted through
+`bypass_actors`, and `main — merge queue` has none, so an admin merge is
+rejected like any other. There is no override path; get the two approvals.
 
 ### Reading queue state
 
@@ -53,9 +57,6 @@ gh pr merge <N> --auto   # → "is already queued to merge" means it IS queued
 `mergeStateStatus` also goes `UNKNOWN` for a minute or two while GitHub
 recomputes mergeability after anything lands on `main`. That is not an error;
 poll again rather than acting on it.
-
-> ⚠️ Pushing directly to `main` — including the doc-only exception — bumps every
-> queued PR behind the new head. Re-check the armed set after any direct push.
 
 ### Updating branches
 

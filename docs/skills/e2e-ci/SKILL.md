@@ -1,7 +1,7 @@
 ---
 name: e2e-ci
-version: "1.1"
-last_updated: "2026-08-08"
+version: "1.2"
+last_updated: "2026-09-13"
 id: e2e-ci
 one_line_purpose: Debug pre/post-merge E2E CI for common.
 entry_point: docs/skills/e2e-ci/SKILL.md
@@ -35,12 +35,13 @@ Actions authoring unrelated to the `common` test workflows.
 
 **File:** `.github/workflows/e2e.yml`
 
-- Runs after merges to `main`
+- Triggers on `push` to `main` (paths-ignore markdown, `docs/**`, and `.github/workflows/**`) and `workflow_dispatch`
 - Calls the local `.github/workflows/run-testsuite.yml` wrapper, which centralizes the pinned `projectbluefin/testsuite` SHA
-- Validates the common layer against three downstream images:
-  - `ghcr.io/projectbluefin/bluefin:latest`
-  - `ghcr.io/projectbluefin/bluefin:lts`
+- Matrix of **two** downstream images, both with `suites: common`:
+  - `ghcr.io/projectbluefin/bluefin:testing`
   - `ghcr.io/projectbluefin/dakota:testing`
+- **Bluefin LTS is deliberately absent.** Its common suite failed every run (bootupd missing, `bootloader-update.service` failing, LockLayering blocking rpm-ostree) — [bluefin-lts#492](https://github.com/projectbluefin/bluefin-lts/issues/492). A permanently red advisory check teaches everyone to ignore it, and GitHub does not allow `continue-on-error` on a job that calls a reusable workflow, so the entry could not be soft-failed in place. LTS stays covered by `promotion-candidate-e2e.yml`. Restore the matrix entry when #492 is fixed
+- Advisory only: it is not a required status check, and it runs after `common:latest` has already been pushed. On failure a `report-failure` job opens or updates one tracking issue
 - Uses SSH-mode tests from the runner, so the common suite does not require a full GNOME session
 
 ## Pre-merge gate
@@ -49,17 +50,13 @@ Actions authoring unrelated to the `common` test workflows.
 
 - Runs on PRs to `main` and on `merge_group`
 - Builds the PR's `common` layer candidate first
-- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:stable` by overlaying `/system_files/shared` and `/system_files/bluefin`
+- Composes a downstream test image from `BASE_IMAGE: ghcr.io/projectbluefin/bluefin:testing` by overlaying `/system_files/shared` and `/system_files/bluefin`
 - Recompiles GSettings schemas in the composed image
 - Pushes the composed image to GHCR and runs the local testsuite wrapper with `suites: common`
 
-This is the pre-merge gate for common-layer changes, so regressions can fail before merge instead of waiting for post-merge E2E.
-In branch protection today it is still an advisory/non-required signal; `build.yml` remains the required merge check.
+This is the pre-merge signal for common-layer changes, so regressions surface before merge instead of waiting for post-merge E2E. It is **not** a required check — the ruleset requires only `validate` and the two `Build and push image` jobs. See [workflow-map.md](../workflow-map.md).
 
-Use a stable downstream base for this PR-time compose gate. The moving `:testing`
-stream belongs in `promotion-candidate-e2e.yml`; using it here makes unrelated
-downstream churn (for example missing CLI tools in the current testing image)
-fail `common` PRs that only change the shared layer.
+> **Known tension:** a `:testing` base means unrelated downstream churn (for example a CLI tool missing from the current testing image) can fail a `common` PR that only changed the shared layer. A stable base would isolate that, but `bluefin:stable` is not what the workflow uses today. If you change it, change this section in the same commit.
 
 ## Promotion-candidate feedback loop
 
@@ -77,32 +74,29 @@ This is **not** a full installer gate. It is the smallest safe repo-local improv
 ## Known CI caveats and quarantines
 
 - `brew-setup.service` is masked in CI, so Homebrew-installed CLI tools are not present unless explicitly provisioned during the job
-- `testsuite#210` tracks the `bash -lc` PATH mismatch affecting `zsh`/`fish` checks in the CI user environment
-- GNOME Software scenarios are intentionally `@quarantine` after `testsuite#258`; they should not be treated as active software-store coverage
-- Bazaar coverage is currently a `@pending` placeholder tied to the same gap
-- `ujust report --confirm` scenario (`system_health.feature`) is `@quarantine` — the `--confirm` mode is not implemented in any current image variant; the step skip-detection used the wrong error string. See testsuite PR #259. Re-enable when `report --confirm` lands in the image Justfile.
+- Everything else here is `projectbluefin/testsuite` internal state — quarantined scenarios, `@pending` placeholders, PATH mismatches. That list lives in the testsuite repo and changes without a `common` commit; read it there rather than mirroring it
 
 ## Testsuite SHA pin
 
-`common/.github/workflows/run-testsuite.yml` pins the testsuite SHA for all repo-local callers. When the pin lags behind `main`, quarantined scenarios may run and cause spurious failures. `common` has Renovate configured (`renovate.json`) but the testsuite SHA pin may need manual updates when testsuite fixes land — check `chore(deps): update` Renovate PRs.
+`.github/workflows/run-testsuite.yml` is the only file in this repo that names the testsuite SHA, and all three callers go through it. When the pin lags behind testsuite `main`, quarantined scenarios may run and cause spurious failures. Renovate does not currently propose bumps for it — check testsuite `main` by hand when a testsuite fix you need has landed.
 
 ## Red Flags
 
-- Using `:testing` as the compose base for `pr-e2e.yml` (causes false failures from unrelated downstream churn).
-- A `workflow_run` trigger fix pushed only to `testing` (default-branch constraint means it has no effect until it reaches `main`).
-- The `promote-to-testing` job running on branches other than `main` (double-promotion risk).
-- An unanchored `--certificate-identity-regexp` wildcard in cosign verify.
+- A change to any of the three testsuite callers that adds its own `projectbluefin/testsuite` ref instead of going through `run-testsuite.yml` — that forks the pin
+- Restoring the `bluefin:lts-testing` entry to `e2e.yml` before [bluefin-lts#492](https://github.com/projectbluefin/bluefin-lts/issues/492) closes, re-establishing a permanently red advisory check
+- Treating a red `e2e.yml` run as a `common` defect without first reading which matrix entry failed
+- An unanchored `--certificate-identity-regexp` wildcard in cosign verify
 
 ## Verification
 
-- [ ] `pr-e2e.yml` uses a stable (not `:testing`) base image.
-- [ ] `run-testsuite.yml` SHA pin matches the testsuite commit being relied on.
-- [ ] Promotion `promote-to-testing` job is gated on `head_branch == 'main'`.
-- [ ] cosign identity regexp is anchored with `^...$`.
+- [ ] `pr-e2e.yml`'s `BASE_IMAGE` and `e2e.yml`'s matrix match what this file says — both are single `grep`s
+- [ ] `run-testsuite.yml` SHA pin matches the testsuite commit being relied on
+- [ ] No workflow other than `run-testsuite.yml` references `projectbluefin/testsuite`
+- [ ] cosign identity regexp is anchored with `^...$`
 
 ## References
 
 | File | Description |
 |---|---|
-| [`references/promotion-patterns.md`](references/promotion-patterns.md) | `promote-to-testing` job pattern, TOCTOU guard, cosign verify anchoring, and cosign install on GHA runners. |
-| [`references/never-stall-design.md`](references/never-stall-design.md) | Promotion gate never-stall design: E2E on testing branch, feedback trigger, jq selector, and bluefin bootstrap. |
+| [`references/promotion-patterns.md`](references/promotion-patterns.md) | **Downstream image repos, not `common`.** `promote-to-testing` job pattern, TOCTOU guard, cosign verify anchoring, cosign install on GHA runners. |
+| [`references/never-stall-design.md`](references/never-stall-design.md) | **Downstream image repos, not `common`.** Promotion gate never-stall design: E2E on the testing branch, feedback trigger, jq selector, bluefin bootstrap. |

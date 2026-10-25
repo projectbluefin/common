@@ -16,31 +16,29 @@ Part of [release-promotion](../SKILL.md) — Supply chain tooling status, requir
 | CVE scanning | ✅ Trivy gate — bundled in `sign-and-publish` | — |
 | Changelog quality | ✅ `git-cliff` — live as of [common#592](https://github.com/projectbluefin/common/pull/592) | — |
 
-### Keyless signing — required permissions
+### Which job holds which permission
 
-`sign-and-publish` composite action requires these permissions on the calling job:
+`build.yml` splits the work across two jobs, and their permissions differ. Copying one block onto the other is the usual mistake.
 
-```yaml
-permissions:
-  id-token: write        # OIDC token for keyless signing
-  attestations: write    # GitHub SLSA L2 attestation
-  packages: write        # push to GHCR
-  security-events: write # Trivy CVE gate upload
-```
+| Job | Permissions | Why |
+|---|---|---|
+| `build_push` (per-arch matrix) | `contents: read`, `packages: write`, `security-events: write` | `security-events: write` is for the Trivy SARIF upload — it lives here, not on `manifest` |
+| `manifest` | `packages: write`, `id-token: write`, `attestations: write` | `id-token` for keyless OIDC, `attestations` for the SBOM + SLSA provenance attestations. No `contents:` entry at all |
+
+`sign-and-publish` runs in `manifest` and needs `packages: write`, `id-token: write`, and `attestations: write`. It does **not** need `security-events: write`.
 
 Do **not** add `SIGNING_SECRET` to new workflows — keyless OIDC has replaced it.
+
+The keyless certificate identity is anchored in `build.yml`:
+
+```
+^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/
+```
 
 ---
 
 ## Verifying a published artifact
 
-### Verify cosign signature (legacy — key-based, pre-2026-06-11)
-
-```bash
-cosign verify \
-  --key https://raw.githubusercontent.com/projectbluefin/common/main/cosign.pub \
-  ghcr.io/projectbluefin/common:latest
-```
 
 ### Verify GitHub attestation (live — keyless, as of common#595)
 

@@ -100,7 +100,7 @@ Out-of-org consumer impact: {explanation or "N/A"}
 
 ### ⛔ Consumer PR body format — colon syntax is REQUIRED
 
-The `check-consumer-contract.yml` regex matches `^Consumer PR:` **literally** (colon, no space before colon, space after). Using a Markdown heading silently fails:
+`projectbluefin/actions/.github/workflows/consumer-validation.yml` (`name: Consumer Validation`, job `Check consumer validation evidence`) matches `^Consumer PR:[[:space:]]+https://github\.com/projectbluefin/(bluefin|bluefin-lts|dakota)/pull/[0-9]+` **literally** — colon, no space before it, whitespace after. Using a Markdown heading silently fails:
 
 ```markdown
 # WRONG — regex does not match a heading; check silently fails

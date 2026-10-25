@@ -1,22 +1,17 @@
 # Common Skill Router
 
-Agent entry point for `projectbluefin/common`. Find the skill that matches
-your task, load only that skill, then act.
+Agent entry point for `projectbluefin/common`. Run `just skill <query>` or
+`python3 scripts/select-skill.py <query>` to route directly from the command line,
+or use this index to find and load only the skill matching your task.
 
-For agents entering another factory repository, use
-[`skills/factory-onboarding.md`](skills/factory-onboarding.md) to verify local
-authority, attach common as a shared-contract sidecar, and run the
-self-repair/self-improvement loop on every task.
+For agents entering another factory repository, use [`skills/factory-onboarding.md`](skills/factory-onboarding.md) to verify local authority.
 
-## Read order
+## Fast skill discovery
 
-1. [`AGENTS.md`](../AGENTS.md) — repo contract, build commands, boundaries.
-2. This file — task→skill mapping.
-3. The skill file named in the table below.
-4. [`docs/factory/agentic-model.md`](factory/agentic-model.md) for cross-repo rules.
-
-For routed Hive work, verify the target repository first, then load that
-repository's local catalog with `docs/skills/hive.md` as the preflight guard.
+```bash
+just skill <query>                       # interactive ranked search
+python3 scripts/select-skill.py <query>  # CLI search with scores
+```
 
 ## Skill index
 
@@ -29,8 +24,8 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
 | Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
+| Operate or integrate the Bluefin Review appliance | [`review-appliance.md`](skills/review-appliance.md) |
 | Queue a reviewed PR for Hive auto-merge-on-green | [`hive-automerge.md`](skills/hive-automerge.md) |
-| Read the static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
 | Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |
@@ -51,12 +46,12 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Lab-test a common PR on ghost | [`lab-testing/SKILL.md`](skills/lab-testing/SKILL.md) |
 | Write or test shell scripts | [`shell-scripts/SKILL.md`](skills/shell-scripts/SKILL.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle/SKILL.md`](skills/brew-lifecycle/SKILL.md) |
+| Work with Apptainer SIF container appliances | [`apptainer-sif/SKILL.md`](skills/apptainer-sif/SKILL.md) |
 | Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
 | Work with bootc | [`bootc.md`](skills/bootc.md) |
 | Work with NVIDIA GPU support | [`nvidia/SKILL.md`](skills/nvidia/SKILL.md) |
 | Work with OEM first-boot hooks | [`oem-hardware-hooks/SKILL.md`](skills/oem-hardware-hooks/SKILL.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
-| Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |
 | Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |
 | Author a new skill | [`write-a-skill.md`](skills/write-a-skill.md) |
 | Understand bonedigger lifecycle | [`bonedigger/SKILL.md`](skills/bonedigger/SKILL.md) |

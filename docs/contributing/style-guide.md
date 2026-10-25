@@ -234,12 +234,9 @@ chore(deps): update bluefin-wallpapers to latest
 ```
 
 ### AI Attribution
-AI-assisted commits must include attribution:
-```
-feat(just): add new system management recipe
 
-Assisted-by: Claude 3.5 Sonnet via GitHub Copilot
-```
+AI-authored commits carry two trailers. The exact form is defined once, in
+[`AGENTS.md`](../../AGENTS.md) — do not restate or vary it here.
 
 ## Comments and Documentation
 
@@ -337,7 +334,8 @@ Include:
 ❌ **Don't add complex build dependencies** - This repo is intentionally minimal
 ❌ **Don't compile code** - This is a configuration-only layer
 ❌ **Don't modify the scratch→ctx build pattern** - It's essential for the OCI layer
-❌ **Don't add linters/formatters** - Keep tooling minimal (Just, jq, bash only)
+❌ **Don't add a new linter or formatter** - the toolchain is fixed: `just`,
+`jq`, `bash`/`shellcheck`, and the hooks already in `.pre-commit-config.yaml`
 ❌ **Don't break existing directory structure** - Maintain `bluefin/` vs `shared/` separation
 ❌ **Don't add unnecessary comments** - Comment only when clarification is needed
 

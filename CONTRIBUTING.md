@@ -4,52 +4,37 @@ Thanks for helping out!
 
 Check the [Contributing Guide](https://docs.projectbluefin.io/contributing) for contribution information.
 
-This repository is the **shared OCI layer** consumed by all Bluefin image variants. Changes here propagate to `bluefin`, `bluefin-lts`, and `dakota`. Stay surgical — see the scope warning in [`AGENTS.md`](./AGENTS.md). Make sure you also check [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture).
+This repository is the **shared layer** for Bluefin images (`bluefin`, `bluefin-lts`) and downstream systems (`dakota`, `utah`, and installation media `iso`). A change to `system_files/shared/` propagates downstream, so stay surgical — see the scope warning in [`AGENTS.md`](./AGENTS.md).
 
-- For Bluefin-specific image changes: [projectbluefin/bluefin](https://github.com/projectbluefin/bluefin)
-- For LTS image changes: [projectbluefin/bluefin-lts](https://github.com/projectbluefin/bluefin-lts)
-- For dakota changes: [projectbluefin/dakota](https://github.com/projectbluefin/dakota)
-- For shared system config (Aurora-compatible files): edit `system_files/shared/` directly in this repo
+- For Bluefin-specific image changes: `projectbluefin/bluefin`
+- For LTS image changes: `projectbluefin/bluefin-lts`
+- For shared global config: edit `system_files/shared/` directly in this repo
 
-## How this repo uses agents
+## Issues and agents
 
-This repo is **human-first for issues.** Humans file issues, triage them, and decide what gets built.
-Automated agents implement approved work — they do not self-direct triage or close issues without
-human approval.
+Humans file and triage issues; agents implement approved work. The label
+workflow, who may set which label, and how to queue work for an agent are all
+in [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md). The rules
+agents operate under are in [`AGENTS.md`](./AGENTS.md). Neither is restated
+here.
 
-### The seven labels
+## Getting a PR merged
 
-Triage runs on exactly seven labels. Nothing else is a workflow state, and there are no slash
-commands:
+`main` is gated by the ruleset `main — merge queue`. Merging needs **two**
+approving reviews plus three green required checks — `validate`,
+`Build and push image (x86_64)`, and `Build and push image (aarch64)` — and
+then the merge queue. There are no bypass actors.
 
-| Label | Meaning |
-|---|---|
-| `1-triage` | Filed, awaiting a human read |
-| `2-discussing` | Needs a decision or a clearer spec |
-| `3-human-queue` | Accepted, queued for a person |
-| `3-clanker-queue` | Accepted, queued for an automated agent |
-| `4-review` | A pull request is awaiting review |
-| `blocked` | Waiting on human input or an external dependency |
-| `hold` | Intentionally paused |
+Other checks run and are worth reading, but do not block: Unit Tests, PR E2E,
+Validate Brewfiles, Validate ChairLift Config, Scorecard. Docs-only PRs skip
+the two Build checks entirely and land on `validate` alone.
 
-### Queueing work for an agent
+Live parameters and how to re-derive them:
+[`docs/skills/governance.md`](docs/skills/governance.md#how-main-is-protected).
 
-Add `3-clanker-queue` to a triaged issue you want an autonomous agent to implement:
-
-```bash
-gh issue edit <number> --repo projectbluefin/common --add-label 3-clanker-queue
-```
-
-The issue description must be clear enough to implement without follow-up questions. Vague issues
-sit in the queue indefinitely — no agent will guess at the spec.
-
-Full lifecycle: [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
-
-## CI
-
-Pull requests must pass `Validate PR`, `Build`, `Unit Tests`, and `PR E2E` — no expensive VM boots.
 Full layer validation (the `common` behave suite from
-[`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite)) runs on every merge to main.
+[`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite)) runs
+on every merge to main.
 
 ## Testing and style
 

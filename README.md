@@ -1,6 +1,9 @@
 # bluefin-common
 
-Shared OCI layer containing common configuration files used across all Bluefin variants (bluefin, bluefin-dx, bluefin-lts).
+Shared OCI layer of configuration files for Bluefin images (`bluefin`, `bluefin-lts`) and downstream systems (`dakota`, `utah`, and installation media `iso`).
+
+Agents working in this repo: read [`AGENTS.md`](AGENTS.md) first. It is the
+operating contract and this README does not restate it.
 
 ## Directory Structure
 
@@ -15,8 +18,7 @@ Files specific to Bluefin
 - GNOME Initial Setup configuration
 
 ### `system_files/shared/` - Shared Configuration
-Files shared with [Aurora](https://getaurora.dev) — Aurora maintainers can cherry-pick commits touching this directory. Edit directly here; changes propagate to all Bluefin variants on next build.
-
+Directly tracked global configuration consumed by all variants. Edit directly here; changes propagate to active downstream systems on build.
 This includes:
 - `Just` recipes for system management
 - Brewfiles for application bundles
@@ -60,12 +62,14 @@ Bluefin-common provides a comprehensive flatpak customization system with multip
 
 ### System Flatpak Brewfiles
 
-Default flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
+Default flatpaks are declared as Homebrew Brewfiles in
+`system_files/bluefin/usr/share/ublue-os/homebrew/`:
 
-- **`system-flatpaks.Brewfile`** - Core flatpaks installed on all Bluefin variants (37 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities)
-- **`system-dx-flatpaks.Brewfile`** - Additional development-focused flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox)
+- **`system-flatpaks.Brewfile`** — core flatpaks for all Bluefin variants
+- **`system-dx-flatpaks.Brewfile`** — additional flatpaks for DX mode
+- **`full-desktop.Brewfile`** — a broad GNOME Circle and community collection
 
-These can be installed using:
+Install the core set:
 ```bash
 ujust install-system-flatpaks
 ```
@@ -85,37 +89,32 @@ These overrides are automatically applied to new user accounts through the `/etc
 
 ## Brewfiles
 
-The `/usr/share/ublue-os/homebrew/` directory contains curated application bundles installable via [bbrew](https://github.com/Valkyrie00/homebrew-bbrew):
+`system_files/shared/usr/share/ublue-os/homebrew/` holds curated CLI and font
+bundles: `ai-tools`, `artwork`, `cli`, `cncf`, `experimental-ide`, `fonts`,
+`fonts-dev`, `ide`, `k8s-tools`, and `swift`. `preinstall.d/` holds the
+bundles applied at first boot (`chairlift`, `system-cli`).
 
-- **`system-flatpaks.Brewfile`** - Default system-wide flatpaks for all Bluefin variants
-- **`system-dx-flatpaks.Brewfile`** - Additional flatpaks for DX (Developer Experience) mode
-- **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community flatpak applications for a full desktop experience
-- **`fonts.Brewfile`** - Common fonts for everyday work
-- **`fonts-dev.Brewfile`** - Additional monospace fonts for development
-- **`cli.Brewfile`** - CLI tools and utilities
-- **`ai-tools.Brewfile`** - AI and machine learning tools
-- **`cncf.Brewfile`** - Cloud Native Computing Foundation tools
-- **`k8s-tools.Brewfile`** - Kubernetes tools
-- **`ide.Brewfile`** - Integrated development environments
-- **`artwork.Brewfile`** - Design and artwork applications
+Only two have a `ujust` recipe — `ujust cncf` and `ujust install-system-flatpaks`.
+For the rest, point `brew bundle` at the file:
 
-Users can install these bundles using the `ujust bbrew` command, which will prompt them to select a Brewfile.
+```bash
+brew bundle --file=/usr/share/ublue-os/homebrew/k8s-tools.Brewfile
+```
 
 ## CI / Testing
 
-Changes are validated in three layers:
+Per-workflow purpose and ownership:
+[`docs/skills/workflow-map.md`](docs/skills/workflow-map.md). What gates a
+merge: [`docs/skills/governance.md`](docs/skills/governance.md#how-main-is-protected).
 
-If you need the per-workflow purpose and ownership map, start with
-[`docs/skills/workflow-map.md`](docs/skills/workflow-map.md).
+**On every PR** — required status checks gating the merge queue:
+- `validate` (`validate.yml`) — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards
+- `Build and push image (x86_64)` and `Build and push image (aarch64)` (`build.yml`) — builds and scans OCI images; skipped for docs-only PRs
 
-**On every PR**:
-- `validate.yml` — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards
-- `build.yml` — builds the OCI image with `buildah`
-- `skill-drift.yml` — warns when implementation changes land without matching skill-doc updates
-- `pr-e2e.yml` — advisory composed-image common-suite check against a downstream Bluefin base
+Advisory checks report but do not block: `unit-tests.yml`, `pr-e2e.yml`, `validate-brewfiles.yaml`, `validate-chairlift-config.yaml`, and `scorecard.yml`.
 
 **On merge to main** — full layer validation via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite):
-- Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin LTS, Bluefin Stable, and Dakota
+- Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin Stable (`bluefin:testing`) and Dakota; LTS is temporarily paused pending bluefin-lts#492
 - SSH-mode: behave runs from the GHA runner over SSH into a QEMU VM — no full GNOME session needed, completes in ~15 min
 - Validates dconf defaults, locked keys, `ujust`, setup scripts, desktop entries, and shell configuration as they land in the composed images
 
