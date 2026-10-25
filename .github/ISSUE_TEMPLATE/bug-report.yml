@@ -1,79 +1,37 @@
 name: "Bug report"
-description: "Tell us what went wrong in Bluefin common and how to reproduce it."
-labels: ["needs-human", "kind/bug"]
+description: "Something is broken. You are the only person who can confirm it."
+type: "Bug"
 body:
   - type: markdown
     attributes:
       value: |
-        ## Help us understand the bug
+        Run `ujust report` before submitting. It captures your image, kernel, hardware, and logs — paste the gist URL below and we likely have everything we need.
 
-        Use a short, specific issue title. Describe one problem per report and remove
-        passwords, tokens, serial numbers, and other private information from evidence.
-        If you used report intake automation, you can link its evidence below.
-
-        ## What happens next
-
-        A maintainer reads every report and may ask you for more details. Once a
-        maintainer accepts it, a contributor or agent can pick it up.
-
-        You do not need labels or commands. Just reply normally in the comments.
-        See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
+  - type: input
+    id: report-link
+    attributes:
+      label: "ujust report gist URL"
+      placeholder: "https://gist.github.com/..."
+    validations:
+      required: true
 
   - type: textarea
     id: what-happened
     attributes:
       label: "What happened?"
-      description: "Summarize the bug, its impact, and when it began. Include relevant hardware or application details."
-      placeholder: "When I…, I see… This prevents me from…"
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: "What did you expect?"
-      description: "Describe the behavior you expected instead."
-    validations:
-      required: true
-
-  - type: textarea
-    id: steps
-    attributes:
-      label: "Steps to reproduce"
-      description: "Give the smallest repeatable set of steps. If it is intermittent or you cannot reproduce it, explain what you tried."
+      description: "What did you see? What did you expect? Be specific — hardware model, exact error text, what you were doing."
       placeholder: |
-        1. …
-        2. …
-        3. …
+        Bluetooth disappears from the panel after suspend on my Framework 13 AMD.
+        The indicator is gone until I reboot. journalctl shows "hci0: Bluetooth host wakeup failed".
+        Expected it to reconnect automatically, as it does on Fedora 42.
     validations:
       required: true
 
   - type: textarea
-    id: image
+    id: extra
     attributes:
-      label: "Image details"
-      description: "Open a terminal and run `bootc status`. Paste the complete output below, including the booted image and any staged image. If the machine cannot boot, the command fails, or bootc is not applicable, explain that instead and provide any image or version details you know."
-      placeholder: "Paste complete bootc status output here, or explain why it is unavailable."
-      render: text
-    validations:
-      required: true
-
-  - type: textarea
-    id: evidence
-    attributes:
-      label: "Additional evidence"
-      description: "Optional: relevant logs, screenshots, error messages, or links to report evidence. Redact private information before sharing."
+      label: "Extra context"
+      description: "Optional — upstream bug links, 'works on X but not Y', anything that narrows the cause."
+      placeholder: "Works fine on the Intel NUC in the same setup. Appears on both 6.14 and 6.15 kernels."
     validations:
       required: false
-
-  - type: dropdown
-    id: automation-preference
-    attributes:
-      label: "Automation preference"
-      description: "Choose \"Human interaction only\" if you do not want agents working on this report: maintainers keep the needs-human label on it, so agents never pick it up."
-      options:
-        - "Human interaction only"
-        - "Machine analysis is welcome"
-        - "No preference"
-    validations:
-      required: true
