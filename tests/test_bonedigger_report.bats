@@ -670,6 +670,33 @@ EOF
     [ ! -e "$LOCAL_REPORT_ROOT/last/journal.txt" ]
 }
 
+@test "publish_smart_logs links the published logs only once across retries" {
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "${GH_CALLS:?}"
+printf 'https://gist.github.com/reporter/abc123\n'
+EOF
+    chmod +x "$WORKDIR/bin/gh"
+    mkdir -p "$WORKDIR/draft"
+    printf 'body\n' > "$WORKDIR/draft/issue.md"
+    printf 'logs\n' > "$WORKDIR/draft/networking.md"
+    export GH_CALLS="$WORKDIR/gh-calls"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        publish_smart_logs
+        publish_smart_logs
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'https://gist.github.com/reporter/abc123' "$WORKDIR/draft/issue.md")" -eq 1 ]
+    [ "$(grep -c '### Selected smart logs' "$WORKDIR/draft/issue.md")" -eq 1 ]
+    [ "$(grep -c 'gist create' "$GH_CALLS")" -eq 1 ]
+}
+
 @test "ordinary reporters create issues without requesting label permissions" {
     cat << 'EOF' > "$WORKDIR/bin/gh"
 #!/usr/bin/bash
