@@ -97,7 +97,7 @@ Third-party actions must be pinned to a full commit SHA with a human-readable ve
 uses: actions/checkout@v4
 uses: actions/checkout@main
 uses: taiki-e/install-action@latest
-uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # CORRECT — internal ref, exempt from the hook
+uses: projectbluefin/testsuite/.github/workflows/e2e.yml@v1  # CORRECT — internal ref, exempt from the hook
 ```
 
 ### Repos with managed tags (exempt)
