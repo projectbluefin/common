@@ -54,7 +54,7 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
 | `bonedigger.yml` | bluefin, bluefin-lts, dakota, knuckle | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | full SHA retention pin (`d530767`, tag `v1`; dakota `9c5faf6`) — file removed from `main` in `bonedigger#40` (2026-09-29), so the pins still resolve and run but cannot be bumped forward |
-| `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@main` |
+| `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin (`7da50e5b6f165a4704159b0ce5a4898caff6466a`) |
 
 **Note:** the `bonedigger.yml` callers are the one internal ref that is a full
 SHA pin rather than a managed floating tag. `lifecycle.yml` was removed from
@@ -104,7 +104,7 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # CORRECT — int
 All `projectbluefin/` internal refs are exempt from the hook. Current usage:
 - `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
 - `projectbluefin/bonedigger` — the `lifecycle.yml` ref is a full SHA retention pin (the file was removed from `main` in `bonedigger#40`), not a managed floating tag
-- `projectbluefin/testsuite` — `@main` (managed floating tag, same policy as all internal refs)
+- `projectbluefin/testsuite` — full SHA pin (e2e.yml consumers pin to specific commits)
 
 External actions (everything outside `projectbluefin/`) must use full SHA pins.
 
