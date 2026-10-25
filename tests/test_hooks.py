@@ -174,7 +174,7 @@ class TestJetbrainsHook:
         assert "ujust install-jetbrains-toolbox" in cmd
         assert "io.github.kolunmi.Bazaar" in cmd
 
-    def test_action_spawns_ujust_devmode(self):
+    def test_action_spawns_chairlift_dx_mode(self):
         resp, calls = _load_hooks_with_mock({
             "BAZAAR_HOOK_ID": "jetbrains-toolbox",
             "BAZAAR_HOOK_STAGE": "action",
@@ -182,10 +182,11 @@ class TestJetbrainsHook:
         })
         assert resp == ""
         assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "ujust devmode" in cmd
-        assert "io.github.kolunmi.Bazaar" in cmd
-
+        assert calls[0] == [
+            "flatpak-spawn", "--host",
+            "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper",
+            "--dx-mode",
+        ]
 
 # ---------------------------------------------------------------------------
 # Brew-installed IDE hooks (VSCode, VSCodium, Zed, Cursor, Antigravity)
@@ -273,7 +274,7 @@ class TestIDEHook:
         assert f"brew trust {tap};" in cmd
         assert f"brew install --cask {brew_pkg}" in cmd
 
-    def test_action_run_devmode_spawns_devmode(self, hook_id, appid, other_appid, brew_pkg):
+    def test_action_run_devmode_spawns_chairlift_dx_mode(self, hook_id, appid, other_appid, brew_pkg):
         resp, calls = _load_hooks_with_mock({
             "BAZAAR_HOOK_ID": hook_id,
             "BAZAAR_HOOK_STAGE": "action",
@@ -282,7 +283,11 @@ class TestIDEHook:
         })
         assert resp == ""
         assert len(calls) == 1
-        assert "ujust devmode" in " ".join(calls[0])
+        assert calls[0] == [
+            "flatpak-spawn", "--host",
+            "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper",
+            "--dx-mode",
+        ]
 
 
 # ---------------------------------------------------------------------------

@@ -71,6 +71,10 @@ Pass Cursor's experimental tap to the handler so it taps and trusts the same
 source that supplies the cask. Keep Cancel as the default and intercept only
 installs; updates and removals must pass through.
 
+### Developer Experience redirection (`run-devmode`)
+
+Intercepted IDE transaction dialogs (`jetbrains-toolbox`, `vscode`, `vscodium`, `zed`) present a `run-devmode` option. Choosing this executes `spawn_chairlift_dx_mode()`, launching ChairLift directly to its Developer Mode toggle screen via `flatpak-spawn --host /home/linuxbrew/.linuxbrew/bin/chairlift-wrapper --dx-mode`. Note that launching `--dx-mode` requires a ChairLift release containing the `--dx-mode` launch intent.
+
 ## Curated schema specification
 
 Bazaar (`io.github.kolunmi.Bazaar`) uses a typed schema rooted at `rows:`.

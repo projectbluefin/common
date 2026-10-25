@@ -39,6 +39,10 @@ def make_popup_terminal_argv(cmd):
 def spawn_ujust(command):
     spawn_and_detach(make_popup_terminal_argv(f'ujust {command}'))
 
+def spawn_chairlift_dx_mode():
+    chairlift = '/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper'
+    spawn_and_detach(['flatpak-spawn', '--host', chairlift, '--dx-mode'])
+
 def spawn_brew(app, tap='ublue-os/tap'):
     brew = '/home/linuxbrew/.linuxbrew/bin/brew'
     cmd = f'{brew} tap {tap}; {brew} trust {tap}; {brew} install --cask {app}'
@@ -70,7 +74,7 @@ def handle_jetbrains():
         case 'action':
             try:
                 if dialog_response_id == 'run-devmode':
-                    spawn_ujust('devmode')
+                    spawn_chairlift_dx_mode()
                 else:
                     spawn_ujust('install-jetbrains-toolbox')
             except:
@@ -111,7 +115,7 @@ def handle_ide(appid_matches, brew_pkg, tap='ublue-os/tap'):
         case 'action':
             try:
                 if dialog_response_id == 'run-devmode':
-                    spawn_ujust('devmode')
+                    spawn_chairlift_dx_mode()
                 else:
                     spawn_brew(brew_pkg, tap)
             except:
