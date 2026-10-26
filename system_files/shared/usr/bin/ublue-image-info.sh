@@ -14,3 +14,9 @@ if [[ -n "${BOOTED_TAG}" ]]; then
 fi
 
 echo -n "${IMAGE_NAME}:${IMAGE_TAG}"
+
+if [[ "$(rpm-ostree status --booted)" =~ "signed" ]]; then
+	echo -n " 🔐"
+else
+	echo -n -e " \033[5m🔓\033[0m"
+fi
