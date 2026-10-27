@@ -105,23 +105,22 @@ teardown() {
 # Repo selection - LTS stream
 # ---------------------------------------------------------------------------
 
-@test "changelog: lts tag selects projectbluefin/bluefin-lts repo" {
+# Bluefin and Bluefin LTS destinations are archived, so the lts* tag no longer
+# selects a distinct repo: it falls through to the changelog caller default
+# (projectbluefin/bluefin). common#1499.
+
+@test "changelog: lts tag falls through to projectbluefin/bluefin repo" {
     MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
-    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
 }
 
-@test "changelog: lts tag does NOT query projectbluefin/bluefin" {
-    MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
-    [ "${status}" -eq 0 ]
-    # The bluefin (non-lts) repo must not appear in any curl call
-    ! grep -q "projectbluefin/bluefin[^-]" "${CURL_CALLS}"
-}
-
-@test "changelog: lts-hwe tag selects projectbluefin/bluefin-lts repo" {
+@test "changelog: lts-hwe tag falls through to projectbluefin/bluefin repo" {
     MOCK_TAG="lts-hwe" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
-    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
 }
 
 # ---------------------------------------------------------------------------
@@ -167,10 +166,13 @@ teardown() {
     grep -q "releases/latest" "${CURL_CALLS}"
 }
 
-@test "changelog: lts tag fetches from bluefin-lts /releases endpoint" {
+@test "changelog: lts tag fetches from bluefin /releases endpoint" {
     MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
-    grep -q "api.github.com/repos/projectbluefin/bluefin-lts/releases" "${CURL_CALLS}"
+    # lts now falls through to the changelog caller default (bluefin); the
+    # versioned /releases endpoint is still used because the tag is lts*.
+    grep -q "api.github.com/repos/projectbluefin/bluefin/releases" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
 }
 
 # ---------------------------------------------------------------------------
@@ -198,15 +200,16 @@ teardown() {
     grep -q "projectbluefin/dakota" "${CURL_CALLS}"
 }
 
-@test "changelog: bluefin-lts image name selects bluefin-lts repo with stable tag" {
+@test "changelog: bluefin-lts image name falls through to bluefin repo" {
     MOCK_NAME="bluefin-lts" MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
-    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
-    ! grep -q "projectbluefin/bluefin[^-]" "${CURL_CALLS}"
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
 }
 
-@test "changelog: bluefin-lts-nvidia image name selects bluefin-lts repo" {
+@test "changelog: bluefin-lts-nvidia image name falls through to bluefin repo" {
     MOCK_NAME="bluefin-lts-nvidia" MOCK_TAG="testing" run bash "${SCRIPT_FILE}"
     [ "${status}" -eq 0 ]
-    grep -q "projectbluefin/bluefin-lts" "${CURL_CALLS}"
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
 }

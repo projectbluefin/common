@@ -4,6 +4,19 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Renovate for
 
 ---
 
+## Renovate Actions outside the workflows directory
+
+`.github/copilot-setup-steps.yml` lives outside Renovate's default workflow
+paths. `renovate.json` adds that exact path to the built-in `github-actions`
+manager's `managerFilePatterns`, so its action pins receive the same digest
+tracking and package rules as regular workflows. No custom regex manager is
+needed: the file uses ordinary workflow syntax.
+
+Renovate [adds these patterns to its defaults](https://docs.renovatebot.com/configuration-options/#managerfilepatterns),
+so standard workflow and `action.yml` discovery remains enabled. When adding
+another nonstandard workflow path, extend this list and the coverage test in
+`tests/test_renovate_config.py` rather than duplicating action parsing.
+
 ## Renovate OCI digest tracking
 
 `Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest`).

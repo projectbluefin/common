@@ -244,7 +244,7 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] Linux casks use `arm64_linux:` / `x86_64_linux:` checksum keys
 - [ ] If adding a cask: it is recorded under `.casks` and removal uses `brew uninstall --cask`
 - [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes (networked; not part of `just check`)
-- [ ] If bumping the ChairLift cask: update `CHAIRLIFT_SCHEMA_REF`, the schema archive pin, and vendored desktop/icons together; compile GSettings schemas after merging shared files into the composed image
+- [ ] If bumping the ChairLift cask: update `CHAIRLIFT_SCHEMA_REF`, the schema archive pin, and vendored desktop/icons together, and bring `ARG CHAIRLIFT_RELEASE` (the root helper and the shipped schemas) to the same ChairLift release so the image's schemas stay at or above the config-validation pin; compile GSettings schemas after merging shared files into the composed image
 - [ ] Bundle and uninstall failures leave the previous state hash intact for retry
 - [ ] The systemd user unit remains ordered after `graphical-session.target`, in `background.slice`, and at reduced I/O weight
 - [ ] User units do not reference the system manager's `network-online.target`; network failures use the service retry policy

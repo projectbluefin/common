@@ -51,6 +51,26 @@ def test_renovate_config_inheritance_and_managers():
     )
 
 
+def test_github_actions_manager_covers_copilot_setup():
+    """The nonstandard setup workflow needs discovery by the native Actions manager."""
+    config = _load_config()
+    patterns = config["github-actions"]["managerFilePatterns"]
+    setup_path = ".github/copilot-setup-steps.yml"
+
+    assert (ROOT / setup_path).is_file()
+    assert any(
+        pattern.startswith("/")
+        and pattern.endswith("/")
+        and re.search(pattern[1:-1], setup_path)
+        for pattern in patterns
+    ), "The github-actions manager must discover the Copilot setup workflow"
+
+    # Keep this an exact extra path, not a catch-all YAML parser. Native workflow
+    # discovery is preserved because managerFilePatterns adds to Renovate defaults.
+    for other_path in ["docs/copilot-setup-steps.yml", ".github/copilot-setup-steps.yml.bak"]:
+        assert not any(re.search(pattern[1:-1], other_path) for pattern in patterns)
+
+
 def test_wallpaper_custom_regex_manager():
     """Verify the custom regex manager for bluefin-wallpapers-gnome in Containerfile."""
     config = _load_config()
@@ -277,10 +297,11 @@ def test_chairlift_custom_regex_manager_tracks_the_containerfile_pin():
 
 
 def test_chairlift_versioning_orders_prereleases():
-    """ChairLift publishes only prereleases (vYY.MM.P-alpha.N). The default
-    semver-coerced versioning discards the prerelease part, so alpha.N and
-    alpha.N+1 compare equal and Renovate would never propose a bump. The
-    versioning regex must parse the pinned tag including its prerelease."""
+    """ChairLift ships stable releases (vYY.MM.P), but the default semver-coerced
+    versioning still needs to parse the pinned tag exactly: a prerelease suffix,
+    if ChairLift ever publishes one, must land in the prerelease group so alpha.N
+    and alpha.N+1 do not compare equal and Renovate would never propose a bump.
+    The versioning regex must parse both stable and prerelease tags."""
     template = _chairlift_manager().get("versioningTemplate", "")
     assert template.startswith("regex:"), "ChairLift needs prerelease-aware regex versioning"
     version_re = re.compile(_js_regex_to_python(template.removeprefix("regex:")))
@@ -297,9 +318,8 @@ def test_chairlift_versioning_orders_prereleases():
 
 
 def test_chairlift_updates_offer_prereleases_and_automerge():
-    """ChairLift publishes prereleases only, so without ignoreUnstable: false
-    Renovate would not offer them. Automerge is enabled so releases merge
-    automatically when CI passes."""
+    """ChairLift ships stable releases, which automerge when CI passes. ignoreUnstable
+    is left off so a prerelease is still surfaced if ChairLift ever publishes one."""
     package_rules = _load_config().get("packageRules", [])
     rules = [
         rule
