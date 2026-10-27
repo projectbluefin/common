@@ -21,6 +21,19 @@ repos:
     rev: 03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
     hooks:
       - id: actionlint
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f # v1.31.1
+    hooks:
+      # Workflow security audit. Runs in the required Validate PR check via
+      # `pre-commit run --all-files`; accepted findings and their reasons
+      # live in .github/zizmor.yml. --offline: the online audits need a
+      # GitHub token that pre-commit does not have.
+      - id: zizmor
+        args:
+          - --no-progress
+          - --offline
+          - --min-severity=medium
+          - --min-confidence=medium
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: f805888065fdb6162e1f800e50bb9460cbd223d6 # 0.37.2
     hooks:
