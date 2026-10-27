@@ -183,6 +183,7 @@ To ensure new and existing repositories remain compliant with this baseline:
    - `.pre-commit-config.yaml` runs `no-floating-action-tags` to prevent unpinned external action tags from being committed.
    - `scripts/check-actions-security.py` verifies top-level permissions declarations and action pinning.
    - `check-actions-security-tests` runs `tests/test_actions_security.py`, the fixture regression suite covering missing permissions, floating tags, and `pull_request_target` untrusted checkouts.
+   - `zizmor` audits workflows offline at `--min-severity=medium --min-confidence=medium`; accepted findings and their justifications are baselined in `.github/zizmor.yml`.
 2. **Automated CI Validation:**
    - `validate.yml` runs `pre-commit run --all-files` on all pull requests, calling both `scripts/check-actions-security.py` and `tests/test_actions_security.py`. The same suite runs locally via `Justfile` (`just test`).
 3. **Cross-Repo Scanner:**
