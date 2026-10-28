@@ -118,3 +118,13 @@ run_script() {
     [ "${status}" -eq 0 ]
     [ "${output}" = "dakota:testing 🔐" ]
 }
+
+@test "ublue-image-info: omits the lock marker when rpm-ostree is not installed" {
+    write_jq_mock
+    write_image_info_fixture "dakota" "latest"
+
+    run_script "${FIXTURE}" "${MOCKDIR}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "dakota:latest" ]
+}
