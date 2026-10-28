@@ -1,3 +1,6 @@
+# Relocatable schemas are located here in dconf
+# Some Gnome extensions don't ship gschema XML, so their settings also need to go in dconf
+
 [org/gnome/shell/extensions/custom-command-list]
 menuoptions-setting=2
 menuicon-setting='ublue-logo-symbolic'

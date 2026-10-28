@@ -34,22 +34,25 @@ teardown() {
     [ "$output" = "USER=[REDACTED] contacted [REDACTED-email]" ]
 }
 
-@test "bug routing maps Bluefin-family, Dakota-family, and unknown images" {
+@test "bug routing maps Dakota-family and unknown images, Bluefin-family falls through" {
+    # Bluefin and Bluefin LTS destinations are archived, so every Bluefin-family
+    # image falls through to the caller default (projectbluefin/common for
+    # reports) instead of a distinct repo (common#1499).
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin latest
-    [ "$output" = "projectbluefin/bluefin" ]
+    [ "$output" = "projectbluefin/common" ]
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin lts-42
-    [ "$output" = "projectbluefin/bluefin-lts" ]
+    [ "$output" = "projectbluefin/common" ]
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin-lts-hwe stable
-    [ "$output" = "projectbluefin/bluefin-lts" ]
+    [ "$output" = "projectbluefin/common" ]
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin-nvidia stable
-    [ "$output" = "projectbluefin/bluefin" ]
+    [ "$output" = "projectbluefin/common" ]
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" dakota latest
@@ -623,6 +626,56 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "publish_smart_logs publishes the selected logs once and links them in the issue" {
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+if [[ "$1" == gist ]]; then
+    printf 'https://gist.github.com/reporter/abc123\n'
+fi
+EOF
+    chmod +x "$WORKDIR/bin/gh"
+
+    mkdir -p "$WORKDIR/draft"
+    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+    printf 'networking\n' > "$WORKDIR/draft/networking.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        # Calling publish_smart_logs several times mimics a failed report
+        # that the user retries via "ujust report --resume".
+        publish_smart_logs
+        publish_smart_logs
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'https://gist.github.com/reporter/abc123' "$WORKDIR/draft/issue.md")" -eq 1 ]
+    [ "$(grep -c '### Selected smart logs' "$WORKDIR/draft/issue.md")" -eq 1 ]
+}
+
+@test "failed issue creation keeps the draft and resume reuses the published logs" {
+    # A resumed draft already has gist-url.txt from the earlier attempt and the
+    # log link once in the issue body. publish_smart_logs must reuse the
+    # published logs without appending the link a second time.
+    mkdir -p "$WORKDIR/draft"
+    printf 'https://gist.github.com/reporter/abc123\n' > "$WORKDIR/draft/gist-url.txt"
+    printf '## 🫐 Bluefin Bug Report\n\n' > "$WORKDIR/draft/issue.md"
+    printf 'The selected, redacted logs are public at: https://gist.github.com/reporter/abc123\n' >> "$WORKDIR/draft/issue.md"
+    printf 'networking\n' > "$WORKDIR/draft/networking.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=("$2/networking.md")
+        publish_smart_logs
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'https://gist.github.com/reporter/abc123' "$WORKDIR/draft/issue.md")" -eq 1 ]
+}
+
 @test "selected profile bundle is capped at two MiB" {
     cat << 'EOF' > "$WORKDIR/bin/journalctl"
 #!/usr/bin/bash
@@ -743,12 +796,12 @@ EOF
 @test "confirmation accepts a positive issue number for the routed repository" {
     run bash -c '
         source "$1"
-        parse_confirm_target "$2" projectbluefin/bluefin-lts
+        parse_confirm_target "$2" projectbluefin/common
         printf "%s|%s" "$CONFIRM_REPO" "$CONFIRM_ISSUE"
     ' _ "$BONEDIGGER_SCRIPT" 73
 
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin-lts|73" ]
+    [ "$output" = "projectbluefin/common|73" ]
 }
 
 @test "declining submission preserves the draft and resume command" {

@@ -194,7 +194,7 @@
       ],
       "description": "GSettings override and dconf lock file parity rules \u2014 must edit both files together for locked settings. Use when changing any GSettings key, dconf override, or lock file in system_files/.",
       "version": "1.2",
-      "last_updated": "2026-10-18",
+      "last_updated": "2026-10-24",
       "doc_type": "reference"
     },
     {

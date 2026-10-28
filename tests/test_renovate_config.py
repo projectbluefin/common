@@ -51,6 +51,26 @@ def test_renovate_config_inheritance_and_managers():
     )
 
 
+def test_github_actions_manager_covers_copilot_setup():
+    """The nonstandard setup workflow needs discovery by the native Actions manager."""
+    config = _load_config()
+    patterns = config["github-actions"]["managerFilePatterns"]
+    setup_path = ".github/copilot-setup-steps.yml"
+
+    assert (ROOT / setup_path).is_file()
+    assert any(
+        pattern.startswith("/")
+        and pattern.endswith("/")
+        and re.search(pattern[1:-1], setup_path)
+        for pattern in patterns
+    ), "The github-actions manager must discover the Copilot setup workflow"
+
+    # Keep this an exact extra path, not a catch-all YAML parser. Native workflow
+    # discovery is preserved because managerFilePatterns adds to Renovate defaults.
+    for other_path in ["docs/copilot-setup-steps.yml", ".github/copilot-setup-steps.yml.bak"]:
+        assert not any(re.search(pattern[1:-1], other_path) for pattern in patterns)
+
+
 def test_wallpaper_custom_regex_manager():
     """Verify the custom regex manager for bluefin-wallpapers-gnome in Containerfile."""
     config = _load_config()

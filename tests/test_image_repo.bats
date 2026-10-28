@@ -7,28 +7,31 @@ setup() {
     export RESOLVER
 }
 
-@test "image-repo: bluefin latest routes to projectbluefin/bluefin" {
+@test "image-repo: bluefin falls through to the caller default" {
+    # Bluefin and Bluefin LTS destinations are archived and refuse new issues,
+    # so every Bluefin-family image falls through to the caller default
+    # (projectbluefin/common for reports) instead of a distinct repo (common#1499).
     run "$RESOLVER" bluefin latest
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin" ]
+    [ "$output" = "projectbluefin/common" ]
 }
 
-@test "image-repo: bluefin with lts tag routes to bluefin-lts" {
+@test "image-repo: bluefin with an lts tag falls through to the caller default" {
     run "$RESOLVER" bluefin lts-20260601
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin-lts" ]
+    [ "$output" = "projectbluefin/common" ]
 }
 
-@test "image-repo: bluefin-lts-hwe routes to bluefin-lts" {
+@test "image-repo: bluefin-lts-hwe falls through to the caller default" {
     run "$RESOLVER" bluefin-lts-hwe stable
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin-lts" ]
+    [ "$output" = "projectbluefin/common" ]
 }
 
-@test "image-repo: bluefin-nvidia routes to bluefin" {
+@test "image-repo: bluefin-nvidia falls through to the caller default" {
     run "$RESOLVER" bluefin-nvidia stable
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin" ]
+    [ "$output" = "projectbluefin/common" ]
 }
 
 @test "image-repo: dakota routes to projectbluefin/dakota" {
@@ -62,10 +65,11 @@ setup() {
     [ "$output" = "projectbluefin/common" ]
 }
 
-@test "image-repo: empty image name with lts tag still routes to bluefin-lts" {
+@test "image-repo: empty image name falls through to the caller default" {
+    # An lts* tag no longer forces the archived bluefin-lts repository.
     run "$RESOLVER" --default projectbluefin/bluefin "" lts-hwe
     [ "$status" -eq 0 ]
-    [ "$output" = "projectbluefin/bluefin-lts" ]
+    [ "$output" = "projectbluefin/bluefin" ]
 }
 
 @test "image-repo: --default= form is accepted" {

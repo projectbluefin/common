@@ -3,6 +3,11 @@
   "extends": [
     "local>projectbluefin/renovate-config"
   ],
+  "github-actions": {
+    "managerFilePatterns": [
+      "/^\\.github/copilot-setup-steps\\.yml$/"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",

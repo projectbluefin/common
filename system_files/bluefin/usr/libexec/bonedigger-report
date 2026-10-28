@@ -749,7 +749,7 @@ publish_smart_logs() {
         printf '%s\n' "$gist_url" > "$DRAFT_DIR/gist-url.txt"
     fi
 
-    if ! grep -Fqx "$gist_url" "$DRAFT_DIR/issue.md"; then
+    if ! grep -Fq "$gist_url" "$DRAFT_DIR/issue.md"; then
         {
             printf '\n### Selected smart logs\n\n'
             printf 'The selected, redacted logs are public at: %s\n' "$gist_url"
