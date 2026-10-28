@@ -105,3 +105,16 @@ run_script() {
     [[ "${output}" == *"jq: command not found"* ]]
     [[ "${output}" == *" 🔐" ]]
 }
+
+@test "ublue-image-info: prefers the booted tag from ublue-booted-image when available" {
+    local booted_file="${WORKDIR}/booted-image"
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_image_info_fixture "dakota" "latest"
+    printf 'ghcr.io/projectbluefin/dakota:testing\n' > "${booted_file}"
+
+    run_script "${FIXTURE}" "${MOCKDIR}" "${booted_file}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "dakota:testing 🔐" ]
+}
