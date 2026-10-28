@@ -38,7 +38,7 @@ install-opentabletdriver:
       OTD_TMPDIR="$(mktemp -d)"
 
       # Tag + sha256 pinned; upstream publishes no separate checksum asset.
-      OTD_RELEASE="v0.6.7"
+      OTD_RELEASE="v0.6.8"
       OTD_TARBALL_SHA256="ab3ecfed8579864d947b2ad04c236822a109bc7c52519af7aaa36e03e99d2265"
       OTD_TARBALL_URL="https://github.com/OpenTabletDriver/OpenTabletDriver/releases/download/${OTD_RELEASE}/opentabletdriver-${OTD_RELEASE#v}_linux-x64_simple.tar.gz"
       curl -fsSL "${OTD_TARBALL_URL}" \
