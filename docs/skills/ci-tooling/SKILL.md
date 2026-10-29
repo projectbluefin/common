@@ -95,6 +95,21 @@ uses: actions/checkout@main
 
 ---
 
+## Python tool pinning
+
+Install Python tools in workflows with `pip install -r tests/requirements.txt`.
+Every direct requirement must use an exact `==` version; Renovate can propose
+updates through its requirements-file manager. Transitive dependencies are not
+locked by this gate.
+
+`tests/test_python_install_pins.py` checks workflow `run` steps and the root
+Justfile for `pip`, `pip3`, and `python -m pip` installs, following requirements
+files recursively. It rejects loose versions, missing files, and cycles.
+The unit-test workflow runs it on workflow changes, and `just test` runs it
+locally. New installer forms or shell wrappers need matching guard fixtures.
+
+---
+
 ## Pre-commit conventions
 
 - Auto-fix hooks **modify files and abort the commit**. Re-stage changed files and rerun before retrying.
