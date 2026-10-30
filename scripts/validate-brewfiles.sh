@@ -91,8 +91,19 @@ main() (
             if [[ "${line}" =~ ${double_entry} || "${line}" =~ ${single_entry} ]]; then
                 type="${BASH_REMATCH[1]}"
                 name="${BASH_REMATCH[2]}"
+                options="${BASH_REMATCH[3]}"
                 [[ "${type}" != brew ]] || type=formula
                 checked=$((checked + 1))
+                # Homebrew 6+ refuses to load items from non-official taps
+                # unless they are trusted. Mirror `brew bundle`: grant trust
+                # only to the item the Brewfile itself declares trusted.
+                if [[ "${options}" =~ ,[[:space:]]*trusted:[[:space:]]*true([[:space:]]|,|#|$) ]] \
+                    && ! brew trust "--${type}" -- "${name}" > "${workdir}/output" 2>&1; then
+                    failed=$((failed + 1))
+                    printf 'FAIL: %s:%s: could not trust %s %s\n' "${brewfile}" "${line_number}" "${type}" "${name}" >&2
+                    sed 's/^/  /' "${workdir}/output" >&2
+                    continue
+                fi
                 # Pass names as data, never interpolate them into bash -c.
                 # Serial checks keep each error adjacent to its source location.
                 if brew info "--${type}" -- "${name}" > "${workdir}/output" 2>&1; then
