@@ -41,30 +41,15 @@ IMAGE_NAME="${1-${IMAGE_NAME-}}"
 IMAGE_TAG="${2-${IMAGE_TAG-}}"
 
 case "$IMAGE_NAME" in
-    bluefin-lts*)
-        printf '%s\n' "projectbluefin/bluefin-lts"
-        ;;
-    bluefin)
-        # The plain bluefin image publishes the LTS stream under lts* tags.
-        if [[ "$IMAGE_TAG" == lts* ]]; then
-            printf '%s\n' "projectbluefin/bluefin-lts"
-        else
-            printf '%s\n' "projectbluefin/bluefin"
-        fi
-        ;;
-    bluefin*)
-        printf '%s\n' "projectbluefin/bluefin"
-        ;;
     dakota*)
         printf '%s\n' "projectbluefin/dakota"
         ;;
     *)
-        # No name (or an unrecognised fork): an lts* tag still identifies the
-        # LTS stream, otherwise defer to the caller-supplied default.
-        if [[ "$IMAGE_TAG" == lts* ]]; then
-            printf '%s\n' "projectbluefin/bluefin-lts"
-        else
-            printf '%s\n' "$UBLUE_IMAGE_REPO_DEFAULT"
-        fi
+        # No name, an unrecognised fork, or a Bluefin-family image: Bluefin and
+        # Bluefin LTS destinations are archived and refuse new issues, so these
+        # fall through to the caller-supplied default (projectbluefin/common for
+        # reports, projectbluefin/bluefin for changelogs) rather than the old
+        # bluefin / bluefin-lts arms removed in common#1499.
+        printf '%s\n' "$UBLUE_IMAGE_REPO_DEFAULT"
         ;;
 esac

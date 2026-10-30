@@ -854,6 +854,40 @@ def test_chairlift_icons_ship_system_wide():
         )
 
 
+def test_airlift_provenance_cites_the_cask_pin():
+    """The vendored ChairLift artifacts must name the tag the cask pins.
+
+    The desktop header and the brew-lifecycle doc record which upstream
+    release the icons and desktop entry were vendored from. If that citation
+    lags a cask bump, the provenance is stale: a reader diffing against the
+    cited tag trusts a release our pinned binary no longer ships. The citation
+    must equal CHAIRLIFT_SCHEMA_REF, the same constant the drift gate reads, so
+    a cask bump moves the citation and the pin together.
+    """
+    validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
+    refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
+    assert refs == ["v26.10.5"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.10.5, got {refs}"
+    )
+    pin = refs[0]
+
+    sources = {
+        "desktop entry": DESKTOP_FILE,
+        "brew-lifecycle doc": (
+            ROOT / "docs/skills/brew-lifecycle/references/service-mechanics.md"
+        ),
+    }
+    for name, path in sources.items():
+        text = path.read_text(encoding="utf-8")
+        assert pin in text, (
+            f"{name} does not cite the cask pin {pin}; update the vendored "
+            "ChairLift attribution to the tag the cask pins"
+        )
+        assert "alpha.2" not in text, (
+            f"{name} still cites the old alpha.2 release; replace it with {pin}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Ask Bluefin menu entry — the dconf Custom Command Menu entry that launches
 # ChairLift's --ask-bluefin dispatcher.

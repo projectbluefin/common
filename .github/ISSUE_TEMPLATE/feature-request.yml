@@ -1,67 +1,35 @@
 name: "Feature request"
-description: "Describe a problem Bluefin common could solve and the outcome you need."
-labels: ["needs-human", "kind/feature"]
+description: "Propose something new. Specific proposals ship. Vague ones wait."
+type: "Feature"
 body:
   - type: markdown
     attributes:
       value: |
-        ## Start with the problem
-
-        Use a short, specific issue title. Tell us who is affected and what would improve
-        their experience. You do not need logs, a technical design, or final acceptance
-        criteria to suggest a feature; maintainers will refine those with you later.
-
-        ## What happens next
-
-        A maintainer reads every request and may ask you to clarify the scope. A
-        suggestion is not a commitment. Once a maintainer accepts it, a contributor
-        or agent can pick it up.
-
-        You do not need labels or commands. Just reply normally in the comments.
-        See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
+        The bottleneck is almost never implementation — it is clarity. Contributors can ship well-scoped work fast, but only if the finish line is clear.
 
   - type: textarea
     id: problem
     attributes:
-      label: "Problem to solve"
-      description: "What are you trying to do, who is affected, and what gets in the way?"
-      placeholder: "As someone who…, I need to…, but currently…"
+      label: "What would you like to see?"
+      description: "What is missing, broken, or annoying? Be specific — name the command, the file, the workflow step."
+      placeholder: "Add this feature or ask for a design review"
     validations:
       required: true
 
   - type: textarea
-    id: outcome
+    id: solution
     attributes:
-      label: "Desired outcome"
-      description: "Describe what success would look like. A concrete example is helpful; a proposed implementation is optional."
-    validations:
-      required: true
-
-  - type: input
-    id: component
-    attributes:
-      label: "Affected component"
-      description: "Which part of common is involved? It is fine to say you are unsure."
-      placeholder: "For example: ujust recipe, desktop defaults, package selection, or unsure"
+      label: "What does done look like?"
+      description: "What command do you run? What do you see? What file changes?"
+      placeholder: "I should be able to set up Docker in one command"
     validations:
       required: true
 
   - type: textarea
-    id: workaround
+    id: extra
     attributes:
-      label: "Current workaround"
-      description: "How do you handle this today, and what are its limitations? Say none if you have no workaround."
+      label: "Extra context"
+      description: "Optional — related issues, upstream references, or files you think are affected."
+      placeholder: "related issues, upstream references, or files you think are affected"
     validations:
       required: false
-
-  - type: dropdown
-    id: automation-preference
-    attributes:
-      label: "Automation preference"
-      description: "Choose \"Human interaction only\" if you do not want agents working on this request: maintainers keep the needs-human label on it, so agents never pick it up."
-      options:
-        - "Human interaction only"
-        - "Machine analysis is welcome"
-        - "No preference"
-    validations:
-      required: true

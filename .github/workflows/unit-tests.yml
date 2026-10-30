@@ -39,7 +39,7 @@ jobs:
           pip install pytest pytest-cov pyyaml jsonschema numpy
 
       - name: Install just
-        uses: taiki-e/install-action@48370026b493bf84596242c95259dba0fe3fb080 # just
+        uses: taiki-e/install-action@53aaa72a1fed2d5b9189d6d54c38e29bf9be2ab9 # just
         with:
           tool: just
 
