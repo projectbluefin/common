@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# Tests for system.just recipes: toggle-testing, toggle-vms, install-system-flatpaks
+# Tests for system.just recipes: toggle-testing, toggle-vms,
+# install-system-flatpaks, check-sb-key
 #
 # Each recipe body is extracted out of the justfile into a standalone bash
 # script, then run against mocked jq/gum/pkexec/bootc/flatpak/brew/just so the
@@ -15,7 +16,7 @@ _extract_recipe() {
     local recipe="$1" out_file="$2"
     awk -v recipe="$recipe" '
         $0 ~ ("^" recipe "([[:space:]$].*)?:$") { in_recipe=1; next }
-        in_recipe && /^    #!\/usr\/bin\/env bash/ { found=1; next }
+        in_recipe && /^    #!\/usr\/bin\/(env )?bash/ { found=1; next }
         found && /^[^[:space:]]/ { exit }
         found { sub(/^    /, ""); print }
     ' "${SYSTEM_JUST}" \
@@ -323,4 +324,146 @@ _run_recipe() {
         TARGET_FLATPAK_FILE="${WORKDIR}/custom.Brewfile"
     [ "$status" -eq 0 ]
     grep -q "brew bundle --file=${WORKDIR}/custom.Brewfile" "${COMMAND_LOG}"
+}
+
+# --- check-sb-key --------------------------------------------------------
+#
+# The recipe reads /sys/firmware/efi and /boot directly. Those roots are
+# rewritten to fixture directories, and PATH is limited to the mocks plus
+# symlinks to the few real tools the recipe needs, so a mokutil or sbverify
+# on the runner cannot leak in.
+
+_setup_sb_key() {
+    EFI_ROOT="${WORKDIR}/efi"
+    BOOT_ROOT="${WORKDIR}/boot"
+    SB_MOCKDIR="${WORKDIR}/sb-bin"
+    mkdir -p "${SB_MOCKDIR}" "${BOOT_ROOT}"
+    _extract_recipe "check-sb-key" "${WORKDIR}/check-sb-key.raw"
+    sed -e 's|/sys/firmware/efi|${EFI_ROOT}|g' \
+        -e 's|/boot/|${BOOT_ROOT}/|g' \
+        "${WORKDIR}/check-sb-key.raw" > "${WORKDIR}/check-sb-key.sh"
+    local tool
+    for tool in od awk head; do
+        ln -s "$(command -v "${tool}")" "${SB_MOCKDIR}/${tool}"
+    done
+    cat > "${SB_MOCKDIR}/uname" <<'MOCK'
+#!/bin/bash
+echo "6.99.0-test.x86_64"
+MOCK
+    chmod +x "${SB_MOCKDIR}/uname"
+}
+
+_add_sb_mock() {
+    local name="$1"
+    cat > "${SB_MOCKDIR}/${name}"
+    chmod +x "${SB_MOCKDIR}/${name}"
+}
+
+_mock_mokutil() {
+    _add_sb_mock "mokutil" <<'MOCK'
+#!/bin/bash
+echo "mokutil $*" >> "${COMMAND_LOG}"
+case "$1" in
+    --sb-state) echo "SecureBoot enabled" ;;
+    --list-enrolled) for i in {1..10}; do echo "enrolled-line-${i}"; done ;;
+esac
+MOCK
+}
+
+# Real efivars files carry a 4-byte attribute header before the value byte.
+_write_secureboot_var() {
+    mkdir -p "${EFI_ROOT}/efivars"
+    printf "\\x06\\x00\\x00\\x00\\x$(printf '%02x' "$1")" \
+        > "${EFI_ROOT}/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+}
+
+_run_sb_key() {
+    run env PATH="${SB_MOCKDIR}" COMMAND_LOG="${COMMAND_LOG}" \
+        EFI_ROOT="${EFI_ROOT}" BOOT_ROOT="${BOOT_ROOT}" \
+        "${BASH}" "${WORKDIR}/check-sb-key.sh"
+}
+
+@test "check-sb-key: a non-EFI system reports that Secure Boot does not apply" {
+    _setup_sb_key
+    _mock_mokutil
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Not an EFI system — Secure Boot does not apply."* ]]
+    [[ "$output" != *"Machine Owner Key"* ]]
+    ! grep -q "mokutil" "${COMMAND_LOG}"
+}
+
+@test "check-sb-key: mokutil reports the Secure Boot state when present" {
+    _setup_sb_key
+    mkdir -p "${EFI_ROOT}"
+    _mock_mokutil
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    grep -qx "mokutil --sb-state" "${COMMAND_LOG}"
+    [[ "$output" == *"SecureBoot enabled"* ]]
+    [[ "$output" != *"mokutil not available"* ]]
+}
+
+@test "check-sb-key: enrolled MOK listing is capped at six lines" {
+    _setup_sb_key
+    mkdir -p "${EFI_ROOT}"
+    _mock_mokutil
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    grep -qx "mokutil --list-enrolled" "${COMMAND_LOG}"
+    [[ "$output" == *"== Machine Owner Key (MOK) Status =="* ]]
+    [[ "$output" == *"enrolled-line-6"* ]]
+    [[ "$output" != *"enrolled-line-7"* ]]
+}
+
+@test "check-sb-key: without mokutil an EFI var value of 1 reads as enabled" {
+    _setup_sb_key
+    _write_secureboot_var 1
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"mokutil not available — checking EFI vars..."* ]]
+    [[ "$output" == *"SecureBoot is enabled"* ]]
+}
+
+@test "check-sb-key: without mokutil an EFI var value of 0 reads as disabled" {
+    _setup_sb_key
+    _write_secureboot_var 0
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SecureBoot is disabled"* ]]
+    [[ "$output" != *"SecureBoot is enabled"* ]]
+}
+
+@test "check-sb-key: without mokutil or the EFI var the state is undetermined" {
+    _setup_sb_key
+    mkdir -p "${EFI_ROOT}/efivars"
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Cannot determine Secure Boot status"* ]]
+    [[ "$output" != *"SecureBoot is"* ]]
+}
+
+@test "check-sb-key: sbverify inspects the running kernel's image" {
+    _setup_sb_key
+    mkdir -p "${EFI_ROOT}"
+    _add_sb_mock "sbverify" <<'MOCK'
+#!/bin/bash
+echo "sbverify $*" >> "${COMMAND_LOG}"
+echo "signature 1"
+MOCK
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"6.99.0-test.x86_64"* ]]
+    grep -qx "sbverify --list ${BOOT_ROOT}/vmlinuz-6.99.0-test.x86_64" "${COMMAND_LOG}"
+    [[ "$output" == *"signature 1"* ]]
+}
+
+@test "check-sb-key: without sbverify the kernel signature check is skipped" {
+    _setup_sb_key
+    mkdir -p "${EFI_ROOT}"
+    _run_sb_key
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"== Kernel Signature =="* ]]
+    ! grep -q "sbverify" "${COMMAND_LOG}"
+    [[ "$output" != *"sbverify not available"* ]]
 }

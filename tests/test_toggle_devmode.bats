@@ -167,7 +167,7 @@ brew install lima
 brew install --cask ublue-os/tap/visual-studio-code-linux
 brew install --cask ublue-os/tap/vscodium-linux
 brew install --cask ublue-os/tap/antigravity-linux
-brew install --cask ublue-os/tap/zed-linux
+brew install --cask zed
 brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 brew install nvim
 brew install helix
@@ -302,6 +302,6 @@ pkexec bash -c" ]
     _choose "  Zed"
     _run_devmode
     [ "${status}" -eq 0 ]
-    grep -qx 'brew install --cask ublue-os/tap/zed-linux' "${COMMAND_LOG}"
+    grep -qx 'brew install --cask zed' "${COMMAND_LOG}"
     [ -f "${HOME}/.config/bluefin/devmode" ]
 }

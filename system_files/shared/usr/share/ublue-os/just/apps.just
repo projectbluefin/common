@@ -13,8 +13,6 @@ install-jetbrains-toolbox:
     brew trust ublue-os/tap 2>/dev/null || true
     brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 
-# Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
-#
 # Supply-chain pins (projectbluefin/common#1170) — update together on a bump:
 # - OTD_RELEASE: the upstream release tag; Renovate keeps it current via a
 #   custom regex manager in renovate.json. The tarball filename is
@@ -25,6 +23,8 @@ install-jetbrains-toolbox:
 #   manually in the same PR (sha256sum the new asset and raw unit file). Because
 #   of that, renovate.json disables automerge for OpenTabletDriver/OpenTabletDriver.
 # - the systemd unit URL is pinned to a fixed flathub packaging commit.
+
+# Install OpenTabletDriver for drawing tablets
 [group('Apps')]
 install-opentabletdriver:
     #!/usr/bin/bash

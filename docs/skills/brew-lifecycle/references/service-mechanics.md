@@ -33,6 +33,11 @@ image before relying on login reconciliation. Source: systemd `docs/PRESET.md`,
 "The Logic". The service only runs when brew is installed at
 `/home/linuxbrew/.linuxbrew/bin/brew`.
 
+A global enable also reaches GDM's user managers. GDM 49+ runs its greeter and
+initial-setup sessions as transient `gdm-*` accounts (HOME under
+`/run/gdm/home/`) that are not `@system` users and cannot write the shared
+prefix, so the script exits 0 for those sessions before any tap or bundle work.
+
 ### State file
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`
@@ -213,13 +218,13 @@ user-scope artifacts are first-user-wins.
 | `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.chairlift.svg` | upstream, verbatim |
 | `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.chairlift-symbolic.svg` | upstream, verbatim |
 
-All three are vendored from ChairLift v26.09.0-alpha.2 (GPL-3.0,
+All three are vendored from ChairLift v26.10.5 (GPL-3.0,
 `projectbluefin/chairlift`) and must be refreshed from the tag the cask pins
 whenever it is bumped. The two icons are byte-identical to upstream, so the
 claim is checkable:
 
 ```bash
-BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v26.09.0-alpha.2/data/icons/hicolor
+BASE=https://raw.githubusercontent.com/projectbluefin/chairlift/v26.10.5/data/icons/hicolor
 cd system_files/shared/usr/share/icons/hicolor
 for icon in scalable/apps/io.projectbluefin.chairlift.svg \
             symbolic/apps/io.projectbluefin.chairlift-symbolic.svg; do
@@ -281,6 +286,28 @@ To bump, change `ARG CHAIRLIFT_RELEASE`; nothing else. Renovate tracks it
 once CI checks pass. The cosign image is a
 `COPY --from=` pin that Renovate's built-in `dockerfile` manager keeps current.
 This pin is independent of `CHAIRLIFT_SCHEMA_REF`, which follows the cask.
+
+The two pins can point at different ChairLift releases, and that is expected
+rather than a fault. `CHAIRLIFT_RELEASE` is the release whose Linux archive
+`common` installs root-side — the pkexec helper, its PolicyKit policy, and the
+GSettings schemas — into every image. `CHAIRLIFT_SCHEMA_REF` is the release the
+user-scoped GUI (the Homebrew cask) and `tests/check-chairlift-config` validate
+the managed config against. One is baked into the image at build time; the
+other ships in the desktop application the user launches, and the two are
+maintained separately — Renovate automerges the one-line `CHAIRLIFT_RELEASE`
+bump while the cask pin moves with the cask release — so a GUI/helper version
+skew is normal. The pins are deliberately not tied by a check: forcing them to
+the same value would fight that design.
+
+When they differ, keep the image's shipped schemas at or above the
+config-validation pin. The schemas the running GUI loads come from
+`CHAIRLIFT_RELEASE`; the config it reads is validated against
+`CHAIRLIFT_SCHEMA_REF`. ChairLift treats a config key its loaded schemas do not
+know as a schema error and disables the whole application, so a shipped schema
+older than the config the GUI validates against is the unsafe direction. Bump
+them to the same ChairLift release in one change when you can; if they must
+drift, bring `CHAIRLIFT_RELEASE` up to at least `CHAIRLIFT_SCHEMA_REF` first so
+the loaded schemas still accept the config.
 
 ---
 

@@ -3,6 +3,11 @@
   "extends": [
     "local>projectbluefin/renovate-config"
   ],
+  "github-actions": {
+    "managerFilePatterns": [
+      "/^\\.github/copilot-setup-steps\\.yml$/"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -93,7 +98,7 @@
       "automerge": false
     },
     {
-      "description": "ChairLift publishes prereleases only, so unstable versions must be offered. Automerge when checks pass.",
+      "description": "Automerge stable projectbluefin/chairlift release updates. Keep ignoreUnstable off so a prerelease is still surfaced if ChairLift ever publishes one, and automerge when checks pass.",
       "matchDepNames": [
         "projectbluefin/chairlift"
       ],

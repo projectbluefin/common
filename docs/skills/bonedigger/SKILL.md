@@ -63,7 +63,9 @@ and [`hive.md`](../hive.md) for cross-repo coordination.
 
 - [ ] Integration tables list each reusable workflow once, combining its
   responsibilities and callers rather than treating each purpose as a workflow.
-- [ ] Bug routing matches Bluefin, Bluefin LTS, Dakota, and the common fallback.
+- [ ] Bug routing matches Dakota and the common fallback, with Bluefin and
+  Bluefin LTS falling through to the caller default (both former destinations
+  are archived, common#1499).
 - [ ] A bug submits at most one supported queue label.
 - [ ] Baseline and selected profile limits are enforced after redaction.
 - [ ] Missing or unauthenticated `gh` leaves a resumable local draft.

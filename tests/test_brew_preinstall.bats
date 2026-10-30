@@ -29,6 +29,8 @@ setup() {
 
     # Override HOME so STATE_FILE lands in a writable location
     export HOME="${WORKDIR}"
+    # A neutral account name, so the GDM-session guard never fires by accident.
+    export USER="bluefin-test"
 
     # Brew mock: shellenv adds our mock bin dir to PATH so `brew bundle` etc.
     # all hit this stub and not any real brew on the system.
@@ -263,6 +265,35 @@ EOF
     run bash "${PATCHED_SCRIPT}"
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"no Brewfiles"* ]]
+}
+
+@test "brew-preinstall: GDM greeter and initial-setup sessions skip before any brew call" {
+    printf 'tap "projectbluefin/tap"\nbrew "ripgrep"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    local user
+    for user in gdm gdm-greeter gdm-greeter-2 gdm-initial-setup; do
+        USER="${user}" BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+        [ "${status}" -eq 0 ]
+        [[ "${output}" == *"GDM session (${user}), skipping"* ]]
+    done
+
+    # A transient account is also recognised by its GDM-owned home.
+    USER="transient" HOME="/run/gdm/home/transient" BREW_LOG="${WORKDIR}/brew.log" \
+        run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"GDM session (transient), skipping"* ]]
+
+    [ ! -e "${WORKDIR}/brew.log" ]
+    [ ! -e "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: a real user whose name starts with gdm still runs" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    USER="gdmfan" BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"GDM session"* ]]
+    grep -q "brew bundle" "${WORKDIR}/brew.log"
 }
 
 # ---------------------------------------------------------------------------
