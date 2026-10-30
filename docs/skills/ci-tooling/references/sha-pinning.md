@@ -54,8 +54,11 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
 | `bonedigger.yml` | bluefin, bluefin-lts, dakota, knuckle | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | full SHA retention pin (`d530767`, tag `v1`; dakota `9c5faf6`) — file removed from `main` in `bonedigger#40` (2026-09-29), so the pins still resolve and run but cannot be bumped forward |
-| `run-testsuite.yml` | common | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin (`7da50e5b6f165a4704159b0ce5a4898caff6466a`, annotated `# main`) |
+| `run-testsuite.yml` | common | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin (`7da50e5b6f165a4704159b0ce5a4898caff6466a`, annotated `# v1`) |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@v1` |
+
+The testsuite pin's `# v1` comment identifies the tag Renovate tracks; the pinned
+commit can lag behind the tag until an update is merged.
 
 **Note:** the `bonedigger.yml` callers and common's `run-testsuite.yml` are the
 two internal refs that are full SHA pins rather than managed floating tags. `lifecycle.yml` was removed from
@@ -105,7 +108,7 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@v1  # CORRECT — inter
 All `projectbluefin/` internal refs are exempt from the hook. Current usage:
 - `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
 - `projectbluefin/bonedigger` — the `lifecycle.yml` ref is a full SHA retention pin (the file was removed from `main` in `bonedigger#40`), not a managed floating tag
-- `projectbluefin/testsuite` — `@v1` (bluefin, bluefin-lts, dakota `run-testsuite.yml`); common's `run-testsuite.yml` is a full SHA pin (`7da50e5b`, annotated `# main`)
+- `projectbluefin/testsuite` — `@v1` (bluefin, bluefin-lts, dakota `run-testsuite.yml`); common's `run-testsuite.yml` is a full SHA pin (`7da50e5b`, annotated `# v1`)
 
 External actions (everything outside `projectbluefin/`) must use full SHA pins.
 

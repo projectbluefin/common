@@ -33,6 +33,10 @@ case "$1" in
                 ;;
         esac
         ;;
+    trust)
+        [[ $# -eq 4 && "$3" == -- ]] || exit 99
+        [[ "${MOCK_TRUST_STATUS:-0}" == 0 ]] || { echo 'trust failed' >&2; exit "${MOCK_TRUST_STATUS}"; }
+        ;;
     *) echo "unexpected brew operation: $*" >&2; exit 99 ;;
 esac
 MOCK
@@ -210,4 +214,22 @@ teardown() {
     grep -qFx 'cask "zed"' "${shared}/experimental-ide.Brewfile"
     grep -qFx 'tap "ublue-os/tap", trusted: true' "${shared}/experimental-ide.Brewfile"
     run ! grep -q 'ublue-os/experimental-tap/zed-linux' "${shared}/experimental-ide.Brewfile"
+}
+
+@test "validator trusts only the items a Brewfile declares trusted, before checking them" {
+    printf 'brew "third/tap/tool", trusted: true\nbrew "other/tap/plain"\ncask "third/tap/app", trusted: true # note\n' > "${FIXTURES}/test.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 0 ]
+    grep -qFx 'trust|--formula|third/tap/tool' "${CALLS}"
+    grep -qFx 'trust|--cask|third/tap/app' "${CALLS}"
+    run ! grep -qF 'trust|--formula|other/tap/plain' "${CALLS}"
+    [ "$(grep -n 'third/tap/tool' "${CALLS}" | head -1 | cut -d: -f2)" = 'trust|--formula|third/tap/tool' ]
+}
+
+@test "a failed trust is reported and the item is not checked" {
+    printf 'brew "third/tap/tool", trusted: true\n' > "${FIXTURES}/test.Brewfile"
+    MOCK_TRUST_STATUS=3 run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"could not trust formula third/tap/tool"* ]]
+    run ! grep -qF 'info|--formula|third/tap/tool' "${CALLS}"
 }
