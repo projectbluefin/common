@@ -26,7 +26,7 @@ metadata:
 
 - Editing Bazaar config in `system_files/bluefin/etc/bazaar/`
 - Porting curated-page structure across Bazaar schema versions
-- Changing Bazaar hook behavior for app install interception (JetBrains, VS Code/Codium, Zed)
+- Changing Bazaar hook behavior for app install interception (JetBrains, VS Code/Codium, Zed, Steam)
 - Adding or changing banner images (JXL→PNG conversion pipeline)
 - Validating Bazaar behavior locally before opening a PR
 - Modifying the background `bazaar.service` systemd service definition
@@ -43,13 +43,11 @@ metadata:
 | `system_files/bluefin/etc/bazaar/curated.yaml` | Curated Explore content (sections, banners, articles, carousels) |
 | `system_files/bluefin/etc/bazaar/blocklist.yaml` | Bluefin blocklist policy |
 | `system_files/bluefin/etc/bazaar/hooks.py` | Host-side hook script invoked by Bazaar |
-| `system_files/bluefin/usr/libexec/bazaar-hook` | In-image hook script used by Bazaar runtime path |
 | `system_files/bluefin/usr/lib/systemd/user/bazaar.service` | Background Bazaar service entrypoint |
 | `tests/test_hooks.py` | `hooks.py` state machine tests |
-| `tests/test_bazaar_hook.py` | `bazaar-hook` state machine tests |
 | `tests/test_curated_config.py` | Curated/Bazaar config shape regression checks |
 
-Both hook scripts must remain synchronized: `hooks.py` (host `/run/host/etc/bazaar/hooks.py`) and `bazaar-hook` (`/usr/libexec/bazaar-hook`) must implement identical hook IDs, stages, and package redirect actions.
+Hook behavior is driven by `hooks.py` (located at host `/run/host/etc/bazaar/hooks.py`), which implements hook IDs, stages, dialog options, and package redirect or application launch actions.
 
 ## Curated schema specification
 
@@ -105,7 +103,6 @@ ujust bazaar-preview /path/to/common
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
-- Editing `system_files/bluefin/etc/bazaar/hooks.py` without applying the same hook handler to `system_files/bluefin/usr/libexec/bazaar-hook` leaves the in-image entry point out of sync.
 
 ## Red Flags
 

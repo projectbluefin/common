@@ -59,6 +59,7 @@ def test_bazaar_config_valid():
         "vscode",
         "vscodium",
         "zed",
+        "steam",
     }
     assert expected_hooks.issubset(hook_ids)
 
@@ -70,4 +71,7 @@ def test_bazaar_config_valid():
             assert "options" in dialog
             option_ids = {opt["id"] for opt in dialog["options"]}
             assert "cancel" in option_ids
-            assert "run-devmode" in option_ids
+            if hook["id"] == "steam":
+                assert "open-chairlift" in option_ids
+            else:
+                assert "run-devmode" in option_ids

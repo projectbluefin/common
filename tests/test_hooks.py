@@ -256,6 +256,91 @@ class TestIDEHook:
         assert "ujust devmode" in " ".join(calls[0])
 
 
+
+# ---------------------------------------------------------------------------
+# Steam hook
+# ---------------------------------------------------------------------------
+
+class TestSteamHook:
+    def test_setup_install_steam_returns_ok(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "com.valvesoftware.Steam",
+        })
+        assert resp == "ok"
+
+    def test_setup_install_non_steam_returns_pass(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": "com.valvesoftware.SteamLink",
+        })
+        assert resp == "pass"
+
+    def test_setup_update_returns_pass(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": "update",
+            "BAZAAR_TS_APPID": "com.valvesoftware.Steam",
+        })
+        assert resp == "pass"
+
+    def test_setup_dialog_returns_ok(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "setup-dialog",
+        })
+        assert resp == "ok"
+
+    def test_teardown_dialog_open_chairlift_returns_ok(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "teardown-dialog",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "open-chairlift",
+        })
+        assert resp == "ok"
+
+    def test_teardown_dialog_cancel_returns_abort(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "teardown-dialog",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "cancel",
+        })
+        assert resp == "abort"
+
+    def test_catch_returns_abort(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "catch",
+        })
+        assert resp == "abort"
+
+    def test_teardown_returns_deny(self):
+        resp = _load_hooks({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "teardown",
+        })
+        assert resp == "deny"
+
+    def test_action_spawns_chairlift(self):
+        resp, calls = _load_hooks_with_mock({
+            "BAZAAR_HOOK_ID": "steam",
+            "BAZAAR_HOOK_STAGE": "action",
+            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "open-chairlift",
+            "BAZAAR_TS_APPID": "com.valvesoftware.Steam",
+        })
+        assert resp == ""
+        assert len(calls) == 1
+        assert calls[0] == [
+            "flatpak-spawn", "--host",
+            "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper",
+            "--dx-mode",
+        ]
+
 # ---------------------------------------------------------------------------
 # Unknown hook ID
 # ---------------------------------------------------------------------------
