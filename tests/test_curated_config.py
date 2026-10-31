@@ -49,13 +49,12 @@ def test_curated_uses_modern_schema_shape():
     assert "Cloud Native Development" in section_titles
     assert "AI and Machine Learning" in section_titles
 
-    ai_section = next(
-        row["section"]
+    curated_ids = {
+        appid
         for row in data["rows"]
         if "section" in row
-        and (row["section"]["title"] if isinstance(row["section"]["title"], str) else row["section"]["title"].get("en")) == "AI and Machine Learning"
-    )
-    ai_appids = ai_section["appids"]["list"]
+        for appid in row["section"]["appids"]["list"]
+    }
 
     denied_prefixes = {
         line.split()[1].removeprefix("app/").removesuffix("/*")
@@ -68,7 +67,7 @@ def test_curated_uses_modern_schema_shape():
         "co.anysphere.cursor",
         "com.google.AntigravityIDE",
     ]:
-        assert expected_appid in ai_appids
+        assert expected_appid in curated_ids
         assert expected_appid not in denied_prefixes
 
 

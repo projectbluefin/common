@@ -20,20 +20,18 @@ rows:
         pl: Nasze ulubione aplikacje
     appids:
       list:
-      - app.drey.Damask
-      - io.github.sitraorg.sitra
-      - io.speedofsound.SpeedOfSound
-      - app.fotema.Fotema
-      - org.gnome.gitlab.YaLTeR.VideoTrimmer
-      - io.github.tanaybhomia.Whisp
-      - cx.modal.TestCenter
-      - re.sonny.Eloquent
+      - com.blackmagic.Resolve
       - de.schmidhuberj.DieBahn
-      - org.gnome.gitlab.cheywood.Pulp
-      - com.github.Darazaki.Spedread
-      - io.github.pleromix.IceBox
-      - com.github.ADBeveridge.Raider
-      - io.github.kelvinnovais.Kasasa
+      - com.anthropic.ClaudeDesktop
+      - io.speedofsound.SpeedOfSound
+      - com.openai.ChatGPT
+      - org.gnome.gitlab.YaLTeR.VideoTrimmer
+      - co.anysphere.cursor
+      - app.fotema.Fotema
+      - com.epicgames.eglv2
+      - re.sonny.Eloquent
+      - ai.storyteller.wordcraft
+      - com.rustdesk.RustDesk
 - banner:
     height: 400
     image:
@@ -88,8 +86,10 @@ rows:
       - de.haeckerfelix.Shortwave
       - io.bassi.Amberol
       - org.videolan.VLC
+      - com.blackmagic.ResolveStudio
+      - org.audacityteam.Audacity
+      - org.ardour.Ardour
       - com.github.wwmm.easyeffects
-      - me.timschneeberger.jdsp4linux
       - org.jellyfin.JellyfinDesktop
       - tv.plex.PlexDesktop
       - com.plexamp.Plexamp
@@ -116,6 +116,9 @@ rows:
         pl: Pracuj mądrzej
     appids:
       list:
+      - ai.storyteller.gridcraft
+      - ai.storyteller.deckcraft
+      - ai.storyteller.pdfcraft
       - com.collaboraoffice.Office
       - org.onlyoffice.desktopeditors
       - com.slack.Slack
@@ -125,8 +128,6 @@ rows:
       - org.inkscape.Inkscape
       - org.kde.krita
       - io.gitlab.theevilskeleton.Upscaler
-      - org.audacityteam.Audacity
-      - org.ardour.Ardour
       - io.github.alainm23.planify
       - md.obsidian.Obsidian
       - com.logseq.Logseq
@@ -186,6 +187,8 @@ rows:
         pl: Przygotuj i zaopatrz się
     appids:
       list:
+      - org.tunaos.tavern
+      - com.genymobile.scrcpy
       - app.drey.Warp
       - org.localsend.localsend_app
       - com.github.zocker_160.SyncThingy
@@ -193,7 +196,6 @@ rows:
       - io.github.vikdevelop.SaveDesktop
       - org.gnome.World.PikaBackup
       - io.ente.auth
-      - de.leopoldluley.Clapgrep
       - org.fedoraproject.MediaWriter
       - org.raspberrypi.rpi-imager
       - hu.irl.cameractrls
@@ -205,6 +207,15 @@ rows:
       - io.github.plrigaux.sysd-manager
       - org.mozilla.vpn
       - io.github.zarestia_dev.rclone-manager
+      - me.iepure.devtoolbox
+      - com.mardojai.ForgeSparks
+      - dev.geopjr.Collision
+      - io.github.lo2dev.Echo
+      - io.github.kelvinnovais.Kasasa
+      - com.github.ADBeveridge.Raider
+      - io.github.sitraorg.sitra
+      - cx.modal.TestCenter
+      - com.github.Darazaki.Spedread
 - banner:
     height: 400
     image:
@@ -226,8 +237,6 @@ rows:
         pl: Zainwestuj w przyszłość
     appids:
       list:
-      - org.endlessos.Key
-      - io.github.david_swift.Flashcards
       - no.bragefuglseth.Keypunch
       - org.tuxpaint.Tuxpaint
       - im.bernard.Memorado
@@ -235,7 +244,6 @@ rows:
       - page.codeberg.lo_vely.Nucleus
       - org.turbowarp.TurboWarp
       - io.github.GGalya1.RiscvAdventure
-      - as.may.moat
       - app.drey.MultiplicationPuzzle
       - io.github.josephmawa.SpellingBee
 - banner:
@@ -259,9 +267,8 @@ rows:
         pl: Odkrywaj inteligentnych asystentów, edytory i modele lokalne
     appids:
       list:
-      - com.openai.ChatGPT
-      - com.anthropic.ClaudeDesktop
-      - co.anysphere.cursor
+      - io.github.tanaybhomia.Whisp
+      - dev.kiro.Kiro
       - com.google.AntigravityIDE
       - com.jeffser.Alpaca
       - io.github.qwersyk.Newelle
@@ -288,7 +295,6 @@ rows:
         pl: Natywne środowiska IDE, narzędzia systemowe i GUI z integracją hosta
     appids:
       list:
-      - de.wwwtech.gitte
       - dev.zed.Zed
       - com.visualstudio.code
       - com.vscodium.codium
@@ -298,13 +304,8 @@ rows:
       - com.google.AndroidStudio
       - org.gnome.Builder
       - cc.arduino.IDE2
-      - io.github.shonebinu.Brief
       - org.gnome.design.IconLibrary
-      - io.github.getnf.embellish
-      - dev.geopjr.Collision
       - app.drey.Elastic
-      - io.github.nokse22.asciidraw
-      - io.github.ronniedroid.concessio
 - banner:
     height: 400
     image:
@@ -326,16 +327,15 @@ rows:
         pl: Kontenery, Kubernetes, API i mikrousługi
     appids:
       list:
+      - com.dbxio.dbx
       - io.podman_desktop.PodmanDesktop
       - io.kinvolk.Headlamp
       - app.freelens.Freelens
       - com.getpostman.Postman
       - io.dbeaver.DBeaverCommunity
       - io.github.anil_e.Codd
-      - me.iepure.devtoolbox
-      - com.mardojai.ForgeSparks
       - io.github.mfat.sshpilot
       - io.github.totoshko88.RustConn
       - io.github.sugarycandybar.Carabiner
       - io.github.tobagin.digger
-      - io.github.lo2dev.Echo
+      - de.wwwtech.gitte
