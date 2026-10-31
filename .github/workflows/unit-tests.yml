@@ -24,6 +24,28 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  zsh-fedora:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    container: registry.fedoraproject.org/fedora:44
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Fedora zsh and test dependencies
+        run: dnf install -y zsh bats diffutils
+
+      - name: Install the startup files at their image paths
+        run: |
+          install -m 0644 system_files/bluefin/etc/zshenv /etc/zshenv
+          install -m 0644 system_files/bluefin/etc/zshrc /etc/zshrc
+          install -m 0644 system_files/bluefin/etc/zlogin /etc/zlogin
+
+      - name: Test Fedora startup file discovery and behavior
+        env:
+          ZSH_TEST_INSTALLED: "1"
+        run: bats --print-output-on-failure tests/test_zsh_config.bats
+
   test:
     runs-on: ubuntu-26.04
     timeout-minutes: 10

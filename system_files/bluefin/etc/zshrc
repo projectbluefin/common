@@ -217,8 +217,8 @@ fi
 #####################
 
 # Load user zsh scripts
-if [ -d $ZSHCONFIG ]; then
-  for f in $ZSHCONFIG/**/*.*sh
+if [[ -d "$ZSHCONFIG" ]]; then
+  for f in "$ZSHCONFIG"/**/*.*sh(N)
   do
       source "$f"
   done
