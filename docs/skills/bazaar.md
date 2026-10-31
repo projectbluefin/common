@@ -50,6 +50,7 @@ metadata:
 | `system_files/shared/usr/share/flatpak/remotes.d/flatpark.flatpakrepo` | FlatPark system remote descriptor |
 | `system_files/shared/usr/share/flatpak/flatpark.filter` | FlatPark ref filter excluding Flathub duplicate IDs |
 | `tests/test_flatpark_remote.py` | Remote descriptor and deduplication filter integrity test |
+| `system_files/shared/usr/lib/systemd/system/flatpark-filter-copy.{path,service}` | Once `/var/lib/flatpak/repo/config` exists, copies `flatpark.filter` into `/var/lib/flatpak/repo/` so sandboxed Bazaar can read it (libflatpak fallback path) |
 
 ## Remote Precedence and App Store Hierarchy
 
