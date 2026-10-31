@@ -114,7 +114,7 @@ The first section's list is rewritten monthly by `bazaar-featured-refresh.yml`:
 
 - **Row:** 12 apps. The `pins` in `.github/bazaar-featured.yaml` (big-name apps) interleave with the scored slots: pin, scored, pin, scored, ... Change pins by PR to that file.
 - **Score (hotness, not size):** `0.60·growth + 0.25·newness + 0.15·installs`, with each term a percentile within its own store (Flathub, FlatPark). Newness fades to 0 over two years. Incumbents get +0.15, and at most 4 new apps are added per month.
-- **Eligible for scored slots:** FOSS (or listed in `allow`), released within 365 days, above the install floor, at most 2 FlatPark apps, and not preinstalled, blocklisted, FlatPark-filtered, in `deny`, or present in another curated section.
+- **Eligible for scored slots:** FOSS (or listed in `allow`), updated within the last 365 days (Flathub), above the install floor, at most 2 FlatPark apps, and not preinstalled, blocklisted, FlatPark-filtered, in `deny`, or present in another curated section.
 - **Veto:** add the ID to `deny` and re-run the workflow (Actions, then **Run workflow**).
 - **Dry run:** `python3 scripts/refresh-featured-apps.py --dry-run --report /tmp/featured.md`.
 - **Failure means no PR:** if any source is down, stale or returns HTML, the script exits non-zero.
