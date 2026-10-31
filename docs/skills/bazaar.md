@@ -73,7 +73,7 @@ installs; updates and removals must pass through.
 
 ### Developer Experience redirection (`run-devmode`)
 
-Intercepted IDE transaction dialogs (`jetbrains-toolbox`, `vscode`, `vscodium`, `zed`) present a `run-devmode` option. Choosing this executes `spawn_chairlift_dx_mode()`, launching ChairLift directly to its Developer Mode toggle screen via `flatpak-spawn --host /home/linuxbrew/.linuxbrew/bin/chairlift-wrapper --dx-mode`. Note that launching `--dx-mode` requires a ChairLift release containing the `--dx-mode` launch intent.
+Every intercepted IDE dialog (`jetbrains-toolbox` plus each `IDE_HOOKS` entry) presents a `run-devmode` option. Choosing it executes `spawn_chairlift_dx_mode()`, launching ChairLift directly to its Developer Mode toggle screen via `flatpak-spawn --host /home/linuxbrew/.linuxbrew/bin/chairlift-wrapper --dx-mode`. `--dx-mode` first shipped in ChairLift v26.10.11 (projectbluefin/chairlift#629); older releases exit 1 with `Unknown option`, so keep `ARG CHAIRLIFT_RELEASE` and the `projectbluefin/tap` cask at or above it.
 
 ## Curated schema specification
 
