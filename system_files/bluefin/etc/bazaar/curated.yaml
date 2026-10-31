@@ -214,8 +214,6 @@ rows:
       - io.github.kelvinnovais.Kasasa
       - com.github.ADBeveridge.Raider
       - io.github.sitraorg.sitra
-      - cx.modal.TestCenter
-      - com.github.Darazaki.Spedread
 - banner:
     height: 400
     image:
