@@ -9,6 +9,7 @@ category: ci-ops
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
+scope: on-device
 dependencies: []
 tags: [bootc, containers, ostree]
 description: >-

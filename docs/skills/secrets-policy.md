@@ -9,6 +9,7 @@ category: meta
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
+scope: on-device
 dependencies: []
 tags: [secrets, security, ci]
 description: >-
