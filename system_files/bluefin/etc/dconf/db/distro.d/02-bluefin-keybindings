@@ -31,9 +31,11 @@ binding='<Super><Shift>Return'
 command='/home/linuxbrew/.linuxbrew/bin/goose-desktop'
 name='Launch Goose'
 
+# compass.service keeps the engine resident; `start` attaches the launcher
+# window on first press, or starts everything if the service is not running.
 [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/compass]
 name='Compass'
-command='/home/linuxbrew/.linuxbrew/bin/compass toggle'
+command="sh -c 'flatpak run org.tunaos.compass toggle || flatpak run org.tunaos.compass start'"
 binding='<Super>space'
 
 # Emoji picker shortcuts for it.mijorus.smile were removed: Smile is no longer in

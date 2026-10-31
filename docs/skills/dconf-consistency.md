@@ -76,8 +76,7 @@ keybindings. They are merged in numeric order. Gaps in numbering are fine. Do no
 existing files — it changes the merge order.
 Treat distro.d filenames as consumer interfaces too: downstream images may
 remove or assert an exact path. Preserve externally referenced names or migrate
-those consumers together. For example, Utah's `Containerfile` removes
-`/etc/dconf/db/distro.d/05-bluefin-searchlight-extension`.
+those consumers together.
 
 ## Custom keybindings and relocatable schemas
 
@@ -99,33 +98,43 @@ When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNO
 
 ### Compass launcher
 
-Common ships the `compass` custom shortcut, the image-scoped
-`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
-and `compass.service` plus its user preset. Preserve the other registered
-custom shortcut paths. Input-source switching keeps `<Shift><Super>space`
-and adds `XF86Keyboard` (backward: `<Shift>XF86Keyboard`); it does not conflict
-with Super+Space, which goes to `compass toggle`.
+Compass (`org.tunaos.compass`) is the Super+Space launcher. It ships as a
+FlatPark Flatpak, not Homebrew, and no GNOME Shell extension is shipped or
+enabled for it. Three pieces in `system_files/bluefin/` make it work:
 
-Dakota owns the Shell extension build and its higher-priority
-`zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
-override alone does not enable it there. Package the extension from the same
-release as the Homebrew engine and verify the versioned D-Bus contract when
-either changes. Compass v0.28.2's extension supports GNOME 50 and 51.
+- `usr/share/flatpak/preinstall.d/compass.preinstall`: `flatpak-preinstall.service`
+  installs it system-wide from the `flatpark` remote in `system_files/shared/`.
+  Keep the app ID out of `flatpark.filter`.
+- `usr/lib/systemd/user/compass.service` (enabled by the static
+  `graphical-session.target.wants/` link): runs
+  `flatpak run org.tunaos.compass serve --no-hotkey` in the graphical session
+  when `/var/lib/flatpak/app/org.tunaos.compass` exists. `--no-hotkey` stops
+  the engine from also requesting Super+Space through the GlobalShortcuts
+  portal (which shows a permission prompt on GNOME). `start --hidden` cannot
+  pass that flag, so do not use it as the session unit. `flatpak run` moves
+  the sandbox into its own `app-flatpak-*.scope`, so systemd cannot kill the
+  engine: the unit stops it with `ExecStop=… shutdown` and skips startup via
+  `ExecCondition=… ping` when an engine already answers. Without those,
+  `restart` leaves the old engine running and the new `serve` crash-loops on
+  "Compass is already running".
+- The `compass` custom shortcut in `02-bluefin-keybindings`:
+  `sh -c 'flatpak run org.tunaos.compass toggle || flatpak run org.tunaos.compass start'`.
+  `toggle` fails until a launcher window is attached to the engine, so the
+  first press falls through to `start`, which attaches to the running engine.
+  If the service is not running, `start` launches its own engine (with the
+  portal hotkey request).
 
-A user preset is policy, not an enablement operation. The consuming image must
-apply it or ship the equivalent graphical-session wants link. The launcher is
-ordered after `brew-preinstall.service` so an initial package sync finishes
-before its binary condition is evaluated. Do not run systemctl in common's
-scratch `ctx` stage. Source: systemd `docs/PRESET.md`, "The Logic".
+Preserve the other registered custom shortcut paths. Input-source switching
+keeps `<Shift><Super>space` and adds `XF86Keyboard` (backward:
+`<Shift>XF86Keyboard`). Downstream images must not rebind `<Super>space`
+or `switch-input-source` in their own distro.d files.
 
-Compass v0.28.2 exposes `serve --no-hotkey`, but `start --hidden` does not
-forward that option. An explicitly empty `launcher.hotkey` disables the
-launcher binding; other configured command shortcuts can still use the
-portal. Do not replace writable user settings with an immutable
-`COMPASS_CONFIG` file. Distribution-controlled startup without a launcher
-portal request requires an upstream `start` opt-out or system-default layer.
-Source: [Compass v0.28.2](https://github.com/tuna-os/compass/tree/a1bab693dc59124fbaecb79037f70882b72f74a7),
-`crates/compass/src/{cli,lib}.rs` and `crates/compass-core/src/global_shortcuts.rs`.
+The unit is enabled by a static wants link in `/usr`, not a user preset:
+presets are applied only at first boot, so a preset would never enable the
+unit on systems upgraded from an older image. Users opt out with
+`systemctl --user mask compass.service`. Compass treats a missing Shell
+extension as absent and keeps running; `flatpak run org.tunaos.compass doctor`
+lists what it disables.
 
 ### Goose shortcuts
 
