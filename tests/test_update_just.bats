@@ -113,10 +113,17 @@ MOCK
     _write_mock "bootc" <<'MOCK'
 #!/bin/bash
 echo "bootc $*" >> "${COMMAND_LOG}"
-if [[ "${MOCK_BOOTC_STATUS:-0}" != "0" ]]; then
-    echo "mock bootc upgrade failure" >&2
+# Plain `upgrade` reports MOCK_BOOTC_OUTPUT on failure. Any other invocation
+# behaves like current bootc after a pull (`No changes in: …`, exit 0), so a
+# recipe that classified the failure by re-running bootc would misreport it.
+if [[ "$*" == "upgrade" ]]; then
+    if [[ "${MOCK_BOOTC_STATUS:-0}" != "0" ]]; then
+        printf '%s\n' "${MOCK_BOOTC_OUTPUT:-mock bootc upgrade failure}" >&2
+    fi
+    exit "${MOCK_BOOTC_STATUS:-0}"
 fi
-exit "${MOCK_BOOTC_STATUS:-0}"
+echo "No changes in: mock"
+exit 0
 MOCK
 
     # An installed copy must never take over the native recipes.
@@ -171,6 +178,7 @@ _run() {
         COMMAND_LOG="${COMMAND_LOG}" \
         SYSTEMD_STATE="${SYSTEMD_STATE}" \
         MOCK_BOOTC_STATUS="${MOCK_BOOTC_STATUS:-0}" \
+        MOCK_BOOTC_OUTPUT="${MOCK_BOOTC_OUTPUT:-}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \
         MOCK_ENABLED_TIMER="${MOCK_ENABLED_TIMER:-}" \
@@ -218,6 +226,43 @@ MOCK
         MOCK_BREW_BIN="${MOCKDIR}/brew" _run "${UPDATE_SCRIPT}"
     [ "${status}" -eq 42 ]
     [[ "${output}" == *"mock bootc upgrade failure"* ]]
+    run ! grep -qE '^(flatpak|brew) ' "${COMMAND_LOG}"
+}
+
+# projectbluefin/common#1417: on composefs, "up to date" is reported by refusing
+# to upgrade with a non-zero exit and a "same fs-verity digest" message. That
+# refusal is not a failure: the update must continue, and a later real failure
+# must still be reported.
+@test "update: treats composefs up-to-date refusal as success and still updates flatpaks" {
+    _write_mock "brew" <<'MOCK'
+#!/bin/bash
+echo "brew $*" >> "${COMMAND_LOG}"
+MOCK
+    MOCK_BOOTC_STATUS=1 \
+        MOCK_BOOTC_OUTPUT='error: Upgrading composefs: Target image has the same fs-verity digest as the existing Some(Booted) deployment.' \
+        MOCK_FLATPAK_REMOTES=$'system\nuser' MOCK_BREW_BIN="${MOCKDIR}/brew" _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ "$(grep -c '^bootc ' "${COMMAND_LOG}")" -eq 1 ]
+    grep -qFx "bootc upgrade" "${COMMAND_LOG}"
+    grep -qF "flatpak update -y" "${COMMAND_LOG}"
+    grep -qFx "brew upgrade" "${COMMAND_LOG}"
+}
+
+@test "update: treats staged composefs refusal as success" {
+    MOCK_BOOTC_STATUS=1 \
+        MOCK_BOOTC_OUTPUT='error: Upgrading composefs: Target image has the same fs-verity digest as the existing Some(Staged) deployment.' \
+        _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ "$(grep -c '^bootc ' "${COMMAND_LOG}")" -eq 1 ]
+}
+
+@test "update: a composefs refusal with a different error still fails" {
+    MOCK_BOOTC_STATUS=1 \
+        MOCK_BOOTC_OUTPUT='error: failed to fetch remote: network unreachable' \
+        _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"network unreachable"* ]]
+    [ "$(grep -c '^bootc ' "${COMMAND_LOG}")" -eq 1 ]
     run ! grep -qE '^(flatpak|brew) ' "${COMMAND_LOG}"
 }
 
