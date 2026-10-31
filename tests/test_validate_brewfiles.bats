@@ -217,7 +217,7 @@ teardown() {
 }
 
 @test "validator trusts only the items a Brewfile declares trusted, before checking them" {
-    printf 'brew "third/tap/tool", trusted: true\nbrew "other/tap/plain"\ncask "third/tap/app", trusted: true # note\n' > "${FIXTURES}/test.Brewfile"
+    printf 'tap "other/tap", trusted: true\nbrew "third/tap/tool", trusted: true\nbrew "other/tap/plain"\ncask "third/tap/app", trusted: true # note\n' > "${FIXTURES}/test.Brewfile"
     run bash "${SCRIPT}" "${FIXTURES}"
     [ "${status}" -eq 0 ]
     grep -qFx 'trust|--formula|third/tap/tool' "${CALLS}"
@@ -232,4 +232,72 @@ teardown() {
     [ "${status}" -eq 1 ]
     [[ "${output}" == *"could not trust formula third/tap/tool"* ]]
     run ! grep -qF 'info|--formula|third/tap/tool' "${CALLS}"
+}
+
+@test "a trusted third-party entry passes" {
+    printf 'tap "third/tap"\nbrew "third/tap/tool", trusted: true\n' > "${FIXTURES}/item.Brewfile"
+    printf 'tap "Other/Tap", trusted: true\ncask "other/tap/App"\ntap "x/homebrew-y", trusted: true\nbrew "x/y/z"\nbrew "third/tap/more",trusted:true,\n' > "${FIXTURES}/tap.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"4 package checks, 0 failures"* ]]
+    grep -qFx 'trust|--formula|third/tap/more' "${CALLS}"
+    grep -qFx 'info|--formula|third/tap/tool' "${CALLS}"
+    grep -qFx 'info|--cask|other/tap/App' "${CALLS}"
+}
+
+@test "an untrusted third-party entry fails with a clear message and is not checked" {
+    printf 'tap "third/tap"\nbrew "third/tap/tool"\ncask "third/tap/app", trusted: false\n' > "${FIXTURES}/test.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"FAIL: ${FIXTURES}/test.Brewfile:2: third-party formula third/tap/tool needs trusted: true"* ]]
+    [[ "${output}" == *"FAIL: ${FIXTURES}/test.Brewfile:3: third-party cask third/tap/app needs trusted: true"* ]]
+    [[ "${output}" == *"2 package checks, 2 failures"* ]]
+    run ! grep -q '^info|' "${CALLS}"
+    run ! grep -q '^trust|' "${CALLS}"
+}
+
+@test "tap trust declared in another Brewfile does not cover this one" {
+    printf 'tap "third/tap", trusted: true\n' > "${FIXTURES}/a.Brewfile"
+    printf 'tap "third/tap"\nbrew "third/tap/tool" # trusted: true\n' > "${FIXTURES}/z.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"z.Brewfile:2: third-party formula third/tap/tool needs trusted: true"* ]]
+}
+
+@test "official and bare entries need no trust" {
+    printf 'brew "homebrew/core/ripgrep"\ncask "homebrew/cask/demo"\nbrew "jq"\n' > "${FIXTURES}/test.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"3 package checks, 0 failures"* ]]
+}
+
+# Ruby fixtures must stay literal in the shell.
+# shellcheck disable=SC2016
+@test "a non-literal trusted value is rejected without trusting or checking the item" {
+    local fixture
+    local -a cases=(
+        'brew "third/tap/tool", trusted: ENV["CI"]'
+        'brew "third/tap/tool", trusted: system("id")'
+        'brew "third/tap/tool", trusted: "true"'
+        'brew "third/tap/tool", trusted: true_value'
+        'brew "jq", trusted: !false'
+        # A "#" inside a Ruby string must not hide a later duplicate key.
+        'brew "third/tap/tool", trusted: true, link: "#", trusted: false'
+        'brew "third/tap/tool", trusted: false, trusted: true'
+    )
+    for fixture in "${cases[@]}"; do
+        : > "${CALLS}"
+        printf '%s\n' "${fixture}" > "${FIXTURES}/test.Brewfile"
+        run bash "${SCRIPT}" "${FIXTURES}"
+        [ "${status}" -eq 1 ]
+        [[ "${output}" == *"test.Brewfile:1: trusted: must be the literal true or false: ${fixture}"* ]]
+        run ! grep -q '^trust|' "${CALLS}"
+        run ! grep -q '^info|' "${CALLS}"
+    done
+}
+
+@test "every third-party entry in the shipped Brewfiles declares trust" {
+    run bash "${SCRIPT}" "${ROOT}/system_files/shared/usr/share/ublue-os/homebrew"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"needs trusted: true"* ]]
 }

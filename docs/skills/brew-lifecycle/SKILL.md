@@ -99,7 +99,12 @@ tap "projectbluefin/tap", trusted: true
 cask "projectbluefin/tap/chairlift"
 ```
 
-The tap line requires `trusted: true`; Homebrew 6 blocks untrusted taps. The
+The tap line requires `trusted: true`; Homebrew 6 blocks untrusted taps.
+Third-party formulae and casks in opt-in Brewfiles (taps we do not control)
+need item-level trust instead, for example
+`brew "carvel-dev/carvel/ytt", trusted: true`; leave their `tap` lines
+untrusted. `just check-brewfiles` fails any fully qualified non-`homebrew/*`
+entry that lacks either form of trust in the same Brewfile. The
 cask must remain pinned upstream in `projectbluefin/tap` rather than being
 replaced with a local mutable download in common.
 
