@@ -23,6 +23,7 @@ test:
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
     bats tests/test_clean_system_bootc.bats
+    bats tests/test_bootc_update_stage.bats
     bats tests/test_default_just.bats
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
