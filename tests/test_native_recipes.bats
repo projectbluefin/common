@@ -104,7 +104,10 @@ teardown() {
 }
 
 @test "native recipes: shipped files contain no bluefinctl provisioning or handoffs" {
-    run grep -rInE '\b(bctl|bluefinctl)\b' "${ROOT}/system_files"
+    # The on-device agent bundle (system_files/.../agent/) is documentation and
+    # may name bctl/bluefinctl while describing the policy against using it, so
+    # exclude it from this provisioning/handoff scan. See AGENTS.md in that dir.
+    run grep -rInE --exclude-dir=agent '\b(bctl|bluefinctl)\b' "${ROOT}/system_files"
     [ "${status}" -eq 1 ]
     [ ! -e "${ROOT}/system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/bluefinctl.Brewfile" ]
 }

@@ -9,6 +9,7 @@ category: test-authoring
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
+scope: on-device
 dependencies: []
 tags: [hardware, oem, first-boot, hooks, shellcheck]
 description: >-
