@@ -55,6 +55,15 @@ ICONS = (
 )
 #: Homebrew's shared prefix on Bluefin. The cask links chairlift-wrapper here.
 CHAIRLIFT_WRAPPER = "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
+#: bluefin-report is a managed cask with the same first-user-only artifacts.
+REPORT_DESKTOP_FILE = (
+    ROOT / "system_files/shared/usr/share/applications/io.projectbluefin.Report.desktop"
+)
+REPORT_ICONS = (
+    ICON_ROOT / "scalable/apps/io.projectbluefin.Report.svg",
+    ICON_ROOT / "symbolic/apps/io.projectbluefin.Report-symbolic.svg",
+)
+REPORT_WRAPPER = "/home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper"
 
 #: bootc flags the privileged helper must never carry. --apply and
 #: --soft-reboot reboot the machine; --download-only locks finalization so
@@ -807,10 +816,10 @@ def test_brewfile_taps_homebrew_tap_with_trust():
 # ---------------------------------------------------------------------------
 
 
-def _desktop_entry() -> dict[str, str]:
+def _desktop_entry(path: Path = DESKTOP_FILE) -> dict[str, str]:
     entries: dict[str, str] = {}
     in_section = False
-    for line in DESKTOP_FILE.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
@@ -859,6 +868,29 @@ def test_chairlift_icons_ship_system_wide():
     for icon in ICONS:
         assert icon.is_file(), f"missing icon: {icon.relative_to(ROOT)}"
         assert icon.stat().st_size > 0, f"empty icon: {icon.relative_to(ROOT)}"
+        assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
+            f"{icon.relative_to(ROOT)} is not an SVG document"
+        )
+
+
+def test_report_desktop_entry_ships_system_wide():
+    """Same first-user-only cask gap as ChairLift: the image entry is the
+    launcher for every later user, and it must go through the wrapper that
+    puts Homebrew's gh on PATH."""
+    assert REPORT_DESKTOP_FILE.is_file(), (
+        f"missing {REPORT_DESKTOP_FILE.relative_to(ROOT)}; without it only the "
+        "first user to run brew bundle gets a Report a Problem launcher"
+    )
+    entry = _desktop_entry(REPORT_DESKTOP_FILE)
+    assert entry.get("Type") == "Application"
+    assert entry.get("Icon") == "io.projectbluefin.Report"
+    assert entry.get("NoDisplay", "false") == "false"
+    assert shlex.split(entry.get("Exec", "")) == [REPORT_WRAPPER]
+
+
+def test_report_icons_ship_system_wide():
+    for icon in REPORT_ICONS:
+        assert icon.is_file(), f"missing icon: {icon.relative_to(ROOT)}"
         assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
             f"{icon.relative_to(ROOT)} is not an SVG document"
         )

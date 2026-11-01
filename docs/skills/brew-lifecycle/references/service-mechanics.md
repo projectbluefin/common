@@ -241,6 +241,20 @@ Homebrew environment that a GDM-launched session PATH lacks, and `/var/home` is
 the real path (`/home` is a symlink on bootc systems). The per-user copies the
 cask still writes for the first user are harmless duplicates of the same entry.
 
+`bluefin-report` has the same first-user-only cask artifacts, so `common` also
+ships its launcher image-side:
+
+| Path | Source |
+|---|---|
+| `/usr/share/applications/io.projectbluefin.Report.desktop` | upstream `data/io.projectbluefin.Report.desktop`, `Exec=` rewritten to `/home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper` |
+| `/usr/share/icons/hicolor/scalable/apps/io.projectbluefin.Report.svg` | upstream, verbatim |
+| `/usr/share/icons/hicolor/symbolic/apps/io.projectbluefin.Report-symbolic.svg` | upstream, verbatim |
+
+These are vendored from bluefin-report 26.11.2 (Apache-2.0,
+`projectbluefin/bluefin-report`); refresh them from the tag the
+`projectbluefin/tap/bluefin-report` cask pins whenever it is bumped. The
+wrapper puts Homebrew's `gh` on PATH for menu launches.
+
 ### Root-owned system files from the release archive
 
 ChairLift is distributed only through the cask, and a cask cannot install

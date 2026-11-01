@@ -258,6 +258,6 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 
 | File | Contents |
 |---|---|
-| [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift managed cask, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, ChairLift brew bundles, shared/ vs bluefin/ placement rule |
+| [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift and bluefin-report managed casks, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, ChairLift brew bundles, shared/ vs bluefin/ placement rule |
 | [service-mechanics.md](references/service-mechanics.md) | How brew-preinstall.service works, state file format, login flow, ChairLift config ownership, long-time user removal scenario, bonedigger-report integration, merging order, path convention |
 | [placement-rules.md](references/placement-rules.md) | No rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust details, Starship shell initialization |
