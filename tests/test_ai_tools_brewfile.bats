@@ -15,7 +15,7 @@ BREWFILE="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/homebre
 
 @test "ai-tools bundle installs llmman as the local inference runtime" {
     grep -qFx 'tap "llmmanorg/tap"' "${BREWFILE}"
-    grep -qFx 'brew "llmmanorg/tap/llmman"' "${BREWFILE}"
+    grep -qFx 'brew "llmmanorg/tap/llmman", trusted: true' "${BREWFILE}"
 }
 
 @test "ai-tools bundle installs the read-only linux-mcp-server diagnostics tool" {

@@ -16,7 +16,7 @@ and `dakota`. Changes here propagate to every variant. Stay surgical.
 just check                 # lint Justfile
 just test                  # pytest + bats
 just build                 # full OCI build (slow, requires podman + network)
-pre-commit run --all-files # yaml/json/sha/actionlint hygiene
+pre-commit run --all-files # yaml/json/sha/actionlint/zizmor hygiene
 ```
 
 Run `just check` and `pre-commit run --all-files` before every commit.

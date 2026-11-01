@@ -8,7 +8,10 @@ Part of [brew-lifecycle](../SKILL.md) — current default package list, what bel
 
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
 defines the default CLI set. Other Brewfiles in the same directory also
-provision managed packages for every variant. The CLI set contains 11 packages:
+provision managed packages for every variant (currently `chairlift.Brewfile`).
+`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`
+adds the Compass launcher for GNOME images; see the GNOME-overlay exception
+below. The CLI set contains 11 packages:
 
 | Package | Purpose | Deps |
 |---|---|---|
@@ -158,6 +161,14 @@ are what pin these app ids.
 `system_files/bluefin/` is included by bluefin and bluefin-lts. Dakota also includes it via its `common.bst` element. However, the semantic intent of `bluefin/` is bluefin-family only. When a package is placed there with a comment like "bluefin + bluefin-lts only", it creates ambiguity about whether Dakota gets it.
 
 **Resolution:** `shared/preinstall.d/` is the unambiguous home for any package that is factory-wide. `bluefin/preinstall.d/` should only contain packages that are intentionally absent from Dakota.
+
+**GNOME-overlay exception:** a package that only works together with GNOME
+defaults shipped from `bluefin/` (Shell extension enablement, media-keys
+shortcuts, user units) lives in `bluefin/preinstall.d/` next to that
+configuration, even though Dakota consumes it too. `compass.Brewfile` is the
+current case: its `compass@tunaos.org` extension, `<Super>space` shortcut, and
+`compass.service` all ship from `system_files/bluefin/`, so the Brewfile stays
+with them.
 
 **Concrete example:** `chairlift.Brewfile` lives in
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, making its

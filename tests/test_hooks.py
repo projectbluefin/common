@@ -8,11 +8,13 @@ setting the relevant env vars and capturing the printed response.
 import importlib.util
 import io
 import os
+import re
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 HOOKS_PATH = (
     Path(__file__).parent.parent
@@ -186,13 +188,15 @@ class TestJetbrainsHook:
 
 
 # ---------------------------------------------------------------------------
-# Brew-installed IDE hooks (VSCode, VSCodium, Zed)
+# Brew-installed IDE hooks (VSCode, VSCodium, Zed, Cursor, Antigravity)
 # ---------------------------------------------------------------------------
 
 IDE_CASES = [
     ("vscode", "com.visualstudio.code", "com.vscodium.codium", "ublue-os/tap/visual-studio-code-linux"),
     ("vscodium", "com.vscodium.codium", "com.visualstudio.code", "ublue-os/tap/vscodium-linux"),
     ("zed", "dev.zed.Zed", "org.mozilla.firefox", "zed"),
+    ("cursor", "co.anysphere.cursor", "com.google.AntigravityIDE", "ublue-os/experimental-tap/cursor-linux"),
+    ("antigravity", "com.google.AntigravityIDE", "co.anysphere.cursor", "ublue-os/tap/antigravity-linux"),
 ]
 
 
@@ -206,6 +210,30 @@ class TestIDEHook:
             "BAZAAR_TS_APPID": appid,
         })
         assert resp == "ok"
+
+    @pytest.mark.parametrize("transaction_type", ["update", "uninstall"])
+    def test_setup_non_install_returns_pass(self, hook_id, appid, other_appid, brew_pkg, transaction_type):
+        resp, calls = _load_hooks_with_mock({
+            "BAZAAR_HOOK_ID": hook_id,
+            "BAZAAR_HOOK_STAGE": "setup",
+            "BAZAAR_TS_TYPE": transaction_type,
+            "BAZAAR_TS_APPID": appid,
+        })
+        assert resp == "pass"
+        assert calls == []
+
+    def test_config_wires_dialog_and_handler(self, hook_id, appid, other_appid, brew_pkg):
+        config = yaml.safe_load(HOOKS_PATH.with_name("bazaar.yaml").read_text())
+        hooks = [hook for hook in config["hooks"] if hook["id"] == hook_id]
+        assert len(hooks) == 1
+        hook = hooks[0]
+        assert hook["when"] == "before-transaction"
+        assert re.search(hook["check-appid-regex"], appid)
+        assert not re.search(hook["check-appid-regex"], other_appid)
+        assert hook["shell"] == "exec python3 /run/host/etc/bazaar/hooks.py"
+        dialog, = hook["dialogs"]
+        assert dialog["default-response-id"] == "cancel"
+        assert {option["id"] for option in dialog["options"]} == {"cancel", "download", "run-devmode"}
 
     def test_setup_other_app_returns_pass(self, hook_id, appid, other_appid, brew_pkg):
         resp = _load_hooks({
@@ -240,8 +268,9 @@ class TestIDEHook:
         assert resp == ""
         assert len(calls) == 1
         cmd = " ".join(calls[0])
-        assert "brew tap ublue-os/tap" in cmd
-        assert "brew trust ublue-os/tap" in cmd
+        tap = brew_pkg.rsplit("/", 1)[0] if "/" in brew_pkg else "ublue-os/tap"
+        assert f"brew tap {tap};" in cmd
+        assert f"brew trust {tap};" in cmd
         assert f"brew install --cask {brew_pkg}" in cmd
 
     def test_action_run_devmode_spawns_devmode(self, hook_id, appid, other_appid, brew_pkg):

@@ -60,7 +60,7 @@ jobs:
         # taiki-e/install-action resolves just from its bundled manifest;
         # extractions/setup-just calls the releases REST API every run and
         # exhausted the installation rate limit in merge groups (#1466).
-        uses: taiki-e/install-action@53aaa72a1fed2d5b9189d6d54c38e29bf9be2ab9 # just
+        uses: taiki-e/install-action@f9ed83c1523674ebae4768d47169d3068663dec4 # just
         with:
           tool: just
 
@@ -145,7 +145,7 @@ jobs:
 
       - name: Install pre-commit
         shell: bash
-        run: pip install pre-commit
+        run: pip install -r tests/requirements.txt
 
       - name: Cache pre-commit hooks
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

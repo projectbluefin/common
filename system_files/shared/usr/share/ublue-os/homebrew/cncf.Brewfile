@@ -39,7 +39,7 @@ brew "crossplane"
 # brew "cubefsctl" # No Homebrew formula found
 
 # Dapr
-brew "dapr/tap/dapr-cli"
+brew "dapr/tap/dapr-cli", trusted: true
 
 # CRI-O (via cri-tools)
 brew "cri-tools"
@@ -121,10 +121,10 @@ brew "etcd"
 # === INCUBATING PROJECTS ===
 
 # Artifact Hub
-brew "artifacthub/cmd/ah"
+brew "artifacthub/cmd/ah", trusted: true
 
 # Buildpacks
-brew "buildpacks/tap/pack"
+brew "buildpacks/tap/pack", trusted: true
 
 # Chaos Mesh
 # brew "chaos-mesh" # Use Helm
@@ -193,7 +193,7 @@ brew "thanos"
 brew "grpc"
 
 # wasmCloud
-brew "wasmcloud/wasmcloud/wash"
+brew "wasmcloud/wasmcloud/wash", trusted: true
 
 # === SANDBOX PROJECTS ===
 
@@ -207,13 +207,13 @@ brew "atlantis"
 brew "cdk8s"
 
 # Carvel
-brew "carvel-dev/carvel/kwt"
-brew "carvel-dev/carvel/kctrl"
-brew "carvel-dev/carvel/ytt"
-brew "carvel-dev/carvel/kapp"
-brew "carvel-dev/carvel/kbld"
-brew "carvel-dev/carvel/imgpkg"
-brew "carvel-dev/carvel/vendir"
+brew "carvel-dev/carvel/kwt", trusted: true
+brew "carvel-dev/carvel/kctrl", trusted: true
+brew "carvel-dev/carvel/ytt", trusted: true
+brew "carvel-dev/carvel/kapp", trusted: true
+brew "carvel-dev/carvel/kbld", trusted: true
+brew "carvel-dev/carvel/imgpkg", trusted: true
+brew "carvel-dev/carvel/vendir", trusted: true
 
 # CloudNativePG
 brew "kubectl-cnpg"
@@ -230,7 +230,7 @@ brew "k8sgpt"
 # brew "kcl-lang/tap/kcl"
 
 # KitOps
-brew "kitops-ml/kitops/kitops"
+brew "kitops-ml/kitops/kitops", trusted: true
 
 # KubeArmor
 # brew "kubearmor" # Use karmor CLI via curl
@@ -252,19 +252,19 @@ brew "kumactl"
 brew "mesheryctl"
 
 # Microcks
-brew "microcks/tap/microcks-cli"
+brew "microcks/tap/microcks-cli", trusted: true
 
 # Porter
 brew "porter"
 
 # Telepresence
-brew "telepresenceio/telepresence/telepresence-oss"
+brew "telepresenceio/telepresence/telepresence-oss", trusted: true
 
 # WasmEdge Runtime
 brew "wasmedge"
 
 # k0s
-brew "k0sproject/tap/k0sctl"
+brew "k0sproject/tap/k0sctl", trusted: true
 
 # k3s (via k3d)
 brew "k3d"

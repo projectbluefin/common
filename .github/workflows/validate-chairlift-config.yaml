@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install deps
-        run: pip install pyyaml
+        run: pip install -r tests/requirements.txt
 
       - name: Validate ChairLift config against upstream schema
         run: python3 tests/check-chairlift-config

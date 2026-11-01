@@ -84,9 +84,11 @@ IDE_HOOKS = {
     'vscode':   (lambda appid: appid == 'com.visualstudio.code', 'ublue-os/tap/visual-studio-code-linux'),
     'vscodium': (lambda appid: appid == 'com.vscodium.codium',   'ublue-os/tap/vscodium-linux'),
     'zed':      (lambda appid: appid.startswith('dev.zed.Zed'),  'zed'),
+    'cursor':   (lambda appid: appid == 'co.anysphere.cursor',  'ublue-os/experimental-tap/cursor-linux', 'ublue-os/experimental-tap'),
+    'antigravity': (lambda appid: appid == 'com.google.AntigravityIDE', 'ublue-os/tap/antigravity-linux'),
 }
 
-def handle_ide(appid_matches, brew_pkg):
+def handle_ide(appid_matches, brew_pkg, tap='ublue-os/tap'):
     match stage:
         case 'setup':
             if transaction_type == 'install' and appid_matches(transaction_appid):
@@ -111,7 +113,7 @@ def handle_ide(appid_matches, brew_pkg):
                 if dialog_response_id == 'run-devmode':
                     spawn_ujust('devmode')
                 else:
-                    spawn_brew(brew_pkg)
+                    spawn_brew(brew_pkg, tap)
             except:
                 pass
             return ''
