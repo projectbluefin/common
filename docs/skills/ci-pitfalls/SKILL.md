@@ -73,6 +73,11 @@ The validator accepts literal `brew`/`cask` declarations (both quote styles,
 indentation, comments, and inline options). Malformed or computed names fail
 explicitly. `tap` lines must also be literal names; `trusted: true|false` is
 the only accepted option, and anything else fails before `brew bundle` runs.
+On `brew`/`cask` lines, `trusted:` may appear once, as the literal `true` or
+`false`. A fully qualified entry from a non-`homebrew/*` tap must be
+item-trusted or come from a tap declared `trusted: true` in the same Brewfile;
+otherwise it fails with `third-party <type> <name> needs trusted: true` instead
+of a generic `brew info` failure. Item-trusted entries get `brew trust` first.
 This is a metadata check, not a complete Ruby DSL, Flatpak, installation,
 checksum-download, or desktop-runtime test. It never installs
 formulae or casks. Keep mock regression tests in `tests/test_validate_brewfiles.bats`

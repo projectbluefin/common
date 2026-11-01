@@ -44,6 +44,11 @@ main() (
     tap_entry='^[[:space:]]*tap[[:space:]]+"[^#{}"\]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
     tap_single="^[[:space:]]*tap[[:space:]]+'[^'\\]+'([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$"
     tap_declaration='^[[:space:]]*tap([^[:alnum:]_]|$)'
+    # A tap declared trusted covers its items only in the Brewfile that declares
+    # it: users run `brew bundle` on one file at a time.
+    tap_trusted_double='^[[:space:]]*tap[[:space:]]+"([^"]+)"[[:space:]]*,[[:space:]]*trusted:[[:space:]]*true([[:space:]]|#|$)'
+    tap_trusted_single="^[[:space:]]*tap[[:space:]]+'([^']+)'[[:space:]]*,[[:space:]]*trusted:[[:space:]]*true([[:space:]]|#|$)"
+    declare -A trusted_taps=()
     : > "${workdir}/taps.Brewfile"
     for brewfile in "${brewfiles[@]}"; do
         line_number=0
@@ -52,6 +57,11 @@ main() (
             if [[ "${line}" =~ ${tap_declaration} ]]; then
                 if [[ "${line}" =~ ${tap_entry} || "${line}" =~ ${tap_single} ]]; then
                     printf '%s\n' "${line}" >> "${workdir}/taps.Brewfile"
+                    if [[ "${line}" =~ ${tap_trusted_double} || "${line}" =~ ${tap_trusted_single} ]]; then
+                        # Homebrew treats user/homebrew-repo and user/repo as one tap.
+                        tap_name="${BASH_REMATCH[1],,}"
+                        trusted_taps["${brewfile}|${tap_name/\/homebrew-//}"]=1
+                    fi
                 else
                     printf 'FAIL: %s:%s: expected a quoted literal tap declaration: %s\n' "${brewfile}" "${line_number}" "${line}" >&2
                     printf 'Validation complete: refusing to evaluate non-literal tap lines.\n' >&2
@@ -81,6 +91,14 @@ main() (
     double_entry='^[[:space:]]*(brew|cask)[[:space:]]+"([^"]+)"([[:space:]]*,.*|[[:space:]]*(#.*)?)$'
     single_entry="^[[:space:]]*(brew|cask)[[:space:]]+'([^']+)'([[:space:]]*,.*|[[:space:]]*(#.*)?)$"
     declaration='^[[:space:]]*(brew|cask)([^[:alnum:]_]|$)'
+    # `trusted:` is accepted only once and only as the literal true or false,
+    # the same strictness as tap lines. Comments are not options, but the
+    # duplicate check reads the raw line: a "#" inside a Ruby string could
+    # otherwise hide a later key that Ruby would honour.
+    trusted_key=',[[:space:]]*trusted:'
+    trusted_literal=',[[:space:]]*trusted:[[:space:]]*(true|false)[[:space:]]*(,|$)'
+    trusted_true=',[[:space:]]*trusted:[[:space:]]*true[[:space:]]*(,|$)'
+    qualified='^([^/]+)/([^/]+)/[^/]+$'
     checked=0
     failed=0
     for brewfile in "${brewfiles[@]}"; do
@@ -91,13 +109,31 @@ main() (
             if [[ "${line}" =~ ${double_entry} || "${line}" =~ ${single_entry} ]]; then
                 type="${BASH_REMATCH[1]}"
                 name="${BASH_REMATCH[2]}"
-                options="${BASH_REMATCH[3]}"
+                raw_options="${BASH_REMATCH[3]}"
+                options="${raw_options%%#*}"
                 [[ "${type}" != brew ]] || type=formula
                 checked=$((checked + 1))
+                if [[ "${options}" =~ ${trusted_key} ]] \
+                    && { [[ ! "${options}" =~ ${trusted_literal} ]] || [[ "${raw_options#*trusted:}" == *trusted:* ]]; }; then
+                    failed=$((failed + 1))
+                    printf 'FAIL: %s:%s: trusted: must be the literal true or false: %s\n' "${brewfile}" "${line_number}" "${line}" >&2
+                    continue
+                fi
+                item_trusted=0
+                [[ ! "${options}" =~ ${trusted_true} ]] || item_trusted=1
                 # Homebrew 6+ refuses to load items from non-official taps
-                # unless they are trusted. Mirror `brew bundle`: grant trust
-                # only to the item the Brewfile itself declares trusted.
-                if [[ "${options}" =~ ,[[:space:]]*trusted:[[:space:]]*true([[:space:]]|,|#|$) ]] \
+                # unless they are trusted. Say so instead of a generic
+                # `brew info` failure.
+                if [[ "${item_trusted}" -eq 0 && "${name,,}" =~ ${qualified} ]] \
+                    && [[ "${BASH_REMATCH[1]}" != homebrew ]] \
+                    && [[ -z "${trusted_taps["${brewfile}|${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"]:-}" ]]; then
+                    failed=$((failed + 1))
+                    printf 'FAIL: %s:%s: third-party %s %s needs trusted: true\n' "${brewfile}" "${line_number}" "${type}" "${name}" >&2
+                    continue
+                fi
+                # Mirror `brew bundle`: grant trust only to the item the
+                # Brewfile itself declares trusted.
+                if [[ "${item_trusted}" -eq 1 ]] \
                     && ! brew trust "--${type}" -- "${name}" > "${workdir}/output" 2>&1; then
                     failed=$((failed + 1))
                     printf 'FAIL: %s:%s: could not trust %s %s\n' "${brewfile}" "${line_number}" "${type}" "${name}" >&2
