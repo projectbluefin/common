@@ -81,3 +81,21 @@ def test_flatpark_filter_copy_service():
     path_unit = SERVICE_PATH.with_suffix(".path").read_text()
     assert "PathExists=/var/lib/flatpak/repo/config" in path_unit
     assert "enable flatpark-filter-copy.path" in PRESET_PATH.read_text().splitlines()
+
+
+def test_preinstalled_apps_are_not_denied_by_flatpark_filter():
+    # A denied ref makes `flatpak preinstall` silently skip the app.
+    denied = {
+        line.split()[1].removeprefix("app/").removesuffix("/*")
+        for line in FILTER_PATH.read_text().splitlines()
+        if line.startswith("deny app/")
+    }
+    root = Path(__file__).parent.parent / "system_files"
+    preinstalled = {
+        line.removeprefix("[Flatpak Preinstall ").removesuffix("]")
+        for path in root.glob("*/usr/share/flatpak/preinstall.d/*.preinstall")
+        for line in path.read_text().splitlines()
+        if line.startswith("[Flatpak Preinstall ")
+    }
+    assert "org.tunaos.compass" in preinstalled
+    assert preinstalled.isdisjoint(denied), preinstalled & denied
