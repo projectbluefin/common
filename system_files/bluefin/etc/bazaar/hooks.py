@@ -44,6 +44,43 @@ def spawn_brew(app, tap='ublue-os/tap'):
     cmd = f'{brew} tap {tap}; {brew} trust {tap}; {brew} install --cask {app}'
     spawn_and_detach(make_popup_terminal_argv(cmd))
 
+def spawn_chairlift(*args):
+    spawn_and_detach([
+        'flatpak-spawn', '--host',
+        '/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper',
+        *args,
+    ])
+
+def handle_steam():
+    match stage:
+        case 'setup':
+            if transaction_type == 'install' and transaction_appid == 'com.valvesoftware.Steam':
+                return 'ok'
+            else:
+                return 'pass'
+
+        case 'setup-dialog':
+            return 'ok'
+
+        case 'teardown-dialog':
+            if dialog_response_id == 'open-chairlift':
+                return 'ok'
+            else:
+                return 'abort'
+
+        case 'catch':
+            return 'abort'
+
+        case 'action':
+            try:
+                spawn_chairlift('--dx-mode')
+            except:
+                pass
+            return ''
+
+        case 'teardown':
+            return 'deny'
+
 def handle_jetbrains():
     def appid_is_jetbrains(appid):
         return appid.startswith('com.jetbrains.') or appid == ('com.google.AndroidStudio')
@@ -126,6 +163,8 @@ def handle_ide(appid_matches, brew_pkg, tap='ublue-os/tap'):
 response = 'pass'
 if hook_id == 'jetbrains-toolbox':
     response = handle_jetbrains()
+elif hook_id == 'steam':
+    response = handle_steam()
 elif hook_id in IDE_HOOKS:
     response = handle_ide(*IDE_HOOKS[hook_id])
 
