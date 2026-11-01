@@ -23,6 +23,7 @@ test:
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
     bats tests/test_clean_system_bootc.bats
+    bats tests/test_bootc_update_stage.bats
     bats tests/test_default_just.bats
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
@@ -48,6 +49,7 @@ test:
     bats tests/test_apps_just.bats
     bats tests/test_image_repo.bats
     bats tests/test_booted_image.bats
+    bats tests/test_flatpak_appstream_refresh.bats
     bats tests/test_damask_service.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats

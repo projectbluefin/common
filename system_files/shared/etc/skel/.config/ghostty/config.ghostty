@@ -33,6 +33,11 @@ keybind = f11=toggle_fullscreen
 # Hide the mouse pointer while typing, matching GNOME Terminal and Ptyxis behavior
 mouse-hide-while-typing = true
 
+# Keep xterm-ghostty locally and over SSH by installing its terminfo on remote
+# hosts. Fall back to xterm-256color over SSH if installation is unavailable.
+# Requires local infocmp and remote tic; installs into the remote ~/.terminfo.
+shell-integration-features = ssh-env,ssh-terminfo
+
 # Send a desktop notification when a command finishes in an unfocused window —
 # useful for long distrobox builds
 notify-on-command-finish = unfocused

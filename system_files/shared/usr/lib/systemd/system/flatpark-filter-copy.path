@@ -1,0 +1,9 @@
+[Unit]
+Description=Copy FlatPark filter once the system Flatpak repo exists
+
+[Path]
+# Fires at boot if the repo exists, otherwise when flatpak first creates it.
+PathExists=/var/lib/flatpak/repo/config
+
+[Install]
+WantedBy=paths.target

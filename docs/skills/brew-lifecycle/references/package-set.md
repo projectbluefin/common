@@ -8,7 +8,8 @@ Part of [brew-lifecycle](../SKILL.md) — current default package list, what bel
 
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
 defines the default CLI set. Other Brewfiles in the same directory also
-provision managed packages for every variant (currently `chairlift.Brewfile`).
+provision managed packages for every variant (currently `chairlift.Brewfile`
+and `bluefin-report.Brewfile`).
 The CLI set contains 11 packages:
 
 | Package | Purpose | Deps |
@@ -30,22 +31,29 @@ The CLI set contains 11 packages:
 
 ### Managed casks
 
-`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile`
-installs ChairLift for every user:
+Brewfiles in `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`
+install these casks for every user:
+
+| Brewfile | App | Cask |
+|---|---|---|
+| `chairlift.Brewfile` | ChairLift | `projectbluefin/tap/chairlift` |
+| `bluefin-report.Brewfile` | Report a problem | `projectbluefin/tap/bluefin-report` |
+
+Each uses the same tap/cask shape:
 
 ```ruby
 tap "projectbluefin/tap", trusted: true
-cask "projectbluefin/tap/chairlift"
+cask "projectbluefin/tap/<cask>"
 ```
 
-This is OS-managed like the default formula set: add the cask and every user
+These are OS-managed like the default formula set: add a cask and every user
 gets it on next login after update; remove it and users whose state file shows
 it as managed have it uninstalled. The `trusted: true` tap flag is required.
-The cask must remain pinned upstream in `projectbluefin/tap`, where it
-tracks `projectbluefin/chairlift` releases; do not vendor an
-unpinned replacement cask into common.
+Each cask must remain pinned upstream in `projectbluefin/tap`; do not vendor an
+unpinned replacement cask into common. ChairLift's cask tracks
+`projectbluefin/chairlift` releases.
 
-The cask's desktop entry and icons land in the installing user's
+Both casks install their desktop entry and icons in the installing user's
 `~/.local/share`, which — with Homebrew's single shared prefix — means only the
 first user ever receives them. `common` therefore also ships the upstream
 desktop file and icons system-wide; see
