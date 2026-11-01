@@ -13,5 +13,7 @@ if [[ ("$SHLVL" -eq 1 && ! -o LOGIN) && -s "${ZDOTDIR:-$HOME}/.zprofile" ]]; the
   source "${ZDOTDIR:-$HOME}/.zprofile"
 fi
 
+# zshenv runs for every zsh, including nested ones; keep PATH entries unique.
+typeset -U path PATH
 export PATH=$PATH:${HOME}/.bin
 export PATH=$HOME/bin:/usr/local/bin:$PATH

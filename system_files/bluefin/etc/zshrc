@@ -195,6 +195,25 @@ colors
 # Sourcing
 #####################
 
+# This file replaces Fedora's /etc/zshrc, which sources /etc/profile.d for
+# non-login shells (login shells get it via /etc/zprofile -> /etc/profile).
+pathmunge() {
+  if ! echo $PATH | /bin/grep -qE "(^|:)$1($|:)" ; then
+    if [ "$2" = "after" ] ; then PATH=$PATH:$1; else PATH=$1:$PATH; fi
+  fi
+}
+_src_etc_profile_d() {
+  emulate -L ksh
+  if [[ ! -o login ]]; then
+    for i in /etc/profile.d/*.sh; do
+      [ -r "$i" ] && . "$i"
+    done
+    unset i
+  fi
+}
+_src_etc_profile_d
+unset -f pathmunge _src_etc_profile_d
+
 # Brew
 if [[ -o interactive ]] && [[ -d /home/linuxbrew/.linuxbrew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

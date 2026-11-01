@@ -76,6 +76,12 @@ assert_quiet() {
     [ "$output" = "$TEST_HOME/bin:/usr/local/bin:/usr/bin:/bin:$TEST_HOME/.bin" ]
 }
 
+@test "zshenv: nested shells do not duplicate PATH entries" {
+    run_zsh -fc 'PATH=/usr/bin:/bin; source "$1"; source "$1"; print -r -- "$PATH"' zsh "$CONFIG_DIR/zshenv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$TEST_HOME/bin:/usr/local/bin:/usr/bin:/bin:$TEST_HOME/.bin" ]
+}
+
 @test "zshenv: later global startup files remain enabled" {
     run_zsh -fc 'setopt rcs globalrcs; source "$1"; [[ -o globalrcs ]]' zsh "$CONFIG_DIR/zshenv"
     assert_quiet
@@ -109,4 +115,17 @@ $TEST_HOME/bin:/usr/local/bin:/usr/bin:/bin:$TEST_HOME/.bin" ]
     [ "$status" -eq 0 ]
     [ "$output" = login ]
     [ -s "$TEST_HOME/.zsh/a/b/config.zsh.zwc" ]
+}
+
+@test "Fedora zsh: profile.d runs once in non-login and login shells" {
+    require_installed_config
+    printf 'export BLUEFIN_PROFILE_D=$((${BLUEFIN_PROFILE_D:-0} + 1))\n' > /etc/profile.d/zz-bluefin-test.sh
+    run_zsh -ic 'print -r -- "$BLUEFIN_PROFILE_D"'
+    local nonlogin_status=$status nonlogin_output=$output
+    run_zsh -lic 'print -r -- "$BLUEFIN_PROFILE_D"'
+    rm -f /etc/profile.d/zz-bluefin-test.sh
+    [ "$nonlogin_status" -eq 0 ]
+    [ "$nonlogin_output" = 1 ]
+    [ "$status" -eq 0 ]
+    [ "$output" = 1 ]
 }
