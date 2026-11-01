@@ -55,7 +55,7 @@ Each cask must remain pinned upstream in `projectbluefin/tap`; do not vendor an
 unpinned replacement cask into common. ChairLift's cask tracks
 `projectbluefin/chairlift` releases.
 
-ChairLift's desktop entry and icons land in the installing user's
+Both casks install their desktop entry and icons in the installing user's
 `~/.local/share`, which — with Homebrew's single shared prefix — means only the
 first user ever receives them. `common` therefore also ships the upstream
 desktop file and icons system-wide; see
