@@ -132,9 +132,23 @@ Why the explicit brew path: `profile.d` scripts run before `brew shellenv`
 is sourced, so `command -v starship` always misses the brew-installed binary
 unless the path is checked directly.
 
-**zsh** — `etc/zsh/zshrc` (in `projectbluefin/common`):
+**zsh** — `etc/zshrc` (in `projectbluefin/common`):
 `brew shellenv` runs before the `if type starship` check, so brew's bin
 is in PATH by the time the check runs. No special handling needed.
+
+Fedora and Utah build zsh with `--enable-etcdir=/etc`, so common installs
+`zshenv`, `zshrc`, and `zlogin` directly under `etc/`. Keep `GLOBAL_RCS`
+enabled in `zshenv`; disabling it prevents the later global files from
+running. The distribution's `/etc/zprofile` remains responsible for loading
+`/etc/profile`; the legacy `etc/zsh/zprofile` remains unused on Fedora.
+Both recursive user-script globs use `(N)` so missing or empty `~/.zsh`
+directories are harmless. `tests/test_zsh_config.bats` covers syntax and
+behavior; the Fedora job in `unit-tests.yml` also installs the files and
+starts real interactive and login shells without explicitly sourcing them.
+
+Sources: [zsh startup files](https://zsh.sourceforge.io/Doc/Release/Files.html#Startup_002fShutdown-Files),
+[glob qualifiers](https://zsh.sourceforge.io/Doc/Release/Expansion.html#Glob-Qualifiers),
+and [Utah's zsh build](https://github.com/projectbluefin/utah-packages/blob/main/packages/zsh/zsh.spec).
 
 **fish** — `usr/share/fish/vendor_conf.d/starship.fish` (in `projectbluefin/common`):
 ```fish
