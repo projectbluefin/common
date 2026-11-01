@@ -34,9 +34,8 @@ cat /usr/share/ublue-os/image-info.json
 ```
 
 `image-info.json` bakes the identity keys (`image-name`, `image-flavor`,
-`image-vendor`, `image-ref`, `image-tag`) at compose time. Its content is
-content-addressable inside the `projectbluefin/common` image and is verifiable
-by signature — do not write image names or tags from memory.
+`image-vendor`, `image-ref`, `image-tag`) at compose time — do not write image
+names or tags from memory.
 
 ## Logs, reporting, and what you can change
 
@@ -44,8 +43,8 @@ The root filesystem is read-only on a running machine, so you cannot edit the
 system itself. Here is where to look and what actually works:
 
 - Logs: `ujust logs-this-boot`, `ujust logs-last-boot`, or `journalctl -b`.
-- Report a problem: `ujust report` gathers a bug report and files it in the
-  tracker named by `BUG_REPORT_URL` in `/etc/os-release`.
+- Report a problem: where available (the Bluefin layer ships it), `ujust report`
+  gathers a bug report and selects its tracker via `/usr/libexec/ublue-image-repo`.
 - Change something for real: user-level overrides under your home directory, or
   a new image. There is no way to make a persistent system change by writing to
   `/` — see "What to do when asked to change something" for the read-only rule.
