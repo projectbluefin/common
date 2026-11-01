@@ -90,7 +90,8 @@ def test_blocklisted_apps_stay_out_of_curated_content():
     }
 
     assert blocked_ids.isdisjoint(curated_ids)
-    assert "com.valvesoftware.Steam" in blocked_ids
+    # Steam stays discoverable so the `steam` before-transaction hook can intercept it.
+    assert "com.valvesoftware.Steam" not in blocked_ids
     assert "com.valvesoftware.SteamLink" in curated_ids
 
 

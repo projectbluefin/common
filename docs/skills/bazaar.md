@@ -125,9 +125,10 @@ ujust bazaar-preview /path/to/common
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
-- Adding a YAML hook without a matching `IDE_HOOKS` entry silently passes through instead of redirecting the install.
+- Adding a YAML hook without a matching `hooks.py` dispatch branch (`IDE_HOOKS` or an explicit `hook_id` case) silently passes through instead of redirecting the install.
 - Bazaar denylist entries go in `blocklist.yaml` under `blocklists[].block`,
-  using the exact Flatpak app ID; remove matching curated entries too.
+  using the exact Flatpak app ID; remove matching curated entries too. Blocklisted
+  apps are hidden from discovery, so their `before-transaction` hooks never fire.
 
 ## Red Flags
 
