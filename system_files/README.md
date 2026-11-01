@@ -36,3 +36,15 @@ The Containerfile also copies generated artifacts into the layers:
 OEM-specific hooks, udev rules, and assets all live in `shared/` so they are present on every variant. Hooks detect hardware at runtime via DMI strings and exit immediately on non-matching hardware — runtime cost is negligible.
 
 See `docs/skills/oem-hardware-hooks.md` for the OEM hook system.
+
+## Ghostty SSH compatibility
+
+The shared Ghostty profile enables `shell-integration-features = ssh-env,ssh-terminfo`
+(Ghostty 1.2.0 or newer). With Ghostty shell integration loaded, SSH attempts to
+install `xterm-ghostty` terminfo into the remote user's `~/.terminfo`, preserving
+Ghostty's terminal capabilities. This requires local `infocmp` and remote `tic`.
+If installation fails, SSH falls back to `xterm-256color`; local sessions keep
+`xterm-ghostty`.
+
+The profile is installed through `/etc/skel`, so this default only reaches new
+homes. Existing users can add the setting to their own Ghostty configuration.
