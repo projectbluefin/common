@@ -1,7 +1,7 @@
 ---
 name: bootc
 version: "1.2"
-last_updated: "2026-10-01"
+last_updated: "2026-10-31"
 id: bootc
 one_line_purpose: Work with bootc image build, update, and Containerfile mechanics.
 entry_point: docs/skills/bootc.md
@@ -204,6 +204,53 @@ curl -s https://raw.githubusercontent.com/bootc-dev/bootc/v1.12.1/crates/lib/src
 curl -s https://raw.githubusercontent.com/containers/storage/main/drivers/overlay/overlay.go \
   | grep -n "redirectDiffIfAdditionalLayer\|DiffGetter" | head -5
 ```
+
+### Known behaviour: composefs `bootc upgrade` "already up to date" refusal
+
+**Reported in `projectbluefin/common#1417`** (composefs images such as
+Dakota). Symptom when the newest image is already booted or staged:
+
+```
+error: Upgrading composefs: Performing Upgrade Operation:
+  Target image has the same fs-verity digest as the existing Some(Booted) deployment.
+```
+
+`bootc upgrade` exits **1** here, but the system is current, not broken. This
+is distinct from #1332: #1332 is a genuine *pull* failure in the overlay
+`containers-storage:` path; #1417 is a *refusal* from a successful comparison
+that happens to use a non-zero exit.
+
+**Action by repo:** both callers run `bootc upgrade` once, mirror its stderr to
+a temp file while still streaming it, and on a non-zero exit match the refusal
+text (`Target image has the same fs-verity digest as the existing`). A match
+prints `System image is already up to date.` and counts as success; any other
+failure keeps its original exit code.
+
+- `system_files/shared/usr/libexec/bootc-update-stage` — the privileged helper
+  behind ChairLift's manual "check for updates now". Its security contract is
+  unchanged: no arguments read, no argv forwarded, exactly one
+  `/usr/bin/bootc upgrade` and none of the reboot/finalize/registry-skip flags
+  (`tests/test_chairlift_config.py::test_bootc_stage_script_is_executable_and_stages_only`,
+  `tests/test_bootc_update_stage.bats`).
+- `system_files/shared/usr/share/ublue-os/just/update.just` — `ujust update`.
+  stdout stays on the terminal; stderr goes through `tee`, so bootc's progress
+  bars (indicatif, stderr) are hidden.
+
+**Never classify by re-running bootc.** `bootc upgrade --check` is not
+read-only on composefs: in upstream `crates/lib/src/bootc_composefs/update.rs`
+(v1.17.1 `upgrade_composefs`), when the image is already pulled and
+`validate_update` returns `Proceed`, `do_upgrade` runs *before* the
+`if opts.check` early return and stages. Newer bootc also answers a re-run with
+`No changes in: …` (exit 0), so the refusal text never reappears.
+
+**Do not** convert this into a `bootc switch` / `--download-only` workaround:
+those change the staged-deployment semantics that ChairLift and uupd rely on.
+This is documented behaviour, not the `#1332` readlink bug — keep the two
+sections apart.
+
+**For end-user reports:** no workaround needed — the system already has the
+latest image. If a *different* error (network, signature, pull failure) shows
+up, that is not #1417; re-run the update or file a new report.
 
 ---
 
