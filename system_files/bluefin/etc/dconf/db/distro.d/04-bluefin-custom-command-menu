@@ -1,3 +1,6 @@
+# Relocatable schemas are located here in dconf
+# Some Gnome extensions don't ship gschema XML, so their settings also need to go in dconf
+
 [org/gnome/shell/extensions/custom-command-list]
 menuoptions-setting=2
 menuicon-setting='ublue-logo-symbolic'
@@ -7,7 +10,7 @@ command-order=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
 command1=('---$(hostname)', '', '', true)
 command2=('About', 'gnome-control-center system about', '', true)
-command3=('System Monitor', '/usr/bin/missioncenter-helper', '', true)
+command3=('System Monitor', '/usr/bin/flatpak run io.missioncenter.MissionCenter', '', true)
 command4=('System Settings', 'gnome-control-center', '', true)
 command5=('---Applications', '', '', true)
 command6=('Bazaar App Store', '/usr/bin/flatpak run io.github.kolunmi.Bazaar', '', true)

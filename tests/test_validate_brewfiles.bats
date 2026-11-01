@@ -33,6 +33,10 @@ case "$1" in
                 ;;
         esac
         ;;
+    trust)
+        [[ $# -eq 4 && "$3" == -- ]] || exit 99
+        [[ "${MOCK_TRUST_STATUS:-0}" == 0 ]] || { echo 'trust failed' >&2; exit "${MOCK_TRUST_STATUS}"; }
+        ;;
     *) echo "unexpected brew operation: $*" >&2; exit 99 ;;
 esac
 MOCK
@@ -68,6 +72,35 @@ teardown() {
     [ "$(wc -l < "${TAPS}")" -eq 2 ]
     [[ "$(head -1 "${CALLS}")" == bundle\|* ]]
     run ! grep -qE '^[[:space:]]*(brew|cask) ' "${TAPS}"
+}
+
+# Ruby interpolation fixtures must stay literal in the shell.
+# shellcheck disable=SC2016
+@test "computed tap lines fail closed without reaching brew bundle" {
+    # One run per fixture: the validator exits at the first non-literal tap.
+    local fixture
+    local -a cases=(
+        'tap "evil/#{"x"}/tap"'
+        'tap "x/y" if system("id")'
+        'tap "x/y"; system("id")'
+        'tap "x/#$0/tap"'
+        'tap "x/#@y/tap"'
+        # An escaped quote ends the string later for Ruby than for the regex,
+        # so the "comment" after it is live code.
+        'tap "a\"# " ; system("id") #'
+        "tap 'x\\' # ' ; system(\"id\") #"
+    )
+    for fixture in "${cases[@]}"; do
+        rm -rf "${FIXTURES}" && mkdir -p "${FIXTURES}"
+        : > "${CALLS}"
+        printf '%s\nbrew "ripgrep"\n' "${fixture}" > "${FIXTURES}/test.Brewfile"
+        run bash "${SCRIPT}" "${FIXTURES}"
+        [ "${status}" -eq 1 ]
+        [[ "${output}" == *"test.Brewfile:1: expected a quoted literal tap declaration: ${fixture}"* ]]
+        [[ "${output}" == *"refusing to evaluate non-literal tap lines"* ]]
+        run ! grep -q '^bundle|' "${CALLS}"
+        run ! grep -q '^info|' "${CALLS}"
+    done
 }
 
 @test "tap failure is fatal and preserves both output streams" {
@@ -178,7 +211,25 @@ teardown() {
     done
     grep -qFx 'cask "projectbluefin/tap/bluefin-wallpapers-extra"' "${shared}/artwork.Brewfile"
     grep -qFx 'tap "projectbluefin/tap", trusted: true' "${shared}/artwork.Brewfile"
-    grep -qFx 'cask "ublue-os/tap/zed-linux"' "${shared}/experimental-ide.Brewfile"
+    grep -qFx 'cask "zed"' "${shared}/experimental-ide.Brewfile"
     grep -qFx 'tap "ublue-os/tap", trusted: true' "${shared}/experimental-ide.Brewfile"
     run ! grep -q 'ublue-os/experimental-tap/zed-linux' "${shared}/experimental-ide.Brewfile"
+}
+
+@test "validator trusts only the items a Brewfile declares trusted, before checking them" {
+    printf 'brew "third/tap/tool", trusted: true\nbrew "other/tap/plain"\ncask "third/tap/app", trusted: true # note\n' > "${FIXTURES}/test.Brewfile"
+    run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 0 ]
+    grep -qFx 'trust|--formula|third/tap/tool' "${CALLS}"
+    grep -qFx 'trust|--cask|third/tap/app' "${CALLS}"
+    run ! grep -qF 'trust|--formula|other/tap/plain' "${CALLS}"
+    [ "$(grep -n 'third/tap/tool' "${CALLS}" | head -1 | cut -d: -f2)" = 'trust|--formula|third/tap/tool' ]
+}
+
+@test "a failed trust is reported and the item is not checked" {
+    printf 'brew "third/tap/tool", trusted: true\n' > "${FIXTURES}/test.Brewfile"
+    MOCK_TRUST_STATUS=3 run bash "${SCRIPT}" "${FIXTURES}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"could not trust formula third/tap/tool"* ]]
+    run ! grep -qF 'info|--formula|third/tap/tool' "${CALLS}"
 }

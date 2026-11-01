@@ -6,9 +6,12 @@ logic in-process so coverage.py can instrument them.
 """
 
 import importlib.util
+import http.client
 import json
 import urllib.error
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from threading import Event, Thread
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -269,6 +272,32 @@ class TestTagExistsInGhcr:
             assert mock_urlopen.call_count == 2
             assert mock_sleep.call_count == 1
 
+    def test_dropped_connection_recovers_on_retry(self):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"[]"
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[
+                http.client.RemoteDisconnected(
+                    "Remote end closed connection without response"
+                ),
+                mock_resp,
+            ],
+        ) as mock_urlopen, patch("time.sleep") as mock_sleep:
+            assert tag_exists_in_ghcr("bluefin", "stable") is False
+            assert mock_urlopen.call_count == 2
+            assert mock_sleep.call_count == 1
+
+    def test_persistent_network_error_returns_none(self):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Temporary failure in name resolution"),
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
     def test_403_without_rate_limit_header_raises_http_error(self):
         """403 without rate limit headers indicates missing scope/permission and must raise immediately."""
         hdrs = {"x-ratelimit-remaining": "4676"}
@@ -282,6 +311,59 @@ class TestTagExistsInGhcr:
                 tag_exists_in_ghcr("bluefin", "stable")
             assert mock_urlopen.call_count == 1
 
+    def test_truncated_body_recovers_on_retry(self):
+        """IncompleteRead from resp.read() (connection dropped mid-body) retries."""
+        truncated = MagicMock()
+        truncated.read.side_effect = http.client.IncompleteRead(
+            partial=b'[{"metadata":', expected=128
+        )
+        truncated.__enter__ = lambda s: s
+        truncated.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[truncated, _mock_urlopen(["stable"])],
+        ) as mock_urlopen, patch("time.sleep") as mock_sleep:
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+            assert mock_urlopen.call_count == 2
+            assert mock_sleep.call_count == 1
+
+    def test_persistent_truncated_body_returns_none(self):
+        truncated = MagicMock()
+        truncated.read.side_effect = http.client.IncompleteRead(
+            partial=b'[{"metadata":', expected=128
+        )
+        truncated.__enter__ = lambda s: s
+        truncated.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=truncated
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
+    def test_malformed_json_body_returns_none(self):
+        """A 200 with a body that is not JSON retries, then reports unknown."""
+        garbage = MagicMock()
+        garbage.read.return_value = b"<html>proxy error</html>"
+        garbage.__enter__ = lambda s: s
+        garbage.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=garbage
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
+    def test_non_array_json_body_returns_none(self):
+        """A 200 whose JSON body is an object, not a versions array, retries."""
+        obj = MagicMock()
+        obj.read.return_value = b'{"message": "unexpected"}'
+        obj.__enter__ = lambda s: s
+        obj.__exit__ = MagicMock(return_value=False)
+        with patch(
+            "urllib.request.urlopen", return_value=obj
+        ) as mock_urlopen, patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+            assert mock_urlopen.call_count == 4
+
     def test_returns_false_on_empty_versions_list(self):
         mock_resp = MagicMock()
         mock_resp.read.return_value = b"[]"
@@ -289,6 +371,73 @@ class TestTagExistsInGhcr:
         mock_resp.__exit__ = MagicMock(return_value=False)
         with patch("urllib.request.urlopen", return_value=mock_resp):
             assert tag_exists_in_ghcr("bluefin", "stable") is False
+
+    @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
+    def test_timeout_recovers_on_retry(self, failure):
+        response = _mock_urlopen(["stable"])
+        if failure == "read":
+            response.read.side_effect = TimeoutError("read timed out")
+            error = response
+        elif failure == "wrapped":
+            error = urllib.error.URLError(TimeoutError("connect timed out"))
+        else:
+            error = TimeoutError("connect timed out")
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[error, _mock_urlopen(["stable"])],
+        ), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+
+    @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
+    def test_persistent_timeout_is_unknown_not_missing(self, failure, capsys):
+        response = _mock_urlopen(["stable"])
+        if failure == "read":
+            response.read.side_effect = TimeoutError("read timed out")
+            kwargs = {"return_value": response}
+        elif failure == "wrapped":
+            kwargs = {"side_effect": urllib.error.URLError(TimeoutError("connect timed out"))}
+        else:
+            kwargs = {"side_effect": TimeoutError("connect timed out")}
+        with patch("urllib.request.urlopen", **kwargs), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+        assert "skipping existence check" in capsys.readouterr().out
+
+    def test_stalled_response_body_times_out(self, monkeypatch):
+        release = Event()
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = b'[{"metadata":{"container":{"tags":["stable"]}}}]'
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                release.wait(1)
+                try:
+                    self.wfile.write(body)
+                except BrokenPipeError:
+                    pass
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        real_urlopen = _mod.urllib.request.urlopen
+
+        def local_urlopen(request, **kwargs):
+            return real_urlopen(f"http://127.0.0.1:{server.server_port}/", **kwargs)
+
+        monkeypatch.setattr(_mod, "REQUEST_TIMEOUT_SECONDS", 0.025)
+        monkeypatch.setattr(_mod, "MAX_RETRIES", 0)
+        monkeypatch.setattr(_mod.urllib.request, "urlopen", local_urlopen)
+        thread.start()
+        try:
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+        finally:
+            release.set()
+            server.shutdown()
+            thread.join()
+            server.server_close()
 
 
 # ---------------------------------------------------------------------------

@@ -11,8 +11,8 @@
 # a follow-up.
 
 APPS_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/apps.just"
-OTD_TARBALL_URL="https://github.com/OpenTabletDriver/OpenTabletDriver/releases/download/v0.6.7/opentabletdriver-0.6.7_linux-x64_simple.tar.gz"
-OTD_TARBALL_SHA256="ab3ecfed8579864d947b2ad04c236822a109bc7c52519af7aaa36e03e99d2265"
+OTD_TARBALL_URL="https://github.com/OpenTabletDriver/OpenTabletDriver/releases/download/v0.6.8/opentabletdriver-0.6.8_linux-x64_simple.tar.gz"
+OTD_TARBALL_SHA256="cc376834980138c49e97fc245ba813a361e46c9e8278413c781075f2902e5d45"
 OTD_SERVICE_URL="https://raw.githubusercontent.com/flathub/net.opentabletdriver.OpenTabletDriver/1a2a2083b8ed831df3b8b6ae3ddfe7dc21d02e01/scripts/opentabletdriver.service"
 OTD_SERVICE_SHA256="ef2f5c450ed1b30cd143285ee119f3cd89fc7b00e1a62ffe471dc4bdd0a1260a"
 WORKDIR=""

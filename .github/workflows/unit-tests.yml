@@ -9,7 +9,7 @@ on:
       - "tests/**"
       - "scripts/**"
       - "Justfile"
-      - ".github/workflows/unit-tests.yml"
+      - ".github/workflows/**"
   push:
     branches:
       - main
@@ -36,10 +36,10 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "$(/home/linuxbrew/.linuxbrew/bin/brew --prefix)/bin" >> "$GITHUB_PATH"
           brew install bats-core fish zsh
-          pip install pytest pytest-cov pyyaml jsonschema numpy
+          pip install -r tests/requirements.txt
 
       - name: Install just
-        uses: taiki-e/install-action@0c0305935e3ef3b9e6205d176ec55ee4fce34cca # just
+        uses: taiki-e/install-action@f9ed83c1523674ebae4768d47169d3068663dec4 # just
         with:
           tool: just
 

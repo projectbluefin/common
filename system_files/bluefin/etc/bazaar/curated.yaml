@@ -151,7 +151,6 @@ rows:
         pl: 'Protokół trzeci: Chronić pilota'
     appids:
       list:
-      - com.valvesoftware.Steam
       - com.heroicgameslauncher.hgl
       - com.discordapp.Discord
       - net.lutris.Lutris
@@ -254,12 +253,16 @@ rows:
       pl: SI i uczenie maszynowe
     subtitle:
       string:
-        en: Explore the best of open source AI
-        fr: Explorez le meilleur de l'IA open source
-        id: Jelajahi yang terbaik dari AI sumber terbuka
-        pl: Odkrywaj open sourcowe rozwiązania SI
+        en: Explore intelligent assistants, editors, and local models
+        fr: Explorez assistants intelligents, éditeurs et modèles locaux
+        id: Jelajahi asisten cerdas, editor, dan model lokal
+        pl: Odkrywaj inteligentnych asystentów, edytory i modele lokalne
     appids:
       list:
+      - com.openai.ChatGPT
+      - com.anthropic.ClaudeDesktop
+      - co.anysphere.cursor
+      - com.google.AntigravityIDE
       - com.jeffser.Alpaca
       - io.github.qwersyk.Newelle
       - ai.jan.Jan

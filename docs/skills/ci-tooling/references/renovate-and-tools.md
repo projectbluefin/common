@@ -4,6 +4,19 @@ Part of [ci-tooling](../SKILL.md) — Renovate OCI digest tracking, Renovate for
 
 ---
 
+## Renovate Actions outside the workflows directory
+
+`.github/copilot-setup-steps.yml` lives outside Renovate's default workflow
+paths. `renovate.json` adds that exact path to the built-in `github-actions`
+manager's `managerFilePatterns`, so its action pins receive the same digest
+tracking and package rules as regular workflows. No custom regex manager is
+needed: the file uses ordinary workflow syntax.
+
+Renovate [adds these patterns to its defaults](https://docs.renovatebot.com/configuration-options/#managerfilepatterns),
+so standard workflow and `action.yml` discovery remains enabled. When adding
+another nonstandard workflow path, extend this list and the coverage test in
+`tests/test_renovate_config.py` rather than duplicating action parsing.
+
 ## Renovate OCI digest tracking
 
 `Containerfile` has three OCI image pins (`docker.io/library/golang:alpine`, `docker.io/library/alpine:latest`, and `ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest`).
@@ -169,3 +182,5 @@ When adding a new binary pinned to a specific version in a script or just file, 
 - the flathub `opentabletdriver.service` unit: pinned to a full commit SHA plus its own sha256 — never fetch a moving branch ref (`refs/heads/…`) for something that gets installed.
 
 **Coupling to know:** Renovate PRs update `OTD_RELEASE` only. The two hashes are not managed by Renovate — a version bump fails the recipe's checksum gate (fail-closed, never fail-open) until the hashes are updated manually in the same PR. Because of that, `renovate.json` carries an `automerge: false` rule for `OpenTabletDriver/OpenTabletDriver`, so those PRs always wait for a human to add the new hashes. Compute them with `sha256sum` against the new release asset and the raw file at the pinned ref. Tests in `tests/test_apps_just.bats` mirror these pins as constants and must move with them.
+
+The sandboxed Bats installer substitutes its fixture's checksum for the mirrored release pin, so passing checksum-gate tests alone does not validate the upstream asset digest. Download the exact `linux-x64_simple.tar.gz` asset, compare its `sha256sum` with GitHub's published asset digest, then update both the recipe hash and the mirrored test URL/hash. Recompute the pinned service hash too; keep its existing pin when the URL and bytes are unchanged. Observe the whole `tests/test_apps_just.bats` module in CI, not only the pinned-URL case.

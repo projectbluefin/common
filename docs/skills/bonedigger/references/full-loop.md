@@ -85,11 +85,11 @@ affected by an existing issue. This mode previews and posts a lightweight
 fingerprint (image, version/digest, kernel, architecture, and failed units)
 with `gh issue comment`. It does not collect OTel data, create a gist, or
 derive an identifier from `machine-id`. A positive issue number uses the
-booted image's normal routing: Bluefin LTS goes to
-`projectbluefin/bluefin-lts`, regular Bluefin to `projectbluefin/bluefin`,
-Dakota to `projectbluefin/dakota`, and unknown variants to
-`projectbluefin/common`. A GitHub issue URL uses its repository and issue
-number directly.
+booted image's normal routing: Bluefin and Bluefin LTS now fall through to the
+caller default, which for bug reports is `projectbluefin/common` (both former
+destinations are archived and refuse new issues); Dakota to `projectbluefin/dakota`,
+and unknown variants to `projectbluefin/common`. A GitHub issue URL uses its
+repository and issue number directly.
 
 Issue numbers must be positive integers. In a terminal, the exact comment is
 shown and requires confirmation before posting; non-interactive use posts after

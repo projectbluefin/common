@@ -1,7 +1,7 @@
 tap "buildpacks/tap"
-brew "buildpacks/tap/pack"
+brew "buildpacks/tap/pack", trusted: true
 tap "k0sproject/tap"
-brew "k0sproject/tap/k0sctl"
+brew "k0sproject/tap/k0sctl", trusted: true
 brew "cdk8s"
 brew "dagger"
 brew "grype"

@@ -1,8 +1,5 @@
 tap "colindean/fonts-nonfree", trusted: true
 
-# === Accessibilty fonts ===
-cask "font-opendyslexic"
-
 # === Office fonts ===
 cask "font-arial"
 cask "font-arial-black"

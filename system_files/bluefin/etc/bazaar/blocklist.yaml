@@ -10,3 +10,4 @@ blocklists:
     - app.devsuite.Ptyxis
     - org.freedesktop.fwupd
     - io.github.kolunmi.Bazaar
+    - com.valvesoftware.Steam

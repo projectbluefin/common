@@ -1,4 +1,4 @@
-"""Regression checks for Bazaar curated config structure."""
+"""Regression checks for Bazaar curated config and app policy."""
 
 from pathlib import Path
 
@@ -7,6 +7,8 @@ import yaml
 ROOT = Path(__file__).parent.parent
 CURATED = ROOT / "system_files/bluefin/etc/bazaar/curated.yaml"
 BAZAAR = ROOT / "system_files/bluefin/etc/bazaar/bazaar.yaml"
+BLOCKLIST = ROOT / "system_files/bluefin/etc/bazaar/blocklist.yaml"
+FLATPARK_FILTER = ROOT / "system_files/shared/usr/share/flatpak/flatpark.filter"
 
 
 def _load_yaml(path: Path):
@@ -46,6 +48,50 @@ def test_curated_uses_modern_schema_shape():
     assert "Desktop Development" in section_titles
     assert "Cloud Native Development" in section_titles
     assert "AI and Machine Learning" in section_titles
+
+    ai_section = next(
+        row["section"]
+        for row in data["rows"]
+        if "section" in row
+        and (row["section"]["title"] if isinstance(row["section"]["title"], str) else row["section"]["title"].get("en")) == "AI and Machine Learning"
+    )
+    ai_appids = ai_section["appids"]["list"]
+
+    denied_prefixes = {
+        line.split()[1].removeprefix("app/").removesuffix("/*")
+        for line in FLATPARK_FILTER.read_text(encoding="utf-8").splitlines()
+        if line.startswith("deny app/")
+    }
+    for expected_appid in [
+        "com.openai.ChatGPT",
+        "com.anthropic.ClaudeDesktop",
+        "co.anysphere.cursor",
+        "com.google.AntigravityIDE",
+    ]:
+        assert expected_appid in ai_appids
+        assert expected_appid not in denied_prefixes
+
+
+def test_blocklisted_apps_stay_out_of_curated_content():
+    blocklist = _load_yaml(BLOCKLIST)
+    curated = _load_yaml(CURATED)
+
+    blocked_ids = {
+        appid
+        for group in blocklist["blocklists"]
+        for appid in group.get("block", [])
+    }
+    curated_ids = {
+        appid
+        for row in curated["rows"]
+        for content in row.values()
+        if isinstance(content, dict)
+        for appid in content.get("appids", {}).get("list", [])
+    }
+
+    assert blocked_ids.isdisjoint(curated_ids)
+    assert "com.valvesoftware.Steam" in blocked_ids
+    assert "com.valvesoftware.SteamLink" in curated_ids
 
 
 def test_bazaar_config_valid():

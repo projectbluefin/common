@@ -3,7 +3,7 @@
 #   - system_files/shared/etc/profile.d/uwelcome.sh
 #   - system_files/shared/usr/share/fish/vendor_conf.d/fish_greeting.fish
 #   - toggle-user-motd compatibility recipe in default.just
-#   - etc/uwelcome/config.json and etc/ublue-os/tags.json
+#   - etc/uwelcome/config.json
 #
 # Behavioral contract:
 #   - uwelcome owns the opt-out decision. Its state lives at
@@ -22,7 +22,6 @@ UWELCOME_PROFILE="${BATS_TEST_DIRNAME}/../system_files/shared/etc/profile.d/uwel
 FISH_GREETING="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/fish/vendor_conf.d/fish_greeting.fish"
 DEFAULT_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/default.just"
 UWELCOME_CONFIG="${BATS_TEST_DIRNAME}/../system_files/shared/etc/uwelcome/config.json"
-TAGS_CONFIG="${BATS_TEST_DIRNAME}/../system_files/shared/etc/ublue-os/tags.json"
 
 WORKDIR=""
 
@@ -201,17 +200,5 @@ teardown() {
 
 @test "uwelcome config: motd is sourced from umotd" {
     run jq -e -r '.motd.commands | index("umotd")' "${UWELCOME_CONFIG}"
-    [ "${status}" -eq 0 ]
-}
-
-@test "umotd tags: is valid JSON with only known tags" {
-    run jq empty "${TAGS_CONFIG}"
-    [ "${status}" -eq 0 ]
-    # Upstream umotd v0.3.2 docs/configuration.md defines the available tags.
-    local known
-    known='["aurora","bazzite","bazzite-deck","bluefin","gnome","kde","vscode","containers"]'
-    run jq -e --argjson known "${known}" \
-        'all(.tags[]; . as $t | $known | index($t) != null)' \
-        "${TAGS_CONFIG}"
     [ "${status}" -eq 0 ]
 }

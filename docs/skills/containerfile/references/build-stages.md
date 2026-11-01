@@ -64,13 +64,12 @@ A tag-for-SHA swap is invisible to CI — the image still builds, because the ta
 resolves to a real commit. Nothing but review catches it, so treat any
 `checkout tags/...` or `--branch` in a diff as a blocking finding.
 
-**Config split.** The two binaries read separate config files, both shipped from
-`system_files/shared/`:
+**Config.** Only `uwelcome` reads a config file; `umotd` has none. It is shipped
+from `system_files/shared/`:
 
 | File | Owner | Contents |
 |---|---|---|
 | `etc/uwelcome/config.json` | uwelcome | greeting, commands, links, color, which command supplies the motd |
-| `etc/ublue-os/tags.json` | umotd | which thematic tip tags this image shows |
 
 Command `desc` values and link `name` values in `config.json` are translation
 keys, not free text — an unknown key renders as the raw identifier in the

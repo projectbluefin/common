@@ -30,7 +30,37 @@ main() (
 
     # Sync the complete tap set first: otherwise bare-name ambiguity depends on
     # which Brewfile find happens to visit first. Preserve declared trust flags.
-    sed -n '/^[[:space:]]*tap[[:space:]]/p' "${brewfiles[@]}" | sort -u > "${workdir}/taps.Brewfile"
+    #
+    # Only literal tap declarations are collected: the taps file IS evaluated as
+    # Ruby by `brew bundle` (Homebrew::Bundle::Dsl#process instance_evals it), so
+    # a computed tap line — string interpolation (#{...}, #$var, #@var),
+    # trailing code after a ';', or a modifier like `if system(...)` — would
+    # execute in CI on a PR-controlled Brewfile. Reject anything that is not a
+    # quoted literal and fail closed before `brew bundle` ever sees it. The only
+    # accepted option is the documented trust flag.
+    # Backslashes are rejected inside both quote styles: an escaped quote (\" or
+    # \') ends the string later for Ruby than for these patterns, so a trailing
+    # "# comment" would be parsed as code.
+    tap_entry='^[[:space:]]*tap[[:space:]]+"[^#{}"\]+"([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$'
+    tap_single="^[[:space:]]*tap[[:space:]]+'[^'\\]+'([[:space:]]*,[[:space:]]*trusted:[[:space:]]*(true|false))?[[:space:]]*(#.*)?$"
+    tap_declaration='^[[:space:]]*tap([^[:alnum:]_]|$)'
+    : > "${workdir}/taps.Brewfile"
+    for brewfile in "${brewfiles[@]}"; do
+        line_number=0
+        while IFS= read -r line || [[ -n "${line}" ]]; do
+            line_number=$((line_number + 1))
+            if [[ "${line}" =~ ${tap_declaration} ]]; then
+                if [[ "${line}" =~ ${tap_entry} || "${line}" =~ ${tap_single} ]]; then
+                    printf '%s\n' "${line}" >> "${workdir}/taps.Brewfile"
+                else
+                    printf 'FAIL: %s:%s: expected a quoted literal tap declaration: %s\n' "${brewfile}" "${line_number}" "${line}" >&2
+                    printf 'Validation complete: refusing to evaluate non-literal tap lines.\n' >&2
+                    exit 1
+                fi
+            fi
+        done < "${brewfile}"
+    done
+    sort -u "${workdir}/taps.Brewfile" -o "${workdir}/taps.Brewfile"
     if [[ -s "${workdir}/taps.Brewfile" ]]; then
         echo "Syncing declared taps from:"
         printf '  %s\n' "${brewfiles[@]}"
@@ -61,8 +91,19 @@ main() (
             if [[ "${line}" =~ ${double_entry} || "${line}" =~ ${single_entry} ]]; then
                 type="${BASH_REMATCH[1]}"
                 name="${BASH_REMATCH[2]}"
+                options="${BASH_REMATCH[3]}"
                 [[ "${type}" != brew ]] || type=formula
                 checked=$((checked + 1))
+                # Homebrew 6+ refuses to load items from non-official taps
+                # unless they are trusted. Mirror `brew bundle`: grant trust
+                # only to the item the Brewfile itself declares trusted.
+                if [[ "${options}" =~ ,[[:space:]]*trusted:[[:space:]]*true([[:space:]]|,|#|$) ]] \
+                    && ! brew trust "--${type}" -- "${name}" > "${workdir}/output" 2>&1; then
+                    failed=$((failed + 1))
+                    printf 'FAIL: %s:%s: could not trust %s %s\n' "${brewfile}" "${line_number}" "${type}" "${name}" >&2
+                    sed 's/^/  /' "${workdir}/output" >&2
+                    continue
+                fi
                 # Pass names as data, never interpolate them into bash -c.
                 # Serial checks keep each error adjacent to its source location.
                 if brew info "--${type}" -- "${name}" > "${workdir}/output" 2>&1; then

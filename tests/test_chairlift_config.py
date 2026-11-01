@@ -205,18 +205,20 @@ def test_no_polkit_rule_grants_bootc_staging_without_authentication():
     )
 
 
-def _stage_script_exec_argv() -> list[str]:
-    exec_lines = [
+def _stage_script_code_lines() -> list[str]:
+    """Non-blank, non-comment lines of the helper. The security contract is
+    about what the helper *runs*, and the forbidden flags are named in the
+    header comment, so the flag check must ignore comments."""
+    return [
         line.strip()
         for line in BOOTC_STAGE_SCRIPT.read_text(encoding="utf-8").splitlines()
-        if line.strip().startswith("exec ")
+        if line.strip() and not line.strip().startswith("#")
     ]
-    assert len(exec_lines) == 1, f"expected exactly one exec invocation: {exec_lines}"
-    return shlex.split(exec_lines[0])
 
 
 def test_bootc_stage_script_is_executable_and_stages_only():
-    """The privileged helper must run plain `bootc upgrade` and nothing else.
+    """The privileged helper runs plain `bootc upgrade` and nothing that
+    reboots, locks finalization, or skips the registry.
 
     Plain `bootc upgrade` fetches the update and queues it as a staged
     deployment that ostree-finalize-staged applies at the user's next
@@ -230,36 +232,44 @@ def test_bootc_stage_script_is_executable_and_stages_only():
     on an already-staged deployment, so pressing ChairLift's button would
     *cancel* an update uupd had staged for the next shutdown.
 
-    Assert the exact argv rather than substrings. `pkexec` runs this script
-    as root, so "contains 'bootc upgrade'" is far too weak a claim: it
-    would also accept `exec /some/other/tool "bootc upgrade"`.
+    The helper is checked on its code lines (not the whole file), because the
+    header comment legitimately names the forbidden flags while explaining
+    why they are absent. `pkexec` runs this script as root, so pin the exact
+    set of bootc invocations: one plain `/usr/bin/bootc upgrade`, nothing
+    else. A substring match would also accept
+    `exec /some/other/tool "bootc upgrade"` or an extra `bootc switch …` line.
     """
     assert BOOTC_STAGE_SCRIPT.stat().st_mode & 0o111, (
         "bootc-update-stage must be executable"
     )
-    argv = _stage_script_exec_argv()
-    assert argv == ["exec", "/usr/bin/bootc", "upgrade"], (
-        f"unexpected privileged command: {argv!r}"
-    )
+    code_lines = _stage_script_code_lines()
+    bootc_lines = [line for line in code_lines if "bootc" in line]
+    assert bootc_lines == [
+        '/usr/bin/bootc upgrade 2>&1 1>&3 | tee "$err_log" >&2 || rc=${PIPESTATUS[0]}'
+    ], f"bootc-update-stage must run exactly `/usr/bin/bootc upgrade`: {bootc_lines!r}"
+    code = "\n".join(code_lines)
+    # Never reboots, locks finalization, or skips the registry check.
+    for flag in FORBIDDEN_BOOTC_FLAGS:
+        assert not re.search(rf"(?<![\w-]){re.escape(flag)}(?:=|\b)", code), (
+            f"bootc-update-stage carries {flag}: the helper stages only and "
+            "must never reboot, lock finalization, or skip the registry check"
+        )
 
 
 @pytest.mark.parametrize("flag", FORBIDDEN_BOOTC_FLAGS)
 def test_bootc_stage_script_rejects_dangerous_flags(flag):
-    """The exact-argv test above already pins the command, but name the
-    forbidden flags individually so a future edit that adds one fails with
-    the reason rather than a diff of two lists.
+    """Name the forbidden flags individually so a future edit that adds one
+    fails with the reason rather than a diff of two lists.
 
     Match whole tokens, including the `--soft-reboot=auto` spelling, and
-    never a bare substring: `--apply` must not be found inside a word.
+    never a bare substring: `--apply` must not be found inside a word. The
+    check runs on code lines only, so the header comment that explains why
+    these flags are absent does not trip it.
     """
-    argv = _stage_script_exec_argv()
-    offenders = [
-        token for token in argv if token == flag or token.startswith(f"{flag}=")
-    ]
-    assert not offenders, (
-        f"bootc-update-stage passes {flag}: {offenders}; the helper stages "
-        "only and must never reboot, lock finalization, or skip the "
-        "registry check"
+    code = "\n".join(_stage_script_code_lines())
+    assert not re.search(rf"(?<![\w-]){re.escape(flag)}(?:=|\b)", code), (
+        f"bootc-update-stage passes {flag}: the helper stages only and must "
+        "never reboot, lock finalization, or skip the registry check"
     )
 
 
@@ -851,6 +861,40 @@ def test_chairlift_icons_ship_system_wide():
         assert icon.stat().st_size > 0, f"empty icon: {icon.relative_to(ROOT)}"
         assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
             f"{icon.relative_to(ROOT)} is not an SVG document"
+        )
+
+
+def test_airlift_provenance_cites_the_cask_pin():
+    """The vendored ChairLift artifacts must name the tag the cask pins.
+
+    The desktop header and the brew-lifecycle doc record which upstream
+    release the icons and desktop entry were vendored from. If that citation
+    lags a cask bump, the provenance is stale: a reader diffing against the
+    cited tag trusts a release our pinned binary no longer ships. The citation
+    must equal CHAIRLIFT_SCHEMA_REF, the same constant the drift gate reads, so
+    a cask bump moves the citation and the pin together.
+    """
+    validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
+    refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
+    assert refs == ["v26.10.5"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v26.10.5, got {refs}"
+    )
+    pin = refs[0]
+
+    sources = {
+        "desktop entry": DESKTOP_FILE,
+        "brew-lifecycle doc": (
+            ROOT / "docs/skills/brew-lifecycle/references/service-mechanics.md"
+        ),
+    }
+    for name, path in sources.items():
+        text = path.read_text(encoding="utf-8")
+        assert pin in text, (
+            f"{name} does not cite the cask pin {pin}; update the vendored "
+            "ChairLift attribution to the tag the cask pins"
+        )
+        assert "alpha.2" not in text, (
+            f"{name} still cites the old alpha.2 release; replace it with {pin}"
         )
 
 

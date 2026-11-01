@@ -1,0 +1,18 @@
+[Unit]
+Description=Copy FlatPark filter where sandboxed app stores can read it
+Documentation=man:flatpak-remote-add(1)
+# remotes.d sets xa.filter=/usr/share/flatpak/flatpark.filter, which Bazaar's
+# sandbox cannot see. libflatpak falls back to repo/<remote>.filter, but only
+# writes that backup itself in flatpak_dir_modify_remote, not for remotes.d.
+# shortcut: downstream copy, drop when flatpak writes the backup for remotes.d remotes
+# Started by flatpark-filter-copy.path once the repo is initialized: a bare
+# repo/ dir holding only the filter leaves flatpak unable to open the repo.
+ConditionPathExists=/var/lib/flatpak/repo/config
+ConditionPathExists=/usr/share/flatpak/flatpark.filter
+Before=flatpak-appstream-refresh.service
+
+[Service]
+Type=oneshot
+# Stay active so the PathExists= trigger does not loop.
+RemainAfterExit=yes
+ExecStart=/usr/bin/install -m 0644 /usr/share/flatpak/flatpark.filter /var/lib/flatpak/repo/flatpark.filter

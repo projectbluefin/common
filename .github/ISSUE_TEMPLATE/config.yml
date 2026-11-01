@@ -1,11 +1,1 @@
-blank_issues_enabled: false
-contact_links:
-  - name: "Questions and troubleshooting"
-    url: https://community.projectbluefin.io/
-    about: "Ask the Bluefin community for help if you are not yet sure this is a bug."
-  - name: "How issues and PRs work here"
-    url: https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md
-    about: "What happens after you file a report or open a pull request."
-  - name: "Contributing guide"
-    url: https://docs.projectbluefin.io/contributing
-    about: "How Bluefin is built and how to contribute a change."
+blank_issues_enabled: true

@@ -5,7 +5,7 @@ just := just_executable()
 # reason; tests/test_suite_registration.bats enforces that.
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py -v
+    python3 -m pytest tests/test_hooks.py tests/test_python_install_pins.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_skill_docs.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py tests/test_flatpark_remote.py -v
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_bling.bats
@@ -23,6 +23,7 @@ test:
     bats tests/test_motd_integration.bats
     bats tests/test_clean_system_podman_path.bats
     bats tests/test_clean_system_bootc.bats
+    bats tests/test_bootc_update_stage.bats
     bats tests/test_default_just.bats
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
@@ -30,6 +31,7 @@ test:
     bats tests/test_uwelcome_profile.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
+    bats tests/test_clean_system.bats
     bats tests/test_brew_preinstall.bats
     bats tests/test_ai_tools_brewfile.bats
     bats tests/test_validate_brewfiles.bats
@@ -42,15 +44,20 @@ test:
     bats tests/test_dynamic_wallpaper_hook.bats
     bats tests/test_damask_setup.bats
     bats tests/test_system_just.bats
+    bats tests/test_bazaar_preview.bats
     bats tests/test_brew_tap_trust.bats
     bats tests/test_apps_just.bats
     bats tests/test_image_repo.bats
+    bats tests/test_booted_image.bats
+    bats tests/test_flatpak_appstream_refresh.bats
     bats tests/test_damask_service.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats
     bats tests/test_pwquality.bats
+    bats tests/test_udev_rules.bats
     bats tests/test_projectbluefin_countme.bats
     bats tests/test_toggle_devmode.bats
+    bats tests/test_compass.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:

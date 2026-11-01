@@ -95,6 +95,21 @@ uses: actions/checkout@main
 
 ---
 
+## Python tool pinning
+
+Install Python tools in workflows with `pip install -r tests/requirements.txt`.
+Every direct requirement must use an exact `==` version; Renovate can propose
+updates through its requirements-file manager. Transitive dependencies are not
+locked by this gate.
+
+`tests/test_python_install_pins.py` checks workflow `run` steps and the root
+Justfile for `pip`, `pip3`, and `python -m pip` installs, following requirements
+files recursively. It rejects loose versions, missing files, and cycles.
+The unit-test workflow runs it on workflow changes, and `just test` runs it
+locally. New installer forms or shell wrappers need matching guard fixtures.
+
+---
+
 ## Pre-commit conventions
 
 - Auto-fix hooks **modify files and abort the commit**. Re-stage changed files and rerun before retrying.
@@ -152,4 +167,4 @@ These are **hygiene gates**, not blocking CI workflow gates. The front-matter si
 | [ACTIONS-SECURITY.md](../../../ACTIONS-SECURITY.md) | Organization GitHub Actions security baseline (top-level `permissions: {}`, SHA pinning, `pull_request_target` scoping, checksum verification). |
 | [references/sha-pinning.md](references/sha-pinning.md) | Full SHA pinning policy, how to find/update SHAs, internal refs, Floating-tag guard regex and exemptions, Renovate vs pre-commit. |
 | [references/pre-commit-conventions.md](references/pre-commit-conventions.md) | Pre-commit auto-fix loop, AI commit attribution, release-state.yaml schema validation, Skill drift detection, Docs hygiene hooks. |
-| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, fork processing in the org runner, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |
+| [references/renovate-and-tools.md](references/renovate-and-tools.md) | Renovate OCI digest tracking, Renovate Actions coverage outside `.github/workflows`, fork processing in the org runner, Trivy scan-image archive input, multi-arch build matrix, Shellcheck in validate.yml, Renovate versioned-binary tracking. |

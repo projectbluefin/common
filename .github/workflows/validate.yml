@@ -57,7 +57,12 @@ jobs:
           echo "All submodules are clean."
 
       - name: Install just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+        # taiki-e/install-action resolves just from its bundled manifest;
+        # extractions/setup-just calls the releases REST API every run and
+        # exhausted the installation rate limit in merge groups (#1466).
+        uses: taiki-e/install-action@f9ed83c1523674ebae4768d47169d3068663dec4 # just
+        with:
+          tool: just
 
       - name: Check Just syntax
         shell: bash
@@ -140,7 +145,7 @@ jobs:
 
       - name: Install pre-commit
         shell: bash
-        run: pip install pre-commit
+        run: pip install -r tests/requirements.txt
 
       - name: Cache pre-commit hooks
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -70,6 +70,48 @@ hooks:
             style: suggested
     shell: exec python3 /run/host/etc/bazaar/hooks.py
 
+  - id: cursor
+    when: before-transaction
+    check-appid-regex: ^co\.anysphere\.cursor$
+    dialogs:
+      - id: cursor-warning
+        title: >-
+          Install Cursor (Host Integration)
+        body-use-markup: true
+        body: >-
+          Cursor on Bluefin is installed natively via <b>Homebrew</b> from the <b>experimental tap</b> for terminal and host SDK access.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew (Experimental)"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: antigravity
+    when: before-transaction
+    check-appid-regex: ^com\.google\.AntigravityIDE$
+    dialogs:
+      - id: antigravity-warning
+        title: >-
+          Install Antigravity (Host Integration)
+        body-use-markup: true
+        body: >-
+          Antigravity on Bluefin is installed natively via <b>Homebrew</b> for terminal and host SDK access.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
   - id: zed
     when: before-transaction
     check-appid-regex: ^dev\.zed\.Zed.*$
