@@ -1,0 +1,3 @@
+[Flatpak Preinstall org.tunaos.compass]
+Branch=stable
+IsRuntime=false
