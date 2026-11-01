@@ -197,7 +197,7 @@ def bundle_skill_text(path: Path, skill_id: str) -> str:
 def write_bundle() -> None:
     """Write the on-device bundle into system_files/shared/usr/share/ublue-os/agent."""
     catalog = build_on_device_catalog()
-    if not catalog["skills"]:
+    if not catalog["skills"] and not _bundle_skills_dir().exists() and not _bundle_index_path().exists():
         return
     skills_dir = _bundle_skills_dir()
     skills_dir.mkdir(parents=True, exist_ok=True)
@@ -229,7 +229,7 @@ def check_bundle() -> list[str]:
     """
     errors: list[str] = []
     catalog = build_on_device_catalog()
-    if not catalog["skills"]:
+    if not catalog["skills"] and not _bundle_skills_dir().exists() and not _bundle_index_path().exists():
         return errors
 
     actual = _bundle_index_path().read_text() if _bundle_index_path().exists() else None
