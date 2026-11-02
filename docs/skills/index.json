@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-31",
+  "generated_at": "2026-11-02",
   "schema_version": "1.0",
   "skills": [
     {
@@ -765,6 +765,26 @@
       "version": "1.1",
       "last_updated": "2026-10-24",
       "doc_type": "reference"
+    },
+    {
+      "id": "utah-merge-policy",
+      "name": "utah-merge-policy",
+      "one_line_purpose": "Merge routine trusted pin updates to Utah workflows automatically, keep credential changes behind a human.",
+      "entry_point": "docs/skills/utah-merge-policy.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "utah",
+        "merge",
+        "auto-merge",
+        "sensitive-path",
+        "policy",
+        "hive"
+      ],
+      "description": "The bounded policy for when Hive may merge maintenance PRs that touch sensitive paths in the Utah and utah-packages repos. Use to decide whether a trusted pin-only update can merge unattended or a credential change stays held.",
+      "version": "1.0",
+      "last_updated": "2026-11-02",
+      "doc_type": "policy"
     },
     {
       "id": "workflow-map",

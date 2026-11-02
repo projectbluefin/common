@@ -22,6 +22,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Run hive priority review at session start | [`hive-review.md`](skills/hive-review.md) |
 | Understand cross-repo agent rules | [`factory/agentic-model.md`](factory/agentic-model.md) |
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
+| Merge a routine trusted pin update to a Utah sensitive path, or hold a credential change | [`utah-merge-policy.md`](skills/utah-merge-policy.md) |
 | Understand how issues and PRs work (Prow, labels, `/commands`) | [`label-workflow.md`](skills/label-workflow.md) |
 | Draft or review a Spektacular specification and plan | [`spektacular-workflow.md`](skills/spektacular-workflow.md) |
 | Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
