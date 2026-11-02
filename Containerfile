@@ -14,7 +14,7 @@ RUN go build -ldflags="-s -w" -o /uwelcome .
 
 FROM docker.io/library/alpine:latest@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS build
 
-COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:820ec33dc2354e521bc915670625f8177a123d961121809b868e420f63c73ab8 / /out/bluefin/usr/share
+COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:94084099dbd9a6c3a8c6254410e3e12179c053fca535d23c46adb1e27372d425 / /out/bluefin/usr/share
 
 RUN apk add just curl
 
