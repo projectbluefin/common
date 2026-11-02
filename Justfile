@@ -58,6 +58,7 @@ test:
     bats tests/test_projectbluefin_countme.bats
     bats tests/test_toggle_devmode.bats
     bats tests/test_compass.bats
+    bats tests/test_admit_evidence.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
