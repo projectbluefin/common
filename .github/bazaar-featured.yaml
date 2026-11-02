@@ -1,0 +1,13 @@
+# Inputs to scripts/refresh-featured-apps.py (monthly Bluefin Recommends refresh).
+# Scoring constants live in the script; only editorial choices live here.
+# The row interleaves pins with scored apps: pin, scored, pin, scored, ...
+pins: # always in the row, in this order; exempt from scoring and exclusions
+  - com.blackmagic.Resolve
+  - com.anthropic.ClaudeDesktop
+  - com.openai.ChatGPT
+  - co.anysphere.cursor
+  - com.epicgames.eglv2
+  - ai.storyteller.wordcraft
+  - com.rustdesk.RustDesk
+deny: [] # never auto-selected; put the reason in a comment next to each id
+allow: [] # waive the free-license filter for these ids (they still have to score)

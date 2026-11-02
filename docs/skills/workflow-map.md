@@ -40,6 +40,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `scorecard.yml` | Weekly OpenSSF Scorecard analysis. Runs on schedule and on push to main. Uploads SARIF to the GitHub Security tab. | Adjusting security posture reporting |
 | `release.yml` | Monthly/versioned OCI release flow. Triggered **only** by the monthly cron (`0 0 1 * *`) and `workflow_dispatch` — there is no `workflow_run` trigger on `E2E`. A cadence guard skips the run when the last release is under 20 days old or a `do-not-merge` PR is open against `main`. Uses git-cliff for changelog generation ([common#592](https://github.com/projectbluefin/common/pull/592)). | Changing versioned layer release behavior |
 | `prow.yml` | Prow ([cncf/prow-github-actions](https://github.com/cncf/prow-github-actions) v3.0.1): `/commands` on issues and PRs, `needs-kind`, review requests from `OWNERS`, merge queue on `lgtm` + `approved`, hourly backstop. Only **Run workflow** syncs labels from `projectbluefin/.project/prow.yaml`; run it after every change to that file. See [label-workflow.md](label-workflow.md). | Changing Prow commands or the pinned Prow version |
+| `bazaar-featured-refresh.yml` | Monthly (2nd, 06:37 UTC) + manual. Scores Flathub/FlatPark apps and opens a PR that refreshes Bazaar's "Bluefin Recommends" row, using the MERGERAPTOR token so the required checks run. It never auto-merges. See [bazaar.md](bazaar.md). | Changing featured-row scoring, pins, or PR mechanics |
 
 ### Incident reporting
 
