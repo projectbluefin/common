@@ -132,3 +132,22 @@ hooks:
             string: "Install via Homebrew"
             style: suggested
     shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: steam
+    when: before-transaction
+    check-appid-regex: ^com\.valvesoftware\.Steam$
+    dialogs:
+      - id: steam-warning
+        title: >-
+          Install Steam (Gaming Mode)
+        body-use-markup: true
+        body: >-
+          Steam on Bluefin is managed via <b>Control Center</b>. Open <b>Features</b> and turn on <b>Gaming</b> to install Steam along with Proton compatibility tools, MangoHud, and controller support.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: open-chairlift
+            string: "Open Control Center (Features)"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
