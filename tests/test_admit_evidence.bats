@@ -40,7 +40,6 @@ pass_record() {
 
 @test "blocks a failed record even when it names a repair task" {
     digest="sha256:abc"
-    evidence="$(pass_record "$digest" "projectbluefin/utah#919")"
     printf '{"check":"decoder-load","status":"fail","image_digest":"%s","repair_task":"projectbluefin/utah#919"}' \
         "$digest" >"$WORKDIR/fail.json"
     evidence="$WORKDIR/fail.json"
@@ -60,12 +59,20 @@ pass_record() {
     [[ "$output" == *"status is \"missing\", not pass"* ]]
 }
 
-@test "blocks evidence captured on an older image than the candidate" {
+@test "admits when evidence is piped on stdin" {
+    digest="sha256:abc"
+
+    run bash -c "printf '%s' '$(cat "$(pass_record "$digest")")' | '$ADMIT_SCRIPT' '$digest'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "admit:"* ]]
+}
+
+@test "blocks evidence captured on a different image than the candidate" {
     evidence="$(pass_record "sha256:old")"
 
     run "$ADMIT_SCRIPT" "sha256:abc" "$evidence"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"older image"* ]]
+    [[ "$output" == *"different image"* ]]
     [[ "$output" == *"sha256:old"* ]]
     [[ "$output" == *"sha256:abc"* ]]
 }
