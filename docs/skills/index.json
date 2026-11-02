@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-31",
+  "generated_at": "2026-11-02",
   "schema_version": "1.0",
   "skills": [
     {
@@ -660,6 +660,25 @@
       "version": "1.1",
       "last_updated": "2026-08-08",
       "doc_type": "reference"
+    },
+    {
+      "id": "repair-lane",
+      "name": "repair-lane",
+      "one_line_purpose": "Resolve review findings on a repair branch instead of only refreshing it.",
+      "entry_point": "docs/skills/repair-lane.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "repair-lane",
+        "review-lifecycle",
+        "progress-contract",
+        "governance",
+        "derived-data"
+      ],
+      "description": "Move a repair branch from changes-requested to ready by fixing the reviewed findings, not by rebasing. Use when a repair branch refreshes commits instead of fixing, regenerates derived data, or records a repair-to-merge receipt.",
+      "version": "1.0",
+      "last_updated": "2026-11-02",
+      "doc_type": "policy"
     },
     {
       "id": "secrets-policy",
