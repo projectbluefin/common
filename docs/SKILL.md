@@ -25,6 +25,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Understand how issues and PRs work (Prow, labels, `/commands`) | [`label-workflow.md`](skills/label-workflow.md) |
 | Draft or review a Spektacular specification and plan | [`spektacular-workflow.md`](skills/spektacular-workflow.md) |
 | Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
+| Move a review-repaired branch to ready without only refreshing it | [`repair-lane.md`](skills/repair-lane.md) |
 | Run a monitored fix-and-land backlog sweep (`/bluefin-review`) | [`bluefin-review/SKILL.md`](skills/bluefin-review/SKILL.md) |
 | Read the static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
