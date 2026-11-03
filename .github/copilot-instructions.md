@@ -12,5 +12,5 @@ PR rules, mandatory gates, and boundaries.
 
 ## Skill routing
 
-Use [`docs/SKILL.md`](../docs/SKILL.md) to find the skill for your task, then
-load only that skill file from [`docs/skills/`](../docs/skills/).
+For optional task-specific references, search [`docs/skills/`](../docs/skills/).
+Load only what the task needs.

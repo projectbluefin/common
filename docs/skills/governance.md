@@ -87,5 +87,4 @@ the flow, labels, and commands.
   test -n "$RULESET_ID" && gh api "repos/projectbluefin/common/rulesets/$RULESET_ID" \
     --jq '.rules[] | select(.type == "pull_request") | .parameters | {required_approving_review_count, require_code_owner_review}'
   ```
-- [ ] `pre-commit run check-skill-catalog --all-files` passes.
-- [ ] `pre-commit run check-skill-index --all-files` passes.
+- [ ] `pre-commit run --all-files` passes.

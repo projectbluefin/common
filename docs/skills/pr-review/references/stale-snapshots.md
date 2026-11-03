@@ -40,8 +40,7 @@ live and record the fresh numbers in the deliverable alongside the original.
    the remaining decision to the maintainer. Do not implement a throttle,
    pause, or reorganization against numbers that no longer hold.
 4. **Date every snapshot** in the deliverable and include the regeneration
-   commands so the next reader can refresh instead of inheriting another stale
-   number (see docs/contributing/reviewer-coverage.md for the pattern).
+   commands so the next reader can refresh instead of inheriting stale numbers.
 
 ## Why `gh api search/issues`, not `gh pr list --state merged --search`
 
