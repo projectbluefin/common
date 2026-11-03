@@ -108,11 +108,11 @@ uses: actions/checkout@3d3c42e
 ```
 
 #### First-Party Actions & Reusable Workflows (`projectbluefin/*`)
-All internal workflow references within the `projectbluefin` organization (`projectbluefin/actions`, `projectbluefin/bonedigger`, `projectbluefin/testsuite`) use managed release tags (`@v1` or `@main`), NOT commit SHAs — with the single documented exception recorded below.
+All internal workflow references within the `projectbluefin` organization (`projectbluefin/actions`, `projectbluefin/testsuite`) use managed release tags (`@v1` or `@main`), NOT commit SHAs — with the single documented exception recorded below.
 
 **Why internal refs use managed tags:**
 1. **Preventing Cross-Repo Update Cascades:** Pinning internal actions to individual commit SHAs creates extreme churn: every commit to `projectbluefin/actions` would require coordinated manual PRs across 10+ downstream consumer repositories.
-2. **Eliminating the `startup_failure` Trap:** When a consumer workflow pins to an internal commit SHA that predated the addition of the called reusable workflow file, GitHub Actions terminates the run with an opaque `startup_failure: This run likely failed because of a workflow file issue` with no diagnostic error (see `bonedigger#27` and `dakota-iso#126`).
+2. **Eliminating the `startup_failure` Trap:** When a consumer workflow pins to an internal commit SHA that predated the addition of the called reusable workflow file, GitHub Actions terminates the run with an opaque `startup_failure: This run likely failed because of a workflow file issue` with no diagnostic error (see `dakota-iso#126`).
 3. **No Unmerged PR Refs:** Workflows must NEVER reference unmerged PR head commits (`refs/pull/*/head`) or ephemeral branch tips (`aa318556... # clanker-queue-rollout`). Reusable workflows must resolve to stable release tags (`@v1`) or the upstream default branch (`@main`).
 
 **Documented exception — `projectbluefin/testsuite`:** `.github/workflows/run-testsuite.yml` in this repository pins `projectbluefin/testsuite/.github/workflows/e2e.yml` to a full commit SHA with a `# main` comment rather than `@main`. The testsuite drives destructive E2E gates whose behaviour changes frequently, so the pin is deliberately held at a known-good commit and advanced by Renovate digest updates (`common#737`, `common#718`) or explicit bumps (`ci: bump testsuite pin`). This SHA pin is a superset of the managed-tag requirement (it is immutable, and `e2e.yml` is known to exist at the pinned commit, so the `startup_failure` trap does not apply), so the scanner exempts `projectbluefin/*` refs from both directions. Any other first-party ref must use a managed tag.

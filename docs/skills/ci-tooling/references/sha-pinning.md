@@ -43,34 +43,35 @@ gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.sha'
 
 ### Internal `projectbluefin/` refs — managed tags, not SHA pins
 
-**`projectbluefin/` internal workflow refs use managed floating tags (`@main` or `@v1`), not SHA pins — with two documented exceptions: the `bonedigger.yml` lifecycle retention pins and common's own `run-testsuite.yml` testsuite pin, both described below.**
+**`projectbluefin/` internal workflow refs use managed floating tags (`@main` or `@v1`), not SHA pins — with one documented exception: common's own `run-testsuite.yml` testsuite pin, described below.**
 
 The `no-floating-action-tags` pre-commit hook exempts all `projectbluefin/` refs via a negative lookahead. External refs (`actions/`, `docker/`, `taiki-e/`, etc.) are still required to be SHA-pinned.
 
-SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: every commit to `projectbluefin/actions` requires manual SHA bumps in all consumers (common, bluefin, bluefin-lts, dakota). Worse, a stale pin silently broke when the pinned commit predated the called file's existence, emitting only `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis (June 2026, bonedigger#27). The failure mode is worse than the risk of managed-tag drift. See [`ci-pitfalls.md`](../../ci-pitfalls/SKILL.md) for the full incident.
+SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: every commit to `projectbluefin/actions` requires manual SHA bumps in all consumers (common, bluefin, bluefin-lts, dakota). Worse, a stale pin silently broke when the pinned commit predated the called file's existence, emitting only `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis (June 2026). The failure mode is worse than the risk of managed-tag drift. See [`ci-pitfalls.md`](../../ci-pitfalls/SKILL.md) for the full incident.
 
 **Current state (post June 2026 cleanup):**
 
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
-| `bonedigger.yml` | bluefin, bluefin-lts, dakota, knuckle | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | full SHA retention pin (`d530767`, tag `v1`; dakota `9c5faf6`) — file removed from `main` in `bonedigger#40` (2026-09-29), so the pins still resolve and run but cannot be bumped forward |
 | `run-testsuite.yml` | common | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin (`7da50e5b6f165a4704159b0ce5a4898caff6466a`, annotated `# v1`) |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@v1` |
 
 The testsuite pin's `# v1` comment identifies the tag Renovate tracks; the pinned
 commit can lag behind the tag until an update is merged.
 
-**Note:** the `bonedigger.yml` callers and common's `run-testsuite.yml` are the
-two internal refs that are full SHA pins rather than managed floating tags. `lifecycle.yml` was removed from
-`projectbluefin/bonedigger`'s `main` (`bonedigger#40`, 2026-09-29), so each
-historical report-intake consumer pins the full SHA at which the
-workflow is retained — a retention pin, not a normal managed-tag call. This is
-distinct from the anti-pattern below: the pinned SHAs resolve to a file that
-still exists, so they do not hit the `startup_failure` cascade.
+**Note:** common's `run-testsuite.yml` is the one internal ref that is a full SHA
+pin rather than a managed floating tag. The pinned commit resolves to a file
+that still exists, so it does not hit the `startup_failure` cascade.
 
-**Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` workflow refs, or SHA-pinning `projectbluefin/bonedigger` refs for any reason other than the lifecycle retention pins noted above. When a SHA predates the file's existence in the repo, GitHub emits `startup_failure: This run likely failed because of a workflow file issue` with no further diagnosis. See [bonedigger#27](https://github.com/projectbluefin/bonedigger/issues/27).
+**Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` workflow refs.
+When a SHA predates the file's existence in the repo, GitHub emits
+`startup_failure: This run likely failed because of a workflow file issue` with
+no further diagnosis.
 
-**Trap: refs that do not contain the called file.** A valid tag or SHA does not guarantee that the requested workflow exists at that ref. Verify the exact repository, workflow path, and ref before using it. Historical report-intake callers retain `projectbluefin/bonedigger` pins. Use the repository's supported managed tag rather than an old semver tag.
+**Trap: refs that do not contain the called file.** A valid tag or SHA does not
+guarantee that the requested workflow exists at that ref. Verify the exact
+repository, workflow path, and ref before using it. Use the repository's
+supported managed tag rather than an old semver tag.
 
 ---
 
@@ -84,13 +85,13 @@ The `no-floating-action-tags` hook blocks commits of workflow files containing f
 
 ### If you narrow the exemption, include reusable-workflow subpaths
 
-If the exemption is narrowed from `projectbluefin/.*` to specific internal repos (for example `actions|bonedigger`), the negative lookahead must allow an optional subpath before `@`:
+If the exemption is narrowed from `projectbluefin/.*` to specific internal repos (for example `actions|testsuite`), the negative lookahead must allow an optional subpath before `@`:
 
 ```regex
-uses:(?!.*projectbluefin\/(?:actions|bonedigger)(?:\/[^@]*)?@).*@(main|master|latest|v[0-9]+)\b
+uses:(?!.*projectbluefin\/(?:actions|testsuite)(?:\/[^@]*)?@).*@(main|master|latest|v[0-9]+)\b
 ```
 
-The key fragment is `(?:\/[^@]*)?`. Without it, reusable workflow refs such as `projectbluefin/bonedigger/.github/workflows/sync-templates.yml@main` or `projectbluefin/testsuite/.github/workflows/e2e.yml@main` can be falsely matched as forbidden floating tags.
+The key fragment is `(?:\/[^@]*)?`. Without it, reusable workflow refs such as `projectbluefin/testsuite/.github/workflows/e2e.yml@main` or `projectbluefin/actions/.github/workflows/build.yml@v1` can be falsely matched as forbidden floating tags.
 
 ### What the floating-tag hook blocks
 
@@ -107,7 +108,6 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@v1  # CORRECT — inter
 
 All `projectbluefin/` internal refs are exempt from the hook. Current usage:
 - `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
-- `projectbluefin/bonedigger` — the `lifecycle.yml` ref is a full SHA retention pin (the file was removed from `main` in `bonedigger#40`), not a managed floating tag
 - `projectbluefin/testsuite` — `@v1` (bluefin, bluefin-lts, dakota `run-testsuite.yml`); common's `run-testsuite.yml` is a full SHA pin (`7da50e5b`, annotated `# v1`)
 
 External actions (everything outside `projectbluefin/`) must use full SHA pins.
