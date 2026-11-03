@@ -30,14 +30,23 @@ bonedigger has two functions:
    issue so triage can see how many machines are affected. Confirmations are
    evidence for a human priority call, not a label transition.
 
-**Packaging note:** in common, keep `ujust report` as a thin recipe wrapper in
-`system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` and put the
-real shell implementation in `/usr/libexec/bonedigger-report`. Keep the
-`BONEDIGGER_VERSION` line in the Justfile because Renovate watches that path.
+**Packaging note:** in common, `ujust report` is a thin recipe wrapper in
+`system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` that launches
+the Report a Problem app through
+`/home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper` — the same launcher the
+shipped `io.projectbluefin.Report.desktop` uses, so Homebrew's `gh` is on PATH.
+The terminal client still ships at `/usr/libexec/bonedigger-report` for direct
+use. Keep the `BONEDIGGER_VERSION` line in the Justfile because Renovate watches
+that path; it pins the shipped terminal client.
 
 ### Creating a report
 
-`ujust report` begins by asking the user's intent: report a bug, get help,
+`ujust report` opens the Report a Problem app (`projectbluefin/bluefin-report`),
+which runs its own collection, review, and publishing steps. The rest of this
+section describes the terminal client, which still ships and is invoked directly
+as `/usr/libexec/bonedigger-report`.
+
+The client begins by asking the user's intent: report a bug, get help,
 request a feature, or confirm an existing issue. Help points to Bluefin
 Discussions without creating an issue. Feature requests always target
 `projectbluefin/common`; bugs use the image mapping below and show that target
@@ -68,9 +77,9 @@ Selected smart logs are
 published to a public gist only after that preview and consent. `gh` is
 required and authenticated; if it is absent, the user can consent to
 `brew install gh`. Failed or declined submissions retain a draft and print its
-exact `ujust report --resume …` command. The visible `ujust report` report
-heading remains the intake compatibility marker rather than making issue
-creation depend on a label.
+exact `/usr/libexec/bonedigger-report --resume …` command. The visible
+`ujust report` report heading remains the intake compatibility marker rather
+than making issue creation depend on a label.
 
 Common uses its own intake and acceptance contract: do not request retired
 numbered queue labels there. Machine-analysis consent does not accept
@@ -80,10 +89,10 @@ data, not active queue labels. See [`label-workflow.md`](../../label-workflow.md
 
 ### Confirm an existing issue
 
-Use `ujust report --confirm <issue-number-or-url>` when the current system is
-affected by an existing issue. This mode previews and posts a lightweight
-fingerprint (image, version/digest, kernel, architecture, and failed units)
-with `gh issue comment`. It does not collect OTel data, create a gist, or
+Use `/usr/libexec/bonedigger-report --confirm <issue-number-or-url>` when the
+current system is affected by an existing issue. This mode previews and posts a
+lightweight fingerprint (image, version/digest, kernel, architecture, and failed
+units) with `gh issue comment`. It does not collect OTel data, create a gist, or
 derive an identifier from `machine-id`. A positive issue number uses the
 booted image's normal routing: Bluefin and Bluefin LTS now fall through to the
 caller default, which for bug reports is `projectbluefin/common` (both former

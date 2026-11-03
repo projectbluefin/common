@@ -644,7 +644,7 @@ EOF
         DRAFT_DIR="$2"
         PROFILE_FILES=("$2/networking.md")
         # Calling publish_smart_logs several times mimics a failed report
-        # that the user retries via "ujust report --resume".
+        # that the user retries via "/usr/libexec/bonedigger-report --resume".
         publish_smart_logs
         publish_smart_logs
         publish_smart_logs
@@ -827,7 +827,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [ -f "$WORKDIR/draft/issue.md" ]
-    [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
+    [[ "$output" == *"Resume with: /usr/libexec/bonedigger-report --resume $WORKDIR/draft"* ]]
 }
 
 @test "cancelling automation selection preserves the bug draft" {
@@ -851,7 +851,7 @@ EOF
 
     [ "$status" -eq 0 ]
     [ -f "$WORKDIR/draft/issue.md" ]
-    [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
+    [[ "$output" == *"Resume with: /usr/libexec/bonedigger-report --resume $WORKDIR/draft"* ]]
 }
 
 @test "feature requests draft against projectbluefin common" {

@@ -8,9 +8,10 @@ Part of [bonedigger](../SKILL.md) — lessons learned from production incidents,
 
 `/usr/libexec/bonedigger-report` stores a submission draft in the user's state
 directory before any public upload. On a failed or declined submission, retain
-that draft and print its exact `ujust report --resume …` command so reports are
-not lost. After a successful issue submission, copy the report body from the
- draft into `$XDG_STATE_HOME/ujust-report/last/` before removing the draft. Keep
+that draft and print its exact `/usr/libexec/bonedigger-report --resume …`
+command so reports are not lost. After a successful issue submission, copy the
+report body from the draft into `$XDG_STATE_HOME/ujust-report/last/` before
+removing the draft. Keep
  copy operations conditional on each source file: optional report artifacts may
  not exist, and `cp` must never make a successful report fail with `cannot stat`.
 

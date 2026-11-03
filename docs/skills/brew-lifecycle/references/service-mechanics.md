@@ -327,7 +327,8 @@ the loaded schemas still accept the config.
 
 ## Confirming the service is working — bonedigger-report
 
-`bonedigger-report` (`ujust report`) captures `systemctl list-units --state=failed`.
+`ujust report` — the Report a Problem app, and the terminal client at
+`/usr/libexec/bonedigger-report` — captures `systemctl list-units --state=failed`.
 If `brew-preinstall.service` fails for a user, it appears in the **Failed Systemd
 Units** section of their gist report. This is the primary signal available today.
 

@@ -25,8 +25,12 @@ metadata:
 
 ## When to Use
 
-Use when changing `ujust report`, its confirmation flow, bonedigger intake, or
+Use when changing the `ujust report` launcher, the terminal client
+(`/usr/libexec/bonedigger-report`), its confirmation flow, bonedigger intake, or
 the labels that route user reports into the factory.
+
+`ujust report` launches the Report a Problem app (`projectbluefin/bluefin-report`);
+the client behavior described below belongs to `/usr/libexec/bonedigger-report`.
 
 ## When Not to Use
 

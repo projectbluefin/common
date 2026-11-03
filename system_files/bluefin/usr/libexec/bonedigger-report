@@ -26,7 +26,7 @@ SELECTED_PROFILES=()
 PROFILE_FILES=()
 
 usage() {
-    printf 'Usage: ujust report [--confirm <issue-number-or-url>] [--resume <draft-directory>]\n' >&2
+    printf 'Usage: /usr/libexec/bonedigger-report [--confirm <issue-number-or-url>] [--resume <draft-directory>]\n' >&2
 }
 
 parse_args() {
@@ -645,7 +645,7 @@ keep_draft() {
     local draft_dir="$1"
 
     printf '\nDraft preserved at: %s\n' "$draft_dir"
-    printf 'Resume with: ujust report --resume %q\n' "$draft_dir"
+    printf 'Resume with: /usr/libexec/bonedigger-report --resume %q\n' "$draft_dir"
 }
 
 persist_local_copy() {
@@ -997,7 +997,7 @@ main() {
         "Feature request") start_feature_request ;;
         "Get help") show_help ;;
         "Confirm an existing report")
-            printf 'Use: ujust report --confirm <issue-number-or-url>\n'
+            printf 'Use: /usr/libexec/bonedigger-report --confirm <issue-number-or-url>\n'
             ;;
     esac
 }

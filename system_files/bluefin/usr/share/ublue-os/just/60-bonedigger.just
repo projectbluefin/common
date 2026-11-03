@@ -3,11 +3,9 @@
 # bonedigger version v0.2.0
 BONEDIGGER_VERSION := "v0.2.0"
 
-export BONEDIGGER_BRAND := "🫐 Bluefin Bug Report"
-
-# Collect a previewed, privacy-respecting report and create an issue directly with gh.
+# Open the Report a Problem app (bluefin-report) to collect, review, and publish.
+# Same launcher the shipped io.projectbluefin.Report.desktop entry uses: the
+# wrapper puts Homebrew's gh on PATH.
 [group('System')]
 report *args:
-    BONEDIGGER_VERSION="{{ BONEDIGGER_VERSION }}" \
-    BONEDIGGER_BRAND="${BONEDIGGER_BRAND}" \
-    /usr/libexec/bonedigger-report {{ args }}
+    /home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper {{ args }}
