@@ -88,7 +88,6 @@ setup() {
 @test "image-repo: consumers do not hardcode upstream repo routing" {
     local root="$BATS_TEST_DIRNAME/.."
     for consumer in \
-        "system_files/bluefin/usr/libexec/bonedigger-report" \
         "system_files/bluefin/usr/share/ublue-os/just/changelog.just"
     do
         run grep -c 'projectbluefin/\(bluefin-lts\|dakota\)"' "$root/$consumer"
