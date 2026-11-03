@@ -1,139 +1,46 @@
-# Factory Improvement — Loop Detail
+# Scoped factory audit reference
 
-Part of [factory-improvement](../SKILL.md) — full MEASURE/TRIAGE/IMPLEMENT/CAPTURE/VERIFY commands, E2E gate matrix, and documentation single-source-of-truth table.
+Optional detail for [factory-improvement](../SKILL.md).
 
----
+## Finding evidence and work
 
-## The Improvement Loop — Full Detail
-
-```
-MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
-```
-
-### MEASURE
+For a requested factory assessment, inspect the affected workflows, recent runs,
+and existing issues before deciding a gap exists. These discovery queries show
+Prow issue state; they do not prove a task is ready to implement:
 
 ```bash
-~/src/hive-status
-
-# Everything awaiting a human (legacy repos: 1-triage; Prow repos: needs-human)
 gh search issues --label "needs-human" --owner projectbluefin --state open \
   --json number,title,repository
-
-# Work already accepted (legacy repos: 3-clanker-queue; Prow repos: triage/accepted)
 gh search issues --label "triage/accepted" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
-> Common, ChairLift, and the printer apps use Prow labels (`needs-human`,
-> `triage/accepted`, `kind/*`, `priority/*`), not `1-triage` or
-> `3-clanker-queue` — see [`../../label-workflow.md`](../../label-workflow.md).
+Verify the target repository's local acceptance rules and current issue before
+acting. Prow work requires `triage/accepted`, no `needs-human`, and no `blocked`
+or `hold`; other repositories may use different rules. Do not copy numbered
+legacy queues or self-accept a discovered gap. Maintainers own prioritization.
 
-### TRIAGE
+## Choosing an improvement
 
-For each open gap:
-- Human gate? → **SKIP** (log it, do not touch)
-- Doc gap? → **IMMEDIATE** (cheapest fix, push directly to main)
-- CI/tooling gap? → file as a GitHub issue and let triage route it
-- Cross-repo gap? → assess blast radius before acting
+Separate a human decision from a mechanical defect. For a cross-repository
+change, identify consumers and blast radius first. Implement only accepted,
+in-scope work, through the target repo's branch/PR path; documentation has no
+direct-main exception. Do not turn a small fix into infrastructure uniformity,
+mandatory retries, or a documentation migration.
 
-> Do **not** self-apply a queue label. Triage and queue admission are human
-> decisions; agents file the issue and stop.
+An actionable out-of-scope gap can be filed with its impact and expected outcome
+through normal issue triage. Check for an existing issue before duplicating it.
+Do not maintain stale backlog lists or completed-audit statistics in skills.
 
-### IMPLEMENT
+## E2E coverage
 
-- Work highest-blast-radius gap first
-- Prefer: doc fix > CI change > code change
-- Max 4 open PRs at once
-- Always `just check` + `pre-commit run --all-files` before commit
+Common's workflows to inspect are `pr-e2e.yml` (composed image and common suite),
+`e2e.yml` (post-merge), and `promotion-candidate-e2e.yml` (promotion candidate).
+For image repositories, also inspect post-merge E2E, promotion smoke checks,
+and upgrade coverage, not just PR validators. Read current workflow triggers,
+required checks, and promotion configuration: advisory E2E is not a blocking
+gate, and schedules or gate requirements can differ between repositories.
 
-### CAPTURE
-
-When you discover a gap:
-
-1. File a GitHub issue in `projectbluefin/common`
-2. Write a clear description — what is broken, what the fix looks like, whether it's automatable
-3. Stop. Do not self-apply a queue label — triage and queue admission are human decisions
-
-```bash
-# Example: file a factory CI gap
-gh issue create --repo projectbluefin/common \
-  --title "ci: pre-commit not wired in testsuite" \
-  --body "..."
-```
-
-### VERIFY
-
-Would a fresh agent reading only the skills avoid the gap just closed?
-If no → the skill is still incomplete.
-
----
-
-## E2E Gate Matrix
-
-| Repo | Pre-merge | Post-merge | Promotion |
-|---|---|---|---|
-| common | `pr-e2e.yml` (composed + common suite) | `e2e.yml` | `promotion-candidate-e2e.yml` |
-| bluefin | PR smoke gate | post-merge common suite | Tuesday 06:00 UTC, N=7 floor, broad e2e suite |
-| bluefin-lts | PR validation (`pr-testsuite.yml`) + advisory e2e (`pr-e2e.yml`) | post-merge e2e | upgrade-test + failure issue reporting |
-| dakota | BST graph validation (`bst show`) | post-merge publish gate | Tuesday 06:00 UTC, N=7 floor, smoke+common e2e suite |
-
-Gaps in this matrix = testing blind spots. File issues for missing gates.
-
----
-
-## Documentation Single-Source-of-Truth
-
-Each rule must exist in exactly ONE location. Other files should have a one-line pointer.
-
-| Rule | Canonical location |
-|---|---|
-| ublue-os prohibition | `common/AGENTS.md` |
-| Issue/PR flow, labels, Prow commands | `docs/skills/label-workflow.md` |
-| PR comment policy | `docs/factory/agentic-model.md` |
-| Branch targets by repo | `docs/factory/agentic-model.md` |
-| Session start ritual | `common/AGENTS.md` (+ pointer in agentic-model.md) |
-| Task→skill routing | `docs/SKILL.md` |
-
----
-
-## Finding Open Gaps
-
-Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this doc — they drift. Always query GitHub for the current state:
-
-```bash
-# Everything awaiting a human (legacy repos: 1-triage; Prow repos: needs-human)
-gh search issues --label "needs-human" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# Work already accepted (legacy repos: 3-clanker-queue; Prow repos: triage/accepted)
-gh search issues --label "triage/accepted" --owner projectbluefin --state open \
-  --json number,title,repository
-```
-
-> Common, ChairLift, and the printer apps use Prow labels (`needs-human`,
-> `triage/accepted`, `kind/*`, `priority/*`), not `1-triage` or
-> `3-clanker-queue` — see [`../../label-workflow.md`](../../label-workflow.md).
-
----
-
-## Automation Audit — completed 2026-06-11
-
-All 7 automation phases deployed. The audit directory has been removed. Key outcomes:
-
-| Measure | Result |
-|---|---|
-| Workflow automation | ~97% (124 workflows, 7 repos) |
-| Human gates | 4 intentional (promotion review, actions merge, priority assignment, stale PR unclaim) |
-| Supply chain | Keyless OIDC + SBOM + SLSA L2 live ([common#595](https://github.com/projectbluefin/common/pull/595)) |
-| C1 reusable-promote | dakota ✅, bluefin-lts ✅, **bluefin pending** ([common#584](https://github.com/projectbluefin/common/issues/584)) |
-
----
-
-## Session Close
-
-After each improvement session:
-
-1. For each gap discovered: file a GitHub issue (see CAPTURE above)
-2. For significant improvements shipped: update the relevant skill file in `docs/skills/`
-
-Do **not** maintain gap lists or changelogs in this skill file or anywhere in the repo. GitHub issues are the live backlog; `docs/skills/` is the knowledge base.
+Validate the actual improved behavior with the target repository's existing
+checks and report results and remaining blockers. Correct task-relevant docs
+when necessary; no compulsory capture/verify loop or session-close skill update.

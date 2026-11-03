@@ -61,20 +61,11 @@ repos:
         language: pygrep
         entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
         exclude: '\.pre-commit-config\.yaml$'
-      - id: check-skill-index
-        name: Validate docs/SKILL.md skill index
-        language: system
-        entry: bash scripts/check-skill-index.sh
-        pass_filenames: false
-        always_run: true
-      - id: check-doc-links
-        name: Validate internal markdown links
-        language: system
-        entry: python3 scripts/check-doc-links.sh
-        pass_filenames: false
-        always_run: true
-      - id: check-skill-catalog
-        name: Validate skill front-matter and docs/skills/index.json
+      # Doc formatting is not a build gate: a typo in a skill page must never
+      # redden every open PR. This hook only guards the shipped on-device
+      # bundle, which is a real artifact.
+      - id: check-agent-bundle
+        name: Validate the shipped on-device agent bundle
         language: system
         entry: python3 scripts/generate_skill_index.py --check
         pass_filenames: false

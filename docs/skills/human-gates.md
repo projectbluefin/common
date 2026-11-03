@@ -12,151 +12,45 @@ status: active
 dependencies: []
 tags: [gates, approval, security]
 description: >-
-  The four human decision gates — Design, Security, Breakage, and Merge —
-  when an agent must stop and request human input. Use when uncertain whether
-  a change requires human review, or to verify evidence requirements before
-  opening a PR.
+  Use when a change needs a human decision or when operating a
+  maintainer-controlled PR review tool.
 metadata:
   type: reference
 ---
 
-# Human Decision Gates
+# Human decision gates
 
-Agents implement autonomously **except** at these four gates. At each gate, stop work and request human input explicitly. Never guess past a gate.
+[AGENTS.md](../../AGENTS.md) defines Design, Security, Breakage, and Merge gates.
+When one applies, stop the affected work and present the proposed change,
+impact, alternatives, evidence, and decision needed. Wait for explicit approval;
+do not grant yourself acceptance or manipulate holds to proceed. If the gate
+is unclear, ask the maintainer rather than guessing.
 
-## Contents
-- [The Four Gates](#the-four-gates)
-- [How to Signal a Gate](#how-to-signal-a-gate)
-- [Verification Evidence Requirement](#verification-evidence-requirement)
-- [When in Doubt](#when-in-doubt)
+## Product decisions
 
----
+Account/identity models, user-visible defaults, and features such as family
+safety need a maintainer-approved specification before merge. It should cover
+affected products, alternatives, threat/UX impact, upgrade and rollback,
+verification, and the maintainer's choice; agents do not choose product policy.
 
-## The Four Gates
+The `systemd-homed` decision in
+[common#1050](https://github.com/projectbluefin/common/issues/1050) holds
+[dakota#962](https://github.com/projectbluefin/dakota/pull/962) until the product
+decision and evidence are complete. Relevant hazards: subvolume storage alone
+does not encrypt homes; switching images does not migrate existing homes; and
+rollback to an image without homed can strand users. Account defaults and
+parental-controls removal require Design, Security, and Breakage approval.
 
-### 1. Design Gate
+## Maintainer-controlled review tools
 
-**Stop when:** You are about to make an architecture change, introduce a new subsystem, or change behavior that is visible to users.
+A tool executing a merge or close on a maintainer's explicit **per-item
+keypress** is the human acting at the gate, not permission for agent self-merge.
+The reviewed `pr-review` card loop allows one keypress per card, never a
+confirm-all batch. GitHub protections must still hold; closes also require
+per-item confirmation because GitHub does not enforce review gates on closing.
 
-Examples:
-- Changing how images are built or composed
-- Adding a new pipeline stage or automation system
-- Changing defaults that affect what users see or can do
-- Restructuring the repo layout or CI model
-
-**Action:** Describe your proposed design clearly: what you're proposing, why, and what you're uncertain about. Ask for human approval before writing code or opening a PR.
-
-**Product-defining specifications.** Changes to an account/identity model,
-user-visible default, or shipped feature such as family safety require a
-maintainer-approved specification before the associated PR is approved for merge.
-Common PRs use native review state; other repositories follow their local review
-lifecycle. The specification records affected products, alternatives, threat
-and UX impact, upgrade/rollback, verification, and the maintainer's choice.
-Agents frame those choices; maintainers decide. A draft or absent
-specification leaves the PR at the human gate, not merely waiting for review
-time.
-The pending [`systemd-homed` specification](../specifications/systemd-homed-default.md)
-holds [dakota#962](https://github.com/projectbluefin/dakota/pull/962) until
-[common#1050](https://github.com/projectbluefin/common/issues/1050)'s
-product decision and evidence are complete.
-
----
-
-### 2. Security Gate
-
-**Stop when:** Your change touches authentication, signing, supply chain, secrets handling, or third-party package sources.
-
-Examples:
-- Adding a new COPR repo or third-party RPM source
-- Changing cosign or SBOM logic
-- Adding or modifying secrets in workflows
-- Changing how packages are verified or pinned
-- Any change to the signing or attestation pipeline
-
-**Action:** Describe exactly which security property is affected and what your proposed approach preserves or changes. Ask for explicit human approval before opening any PR. Security changes require maintainer review regardless of how minor they appear.
-
----
-
-### 3. Breakage Gate
-
-**Stop when:** Your change removes or renames a public input, changes a default that consuming repos depend on, or could break `bluefin`, `bluefin-lts`, `dakota`, `aurora`, or `bazzite`.
-
-Examples:
-- Renaming or removing a workflow input used by downstream callers
-- Changing a system file path that other scripts reference
-- Modifying `projectbluefin/actions` in a way that could break consumers
-- Changing a dconf key or GSettings schema that affects downstream images
-
-**Action:** Identify all affected consumers before opening the PR. List them in the PR description. Confirm no consumer will silently break. If cross-repo coordination is needed, note that explicitly.
-
-> ⚠️ `common` changes propagate to ALL downstream variants at next build. A broken `system_files/shared/` change breaks `bluefin`, `bluefin-lts`, AND `dakota` simultaneously.
-
----
-
-### 4. Merge Gate
-
-**Stop when:** Your PR is ready for final review and merge.
-
-This gate is always human. CI passing plus an approving review from a human reviewer is required before merge. Auto-merge fires only after both conditions are met.
-
-Agents never self-merge, never bypass branch protection, and never force-push to a protected branch.
-
-This gate binds agents, not the maintainer's own hands. A review tool that
-executes a merge or close only on the maintainer's explicit per-item keypress
-— with rulesets and branch protection still enforced by GitHub — is the human
-acting at the gate, not an agent self-merging. The reviewed vehicle is the
-`pr-review` card loop: one keypress per card, never a confirm-all prompt
-spanning items. Close carries the same weight as merge — GitHub enforces
-nothing on a close — so this carve-out covers keypress-confirmed closes only;
-closing pull requests without a per-item keypress is agent mutation of
-human-visible state and stays forbidden. Arming auto-merge
-(`gh pr merge --auto`) on the keypress is the same human decision deferred
-until checks pass; it is in scope only pinned with `--match-head-commit` to the
-head SHA captured alongside the diff the human reviewed — not to a head re-read
-at keypress time — so drift between review and landing fails
-server-side instead of merging unreviewed code. What remains forbidden for
-any tool: `--admin` overrides, submitting an approving review, and any
-non-interactive batch mutation.
-
----
-
-## How to Signal a Gate
-
-When you hit a gate:
-
-1. Stop. Present what you've done (branch, diff) and what decision is needed — do NOT open a PR yet.
-2. Describe the gate clearly:
-   ```
-   Hitting the Security Gate — need human approval before opening a PR.
-
-   Proposed change: [describe it]
-   Security property affected: [what it is]
-   My approach: [what you're proposing]
-   Alternative approaches: [if any]
-   ```
-3. Add the `blocked` label to the related issue (not a new PR comment).
-4. Wait for explicit human approval before opening a PR.
-
----
-
-## Verification Evidence Requirement
-
-Before removing draft status and requesting formal review, ALL of the following must be true:
-
-- [ ] CI is passing (link the run in the PR description)
-- [ ] If no automated test covers the change — describe how you manually verified it
-- [ ] Skill file update committed in **this same PR** (not a follow-up)
-- [ ] PR title follows Conventional Commits format (`feat:`, `fix:`, `docs:`, etc.)
-- [ ] Both attribution trailers present on every AI-authored commit:
-  ```
-  Assisted-by: <Model> via GitHub Copilot
-  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-  ```
-
-Do not request review until all five are checked. A PR without evidence is not ready.
-
----
-
-## When in Doubt
-
-If you are uncertain whether something hits a gate — it does. Describe what you're doing and what you're uncertain about, and ask. A short human answer costs less than a wrong implementation. Do not open a PR speculatively.
+Arming auto-merge on that keypress must use `--match-head-commit` with the head
+SHA captured alongside the diff the human reviewed, not a head re-read at
+keypress time. Drift must fail server-side rather than land unreviewed code.
+Admin overrides, submitting an approving review, and non-interactive batch
+mutation remain forbidden.
