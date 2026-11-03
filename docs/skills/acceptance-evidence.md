@@ -12,11 +12,9 @@ status: active
 dependencies: []
 tags: [acceptance, evidence, hardware, promotion, hive]
 description: >-
-  Acceptance evidence classification for promotion candidates. Use when
-  deciding whether an acceptance check can run in a CI VM, when recording the
-  physical-only exception for a remaining issue, or when Hive needs to acquire
-  boot/update/rollback and desktop evidence without an operator dispatching
-  every run.
+  Acceptance evidence for promotion candidates. Use when deciding whether a
+  check can run in a CI VM, recording a physical-only exception, or having
+  Hive gather boot/update/rollback and desktop evidence without an operator.
 metadata:
   type: runbook
 ---
@@ -114,6 +112,6 @@ not from an agent editing a workflow.
 ## Related paths
 
 - Which checks need a real device: [`hardware-testing.md`](./hardware-testing.md)
-- What already runs in CI/VMs: [`e2e-ci.md`](./e2e-ci.md)
+- What already runs in CI/VMs: [`e2e-ci.md`](./e2e-ci/SKILL.md)
 - When to stop and ask a human: [`human-gates.md`](./human-gates.md)
 - Issue this records against: projectbluefin/common#1614

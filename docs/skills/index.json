@@ -1,7 +1,26 @@
 {
-  "generated_at": "2026-11-02",
+  "generated_at": "2026-11-03",
   "schema_version": "1.0",
   "skills": [
+    {
+      "id": "acceptance-evidence",
+      "name": "acceptance-evidence",
+      "one_line_purpose": "Record which acceptance checks are automatable in CI/VMs and which are physical-only.",
+      "entry_point": "docs/skills/acceptance-evidence.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "acceptance",
+        "evidence",
+        "hardware",
+        "promotion",
+        "hive"
+      ],
+      "description": "Acceptance evidence for promotion candidates. Use when deciding whether a check can run in a CI VM, recording a physical-only exception, or having Hive gather boot/update/rollback and desktop evidence without an operator.",
+      "version": "1.0",
+      "last_updated": "2026-11-02",
+      "doc_type": "runbook"
+    },
     {
       "id": "bazaar",
       "name": "bazaar",
