@@ -37,7 +37,7 @@ the source tree assume a checkout, not this image.
 
 - Editing Bazaar config in `system_files/bluefin/etc/bazaar/`
 - Porting curated-page structure across Bazaar schema versions
-- Changing Bazaar hook behavior for app install interception (JetBrains, VS Code/Codium, Zed, Cursor, Antigravity)
+- Changing Bazaar hook behavior for app install interception (JetBrains, VS Code/Codium, Zed, Cursor, Antigravity, Steam)
 - Adding or changing banner images (JXL→PNG conversion pipeline)
 - Validating Bazaar behavior locally before opening a PR
 - Modifying the background `bazaar.service` systemd service definition
@@ -61,6 +61,10 @@ the source tree assume a checkout, not this image.
 | `system_files/shared/usr/share/flatpak/flatpark.filter` | FlatPark ref filter excluding Flathub duplicate IDs |
 | `tests/test_flatpark_remote.py` | Remote descriptor and deduplication filter integrity test |
 | `system_files/shared/usr/lib/systemd/system/flatpark-filter-copy.{path,service}` | Once `/var/lib/flatpak/repo/config` exists, copies `flatpark.filter` into `/var/lib/flatpak/repo/` so sandboxed Bazaar can read it (libflatpak fallback path) |
+| `.github/bazaar-featured.yaml` | Pins, vetoes (`deny`) and license waivers (`allow`) for the monthly Recommends refresh |
+| `scripts/refresh-featured-apps.py` | Scores Flathub + FlatPark apps and rewrites the Recommends row |
+| `.github/workflows/bazaar-featured-refresh.yml` | Monthly (2nd, 06:37 UTC) + manual run that opens the refresh PR |
+| `tests/test_refresh_featured_apps.py` | Offline scoring, selection and rewrite tests |
 
 ## Remote Precedence and App Store Hierarchy
 
@@ -80,6 +84,10 @@ Antigravity uses `ublue-os/tap/antigravity-linux` from `ide.Brewfile`.
 Pass Cursor's experimental tap to the handler so it taps and trusts the same
 source that supplies the cask. Keep Cancel as the default and intercept only
 installs; updates and removals must pass through.
+
+### Developer Experience redirection (`run-devmode`)
+
+Every intercepted IDE dialog (`jetbrains-toolbox` plus each `IDE_HOOKS` entry) presents a `run-devmode` option. Choosing it executes `spawn_chairlift_dx_mode()`, launching ChairLift directly to its Developer Mode toggle screen via `flatpak-spawn --host /home/linuxbrew/.linuxbrew/bin/chairlift-wrapper --dx-mode`. `--dx-mode` first shipped in ChairLift v26.10.11 (projectbluefin/chairlift#629); older releases exit 1 with `Unknown option`, so keep `ARG CHAIRLIFT_RELEASE` and the `projectbluefin/tap` cask at or above it.
 
 ## Curated schema specification
 
@@ -115,6 +123,18 @@ rows:
 
 Note: Legacy Bazaar releases (`v0.8.2` and older) used a root-level `css:` block and `rows: - sections:`, which is deprecated upstream and rejected by modern Bazaar releases.
 
+## Monthly "Bluefin Recommends" refresh
+
+The first section's list is rewritten monthly by `bazaar-featured-refresh.yml`:
+
+- **Row:** 12 apps. The `pins` in `.github/bazaar-featured.yaml` (big-name apps) interleave with the scored slots: pin, scored, pin, scored, ... Change pins by PR to that file.
+- **Score (hotness, not size):** `0.60·growth + 0.25·newness + 0.15·installs`, with each term a percentile within its own store (Flathub, FlatPark). Newness fades to 0 over two years. Incumbents get +0.15, and at most 4 new apps are added per month.
+- **Eligible for scored slots:** FOSS (or listed in `allow`), updated within the last 365 days (Flathub), above the install floor, at most 2 FlatPark apps, and not preinstalled, blocklisted, FlatPark-filtered, in `deny`, or present in another curated section.
+- **Veto:** add the ID to `deny` and re-run the workflow (Actions, then **Run workflow**).
+- **Dry run:** `python3 scripts/refresh-featured-apps.py --dry-run --report /tmp/featured.md`.
+- **Failure means no PR:** if any source is down, stale or returns HTML, the script exits non-zero.
+- **Merging:** the PR is opened with the MERGERAPTOR App token, so the required checks run. That App can bypass the review ruleset, so the workflow must **never** enable auto-merge. Prow merges after a human `/lgtm` and `/approve`.
+
 ## Core Process: Local Preview Workflow
 
 The curated layout references native JXL banners from the `bluefin-branding` submodule. The local preview recipes copy the curated configuration and JXL banners to `/etc/bazaar/` on the host:
@@ -135,9 +155,10 @@ ujust bazaar-preview /path/to/common
 - Editing curated content without local preview causes UI regressions to slip through.
 - Copying Aurora/Bazaar examples directly can leave non-Bluefin branding or links.
 - Changing hook dialog/response IDs must be mirrored in tests to avoid silent behavior drift.
-- Adding a YAML hook without a matching `IDE_HOOKS` entry silently passes through instead of redirecting the install.
+- Adding a YAML hook without a matching `hooks.py` dispatch branch (`IDE_HOOKS` or an explicit `hook_id` case) silently passes through instead of redirecting the install.
 - Bazaar denylist entries go in `blocklist.yaml` under `blocklists[].block`,
-  using the exact Flatpak app ID; remove matching curated entries too.
+  using the exact Flatpak app ID; remove matching curated entries too. Blocklisted
+  apps are hidden from discovery, so their `before-transaction` hooks never fire.
 
 ## Red Flags
 
@@ -149,5 +170,5 @@ ujust bazaar-preview /path/to/common
 Before declaring a Bazaar task complete, ensure:
 - [ ] `just check` passes.
 - [ ] `pre-commit run --all-files` passes.
-- [ ] All python unit tests (`tests/test_curated_config.py`, `tests/test_hooks.py`) are green.
+- [ ] All python unit tests (`tests/test_curated_config.py`, `tests/test_hooks.py`, `tests/test_refresh_featured_apps.py`) are green.
 - [ ] Banners in the preview list have `.jxl` extensions.

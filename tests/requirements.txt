@@ -4,5 +4,4 @@ pre-commit==4.7.0
 pytest==9.2.0
 pytest-cov==7.1.0
 pyyaml==6.0.3
-jsonschema==4.26.0
 numpy==2.5.4

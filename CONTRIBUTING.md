@@ -1,58 +1,25 @@
-# CONTRIBUTING
+# Contributing
 
-Thanks for helping out!
+Thanks for helping out! Start with the
+[Bluefin contributing guide](https://docs.projectbluefin.io/contributing).
+The [architecture overview](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture)
+explains how the image repositories fit together.
 
-Check the [Contributing Guide](https://docs.projectbluefin.io/contributing) for contribution information.
+Common holds shared configuration. Image-specific changes belong in
+[bluefin](https://github.com/projectbluefin/bluefin),
+[bluefin-lts](https://github.com/projectbluefin/bluefin-lts), or
+[dakota](https://github.com/projectbluefin/dakota); Aurora-compatible shared
+configuration lives in `system_files/shared/` here.
 
-This repository is the **shared OCI layer** consumed by all Bluefin image variants. Changes here propagate to `bluefin`, `bluefin-lts`, and `dakota`. Stay surgical — see the scope warning in [`AGENTS.md`](./AGENTS.md). Make sure you also check [the architecture diagram](https://docs.projectbluefin.io/contributing#understanding-bluefins-architecture).
+Use the bug-report or feature-request form; maintainers decide what is accepted.
+Reporters can reply normally without learning labels or slash commands.
+The [repo contract](AGENTS.md) covers builds, accepted agent work, and PR gates.
 
-- For Bluefin-specific image changes: [projectbluefin/bluefin](https://github.com/projectbluefin/bluefin)
-- For LTS image changes: [projectbluefin/bluefin-lts](https://github.com/projectbluefin/bluefin-lts)
-- For dakota changes: [projectbluefin/dakota](https://github.com/projectbluefin/dakota)
-- For shared system config (Aurora-compatible files): edit `system_files/shared/` directly in this repo
+PR checks include `Validate PR`, `Build`, `Unit Tests`, and `PR E2E`, without
+expensive VM boots. Full layer validation (the `common` behave suite in
+[testsuite](https://github.com/projectbluefin/testsuite)) runs on merges to main.
 
-## How this repo uses agents
-
-This repo is **human-first for issues.** Humans file issues, triage them, and decide what gets built.
-Automated agents implement approved work — they do not self-direct triage or close issues without
-human approval.
-
-Use the bug-report or feature-request form. A maintainer reads every report;
-once it is accepted (`/triage accepted`) it can be picked up. Reporters reply
-normally and do not need labels or slash commands.
-
-Pull requests are reviewed and merged with Prow: a reviewer comments `/lgtm`,
-an `OWNERS` approver approves, and Prow puts the PR in the merge queue. See
-[`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) for the full
-flow, labels, and commands.
-
-## CI
-
-Pull requests must pass `Validate PR`, `Build`, `Unit Tests`, and `PR E2E` — no expensive VM boots.
-Full layer validation (the `common` behave suite from
-[`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite)) runs on every merge to main.
-
-## Testing and style
-
-- [`docs/TESTING.md`](docs/TESTING.md) — the testing contract: what must be
-  tested, hardware gate boundaries, coverage targets, and exemptions.
-- [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) —
-  coding and configuration conventions for shell scripts, Just recipes,
-  JSON/YAML, and the Containerfile.
-- [`docs/contributing/reviewer-ladder.md`](docs/contributing/reviewer-ladder.md) —
-  draft proposal for a four-rung contributor ladder (Triager, Domain
-  Reviewer); unadopted until a maintainer decision.
-- [`docs/contributing/hold-gate-rubric.md`](docs/contributing/hold-gate-rubric.md) —
-  draft proposal for hold-gate PR queue prioritization rubric (P0/P1/P2 risk tiers
-  and release-gate expedite lane); unadopted until a maintainer decision.
-- [`docs/contributing/triage-sla.md`](docs/contributing/triage-sla.md) —
-  draft proposal for a 14-day first-response SLA on human-authored issues and
-  a triage-first review-allocation rule; unadopted until a maintainer decision.
-- [`docs/contributing/agent-lane-throttle.md`](docs/contributing/agent-lane-throttle.md) —
-  draft proposal for demand-side throttling of agent-filed PRs under review
-  backlog; unadopted until a maintainer decision.
-- [`ACTIONS-SECURITY.md`](./ACTIONS-SECURITY.md) — organization GitHub Actions
-  security baseline: top-level `permissions: {}`, SHA pinning, `pull_request_target`
-  restrictions, and checksum verification.
-- [`docs/contributing/self-collision-preflight.md`](docs/contributing/self-collision-preflight.md) —
-  draft proposal for preflight check against overlapping open PR clusters.
+Task-specific references: [testing](docs/TESTING.md),
+[style](docs/contributing/style-guide.md),
+[Actions security](ACTIONS-SECURITY.md), and
+[Prow commands](docs/skills/label-workflow.md).

@@ -20,129 +20,43 @@ metadata:
 
 # Common workflow map
 
-Load this when you need to understand **what each GitHub workflow in `projectbluefin/common` is for** and which one to edit.
+`common` builds the shared OCI layer. Workflow YAML is authoritative for
+triggers, runner versions, permissions, and dependency pins.
 
-`common` is a **shared OCI layer repo**, not a standalone product image repo. Its workflows exist to protect the layer that flows into `bluefin`, `bluefin-lts`, and `dakota`.
-
-## Workflow groups
-
-| Workflow | Purpose | When to touch it |
-|---|---|---|
-| `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
-| `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
-| `validate-chairlift-config.yaml` | Checks `/usr/share/chairlift/config.yml` against the schema of the pinned ChairLift release (`CHAIRLIFT_SCHEMA_REF`, currently `v26.10.5`); path-filtered plus a weekly cron | Changing the ChairLift maintainer config, cask pin, or upstream schema assumptions |
-| `unit-tests.yml` | Runs `pytest` + `bats` on PRs, every push to `main`, and `merge_group`, without a path filter. | Adding or changing tests |
-| `build.yml` | Builds and publishes the `common` OCI layer on merge. Runs parallel per-arch jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`). Build uses rootless `buildah-build`; after build, `sudo skopeo copy` promotes the image into root storage so `push-image` (which uses `sudo podman push`) can find it. Then a `manifest` job assembles the multi-arch manifest, logs into GHCR, signs with keyless OIDC, generates SBOM, and attests SLSA L2. Downstream propagation is handled by Renovate (bluefin/bluefin-lts, ~3h) and dakota's daily cron — there is no direct dispatch from this workflow. | Changing how the shared layer is built or pushed |
-| `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer (composes + runs common suite via `run-testsuite.yml`) | Changing how PR-time downstream composition is tested |
-| `e2e.yml` | Post-merge, **advisory** common-suite validation. Tests the downstream `*-testing` images (`bluefin:testing`, `dakota:testing`) — not the layer just built. Triggers on `push: main` in parallel with `build.yml`, is **not** a required check, and does **not** gate publication: `common:latest` is pushed regardless of the result. On failure it opens or updates a single tracking issue. **Bluefin LTS is deliberately excluded** while [bluefin-lts#492](https://github.com/projectbluefin/bluefin-lts/issues/492) is open — it failed every run, and GitHub does not allow `continue-on-error` on a reusable-workflow call, so it could not be soft-failed in place. LTS is still covered weekly by `promotion-candidate-e2e.yml`. | Changing shipped-layer validation after merge |
-| `run-testsuite.yml` | Local wrapper that centralizes the pinned `projectbluefin/testsuite` SHA | Updating the shared testsuite pin or common-side testsuite wiring |
-| `promotion-candidate-e2e.yml` | Weekly smoke/common check against `bluefin:testing` and `bluefin:lts-testing` | Adjusting common-side signal before downstream Tuesday promotions |
-| `scorecard.yml` | Weekly OpenSSF Scorecard analysis. Runs on schedule and on push to main. Uploads SARIF to the GitHub Security tab. | Adjusting security posture reporting |
-| `release.yml` | Monthly/versioned OCI release flow. Triggered **only** by the monthly cron (`0 0 1 * *`) and `workflow_dispatch` — there is no `workflow_run` trigger on `E2E`. A cadence guard skips the run when the last release is under 20 days old or a `do-not-merge` PR is open against `main`. Uses git-cliff for changelog generation ([common#592](https://github.com/projectbluefin/common/pull/592)). | Changing versioned layer release behavior |
-| `prow.yml` | Prow ([cncf/prow-github-actions](https://github.com/cncf/prow-github-actions) v3.0.1): `/commands` on issues and PRs, `needs-kind`, review requests from `OWNERS`, merge queue on `lgtm` + `approved`, hourly backstop. Only **Run workflow** syncs labels from `projectbluefin/.project/prow.yaml`; run it after every change to that file. See [label-workflow.md](label-workflow.md). | Changing Prow commands or the pinned Prow version |
-| `bazaar-featured-refresh.yml` | Monthly (2nd, 06:37 UTC) + manual. Scores Flathub/FlatPark apps and opens a PR that refreshes Bazaar's "Bluefin Recommends" row, using the MERGERAPTOR token so the required checks run. It never auto-merges. See [bazaar.md](bazaar.md). | Changing featured-row scoring, pins, or PR mechanics |
-
-### Incident reporting
-
-On failure, `e2e.yml` opens one tracking issue (or comments on the open one) and
-`promotion-candidate-e2e.yml` opens a dated issue. Both use `gh issue create`
-with `needs-human` and `kind/bug`; a maintainer triages them like any report.
-
-> **Workflows that do not exist in `common` and must not be re-added:**
-> - `backfill-pipeline.yml` — issue widget backfill. If needed, run as a local script; do not add CI plumbing for a one-shot task.
-> - `skill-drift.yml` — retired across the factory; the shared reusable it called was deleted. Process conventions are not CI gates. See `ci-tooling.md` § Skill drift detection.
-> - `docs-quality.yml` — skill frontmatter enforcement belongs in agent review, not CI.
-> - `renovate-automerge.yml` — deleted in [#783](https://github.com/projectbluefin/common/pull/783). Renovate uses `platformAutomerge: true` in `renovate.json`; GitHub's native auto-merge + merge queue replaces it. Do not re-add a workflow-based automerge mechanism.
-> - `sync-codeowners.yml` — does not exist in any factory repo. Do not document or re-add it.
-
-## Mental model
-
-### Unit suite registration
-
-Both catalogs in `unit-tests.yml` are derived from disk: `bats tests/*.bats`
-runs every bats suite and one pytest invocation runs every `tests/test_*.py`
-under the Bazaar coverage command. Adding a suite therefore only requires
-registering it in the `Justfile` test recipe (the registration drift gate
-checks the Justfile) and dropping the file in `tests/`. Install suite
-dependencies in CI (`jsonschema` for skill docs and `just` for recipe
-execution). New test modules share the Bazaar coverage denominator, so keep
-unrelated imports out of them rather than splitting the step. When adding
-covered source paths, update both PR and push filters.
-
-### Validation and policy
-
-`validate.yml` and `validate-brewfiles.yaml` are about catching repo-local mistakes **before merge**.
-
-`validate-chairlift-config.yaml` validates against an external upstream schema
-that can drift without a common commit. It fetches ChairLift's page, group, and
-field names and fails closed because unknown keys disable the whole
-application. It reads the tag the `projectbluefin/tap` cask pins rather
-than upstream `main`, so it cannot green-light a key the shipped binary
-rejects.
-It is a separate workflow on purpose: `just check` must stay hermetic, so no
-networked gate belongs in the repo-wide PR check.
-
-### Shared-layer build and release
-
-`build.yml` and `release.yml` are about shipping the `common` layer itself.
-
-### Downstream behavior checks
-
-`pr-e2e.yml`, `e2e.yml`, `run-testsuite.yml`, and `promotion-candidate-e2e.yml` exist because `common` only proves itself when composed into downstream images.
-
-Only **`pr-e2e.yml` gates publication**: it composes the PR's own layer and runs the common suite before merge. `e2e.yml` runs *after* the layer is already pushed and is advisory.
-
-That distinction matters when `e2e.yml` is red. It exercises downstream `*-testing` images, so a failure can originate in a downstream base image that `common` does not own and cannot fix — a bootc, bootupd, or kernel regression in `bluefin-lts` surfaces here as a red `common` run. Read the failing matrix entry before assuming the defect is in `system_files/`.
-
-### What gates publication, and what does not
-
-| Check | Required? | Effect on `common:latest` |
-|---|---|---|
-| `validate` | yes (ruleset) | blocks merge |
-| `Build and push image (x86_64 / aarch64)` | yes (ruleset) | blocks merge |
-| `pr-e2e.yml` | pre-merge | blocks merge |
-| `e2e.yml` | **no** | none — the layer is already published |
-
-Verify with:
-
-```bash
-gh api repos/projectbluefin/common/rulesets --jq '.[].id' \
-  | xargs -I{} gh api repos/projectbluefin/common/rulesets/{} \
-      --jq '[.rules[]|select(.type=="required_status_checks")
-             |.parameters.required_status_checks[]?.context]'
-```
-
-### Factory operations
-
-Issue and PR automation is Prow (`prow.yml`). Its org-wide config lives in
-`projectbluefin/.project` (`prow.yaml`, and `maintainers.yaml` synced into the
-root `OWNERS`). Hive supplies assignment and scheduling, not acceptance.
-
-[bonedigger#40](https://github.com/projectbluefin/bonedigger/pull/40) removed
-`.github/workflows/lifecycle.yml` from `main`. Downstream `bonedigger.yml`
-callers retain historical pins that still resolve the removed file; those
-pins cannot be advanced to current `main`.
-
-Verify this list against the checkout before trusting it:
-
-```bash
-ls .github/workflows/
-```
-
-## Which skill to load next
-
-| If the work is about... | Load |
+| Workflow | Responsibility |
 |---|---|
-| Workflow pins, floating-tag guard | `ci-tooling/SKILL.md` |
-| Pre/post-merge or promotion-candidate tests | `e2e-ci/SKILL.md` |
-| Release cadence, promotion criteria, artifact signing | `release-promotion/SKILL.md` |
-| OWNERS or governance policy | `governance.md` |
-| Queue state, labels, Prow commands | `label-workflow.md`, `pr-review/SKILL.md` (merge queue section) |
+| [validate.yml](../../.github/workflows/validate.yml) | Just syntax, shellcheck, submodule drift, image references, dconf parity, pre-commit |
+| [unit-tests.yml](../../.github/workflows/unit-tests.yml) | All Python and Bats suites; Bazaar coverage gate |
+| [validate-brewfiles.yaml](../../.github/workflows/validate-brewfiles.yaml) | Networked Homebrew metadata validation |
+| [validate-chairlift-config.yaml](../../.github/workflows/validate-chairlift-config.yaml) | ChairLift config against the schema selected by its release pin |
+| [build.yml](../../.github/workflows/build.yml) | Per-architecture layer builds, publication, multi-arch manifest, signing and attestations |
+| [pr-e2e.yml](../../.github/workflows/pr-e2e.yml) | Compose the PR layer into a downstream test image before merge |
+| [e2e.yml](../../.github/workflows/e2e.yml) | Advisory post-merge checks of downstream testing images; failure reporting |
+| [run-testsuite.yml](../../.github/workflows/run-testsuite.yml) | Shared testsuite entrypoint and pin |
+| [promotion-candidate-e2e.yml](../../.github/workflows/promotion-candidate-e2e.yml) | Scheduled downstream promotion-candidate checks |
+| [release.yml](../../.github/workflows/release.yml) | Scheduled/manual versioned layer releases |
+| [scorecard.yml](../../.github/workflows/scorecard.yml) | OpenSSF security reporting |
+| [prow.yml](../../.github/workflows/prow.yml) | Issue/PR commands and merge-queue routing; see [labels](label-workflow.md) |
+| [bazaar-featured-refresh.yml](../../.github/workflows/bazaar-featured-refresh.yml) | Refresh the featured-app row by PR, without auto-merge |
 
-## Hard rule
+## Boundaries
 
-When editing workflows here, preserve the repo boundary:
+- `common` validates the shared layer; downstream repositories own their
+  image-specific behavior. Reusable factory CI belongs in `projectbluefin/actions`.
+- Required checks must report for every eligible PR and merge-group ref.
+  Skip expensive steps, not required jobs, for documentation-only changes.
+- Keep `just check` hermetic. Networked Brewfile and ChairLift checks stay separate.
+- Post-merge E2E is advisory: it tests downstream images, not the layer just
+  published. Inspect the failing image before assigning ownership.
+- Query live branch rulesets before changing required check names or landing
+  work; this index is not a copy of branch protection.
 
-- `common` validates the **shared layer**
-- downstream image repos validate their **image-specific** behavior
-- reusable CI logic should live in `projectbluefin/actions`, not be duplicated inline unless the logic is truly `common`-specific
+## Tests and references
+
+CI derives suites from `tests/test_*.py` and `tests/*.bats`. Register new suites
+in the `Justfile` too; `test_suite_registration.bats` checks that local path.
+Python dependencies are pinned in `tests/requirements.txt`.
+
+Use [CI tooling](ci-tooling/SKILL.md) for action pins and pre-commit,
+[E2E](e2e-ci/SKILL.md) for composition tests, and
+[release promotion](release-promotion/SKILL.md) for release behavior.

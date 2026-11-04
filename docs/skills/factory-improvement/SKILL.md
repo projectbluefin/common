@@ -3,7 +3,7 @@ name: factory-improvement
 version: "1.3"
 last_updated: "2026-10-07"
 id: factory-improvement
-one_line_purpose: Audit and propose factory self-improvement automation.
+one_line_purpose: Audit and propose task-scoped factory automation improvements.
 entry_point: docs/skills/factory-improvement/SKILL.md
 category: meta
 mcp_compliance_level: partial
@@ -12,134 +12,31 @@ status: active
 dependencies: []
 tags: [factory, automation, improvement]
 description: >-
-  Self-improving factory loop for projectbluefin. Use when identifying
-  automation gaps, proposing workflows, or auditing ACMM maturity.
+  Use for an explicitly requested factory automation audit, workflow gap
+  investigation, or repository onboarding assessment.
 metadata:
   type: reference
 ---
 
-# Factory Improvement — Self-Improving Loop
+# Factory improvement
 
-## When to Use
+Use for a scoped automation assessment, not routine bug fixes, single-PR
+reviews, or incident response. Measure the requested behavior against current
+workflows and failures before proposing automation; avoid enforcing identical
+infrastructure on repositories with different needs.
 
-- Dedicated "improve the factory" sessions
-- After an architectural review surfaces gaps
-- Onboarding a new repo into the factory standard
-- Quarterly health check: design vs. reality drift
+Human triage acceptance, review/merge approval, release blocker calls,
+production go/no-go, and stale PR reassignment or closure remain human decisions.
+Do not automate them without explicit maintainer approval. The `ublue-os/*`
+write prohibition has no automation exception. Other boundaries and accepted-work
+routing are in [AGENTS.md](../../../AGENTS.md).
 
-## When NOT to Use
+Choose the smallest accepted improvement. Verify the changed behavior using the
+target repo's checks; update documentation only if it becomes inaccurate or a
+reusable operational constraint needs recording. A factory assessment does not
+require a skill update, a docs migration, or a new issue for every observation.
+Keep actionable backlog in GitHub rather than appending status lists here.
 
-- Fixing a specific bug (use the repo's AGENTS.md + relevant skill)
-- Reviewing a single PR (use `hive-review` or `pr-review`)
-- Active incident response — fix the incident first, then run this loop
-
----
-
-## Mission
-
-**Full automation of everything that does not require a human judgment call.**
-
-The factory should be self-healing: issues flow through the pipeline, agents handle
-the mechanical work, and humans make only the decisions requiring accountability,
-context, or trust. Every manual step that *could* be automated is a reliability tax.
-
----
-
-## Human Gates — Intentional and Non-Negotiable
-
-Never automate these. Never propose automating them without explicit maintainer approval:
-
-| Gate | Why it must be human |
-|---|---|
-| Admitting an issue to implementation (`triage/accepted`, or legacy `3-clanker-queue`) | Prioritization judgment; scope acceptance |
-| PR merge approval (`/lgtm` + `/approve` from `OWNERS`, plus required GitHub reviews) | Accountability; trust for org-critical changes |
-| Release blocker calls during a promotion window | Release impact judgment |
-| Production promotion decisions (Tuesday 06:00 UTC, N=7 floor) | Final go/no-go for user-facing changes |
-| Reassigning or closing a stale PR | Judgment on abandoned vs. still-active work |
-| Any write or automated action to `ublue-os/*` namespace | Absolute prohibition — reads only. |
-
-Everything else is automatable.
-
----
-
-## The Improvement Loop
-
-```
-MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
-```
-
-See [`references/loop-detail.md`](references/loop-detail.md) for the full MEASURE/TRIAGE/IMPLEMENT/CAPTURE/VERIFY commands and patterns.
-
-```bash
-# Quick status
-~/src/hive-status
-
-# Everything awaiting a human (legacy repos: 1-triage; Prow repos: needs-human)
-gh search issues --label "needs-human" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# Work accepted (legacy repos: 3-clanker-queue; Prow repos: triage/accepted)
-gh search issues --label "triage/accepted" --owner projectbluefin --state open \
-  --json number,title,repository
-```
-
-> Common, ChairLift, and the printer apps use Prow labels (`needs-human`,
-> `triage/accepted`, `kind/*`, `priority/*`), not `1-triage` or
-> `3-clanker-queue` — see [`../label-workflow.md`](../label-workflow.md).
-
----
-
-## Pipeline Uniformity Checklist
-
-Each factory repo must have ALL of:
-
-| Requirement | Check command |
-|---|---|
-| `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
-| `bonedigger.yml` wired (image repos only) | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
-| Workflow labels present | Verify each repository's local contract with `gh label list --repo projectbluefin/{repo}`; Prow repositories use the labels in [`../label-workflow.md`](../label-workflow.md), not numbered queues. |
-| pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
-| Squash-only merge | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed` |
-
----
-
-## What "Done" Looks Like
-
-- [ ] Every factory repo has identical infrastructure (AGENTS.md, pre-commit, squash-only). `bluefin`, `bluefin-lts`, `dakota`, `actions`, and `testsuite` carry the seven canonical labels; Prow repositories carry the Prow labels — see [`../label-workflow.md`](../label-workflow.md).
-- [ ] Every pipeline stage has a gate: pre-merge CI, post-merge e2e, promotion smoke
-- [ ] All rules exist in exactly one canonical location with one-line pointers elsewhere
-- [ ] Renovate is running across all repos
-- [ ] Only the human gates listed above remain manual
-- [ ] ISO rebuilds are event-driven (triggered by stable promotion, not manual dispatch)
-- [ ] Supply chain: keyless signing + SBOM + SLSA L2 provenance on all image builds
-- [ ] Self-healing: retry + token health check on all workflows with external dependencies
-
----
-
-## Red Flags
-
-- Self-applying a queue label (triage and queue admission are human decisions)
-- Maintaining gap lists or changelogs in this skill file — GitHub issues are the live backlog
-- Automating any item in the Human Gates table above without explicit maintainer approval
-- Using `secrets.GITHUB_TOKEN` for cross-repo dispatch (it will silently fail — see references)
-
----
-
-## Verification
-
-After each improvement session:
-
-1. For each gap discovered: file a GitHub issue (see CAPTURE in references)
-2. For significant improvements shipped: update the relevant skill file in `docs/skills/`
-3. Would a fresh agent reading only the skills avoid the gap just closed? If no → the skill is still incomplete.
-
-Always `just check` + `pre-commit run --all-files` before commit.
-
----
-
-## References
-
-| Reference | Description |
-|---|---|
-| [`references/loop-detail.md`](references/loop-detail.md) | Full MEASURE/TRIAGE/IMPLEMENT/CAPTURE/VERIFY commands; E2E gate matrix; documentation single-source-of-truth table |
-| [`references/ci-patterns.md`](references/ci-patterns.md) | Known CI pitfalls (consumer PR format, caller permissions, workflow_run name mismatch); cross-repo dispatch patterns |
+Optional detail:
+- [Audit queries and E2E coverage](references/loop-detail.md)
+- [CI pitfalls and cross-repo dispatch](references/ci-patterns.md)

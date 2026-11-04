@@ -32,7 +32,7 @@ diagnosis.
 - Writing or modifying a shell script under `system_files/`
 - Writing bats tests for a shell script
 - Debugging a shellcheck failure in validate.yml
-- Removing a shell script from common (the 4 mandatory touch-points)
+- Removing a shell script from common (removal checklist)
 
 ## When NOT to Use
 
@@ -41,15 +41,15 @@ diagnosis.
 
 ---
 
-## Removing a shell script from common — 4 touch-points to check
+## Removing a shell script from common
 
-When deleting `system_files/bluefin/usr/bin/<script>`, check all four:
+When deleting `system_files/bluefin/usr/bin/<script>`, check its callers:
 
 | File | What to remove |
 |---|---|
 | `.github/workflows/validate.yml` | Nothing for shellcheck (the set is derived from extension/shebang on disk); remove any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
 | `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
-| `docs/skills/` | The script's skill file (if it has one) + its `docs/SKILL.md` routing row and any related skill links + all cross-references |
+| `docs/skills/` | The script's skill file (if any) and all cross-references under `docs/` |
 
 ### Dead apt step hazard
 
@@ -59,9 +59,9 @@ If the `validate.yml` shellcheck step was the **only** consumer of `Install shel
 
 After deleting the script and its skill file, run:
 ```bash
-grep -rn "<script-name>" docs/ specs/ --include="*.md" --include="*.json"
+grep -rn "<script-name>" docs/ --include="*.md" --include="*.json"
 ```
-Common survivors: `devmode.md` advisories, `image-registry.md` section headers, `specs/` JSON chunks.
+Common survivors: `devmode.md` advisories and `image-registry.md` section headers.
 
 ---
 

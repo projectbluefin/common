@@ -144,18 +144,6 @@ setup() {
 ```
 Used for `gum`, `systemd-cryptenroll`, `bootc`, `rpm-ostree`. Check `"${WORKDIR}/calls.log"` in assertions.
 
-### Docs skill validators need synthetic trees
-
-Scripts that validate `docs/skills/` or `docs/SKILL.md` should run from a temp
-cwd with a handcrafted mini catalog. The real repo tree is too large for clean
-negative tests, and a synthetic tree keeps link, front-matter, and index
-failures deterministic.
-
-For `generate_skill_index.py`, patch `REPO_ROOT`, `SKILLS_DIR`, `SCHEMA_PATH`,
-and `INDEX_PATH` to point at the fixture tree before calling `build_catalog()`
-or `main()`. This keeps `--write` and `--check` safe in unit tests without
-touching the live repo files.
-
 ### Test retired delegation with a failing stub
 
 Native recipes must work even when a retired delegate remains installed.

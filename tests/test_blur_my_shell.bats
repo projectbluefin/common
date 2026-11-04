@@ -71,15 +71,6 @@ override_value() {
     [ "$status" -ne 0 ]
 }
 
-@test "the gnome-rounded-blur skill is indexed" {
-    run python3 -c "
-import json, sys
-index = json.load(open('${REPO_ROOT}/docs/skills/index.json'))
-sys.exit(0 if any(s['id'] == 'gnome-rounded-blur' for s in index['skills']) else 1)
-"
-    [ "$status" -eq 0 ]
-}
-
 @test "the gnome-rounded-blur skill records the base-image ownership split" {
     [ -f "${SKILL}" ]
     run grep -c "04-packages.sh" "${SKILL}"

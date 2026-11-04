@@ -134,4 +134,4 @@ This keeps a refresh-only cycle from being mistaken for a resolution.
 - [ ] Removed counts/reports/snapshots were not restored.
 - [ ] Any unblockable dependency is named and linked, not described as a refresh.
 - [ ] The receipt shows repair → review → CI → Hive merge, not a branch-update.
-- [ ] `bash scripts/check-skill-frontmatter.sh` passes and the skill index is regenerated.
+- [ ] `pre-commit run --all-files` passes.
