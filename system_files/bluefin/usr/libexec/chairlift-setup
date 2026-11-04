@@ -44,8 +44,12 @@ if [[ "${disposition}" == "completed" || "${disposition}" == "skipped" ]]; then
     exit 0
 fi
 
-# Check for legacy completion version
-completed_ver="$(gsettings get "${SCHEMA_ID}" completed-version 2>/dev/null || echo "''")"
+# Check for legacy completion version. If reading fails, exit with error so
+# an error does not demote an earlier completed setup to unsettled.
+completed_ver="$(gsettings get "${SCHEMA_ID}" completed-version 2>/dev/null)" || {
+    echo "chairlift-setup: error: failed to read ${SCHEMA_ID} completed-version" >&2
+    exit 1
+}
 completed_ver="${completed_ver#\'}"
 completed_ver="${completed_ver%\'}"
 

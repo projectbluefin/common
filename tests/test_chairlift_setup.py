@@ -133,6 +133,28 @@ class ChairliftSetupTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.launched.exists())
 
+    def test_completed_version_read_failure_exits_with_error(self):
+        # Test schema that has disposition but lacks completed-version
+        partial_schema_xml = """<schemalist>
+  <schema id="io.projectbluefin.chairlift.firstrun" path="/io/projectbluefin/chairlift/firstrun/">
+    <key name="disposition" type="s"><default>'not-addressed'</default></key>
+  </schema>
+</schemalist>
+"""
+        partial_schemas = self.root / "partial-schemas"
+        partial_schemas.mkdir(mode=0o700)
+        (partial_schemas / "firstrun.gschema.xml").write_text(partial_schema_xml)
+        subprocess.run(
+            ["glib-compile-schemas", "--strict", str(partial_schemas)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        result = self.launch(GSETTINGS_SCHEMA_DIR=str(partial_schemas))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("completed-version", result.stderr)
+        self.assertFalse(self.launched.exists())
+
     def test_greeter_accounts_are_excluded_before_reading_settings(self):
         for username in ("gdm", "gdm-launch-environment"):
             with self.subTest(username=username):
