@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# chairlift-setup — launch ChairLift in setup mode on first graphical login.
+#
+# Runs on login after graphical-session.target and brew-preinstall.service.
+# If ChairLift is installed and setup has not been settled (completed or
+# dismissed), it launches the onboarding flow. If setup is already settled,
+# it exits 0 without re-prompting.
+set -euo pipefail
+
+CHAIRLIFT_WRAPPER="/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
+SCHEMA_ID="io.projectbluefin.chairlift.firstrun"
+
+# GDM greeter and initial-setup sessions run as transient accounts with HOME
+# under /run/gdm/home/. Skip before reading user settings.
+current_user="${USER:-$(id -un 2>/dev/null || echo "")}"
+if [[ "${current_user}" == gdm || "${current_user}" == gdm-* || "${HOME:-}" == /run/gdm/home/* ]]; then
+    exit 0
+fi
+
+# ChairLift is installed via Homebrew cask at first login. If brew-preinstall
+# hasn't installed it yet (or installation failed), exit 0 so the service
+# doesn't loop or fail the session; the next login will retry.
+if [[ ! -x "${CHAIRLIFT_WRAPPER}" ]]; then
+    exit 0
+fi
+
+# Check whether gsettings is available.
+if ! command -v gsettings >/dev/null 2>&1; then
+    exit 0
+fi
+
+# Read setup disposition from GSettings. If the schema is missing or unreadable,
+# exit with error so we don't accidentally assume settled state.
+disposition="$(gsettings get "${SCHEMA_ID}" disposition 2>/dev/null)" || {
+    echo "chairlift-setup: error: failed to read ${SCHEMA_ID} disposition" >&2
+    exit 1
+}
+
+# Normalize string: strip surrounding single quotes if present
+disposition="${disposition#\'}"
+disposition="${disposition%\'}"
+
+if [[ "${disposition}" == "completed" || "${disposition}" == "skipped" ]]; then
+    exit 0
+fi
+
+# Check for legacy completion version
+completed_ver="$(gsettings get "${SCHEMA_ID}" completed-version 2>/dev/null || echo "''")"
+completed_ver="${completed_ver#\'}"
+completed_ver="${completed_ver%\'}"
+
+if [[ -n "${completed_ver}" ]]; then
+    exit 0
+fi
+
+# Launch ChairLift in setup mode. exec forwards exit status and avoids leaving a shell process.
+exec "${CHAIRLIFT_WRAPPER}" --setup
