@@ -2,7 +2,7 @@
 # ublue-image-repo — canonical image-name/tag -> upstream GitHub repo resolver.
 #
 # Single source of truth for "which repository owns this booted image".
-# Every consumer (bonedigger-report, ujust changelogs, ...) must route through
+# Every consumer (ujust report, ujust changelogs, ...) must route through
 # here so the grammar cannot drift per call site.
 #
 # Usage:

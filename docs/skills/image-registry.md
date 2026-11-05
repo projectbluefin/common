@@ -143,11 +143,10 @@ Project Bluefin counts.
 ## Runtime repository selection
 
 Repository routing for booted images is canonically resolved by
-`/usr/libexec/ublue-image-repo` (consumed by `ujust changelogs` and
-`bonedigger-report`). `dakota` images use `projectbluefin/dakota`; every other
-image name — including `bluefin` and `bluefin-lts` — falls through to the
-caller-supplied default (`projectbluefin/bluefin` for changelogs,
-`projectbluefin/common` for bug reports). The archived `projectbluefin/bluefin`
+`/usr/libexec/ublue-image-repo` (consumed by `ujust changelogs`). `dakota` images
+use `projectbluefin/dakota`; every other image name — including `bluefin` and
+`bluefin-lts` — falls through to the caller-supplied default
+(`projectbluefin/bluefin` for changelogs). The archived `projectbluefin/bluefin`
 and `projectbluefin/bluefin-lts` destinations no longer keep their own routing,
 so do not infer the repository from the image name or the tag: LTS images may
 use `stable`, `testing`, or `lts` aliases.
