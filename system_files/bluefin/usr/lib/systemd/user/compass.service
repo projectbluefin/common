@@ -1,14 +1,22 @@
 [Unit]
-Description=Compass launcher
+Description=Compass launcher engine
 Documentation=https://github.com/tuna-os/compass
-ConditionPathExists=/home/linuxbrew/.linuxbrew/bin/compass
-After=graphical-session.target brew-preinstall.service
-Requires=dbus.socket
+After=graphical-session.target
 PartOf=graphical-session.target
+ConditionUser=!@system
+ConditionPathExists=/var/lib/flatpak/app/org.tunaos.compass
 
 [Service]
 Type=simple
-ExecStart=/home/linuxbrew/.linuxbrew/bin/compass start --hidden
+# `flatpak run` moves the sandbox into its own app-flatpak-*.scope, outside this
+# unit's cgroup, so systemd cannot stop the engine itself. Skip startup when an
+# engine already answers (e.g. one spawned by the shortcut's `start` fallback)
+# and stop it through its own IPC.
+ExecCondition=/bin/sh -c '! /usr/bin/flatpak run org.tunaos.compass ping >/dev/null 2>&1'
+# --no-hotkey: Super+Space is a native GNOME shortcut (02-bluefin-keybindings),
+# so the engine must not also request it through the GlobalShortcuts portal.
+ExecStart=/usr/bin/flatpak run org.tunaos.compass serve --no-hotkey
+ExecStop=/usr/bin/flatpak run org.tunaos.compass shutdown
 Restart=on-failure
 RestartSec=5
 

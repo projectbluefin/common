@@ -20,7 +20,7 @@ BLUEFIN="${BATS_TEST_DIRNAME}/../system_files/bluefin"
 
     run gsettings get org.gnome.shell enabled-extensions
     [ "$status" -eq 0 ]
-    [[ "$output" == *"'compass@tunaos.org'"* ]]
+    [[ "$output" != *compass@tunaos.org* ]]
     [[ "$output" != *search-light* ]]
     run gsettings get org.gnome.desktop.wm.keybindings switch-input-source
     [ "$status" -eq 0 ]
@@ -41,7 +41,7 @@ BLUEFIN="${BATS_TEST_DIRNAME}/../system_files/bluefin"
     dconf compile "${XDG_CONFIG_HOME}/dconf/compass-test" "${BLUEFIN}/etc/dconf/db/distro.d"
     run dconf read /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/compass/command
     [ "$status" -eq 0 ]
-    [ "$output" = "'/home/linuxbrew/.linuxbrew/bin/compass toggle'" ]
+    [ "$output" = "\"sh -c 'flatpak run org.tunaos.compass toggle || flatpak run org.tunaos.compass start'\"" ]
     run dconf read /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/compass/binding
     [ "$status" -eq 0 ]
     [ "$output" = "'<Super>space'" ]

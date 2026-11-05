@@ -10,9 +10,7 @@ Part of [brew-lifecycle](../SKILL.md) — current default package list, what bel
 defines the default CLI set. Other Brewfiles in the same directory also
 provision managed packages for every variant (currently `chairlift.Brewfile`
 and `bluefin-report.Brewfile`).
-`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`
-adds the Compass launcher for GNOME images; see the GNOME-overlay exception
-below. The CLI set contains 11 packages:
+The CLI set contains 11 packages:
 
 | Package | Purpose | Deps |
 |---|---|---|
@@ -173,10 +171,8 @@ are what pin these app ids.
 **GNOME-overlay exception:** a package that only works together with GNOME
 defaults shipped from `bluefin/` (Shell extension enablement, media-keys
 shortcuts, user units) lives in `bluefin/preinstall.d/` next to that
-configuration, even though Dakota consumes it too. `compass.Brewfile` is the
-current case: its `compass@tunaos.org` extension, `<Super>space` shortcut, and
-`compass.service` all ship from `system_files/bluefin/`, so the Brewfile stays
-with them.
+configuration, even though Dakota consumes it too. No Brewfile currently
+needs it; the Compass launcher is a Flatpak (`bluefin/usr/share/flatpak/preinstall.d/`).
 
 **Concrete example:** `chairlift.Brewfile` lives in
 `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, making its
