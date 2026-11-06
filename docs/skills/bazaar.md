@@ -62,7 +62,7 @@ metadata:
 Bazaar prioritizes Flathub by design:
 - `bz-entry.c` awards a +1000 point usefulness bonus to entries originating from a remote named `flathub`.
 - Secondary remotes (such as `flatpark`) provide complementary applications not present on Flathub without superseding Flathub as the #1 store.
-- Non-Flathub remotes use Flatpak ref filters (`Filter=/usr/share/flatpak/flatpark.filter`) to disallow exact application IDs that overlap with Flathub (`com.calibre_ebook.calibre`, `com.google.Chrome`, `com.jianguoyun.Nutstore`, `com.longbridgeapp.LongbridgePro`, `com.tencent.wemeet`, `com.tradingview.tradingview`, `io.enpass.Enpass`, `me.hyliu.fluentreader`, `org.openshot.OpenShot`, `social.whalebird.WhalebirdDesktop`).
+- The FlatPark ref filter (`Filter=/usr/share/flatpak/flatpark.filter`) disallows exact application IDs that overlap with Flathub. `scripts/refresh-featured-apps.py` generates it monthly from the complete Flathub appstream catalog and FlatPark search index; the refresh PR lists additions and removals.
 - Note: Ref filters match exact IDs (`deny app/<id>/*`). Repackaged upstream vendor apps under non-standard IDs (such as `com.tencent.weixin` vs Flathub's `com.tencent.WeChat`) are not excluded by exact-ID filtering and require explicit filter lines or Bazaar blocklist entries if duplication is undesired.
 - Curated sections in `curated.yaml` may reference apps provided by secondary remotes (such as FlatPark); each application ID must exist in the target remote and must not be denied by its ref filter.
 
@@ -122,7 +122,7 @@ The first section's list is rewritten monthly by `bazaar-featured-refresh.yml`:
 - **Score (hotness, not size):** `0.60·growth + 0.25·newness + 0.15·installs`, with each term a percentile within its own store (Flathub, FlatPark). Newness fades to 0 over two years. Incumbents get +0.15, and at most 4 new apps are added per month.
 - **Eligible for scored slots:** FOSS (or listed in `allow`), updated within the last 365 days (Flathub), above the install floor, at most 2 FlatPark apps, and not preinstalled, blocklisted, FlatPark-filtered, in `deny`, or present in another curated section.
 - **Veto:** add the ID to `deny` and re-run the workflow (Actions, then **Run workflow**).
-- **Dry run:** `python3 scripts/refresh-featured-apps.py --dry-run --report /tmp/featured.md`.
+- **Dry run:** `python3 scripts/refresh-featured-apps.py --dry-run --report /tmp/featured.md` previews both the row and filter changes without writing either generated file.
 - **Failure means no PR:** if any source is down, stale or returns HTML, the script exits non-zero.
 - **Merging:** the PR is opened with the MERGERAPTOR App token, so the required checks run. That App can bypass the review ruleset, so the workflow must **never** enable auto-merge. Prow merges after a human `/lgtm` and `/approve`.
 
