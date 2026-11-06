@@ -442,12 +442,12 @@ def brewfile_flatpaks(path):
     return set(re.findall(r'^flatpak "([^"]+)"', path.read_text(encoding="utf-8"), re.M))
 
 
-def check_pins(pins, flathub_ids, flatpark_listed, blocklist, flatpark_filter):
+def check_pins(pins, flathub_ids, flatpark_listed, blocklist):
     for p in pins:
         if p not in flathub_ids and p not in flatpark_listed:
             raise Abort(f"pin {p} is in neither Flathub popular nor FlatPark search-index.json")
-        if p in blocklist or (p in flatpark_filter and p not in flathub_ids):
-            raise Abort(f"pin {p} is denied by blocklist.yaml or flatpark.filter")
+        if p in blocklist:
+            raise Abort(f"pin {p} is denied by blocklist.yaml")
 
 
 def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
@@ -487,7 +487,7 @@ def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
         flatpark_filter = listed & flathub_ids
         filter_text = render_flatpark_filter(listed, flathub_ids)
         ctx["flatpark_filter"] = flatpark_filter
-        check_pins(pins, {h["app_id"] for h in hits} | flathub_ids, listed, blocklist, flatpark_filter)
+        check_pins(pins, {h["app_id"] for h in hits} | flathub_ids, listed, blocklist)
 
         reasons = {}
         fh = []

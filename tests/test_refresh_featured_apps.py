@@ -303,11 +303,12 @@ def test_load_flatpark_missing_daily_file_raises():
 
 
 def test_check_pins_raises_for_unknown_or_denied_pin():
-    m.check_pins(["a", "b"], {"a"}, {"b"}, set(), set())
+    # A pin in both catalogs is installable from Flathub even if FlatPark is filtered.
+    m.check_pins(["a", "b", "c"], {"a", "c"}, {"b", "c"}, set())
     with pytest.raises(m.Abort, match="neither"):
-        m.check_pins(["a", "zzz"], {"a"}, set(), set(), set())
-    with pytest.raises(m.Abort, match="denied"):
-        m.check_pins(["a"], {"a"}, set(), {"a"}, set())
+        m.check_pins(["a", "zzz"], {"a"}, set(), set())
+    with pytest.raises(m.Abort, match=r"^pin a is denied by blocklist\.yaml$"):
+        m.check_pins(["a"], {"a"}, set(), {"a"})
 
 
 def test_parse_added_dates_keeps_earliest():
