@@ -78,7 +78,7 @@ uses: actions/checkout@main
 
 ### Internal refs
 
-**Internal `projectbluefin/` refs use managed floating tags (`@main` or `@v1`), not SHA pins — with one documented exception: the `bonedigger.yml` lifecycle retention pins.** The `no-floating-action-tags` hook exempts all `projectbluefin/` refs. See [sha-pinning.md](references/sha-pinning.md) for the full policy, the retention-pin exception, and Floating-tag guard details.
+**Internal `projectbluefin/` refs generally use managed floating tags (`@main` or `@v1`), with documented SHA-pin exceptions.** The `no-floating-action-tags` hook exempts all `projectbluefin/` refs. See [sha-pinning.md](references/sha-pinning.md) for the exceptions and Floating-tag guard details.
 
 ---
 
