@@ -109,6 +109,16 @@ not from an agent editing a workflow.
 - [ ] Each physical-only check is recorded as pending with the reason it cannot be automated.
 - [ ] Non-acceptance work (package imports) is kept out of the acceptance list.
 
+## Checking a record
+
+`scripts/admit-evidence.sh <candidate-digest> [evidence-file]` applies the rule
+above to one record (JSON with `check`, `status` = pass|fail|missing,
+`image_digest`, `repair_task`). Exit 0 admits; 1 blocks (missing, failed,
+invalid, or captured on a different digest); 2 is bad usage. It performs no
+signature verification — the caller must verify the record's signature first.
+The evidence file defaults to stdin, so `cat record.json | admit-evidence.sh
+sha256:...` works as well as passing the path explicitly.
+
 ## Related paths
 
 - Which checks need a real device: [`hardware-testing.md`](./hardware-testing.md)
