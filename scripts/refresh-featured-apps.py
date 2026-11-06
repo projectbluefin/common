@@ -118,6 +118,23 @@ def load_flathub(fetch):
     return hits, set(fetch_json(fetch, f"{FLATHUB}/eol/message"))
 
 
+def load_flathub_ids(fetch):
+    """Load the complete application ID catalog, not just popular applications."""
+    ids = fetch_json(fetch, f"{FLATHUB}/appstream")
+    if not isinstance(ids, list) or len(ids) < FLATHUB_MIN_HITS or any(
+        not isinstance(i, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", i) for i in ids
+    ):
+        raise Abort("Flathub appstream catalog is incomplete or invalid")
+    return set(ids)
+
+
+def render_flatpark_filter(listed, flathub_ids):
+    """Generate the exact-ID intersection in Flatpak filter format."""
+    return "# Generated monthly by scripts/refresh-featured-apps.py; do not edit.\n" + "".join(
+        f"deny app/{app_id}/*\n" for app_id in sorted(listed & flathub_ids)
+    )
+
+
 def load_flatpark(fetch, today):
     """(totals, {id: 21 daily installs ending at `through`}, listed ids). Aborts if stale or partial."""
     totals = fetch_json(fetch, f"{FLATPARK_STATS}/totals.json")
@@ -134,7 +151,13 @@ def load_flatpark(fetch, today):
             raise Abort(f"FlatPark daily file {day} has an unexpected shape")
         for app_id, stats in daily["apps"].items():
             series.setdefault(app_id, [0] * TREND_DAYS)[k] = stats.get("installs", 0)
-    listed = {entry["id"] for entry in fetch_json(fetch, FLATPARK_INDEX)}
+    index = fetch_json(fetch, FLATPARK_INDEX)
+    if not isinstance(index, list) or len(index) < FLATPARK_MIN_APPS or any(
+        not isinstance(entry, dict) or not isinstance(entry.get("id"), str)
+        or not re.fullmatch(r"[A-Za-z0-9_.-]+", entry["id"]) for entry in index
+    ):
+        raise Abort("FlatPark search index is incomplete or invalid")
+    listed = {entry["id"] for entry in index}
     return totals, series, listed
 
 
@@ -338,7 +361,7 @@ def _fmt(app, incumbents, pins):
     )
 
 
-def render_report(*, month, fetched_at, flathub_hits, flatpark_totals, pools, row, old_row, pins, incumbents, reasons, run_url=None, merge_section=""):
+def render_report(*, month, fetched_at, flathub_hits, flatpark_totals, pools, row, old_row, pins, incumbents, reasons, filter_added=(), filter_removed=(), run_url=None, merge_section=""):
     """Markdown PR body for the refresh."""
     by_id = {a["id"]: a for pool in pools.values() for a in pool}
     scored = [by_id[i] for i in row if i not in pins]
@@ -380,6 +403,10 @@ def render_report(*, month, fetched_at, flathub_hits, flatpark_totals, pools, ro
         out.append(f"- `{i}`: {reason}")
     if not removed:
         out.append("None.")
+    out += ["", "### FlatPark duplicate filter", "", "Added:"]
+    out += [f"- `{i}`" for i in sorted(filter_added)] or ["- None."]
+    out += ["", "Removed:"]
+    out += [f"- `{i}`" for i in sorted(filter_removed)] or ["- None."]
     out += ["", "### New row", "", f"\\# | {header}", "--- | " + " | ".join(["---"] * 9)]
     for k, i in enumerate(row, 1):
         app = by_id.get(i, {"id": i, "source": "pin"})
@@ -419,14 +446,14 @@ def check_pins(pins, flathub_ids, flatpark_listed, blocklist, flatpark_filter):
     for p in pins:
         if p not in flathub_ids and p not in flatpark_listed:
             raise Abort(f"pin {p} is in neither Flathub popular nor FlatPark search-index.json")
-        if p in blocklist or p in flatpark_filter:
+        if p in blocklist or (p in flatpark_filter and p not in flathub_ids):
             raise Abort(f"pin {p} is denied by blocklist.yaml or flatpark.filter")
 
 
 def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--report", type=Path, help="write the PR-body Markdown here")
-    ap.add_argument("--dry-run", action="store_true", help="print the row and report; do not write curated.yaml")
+    ap.add_argument("--dry-run", action="store_true", help="print the row and report; do not write generated files")
     args = ap.parse_args(argv)
     now = now or datetime.now(timezone.utc)
     try:
@@ -442,21 +469,25 @@ def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
             for i in r["section"]["appids"]["list"]
         }
         blocklist = {i for b in yaml.safe_load(BLOCKLIST.read_text(encoding="utf-8"))["blocklists"] for i in b.get("block", [])}
-        flatpark_filter = set(re.findall(r"^deny app/([^/\s]+)/", FLATPARK_FILTER.read_text(encoding="utf-8"), re.M))
+        old_filter = set(re.findall(r"^deny app/([^/\s]+)/", FLATPARK_FILTER.read_text(encoding="utf-8"), re.M))
         ctx = {
             "pins": set(pins),
             "deny": set(config.get("deny") or []),
             "allow": set(config.get("allow") or []),
             "blocklist": blocklist,
-            "flatpark_filter": flatpark_filter,
+            "flatpark_filter": set(),
             "other_sections": other_sections,
             "preinstalled": set().union(*map(brewfile_flatpaks, PREINSTALLED)),
             "full_desktop": brewfile_flatpaks(FULL_DESKTOP),
         }
 
         hits, eol = load_flathub(fetch)
+        flathub_ids = load_flathub_ids(fetch)
         totals, series, listed = load_flatpark(fetch, now.date())
-        check_pins(pins, {h["app_id"] for h in hits}, listed, blocklist, flatpark_filter)
+        flatpark_filter = listed & flathub_ids
+        filter_text = render_flatpark_filter(listed, flathub_ids)
+        ctx["flatpark_filter"] = flatpark_filter
+        check_pins(pins, {h["app_id"] for h in hits} | flathub_ids, listed, blocklist, flatpark_filter)
 
         reasons = {}
         fh = []
@@ -504,6 +535,8 @@ def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
         pins=pins,
         incumbents=incumbents,
         reasons=reasons,
+        filter_added=flatpark_filter - old_filter,
+        filter_removed=old_filter - flatpark_filter,
         run_url=run_url,
         merge_section=merge[0] if merge else "",
     )
@@ -515,6 +548,7 @@ def main(argv=None, fetch=http_get, added_dates=flatpark_added_dates, now=None):
         print(report)
     else:
         CURATED.write_text(new_text, encoding="utf-8")
+        FLATPARK_FILTER.write_text(filter_text, encoding="utf-8")
     return 0
 
 
