@@ -39,7 +39,7 @@ jobs:
           pip install -r tests/requirements.txt
 
       - name: Install just
-        uses: taiki-e/install-action@0b43677d266e02f8bd34a2096b57e23a01a92aff # just
+        uses: taiki-e/install-action@56e0547d8ae60783cb5425ff9d8eaacd60a0de09 # just
         with:
           tool: just
 
