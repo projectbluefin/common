@@ -1,0 +1,42 @@
+# Relocatable schemas are located here in dconf
+# Some Gnome extensions don't ship gschema XML, so their settings also need to go in dconf
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0]
+binding='<Control><Alt>t'
+command='xdg-terminal-exec'
+name='Terminal'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1]
+binding='<Control><Alt>Return'
+command='xdg-terminal-exec'
+name='Terminal Alt'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2]
+binding='<Control><Shift>Escape'
+command="flatpak run io.missioncenter.MissionCenter"
+name='mission-center'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3]
+binding='<Control><Alt>BackSpace'
+command='/home/linuxbrew/.linuxbrew/bin/goose-desktop'
+name='Launch Goose'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
+binding='<Super>e'
+command='nautilus --new-window'
+name='New File Manager Window'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5]
+binding='<Super><Shift>Return'
+command='/home/linuxbrew/.linuxbrew/bin/goose-desktop'
+name='Launch Goose'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/compass]
+name='Compass'
+command='/home/linuxbrew/.linuxbrew/bin/compass toggle'
+binding='<Super>space'
+
+# Emoji picker shortcuts for it.mijorus.smile were removed: Smile is no longer in
+# system-flatpaks.Brewfile, so the bindings were no-ops on a default install and
+# <Super>period shadowed GNOME's built-in emoji insertion shortcut. Users who install
+# Smile (full-desktop.Brewfile) can add the shortcuts back in Settings > Keyboard.

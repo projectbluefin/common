@@ -1,0 +1,250 @@
+---
+name: dconf-consistency
+version: "1.2"
+last_updated: "2026-10-24"
+id: dconf-consistency
+one_line_purpose: Keep GSettings overrides and dconf lock files in parity.
+entry_point: docs/skills/dconf-consistency.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
+tags: [dconf, gnome, configuration]
+description: >-
+  GSettings override and dconf lock file parity rules — must edit both files
+  together for locked settings. Use when changing any GSettings key, dconf
+  override, or lock file in system_files/.
+metadata:
+  type: reference
+  context7-sources:
+    - /systemd/systemd
+---
+
+# dconf Consistency
+
+## Default location for desktop and GNOME settings
+
+When changing a desktop or GNOME default in this repo, start here:
+
+- `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` for GSettings defaults
+- `system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings` for keys that must be locked against user changes
+
+This is the canonical place for Bluefin desktop defaults. If a setting is not a one-off runtime tweak and it should ship as part of the image, put it in the override file first. Do not invent a new file for a single setting when an existing override already exists.
+
+## The two-file rule
+
+GSettings defaults live in two coordinated files:
+
+| File | Purpose |
+|---|---|
+| `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` | Sets the default value |
+| `system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings` | Prevents users from changing it |
+
+**Every locked key must exist in the override. Every override key that should not be user-overridable must be in the lock file.**
+
+These two files must be edited together. Editing one without the other produces:
+- Lock file references a missing key → dconf compile error on boot
+- Override sets a value, lock file omits it → user can override it (silent regression)
+
+## Adding a locked setting
+
+1. Add the key + value to `zz0-bluefin-modifications.gschema.override`
+2. Add the key path to `locks/01-bluefin-locked-settings`
+3. Verify locally: `gschema.override` format requires `[schema]` section header, key = value
+
+## Default rule for future agents
+
+- For image-default desktop settings: edit `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`
+- For settings that must be immutable by users: edit both the override and `system_files/bluefin/etc/dconf/db/distro.d/locks/01-bluefin-locked-settings`
+- For first-boot user-session behavior: use the existing hooks in `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/` rather than adding new config files ad hoc
+- Do not create a new schema override file for a single setting when the existing Bluefin override already exists
+
+## Removing a locked setting
+
+1. Remove from `locks/01-bluefin-locked-settings` first
+2. Then remove from (or update) `zz0-bluefin-modifications.gschema.override`
+
+## Adding an unlocked default
+
+Only step 1 above — do **not** add to the lock file.
+
+## dconf distro.d files
+
+The numbered files in `system_files/bluefin/etc/dconf/db/distro.d/` set defaults and
+keybindings. They are merged in numeric order. Gaps in numbering are fine. Do not renumber
+existing files — it changes the merge order.
+Treat distro.d filenames as consumer interfaces too: downstream images may
+remove or assert an exact path. Preserve externally referenced names or migrate
+those consumers together. For example, Utah's `Containerfile` removes
+`/etc/dconf/db/distro.d/05-bluefin-searchlight-extension`.
+
+## Custom keybindings and relocatable schemas
+
+Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot be defined directly as standard schemas in gschema override files, their configuration is split across two locations:
+
+1. **Path registration in gschema override**: In `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override`, list each custom keybinding path in the `custom-keybindings` array under `[org.gnome.settings-daemon.plugins.media-keys]`:
+   ```ini
+   custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', ...]
+   ```
+2. **Keybinding definition in dconf distro.d**: In `system_files/bluefin/etc/dconf/db/distro.d/02-bluefin-keybindings`, define the `binding`, `command`, and `name` under each path header:
+   ```ini
+   [org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4]
+   binding='<Super>e'
+   command='nautilus --new-window'
+   name='New File Manager Window'
+   ```
+
+When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
+
+### Compass launcher
+
+Common ships the `compass` custom shortcut, the image-scoped
+`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
+and `compass.service` plus its user preset. Preserve the other registered
+custom shortcut paths. Input-source switching keeps `<Shift><Super>space`
+and adds `XF86Keyboard` (backward: `<Shift>XF86Keyboard`); it does not conflict
+with Super+Space, which goes to `compass toggle`.
+
+Dakota owns the Shell extension build and its higher-priority
+`zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
+override alone does not enable it there. Package the extension from the same
+release as the Homebrew engine and verify the versioned D-Bus contract when
+either changes. Compass v0.28.2's extension supports GNOME 50 and 51.
+
+A user preset is policy, not an enablement operation. The consuming image must
+apply it or ship the equivalent graphical-session wants link. The launcher is
+ordered after `brew-preinstall.service` so an initial package sync finishes
+before its binary condition is evaluated. Do not run systemctl in common's
+scratch `ctx` stage. Source: systemd `docs/PRESET.md`, "The Logic".
+
+Compass v0.28.2 exposes `serve --no-hotkey`, but `start --hidden` does not
+forward that option. An explicitly empty `launcher.hotkey` disables the
+launcher binding; other configured command shortcuts can still use the
+portal. Do not replace writable user settings with an immutable
+`COMPASS_CONFIG` file. Distribution-controlled startup without a launcher
+portal request requires an upstream `start` opt-out or system-default layer.
+Source: [Compass v0.28.2](https://github.com/tuna-os/compass/tree/a1bab693dc59124fbaecb79037f70882b72f74a7),
+`crates/compass/src/{cli,lib}.rs` and `crates/compass-core/src/global_shortcuts.rs`.
+
+### Goose shortcuts
+
+The shipped defaults launch `/home/linuxbrew/.linuxbrew/bin/goose-desktop`
+directly from `custom3` (`<Control><Alt>BackSpace`) and `custom5`
+(`<Super><Shift>Return`, the Copilot+Enter combination on the configured
+keyboard). These are desktop defaults, not troubleshooting or Agent Mode
+switches. They do not install Goose; users need the `goose-linux` cask from
+`ujust install-ai-tools` or their existing Goose installation.
+
+Use the absolute Homebrew binary path: GNOME shortcut commands do not inherit
+a login shell's `PATH`. Keep the existing custom shortcut slots stable and
+register new slots in the schema override as well as defining them in dconf.
+User-set shortcut values and lists take precedence over these unlocked defaults.
+
+For a local verification, use `/usr/bin/gsettings` and compare its output with
+`dconf dump /org/gnome/settings-daemon/plugins/media-keys/`. Homebrew can shadow
+`gsettings` with a build that reports defaults or empty values rather than the
+host's active settings. Read back both the active path list and each entry's
+`binding`, `command`, and `name`; settings persistence alone does not prove
+physical-key delivery.
+
+For shipped-default verification, compile the media-keys override against host
+schemas and compile `02-bluefin-keybindings` into a temporary dconf database.
+Read both shortcuts through GSettings using an isolated profile and config
+directory, without writing to the live user's database.
+
+## Validation
+
+`validate.yml` now includes an automated pre-merge parity check for `01-bluefin-locked-settings` against the `.override` files in `system_files/bluefin/usr/share/glib-2.0/schemas/`.
+
+Compile against the actual schema XML definitions, not an override-only
+directory (which reports "No schema files found" and checks nothing):
+
+```bash
+tmp="$(mktemp -d)"
+cp /usr/share/glib-2.0/schemas/*.xml "$tmp/"
+cp system_files/bluefin/usr/share/glib-2.0/schemas/*.override "$tmp/"
+glib-compile-schemas --strict "$tmp"
+GSETTINGS_BACKEND=memory GSETTINGS_SCHEMA_DIR="$tmp" gsettings get org.gnome.shell enabled-extensions
+rm -r "$tmp"
+```
+
+`tests/test_compass.bats` runs these compiled-schema and dconf checks for the
+Compass defaults, but only locally: the unit-tests CI job lacks GNOME schemas
+and dconf tooling, so it skips there. Run it on a GNOME host when changing
+these files.
+
+The E2E `common` suite validates dconf state post-merge.
+
+## Shared launchers for GNOME menu items
+
+If a custom-command-menu entry and a desktop file should launch the same thing, prefer a shared helper under `system_files/bluefin/usr/bin/` instead of duplicating inline shell in both places. Update both the dconf entry and the `.desktop` file together so the shell menu and app launcher stay in sync.
+
+For Flatpak applications, use `/usr/bin/flatpak run <app-id>` directly unless
+the helper is shipped for every consumer of common. Keep the existing
+`commandN` slot and `command-order` when replacing a launcher: user-layer
+overrides are keyed by slot.
+
+Before retiring a downstream menu override, compare it with common's merged,
+pinned source, not the upstream PR description. Planned launcher changes may
+have been reverted before merge.
+
+## Menu commands must use the absolute Homebrew wrapper path
+
+The Custom Command Menu (any `*-custom-command-menu` file under `system_files/bluefin/etc/dconf/db/distro.d/`) runs each entry through a non-interactive `bash -c` with no login environment, so Homebrew is **not** on `PATH`. Any menu entry that invokes a Homebrew-managed binary must name the absolute path to its Homebrew-shared wrapper:
+
+```
+/home/linuxbrew/.linuxbrew/bin/<binary>-wrapper
+```
+
+Bare `chairlift --ask-bluefin` fails: the menu cannot find the binary. The absolute wrapper path is the same one `system_files/shared/usr/share/applications/io.projectbluefin.chairlift.desktop` uses for `Exec=` and that `tests/test_chairlift_config.py` pins as `CHAIRLIFT_WRAPPER`.
+
+The `Ask Bluefin` menu label is ChairLift's identity key. ChairLift's Agents-page "Show Ask Bluefin in menu" switch matches entries with this label and a known command (`xdg-open <url>` or `chairlift-wrapper --ask-bluefin`). Renaming the label or the entry's slot breaks the switch's hide/show behaviour irreversibly for users who already configured it. Pin both.
+
+## dconf profile lookup order and CI test interference
+
+The dconf profile shipped by bluefin images (`/etc/dconf/profile/user`) is:
+
+```
+user-db:user
+system-db:local
+system-db:site
+system-db:distro
+```
+
+`local` has **higher priority than `distro`**. The testsuite's `e2e.yml` writes `/etc/dconf/db/local.d/00-ci-testing` before every VM boot. Since projectbluefin/testsuite#683 (pinned here from `7da50e5`), it sets only:
+
+```ini
+[org/gnome/shell]
+allow-extension-installation=true
+```
+
+It no longer touches `enabled-extensions`, so the image's schema default survives into the test VM. After the GNOME session starts, the suite runs `gnome-extensions enable unsafe-mode@bluefin-test`, which writes `enabled-extensions` into the **user** database as the current effective list plus `unsafe-mode@bluefin-test`. So `gsettings get org.gnome.shell enabled-extensions` in a test returns the image default **plus** `unsafe-mode@bluefin-test`.
+
+Older testsuite pins (before projectbluefin/testsuite#683) also wrote `enabled-extensions=['unsafe-mode@bluefin-test']` into `local.d`, replacing the image default and making per-extension `ExtensionState` assertions fail (`state=6`/`state=99`). With the current pin, such failures point at the **image** (extension missing, broken, or not in the shipped default), not at testsuite.
+
+### Testing the distribution default vs the effective value
+
+| Goal | Command | Why |
+|---|---|---|
+| Check what a real user sees | `gsettings get org.gnome.shell enabled-extensions` | Returns user-db > local > distro > schema |
+| Check what the distro ships as default | `python3 -c "import gi; gi.require_version('Gio','2.0'); from gi.repository import Gio; v = Gio.Settings.new('org.gnome.shell').get_default_value('enabled-extensions'); print(v.unpack() if v else [])"` | Reads compiled schema, bypasses ALL dconf databases |
+| Check a locked key | `gsettings get <key>` | Locked keys cannot be overridden — always returns distro value |
+
+**Use `get_default_value()` in E2E tests that validate the OS ships the correct schema default.** Use `gsettings get` only when testing the effective runtime value or locked keys.
+
+### Where enabled-extensions lives
+
+`enabled-extensions` for `org.gnome.shell` is set in `system_files/bluefin/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override` — this sets the schema DEFAULT. It is NOT in `distro.d/` and is not a locked key, so users can override it.
+
+In test VMs the effective value is this default plus `unsafe-mode@bluefin-test` (added to the user database by the suite). Tests that validate the shipped config should still use `get_default_value()` so the CI-only extension does not affect the assertion.
+
+## Flatpak application defaults via GKeyfileSettingsBackend
+
+Flatpak applications run sandboxed and typically use `GKeyfileSettingsBackend` rather than the host system's dconf database.
+
+Key differences from host GSettings:
+- Config is stored in a keyfile at `~/.var/app/<app-id>/config/glib-2.0/settings/keyfile`.
+- Schema separation: root application preferences are separated from plugin sources (e.g., `[app/drey/Damask]` vs `[app/drey/Damask/sources/slideshow]`).
+- Pre-seeding defaults cannot be done via `/etc/dconf/db` or `gschema.override`. Instead, pre-seed defaults in `system_files/bluefin/usr/share/ublue-os/user-setup.hooks.d/` gated by `version-script-check <name> user <n> || exit 0` at the top of the hook and `version-script-commit <name> user <n>` at the end, so a failed pre-seed retries on the next boot.
+- Non-destructive activation: check `[[ ! -f "${KEYFILE}" ]]` before writing so existing user configurations are never overwritten, and set inactive or dormant defaults (e.g., `active-source='none'`) when activating by default would override host user desktop settings or timed wallpaper slideshows.

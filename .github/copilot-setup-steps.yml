@@ -1,0 +1,32 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install just
+        uses: taiki-e/install-action@0b43677d266e02f8bd34a2096b57e23a01a92aff # just
+        with:
+          tool: just
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Verify tooling
+        run: |
+          just --version
+          pre-commit --version

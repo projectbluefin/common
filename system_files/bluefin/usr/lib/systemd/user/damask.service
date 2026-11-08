@@ -1,0 +1,15 @@
+[Unit]
+Description=Damask Wallpaper Slideshow Background Service
+After=graphical-session.target
+ConditionUser=!@system
+ConditionPathExists=|%h/.local/share/flatpak/app/app.drey.Damask
+ConditionPathExists=|/var/lib/flatpak/app/app.drey.Damask
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/flatpak run app.drey.Damask --background
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,12 @@
+# Keychron keyboard hardware enablement
+# Created on https://github.com/ublue-os/config/pull/153
+# Written by https://github.com/atimeofday
+#
+# This rule matches every hidraw node (keyboards, mice, touchpads, FIDO keys),
+# so it must not widen the mode: the uaccess tag grants the active seat user
+# an ACL, which is all usevia.app needs. A world-accessible mode would let any
+# other uid read raw keystrokes or drive security keys (#1503).
+#
+# The file must sort before systemd's 73-seat-late.rules, which runs the
+# uaccess builtin for nodes tagged "uaccess"; a tag added later is ignored.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", TAG+="uaccess", TAG+="udev-acl"

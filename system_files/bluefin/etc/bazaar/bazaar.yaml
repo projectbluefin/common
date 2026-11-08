@@ -1,0 +1,153 @@
+yaml-blocklist-paths:
+  - /run/host/etc/bazaar/blocklist.yaml
+
+curated-config-paths:
+  - /run/host/etc/bazaar/curated.yaml
+
+hide-auto-update-options: true
+
+hooks:
+  - id: jetbrains-toolbox
+    when: before-transaction
+    check-appid-regex: ^(com\.jetbrains\..*|com\.google\.AndroidStudio)$
+    dialogs:
+      - id: jetbrains-warning
+        title: >-
+          Install JetBrains IDEs (Host Integration)
+        body-use-markup: true
+        body: >-
+          JetBrains IDEs on Bluefin are managed via <b>JetBrains Toolbox</b> for native host integration, seamless SDK detection, and container toolchain support.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: run-ujust
+            string: "Download JetBrains Toolbox"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: vscode
+    when: before-transaction
+    check-appid-regex: ^com\.visualstudio\.code$
+    dialogs:
+      - id: vscode-warning
+        title: >-
+          Install Visual Studio Code (Host Integration)
+        body-use-markup: true
+        body: >-
+          Visual Studio Code on Bluefin is installed natively via <b>Homebrew</b> with full terminal access, devcontainer support, and host SDK integration.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: vscodium
+    when: before-transaction
+    check-appid-regex: ^com\.vscodium\.codium$
+    dialogs:
+      - id: vscodium-warning
+        title: >-
+          Install VSCodium (Host Integration)
+        body-use-markup: true
+        body: >-
+          VSCodium on Bluefin is installed natively via <b>Homebrew</b> with full system container access, terminal integration, and devcontainer support.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: cursor
+    when: before-transaction
+    check-appid-regex: ^co\.anysphere\.cursor$
+    dialogs:
+      - id: cursor-warning
+        title: >-
+          Install Cursor (Host Integration)
+        body-use-markup: true
+        body: >-
+          Cursor on Bluefin is installed natively via <b>Homebrew</b> from the <b>experimental tap</b> for terminal and host SDK access.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew (Experimental)"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: antigravity
+    when: before-transaction
+    check-appid-regex: ^com\.google\.AntigravityIDE$
+    dialogs:
+      - id: antigravity-warning
+        title: >-
+          Install Antigravity (Host Integration)
+        body-use-markup: true
+        body: >-
+          Antigravity on Bluefin is installed natively via <b>Homebrew</b> for terminal and host SDK access.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: zed
+    when: before-transaction
+    check-appid-regex: ^dev\.zed\.Zed.*$
+    dialogs:
+      - id: zed-warning
+        title: >-
+          Install Zed (Host Integration)
+        body-use-markup: true
+        body: >-
+          Zed on Bluefin is installed natively via <b>Homebrew</b> for optimal performance, GPU acceleration, and direct host SDK access.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: download
+            string: "Install via Homebrew"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py
+
+  - id: steam
+    when: before-transaction
+    check-appid-regex: ^com\.valvesoftware\.Steam$
+    dialogs:
+      - id: steam-warning
+        title: >-
+          Install Steam (Gaming Mode)
+        body-use-markup: true
+        body: >-
+          Steam on Bluefin is managed via <b>Control Center</b>. Open <b>Features</b> and turn on <b>Gaming</b> to install Steam along with Proton compatibility tools, MangoHud, and controller support.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: open-chairlift
+            string: "Open Control Center (Features)"
+            style: suggested
+    shell: exec python3 /run/host/etc/bazaar/hooks.py

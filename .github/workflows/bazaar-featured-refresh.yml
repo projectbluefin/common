@@ -1,0 +1,64 @@
+# Monthly refresh of the "Bluefin Recommends" row in Bazaar's curated.yaml.
+# Scores Flathub + FlatPark apps by growth/newness/size (scripts/refresh-featured-apps.py,
+# pins and vetoes in .github/bazaar-featured.yaml) and opens a PR for human review.
+name: Refresh Bazaar featured apps
+
+on:
+  schedule:
+    - cron: "37 6 2 * *" # after FlatPark's 01:30 UTC stats rollup
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: bazaar-featured-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh Bluefin Recommends
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Install pinned Python deps
+        run: pip install -r tests/requirements.txt
+
+      - name: Score apps and rewrite the Recommends row
+        # Exits non-zero (no PR) if a source is down, stale, or a pin is invalid.
+        run: python3 scripts/refresh-featured-apps.py --report "$RUNNER_TEMP/featured-pr.md"
+
+      # Minted after the networked step so the write token only lives for the push.
+      - name: Mint mergeraptor token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      # App token (not GITHUB_TOKEN) so the required PR checks run. NEVER enable
+      # auto-merge here: mergeraptor bypasses the review ruleset; Prow merges after
+      # human /lgtm + /approve.
+      - name: Open or update the refresh PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sign-commits: true
+          base: main
+          branch: automation/bazaar-featured-refresh
+          add-paths: system_files/bluefin/etc/bazaar/curated.yaml
+          commit-message: "feat(bazaar): refresh Bluefin Recommends row"
+          title: "feat(bazaar): refresh Bluefin Recommends row"
+          body-path: ${{ runner.temp }}/featured-pr.md
+          labels: |
+            kind/feature
+            area/flatpak

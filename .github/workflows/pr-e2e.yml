@@ -1,0 +1,129 @@
+name: PR E2E
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+      - "docs/**"
+      - "AGENTS.md"
+      - ".github/workflows/**"
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BASE_IMAGE: ghcr.io/projectbluefin/bluefin:testing
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_NAME: common
+
+permissions: {}
+
+jobs:
+  compose:
+    name: Compose PR test image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image-meta.outputs.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
+
+      - name: Generate tags
+        id: image-meta
+        shell: bash
+        run: |
+          sha_short="${GITHUB_SHA::7}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            compose_tag="e2e-pr-${{ github.event.pull_request.number }}-${sha_short}"
+          else
+            compose_tag="e2e-merge-group-${sha_short}"
+          fi
+          {
+            echo "common_tag=${sha_short}"
+            echo "compose_tag=${compose_tag}"
+            echo "image=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${compose_tag}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build common layer candidate
+        id: build_common
+        uses: redhat-actions/buildah-build@719e3c40d8af9790c23eca13f7daa339f2867034 # v3
+        with:
+          containerfiles: |
+            ./Containerfile
+          image: localhost/common-pr
+          tags: ${{ steps.image-meta.outputs.common_tag }}
+          oci: true
+
+      - name: Write compose Containerfile
+        shell: bash
+        run: |
+          cat <<EOF > Containerfile.pr-e2e
+          FROM localhost/common-pr:${{ steps.image-meta.outputs.common_tag }} AS common
+          FROM ${{ env.BASE_IMAGE }}
+
+          COPY --from=common /system_files/shared /tmp/system_files/shared
+          COPY --from=common /system_files/bluefin /tmp/system_files/bluefin
+
+          RUN rsync -a /tmp/system_files/shared/ / && \
+              rsync -a /tmp/system_files/bluefin/ / && \
+              glib-compile-schemas /usr/share/glib-2.0/schemas && \
+              rm -rf /tmp/system_files
+          EOF
+
+      - name: Build composed test image
+        id: build_compose
+        uses: redhat-actions/buildah-build@719e3c40d8af9790c23eca13f7daa339f2867034 # v3
+        with:
+          containerfiles: |
+            ./Containerfile.pr-e2e
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.image-meta.outputs.compose_tag }}
+          oci: true
+
+      - name: Login to GitHub Container Registry
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push composed test image
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: redhat-actions/push-to-registry@94ade333c38ecc0e60e94785125d9a52ca423b37 # v3
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          image: ${{ steps.build_compose.outputs.image }}
+          tags: ${{ steps.build_compose.outputs.tags }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          extra-args: |
+            --compression-format=zstd:chunked
+
+  e2e:
+    name: E2E — composed common suite
+    needs: compose
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/run-testsuite.yml
+    with:
+      image: ${{ needs.compose.outputs.image }}
+      suites: common

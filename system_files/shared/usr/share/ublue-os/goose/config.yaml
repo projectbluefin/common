@@ -1,0 +1,16 @@
+# Bluefin default Goose configuration; select a model provider in Goose.
+# Keep the prefix/bin symlink; a resolved Cellar path expires after an upgrade.
+extensions:
+  linux-mcp-server:
+    args:
+      - --toolset
+      - FIXED
+      - --no-search-for-ssh-key
+      - --verify-host-keys
+    bundled: false
+    cmd: /home/linuxbrew/.linuxbrew/bin/linux-mcp-server
+    enabled: true
+    envs: {}
+    name: linux-mcp-server
+    timeout: 300
+    type: stdio

@@ -1,0 +1,136 @@
+---
+name: shell-scripts
+version: "1.2"
+last_updated: "2026-09-23"
+id: shell-scripts
+one_line_purpose: Write and test shell scripts under system_files/.
+entry_point: docs/skills/shell-scripts/SKILL.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
+tags: [shell, bash, testing, bats, shellcheck]
+description: >-
+  Shell script authoring and testability. Use when writing or testing shell
+  scripts under system_files/, removing scripts, or adding bats tests.
+metadata:
+  type: reference
+  context7-sources:
+    - /koalaman/shellcheck
+    - /bats-core/bats-core
+---
+
+# Shell Scripts — authoring and testability
+
+This skill owns shell authoring and testability; [CI tooling](../ci-tooling/SKILL.md)
+owns workflow policy and [CI pitfalls](../ci-pitfalls/SKILL.md) owns failure
+diagnosis.
+
+## When to Use
+
+- Writing or modifying a shell script under `system_files/`
+- Writing bats tests for a shell script
+- Debugging a shellcheck failure in validate.yml
+- Removing a shell script from common (removal checklist)
+
+## When NOT to Use
+
+- CI workflow configuration (pre-commit, actionlint, SHA pinning) → [`ci-tooling.md`](../ci-tooling/SKILL.md)
+- CI incident log and silent failure patterns → [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md)
+
+---
+
+## Removing a shell script from common
+
+When deleting `system_files/bluefin/usr/bin/<script>`, check its callers:
+
+| File | What to remove |
+|---|---|
+| `.github/workflows/validate.yml` | Nothing for shellcheck (the set is derived from extension/shebang on disk); remove any `candidates.append(Path("..."))` entry in the Python OCI-ref guard |
+| `system_files/bluefin/usr/share/ublue-os/just/system.just` | The `just` target and all aliases |
+| `docs/skills/` | The script's skill file (if any) and all cross-references under `docs/` |
+
+### Dead apt step hazard
+
+If the `validate.yml` shellcheck step was the **only** consumer of `Install shellcheck` in that job, delete the apt install step too — it becomes a silent no-op that wastes ~20 seconds per CI run and confuses future readers.
+
+### Cross-reference sweep
+
+After deleting the script and its skill file, run:
+```bash
+grep -rn "<script-name>" docs/ --include="*.md" --include="*.json"
+```
+Common survivors: `devmode.md` advisories and `image-registry.md` section headers.
+
+---
+
+## Core Testability Idioms
+
+Quick reference — full patterns with WRONG/CORRECT examples in
+[references/testability-patterns.md](references/testability-patterns.md).
+
+| Pattern | Summary |
+|---|---|
+| `BASH_SOURCE` main guard | Wrap main flow so `source` in bats only loads functions |
+| `${VAR:-default}` override | Make every `/proc`, `/dev`, `/usr/share` path overridable |
+| PATH-stub mocking | Drop executable stubs into `${WORKDIR}/bin`, prepend to `PATH` |
+| XDG_CONFIG_HOME isolation | `unset XDG_CONFIG_HOME` in `setup()` alongside `export HOME=...` |
+| stdin redirect override | Use `${IMAGE_INFO_FILE:-/path}` so bats can inject a fixture |
+| Subshell export check | Instrument the `$(...)` call, not the exec'd process |
+| Guard optional commands | `command -v foo >/dev/null` before doing work |
+| `NO_COLOR` propagation | Disable ANSI from both the script and subprocesses; assert captured output has no ESC bytes |
+
+## Bats Test Structure
+
+Standard file layout, mocking, and pitfalls in
+[references/bats-patterns.md](references/bats-patterns.md).
+
+## Just recipe descriptions
+
+Keep maintainer notes above the user-facing description comment. `just --list`
+uses the last comment line before a recipe's attributes as its description, so
+a note about dependency pins can accidentally replace the help text. Separate
+the notes with a blank line, then put the description immediately above the
+recipe's attributes.
+
+Verify the displayed text without running the installer:
+
+```bash
+just --justfile system_files/shared/usr/share/ublue-os/just/apps.just --list
+```
+
+## Shellcheck Reference
+
+Directive syntax, SC code notes, and quoting fix examples in
+[references/shellcheck-examples.md](references/shellcheck-examples.md).
+
+---
+
+## Red Flags
+
+- A shell script reads from a hardcoded `/proc`, `/dev`, or `/usr/share/...` path without an env-var override — untestable in CI
+- A bats test overrides `HOME` but not `XDG_CONFIG_HOME` — leaks to the real runner config dir
+- A shellcheck `disable=` directive has an inline comment after it (SC1072/SC1073)
+- A script's main flow runs on `source` (no `BASH_SOURCE` guard) — breaks bats loading
+- `--cov=tests` in a pytest invocation — measures test files, not source under test
+
+---
+
+## Verification
+
+- [ ] `shellcheck -S warning <file>` passes on the modified script
+- [ ] `just test` passes locally (bats + pytest)
+- [ ] If a shellcheck directive was added, verify its syntax against Context7 (shellcheck library) and confirm the SC code is correct
+- [ ] If a bats test uses env-var overrides, confirm the script uses `${VAR:-default}` at the read site — the override does nothing without it
+- [ ] If a script was removed, all 4 touch-points were checked and the cross-reference sweep returned no survivors
+
+---
+
+## References
+
+| File | Contents |
+|---|---|
+| [references/testability-patterns.md](references/testability-patterns.md) | All testability patterns with full WRONG/CORRECT code examples |
+| [references/bats-patterns.md](references/bats-patterns.md) | Standard bats file structure, mocking, and assertion pitfalls |
+| [references/shellcheck-examples.md](references/shellcheck-examples.md) | Shellcheck directive syntax, SC codes, and quoting fix examples |

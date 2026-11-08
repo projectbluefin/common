@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+NoDisplay=false
+Terminal=false
+Exec=flatpak run org.gnome.Papers /usr/share/doc/bluefin/bluefin.pdf
+Icon=ublue-docs
+Name=Documentation
+Name[cs]=Dokumentace
+Comment=Bluefin documentation
+Comment[cs]=Bluefin dokumentace
+Comment[fr]=Documentation de Bluefin
+Keywords=Bluefin;Help;Docs;Instructions
+Categories=Utility;

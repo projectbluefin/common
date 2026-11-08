@@ -1,0 +1,2 @@
+enable flatpak-appstream-refresh.service
+enable flatpark-filter-copy.path

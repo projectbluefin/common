@@ -1,0 +1,183 @@
+# Package Set — brew-lifecycle
+
+Part of [brew-lifecycle](../SKILL.md) — current default package list, what belongs in preinstall.d, the fzf/ujust bootstrap, opt-in Brewfiles, and the shared/ vs bluefin/ placement rule.
+
+---
+
+## Current default package set (preinstall.d)
+
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile`
+defines the default CLI set. Other Brewfiles in the same directory also
+provision managed packages for every variant (currently `chairlift.Brewfile`
+and `bluefin-report.Brewfile`).
+`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`
+adds the Compass launcher for GNOME images; see the GNOME-overlay exception
+below. The CLI set contains 11 packages:
+
+| Package | Purpose | Deps |
+|---|---|---|
+| `fzf` | Fuzzy finder | static |
+| `glow` | Markdown renderer | static |
+| `htop` | Process viewer | `ncurses` |
+| `rclone` | Cloud storage sync | static |
+| `restic` | Backup tool | static |
+| `smartmontools` | Drive SMART monitor | static |
+| `squashfs` | Squashfs tools | `lz4, lzo, xz, zstd` |
+| `starship` | Shell prompt | static |
+| `tcpdump` | Packet analyzer | `libpcap, openssl@4` |
+| `tmux` | Terminal multiplexer | `libevent, ncurses, utf8proc` |
+| `ykman` | YubiKey management | `cryptography, python@3.14` |
+
+**Removed:** `inxi` (system info, redundant with `fastfetch` on the image) and
+`nvtop` (GPU monitor, hardware-specific — not everyone has a GPU).
+
+### Managed casks
+
+Brewfiles in `system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`
+install these casks for every user:
+
+| Brewfile | App | Cask |
+|---|---|---|
+| `chairlift.Brewfile` | ChairLift | `projectbluefin/tap/chairlift` |
+| `bluefin-report.Brewfile` | Report a problem | `projectbluefin/tap/bluefin-report` |
+
+Each uses the same tap/cask shape:
+
+```ruby
+tap "projectbluefin/tap", trusted: true
+cask "projectbluefin/tap/<cask>"
+```
+
+These are OS-managed like the default formula set: add a cask and every user
+gets it on next login after update; remove it and users whose state file shows
+it as managed have it uninstalled. The `trusted: true` tap flag is required.
+Each cask must remain pinned upstream in `projectbluefin/tap`; do not vendor an
+unpinned replacement cask into common. ChairLift's cask tracks
+`projectbluefin/chairlift` releases.
+
+Both casks install their desktop entry and icons in the installing user's
+`~/.local/share`, which — with Homebrew's single shared prefix — means only the
+first user ever receives them. `common` therefore also ships the upstream
+desktop file and icons system-wide; see
+[service-mechanics.md](service-mechanics.md).
+
+### What belongs in preinstall.d
+
+`preinstall.d/` is for packages every user gets automatically, managed
+entirely by the OS. The contract is unambiguous:
+
+**Add a line → every user gets it on next login after update.**
+**Remove a line → every user who got it through the managed set gets it
+uninstalled on next login after update.**
+
+**Belongs here:**
+- Universal CLI tools with no hardware prerequisite
+- Tools that should be present before the user does anything
+- Things with broad utility regardless of workflow (backups, prompt, terminal)
+- Static binaries preferred — zero transitive deps is ideal
+
+**Does not belong here:**
+- Hardware-specific tools (`nvtop` — not everyone has a GPU)
+- Tool-specific workflows (`ykman` — not everyone has a YubiKey, but it stays
+  for now as a low-cost dep carrier; revisit if `python@3.14` becomes a problem)
+- Anything that is naturally opt-in (`k8s-tools`, `cncf`, `ide`, etc.) — those
+  go in the other Brewfiles and are only installed when the user runs `ujust bbrew`
+- Packages already on the image (`fastfetch`, `gum`, `just`, `gcc`) — no need
+  to duplicate them in brew
+
+### `fzf` and `ujust --choose`
+
+`fzf` is managed through `system-cli.Brewfile`, so it may be unavailable before
+the first-login `brew-preinstall.service` completes. The `ujust` wrapper
+bootstraps `fzf` on demand when `--choose` is requested, then reinitializes the
+Homebrew environment before dispatching to `just`. Keep this bootstrap path
+separate from ordinary `ujust` commands so missing Homebrew does not affect
+non-interactive recipes.
+
+---
+
+## Opt-in Brewfiles (ujust bbrew)
+
+These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
+`preinstall.d/`) and are only installed when the user explicitly runs
+`ujust bbrew` and picks from the menu:
+
+- `ai-tools.Brewfile`
+- `artwork.Brewfile`
+- `cli.Brewfile`
+- `cncf.Brewfile`
+- `experimental-ide.Brewfile`
+- `fonts.Brewfile`
+- `fonts-dev.Brewfile`
+- `ide.Brewfile`
+- `k8s-tools.Brewfile`
+- `nsl.Brewfile` — NSL development machines (requires host virtualization support)
+- `swift.Brewfile`
+- `video-wallpaper.Brewfile` — Hidamari, video wallpaper
+- `wallpaper-slideshow.Brewfile` — Damask, wallpaper slideshow
+
+`artwork.Brewfile` installs `bluefin-wallpapers-extra` from
+`projectbluefin/tap`. `brew bundle` matches installed casks by bare token, so
+users who already have the `ublue-os/tap/bluefin-wallpapers-extra` cask get a
+no-op on re-bundle and keep the old artifact. Opt-in Brewfiles are outside the
+`brew-preinstall` migration, so this switch is intentionally not migrated
+automatically; to move an existing install to the projectbluefin cask, run:
+
+```bash
+brew uninstall --cask ublue-os/tap/bluefin-wallpapers-extra
+brew install --cask projectbluefin/tap/bluefin-wallpapers-extra
+```
+
+Bluefin-specific (in `system_files/bluefin/`):
+- `full-desktop.Brewfile` — GNOME Circle + community flatpaks
+
+These are validated by the `validate-brewfiles.yaml` CI workflow on every PR
+that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
+
+### A second consumer: ChairLift `brew_bundles_group`
+
+`ujust bbrew` is not the only reader of this directory. ChairLift's
+`applications_page.brew_bundles_group` in
+`/usr/share/chairlift/config.yml` points `bundles_paths` at
+`/usr/share/ublue-os/homebrew` and renders one installable bundle per
+**immediate** `*.Brewfile` child, naming the bundle after the filename stem.
+So a file added here also appears on ChairLift's Applications page without any
+further wiring — and the filename is user-visible UI text.
+
+Two consequences when adding a bundle:
+
+- The file must be a **direct** child of the directory and carry the exact
+  `.Brewfile` suffix. ChairLift does not recurse, and a misplaced file is
+  silently absent from the UI rather than an error.
+- Names must be unique and readable as a bundle label
+  (`wallpaper-slideshow`, not `wallpaper_slideshow_v2`).
+
+The bundle only covers **install**. Do not add an uninstall action for a
+bundle, and do not invent a group to express one — an unknown group key fails
+ChairLift's strict schema validation and disables the whole application.
+
+CI's `scripts/validate-brewfiles.sh` validator skips `flatpak` lines (it only
+validates `brew` and `cask` lines), so the unit tests in `test_chairlift_config.py`
+are what pin these app ids.
+
+---
+
+## Brewfile scope: shared/ vs bluefin/ for all-variant packages
+
+**Rule:** Any package that should install on ALL variants (bluefin, bluefin-lts, dakota) must live in `system_files/shared/preinstall.d/`, not `system_files/bluefin/preinstall.d/`.
+
+`system_files/bluefin/` is included by bluefin and bluefin-lts. Dakota also includes it via its `common.bst` element. However, the semantic intent of `bluefin/` is bluefin-family only. When a package is placed there with a comment like "bluefin + bluefin-lts only", it creates ambiguity about whether Dakota gets it.
+
+**Resolution:** `shared/preinstall.d/` is the unambiguous home for any package that is factory-wide. `bluefin/preinstall.d/` should only contain packages that are intentionally absent from Dakota.
+
+**GNOME-overlay exception:** a package that only works together with GNOME
+defaults shipped from `bluefin/` (Shell extension enablement, media-keys
+shortcuts, user units) lives in `bluefin/preinstall.d/` next to that
+configuration, even though Dakota consumes it too. `compass.Brewfile` is the
+current case: its `compass@tunaos.org` extension, `<Super>space` shortcut, and
+`compass.service` all ship from `system_files/bluefin/`, so the Brewfile stays
+with them.
+
+**Concrete example:** `chairlift.Brewfile` lives in
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/`, making its
+all-variant provisioning explicit.

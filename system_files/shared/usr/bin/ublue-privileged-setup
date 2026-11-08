@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# Thin wrapper: the dispatcher itself lives in hookrunner.sh so that
+# ublue-system-setup, ublue-user-setup and ublue-privileged-setup cannot drift.
+#
+# Privileged setup can be called via user services (see
+# /usr/share/polkit-1/rules.d/20-privileged-user-setup.rules).
+
+HOOKRUNNER="${HOOKRUNNER:-/usr/lib/ublue/setup-services/hookrunner.sh}"
+# shellcheck source=/dev/null
+source "${HOOKRUNNER}"
+
+run_setup_hooks "privileged-hooks-directory" "/usr/share/ublue-os/privileged-setup.hooks.d"

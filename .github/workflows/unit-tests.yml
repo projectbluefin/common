@@ -1,0 +1,73 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "system_files/**"
+      - "tests/**"
+      - "scripts/**"
+      - "Justfile"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - main
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Homebrew environment and test dependencies
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "$(/home/linuxbrew/.linuxbrew/bin/brew --prefix)/bin" >> "$GITHUB_PATH"
+          brew install bats-core fish zsh
+          pip install -r tests/requirements.txt
+
+      - name: Install just
+        uses: taiki-e/install-action@0b43677d266e02f8bd34a2096b57e23a01a92aff # just
+        with:
+          tool: just
+
+      - name: shellcheck the Brewfile validator
+        run: shellcheck scripts/validate-brewfiles.sh tests/test_validate_brewfiles.bats
+
+      - name: Run bats (all suites, catalog derived from disk)
+        run: |
+          # Derive the bats catalog from disk: every tests/*.bats runs. This
+          # replaces the old per-suite list that had silently drifted — suites
+          # were on disk but never ran in CI.
+          bats tests/*.bats
+
+      - name: Run pytest (all modules, catalog derived from disk)
+        run: python3 -m pytest tests/test_*.py -v --cov=system_files/bluefin/etc/bazaar --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage-html --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage-html/
+          retention-days: 7
+
+
+      - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew bundle list --file=system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/system-cli.Brewfile

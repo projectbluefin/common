@@ -1,0 +1,1007 @@
+#!/usr/bin/bash
+# shellcheck disable=SC2016
+set -euo pipefail
+
+IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
+BONEDIGGER_BRAND="${BONEDIGGER_BRAND:-🫐 Bluefin Bug Report}"
+DRAFT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report/drafts"
+LOCAL_REPORT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report"
+MAX_BASELINE_BYTES=$((64 * 1024))
+MAX_BASELINE_CONTENT_BYTES=$((60 * 1024))
+MAX_PROFILE_BYTES=$((500 * 1024))
+MAX_BUNDLE_BYTES=$((2 * 1024 * 1024))
+
+CONFIRM_TARGET=""
+RESUME_DIR=""
+IMAGE_NAME=""
+IMAGE_REF=""
+IMAGE_TAG=""
+IMAGE_VERSION="unknown"
+IMAGE_FLAVOR=""
+BUG_REPO=""
+BOOTC_JSON="{}"
+BOOTC_STATUS="Unavailable"
+BOOTED_DIGEST="unknown"
+SELECTED_PROFILES=()
+PROFILE_FILES=()
+
+usage() {
+    printf 'Usage: ujust report [--confirm <issue-number-or-url>] [--resume <draft-directory>]\n' >&2
+}
+
+parse_args() {
+    while (($# > 0)); do
+        case "$1" in
+            --confirm)
+                if (($# < 2)); then
+                    usage
+                    return 1
+                fi
+                CONFIRM_TARGET="$2"
+                shift 2
+                ;;
+            --resume)
+                if (($# < 2)); then
+                    usage
+                    return 1
+                fi
+                RESUME_DIR="$2"
+                shift 2
+                ;;
+            *)
+                usage
+                return 1
+                ;;
+        esac
+    done
+
+    if [[ -n "$CONFIRM_TARGET" && -n "$RESUME_DIR" ]]; then
+        usage
+        return 1
+    fi
+}
+
+read_image_field() {
+    local field="$1"
+
+    if command -v jq &>/dev/null; then
+        jq -r --arg field "$field" '.[$field] // "unknown"' "$IMAGE_INFO_FILE" 2>/dev/null || \
+            printf 'unknown\n'
+    else
+        printf 'unknown\n'
+    fi
+}
+
+read_image_info() {
+    IMAGE_NAME="$(read_image_field image-name)"
+    IMAGE_REF="$(read_image_field image-ref)"
+    IMAGE_TAG="$(read_image_field image-tag)"
+    IMAGE_FLAVOR="$(read_image_field image-flavor)"
+}
+
+read_boot_status() {
+    local booted_ref booted_tag booted_name
+    local booted_image_bin="${UBLUE_BOOTED_IMAGE_BIN:-/usr/libexec/ublue-booted-image}"
+
+    BOOTC_JSON="$(bootc status --json 2>/dev/null || printf '{}')"
+    BOOTC_STATUS="$(bootc status 2>/dev/null || printf 'Unavailable')"
+
+    if command -v jq &>/dev/null; then
+        BOOTED_DIGEST="$(printf '%s' "$BOOTC_JSON" | \
+            jq -r '.status.booted.imageDigest // "unknown"' 2>/dev/null || printf 'unknown')"
+        # image-info.json is baked at compose time; the booted ref, tag and
+        # name come from the deployment itself (projectbluefin/common#1020,
+        # projectbluefin/common#1009, projectbluefin/dakota#1328). The
+        # derivation rules are owned by /usr/libexec/ublue-booted-image.
+        booted_ref="$("$booted_image_bin" ref 2>/dev/null || true)"
+        if [[ -n "$booted_ref" ]]; then
+            IMAGE_REF="$booted_ref"
+            booted_tag="$("$booted_image_bin" tag 2>/dev/null || true)"
+            if [[ -n "$booted_tag" ]]; then
+                IMAGE_TAG="$booted_tag"
+            fi
+            booted_name="$("$booted_image_bin" name 2>/dev/null || true)"
+            if [[ -n "$booted_name" ]]; then
+                IMAGE_NAME="$booted_name"
+            fi
+        fi
+    else
+        BOOTED_DIGEST="unknown"
+    fi
+
+    IMAGE_VERSION="$(sed -n 's/^IMAGE_VERSION="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/os-release 2>/dev/null | head -1)"
+    IMAGE_VERSION="${IMAGE_VERSION:-unknown}"
+}
+
+route_issue_repo() {
+    # Routing grammar lives in one place only — see
+    # system_files/shared/usr/libexec/ublue-image-repo.
+    BUG_REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/common" "$IMAGE_NAME" "$IMAGE_TAG")"
+}
+
+scrub_kernel_log() {
+    sed -E \
+        -e 's/([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}/[MAC-REDACTED]/gi' \
+        -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/[IP-REDACTED]/g' \
+        -e 's/([0-9a-fA-F]{1,4}:){3,7}[0-9a-fA-F]{0,4}/[IP-REDACTED]/gi' \
+        -e 's/[0-9a-fA-F]{0,4}(:[0-9a-fA-F]{0,4})*::[0-9a-fA-F:]+/[IP-REDACTED]/gi' \
+        -e 's/[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}/[UUID-REDACTED]/gi' \
+        -e 's/(eui\.|naa\.|wwn\.)[0-9a-fA-F]+/[SERIAL-REDACTED]/gi' \
+        -e 's|/(var/)?home/[^/[:space:]]+/|/\1home/[REDACTED]/|g'
+}
+
+scrub_journal_log() {
+    scrub_kernel_log | sed -E \
+        -e 's/(USER|LOGNAME)=[^[:space:]]*/\1=[REDACTED]/g' \
+        -e 's/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/[REDACTED-email]/g'
+}
+
+# Hardware probe helpers shared by the opt-in Hardware smart log profile and
+# the always-on baseline hardware summary, so the two views cannot drift
+# apart. Every helper routes its output through scrub_kernel_log so that no
+# hardware probe reaches a public issue unredacted.
+# projectbluefin/common#1338.
+dmi_field() {
+    local field="$1"
+    local dmi_id_path="${DMI_ID_PATH:-/sys/class/dmi/id}"
+
+    [[ -r "$dmi_id_path/$field" ]] || return 1
+    scrub_kernel_log < "$dmi_id_path/$field"
+}
+
+gpu_pci_lines() {
+    command -v lspci &>/dev/null || return 0
+    lspci 2>/dev/null | grep -iE 'VGA|Display|3D controller|2D controller' || true
+}
+
+net_interface_names() {
+    local sys_class_net="${SYS_CLASS_NET_PATH:-/sys/class/net}"
+    local iface
+    local -a names=()
+
+    [[ -d "$sys_class_net" ]] || return 0
+    for iface in "$sys_class_net"/*; do
+        [[ -e "$iface" ]] || continue
+        names+=("${iface##*/}")
+    done
+    if ((${#names[@]} > 0)); then
+        printf '%s\n' "${names[@]}" | scrub_kernel_log
+    fi
+}
+
+limit_file() {
+    local file="$1"
+    local limit="$2"
+    local bytes
+    local marker=$'\n\n_Additional output was omitted to keep this report bounded._\n'
+    local marker_bytes
+
+    bytes="$(wc -c < "$file")"
+    if ((bytes <= limit)); then
+        return
+    fi
+
+    marker_bytes="${#marker}"
+    if ((limit <= marker_bytes)); then
+        head -c "$limit" "$file" > "${file}.limited"
+    else
+        head -c "$((limit - marker_bytes))" "$file" > "${file}.limited"
+        printf '%s' "$marker" >> "${file}.limited"
+    fi
+    mv "${file}.limited" "$file"
+}
+
+profile_desktop_graphics() {
+    printf '## Desktop / graphics smart log\n\n'
+    printf '### Enabled extensions\n\n```\n'
+    gnome-extensions list --enabled 2>/dev/null | scrub_journal_log || true
+    printf '```\n\n### Graphics devices\n\n```\n'
+    gpu_pci_lines | scrub_journal_log || true
+    printf '```\n\n### Desktop warnings and errors\n\n```\n'
+    journalctl -b 0 --no-pager -u gdm -u gnome-shell -p warning..alert 2>/dev/null | \
+        tail -200 | scrub_journal_log || true
+    printf '```\n'
+}
+
+profile_sleep_crash() {
+    printf '## Sleep / crash smart log\n\n### Previous boot crash and sleep signals\n\n```\n'
+    journalctl -b -1 -k --no-pager 2>/dev/null | \
+        grep -iE 'panic|oops|BUG:|Call Trace|suspend|hibernate|resume|hung task|lockup' | \
+        tail -250 | scrub_journal_log || true
+    printf '```\n\n### Coredump index (last seven days)\n\n```\n'
+    coredumpctl list --no-pager --no-legend --since '7 days ago' 2>/dev/null | \
+        tail -50 | scrub_journal_log || true
+    printf '```\n'
+}
+
+profile_update_boot() {
+    printf '## Update / boot smart log\n\n### bootc status\n\n```\n'
+    printf '%s\n' "$BOOTC_STATUS" | scrub_journal_log
+    printf '```\n\n### Update and boot warnings\n\n```\n'
+    journalctl -b 0 --no-pager -u bootc-fetch-apply-updates.service \
+        -u rpm-ostreed -u systemd-boot-update.service -p warning..alert 2>/dev/null | \
+        tail -250 | scrub_journal_log || true
+    printf '```\n'
+}
+
+profile_networking() {
+    printf '## Networking smart log\n\n### NetworkManager warnings and errors\n\n```\n'
+    journalctl -b 0 --no-pager -u NetworkManager -p warning..alert 2>/dev/null | \
+        tail -250 | scrub_journal_log || true
+    printf '```\n\n### Network device state\n\n```\n'
+    nmcli --terse --fields DEVICE,TYPE,STATE device status 2>/dev/null | \
+        scrub_journal_log || true
+    printf '```\n'
+}
+
+profile_flatpak_application() {
+    printf '## Flatpak / application smart log\n\n### Installed Flatpaks\n\n```\n'
+    flatpak list --columns=application,version 2>/dev/null | scrub_journal_log || true
+    printf '```\n\n### Flatpak and portal warnings\n\n```\n'
+    journalctl -b 0 --no-pager -u flatpak-system-helper -u xdg-desktop-portal \
+        -p warning..alert 2>/dev/null | tail -250 | scrub_journal_log || true
+    printf '```\n'
+}
+
+# Hardware inventory profile. Captures a bounded view of CPU/memory/GPU/disk/
+# DMI/PCI/USB devices, including the original GIST_PCI-style GPU detection
+# (lspci + nvidia-smi + AMD DRM sysfs), so reporters and maintainers can see
+# the machine a bug was filed from without uploading a full dmidecode dump.
+# projectbluefin/common#1338.
+profile_hardware() {
+    printf '## Hardware smart log\n\n'
+
+    local dmi_value bios_vendor bios_version
+
+    printf '### DMI / system identity\n\n```\n'
+    if dmi_value="$(dmi_field sys_vendor)"; then
+        printf 'Vendor:   %s\n' "$dmi_value"
+    fi
+    if dmi_value="$(dmi_field product_name)"; then
+        printf 'Product:  %s\n' "$dmi_value"
+    fi
+    if dmi_value="$(dmi_field product_family)"; then
+        printf 'Family:   %s\n' "$dmi_value"
+    fi
+    if dmi_value="$(dmi_field product_version)"; then
+        printf 'Version:  %s\n' "$dmi_value"
+    fi
+    if bios_vendor="$(dmi_field bios_vendor)"; then
+        bios_version="$(dmi_field bios_version || true)"
+        printf 'BIOS:     %s %s\n' "$bios_vendor" "${bios_version:-unknown}"
+    fi
+    if dmi_value="$(dmi_field chassis_type)"; then
+        printf 'Chassis:  type=%s\n' "$dmi_value"
+    fi
+    printf '```\n\n'
+
+    printf '### CPU\n\n```\n'
+    if command -v lscpu &>/dev/null; then
+        lscpu 2>/dev/null | grep -iE \
+            '^(Architecture|Model name|Vendor ID|CPU\(s\)|Thread\(s\) per core|Core\(s\) per socket|Socket\(s\)|CPU max MHz|CPU min MHz|Virtualization|L1d cache|L1i cache|L2 cache|L3 cache):' | \
+            scrub_kernel_log || true
+    elif [[ -r /proc/cpuinfo ]]; then
+        awk -F: '/^model name|^vendor_id|^cpu family|^cpu MHz|^cache size/ {print $1": "$2}' \
+            /proc/cpuinfo | sort -u | scrub_kernel_log || true
+    else
+        printf '_CPU info unavailable_\n'
+    fi
+    printf '```\n\n'
+
+    printf '### Memory\n\n```\n'
+    if command -v free &>/dev/null; then
+        free -h --si 2>/dev/null | head -3 | scrub_kernel_log || printf '_unavailable_\n'
+    else
+        printf '_free unavailable_\n'
+    fi
+    printf '```\n\n'
+
+    printf '### Graphics devices\n\n'
+    local gpu_pci
+    gpu_pci="$(gpu_pci_lines)"
+    if [[ -n "$gpu_pci" ]]; then
+        printf '```\n%s\n```\n' "$(printf '%s' "$gpu_pci" | scrub_kernel_log)"
+    else
+        printf '_No PCI GPU detected_\n'
+    fi
+    if command -v nvidia-smi &>/dev/null; then
+        printf '\n#### NVIDIA (`nvidia-smi -q`)\n\n```\n'
+        nvidia-smi -q 2>/dev/null | sed -E \
+            -e 's/GPU UUID[[:space:]]*:[[:space:]]*[A-Za-z0-9_-]*/GPU UUID                          : [REDACTED]/g' \
+            -e 's/Serial Number[[:space:]]*:[[:space:]]*[A-Za-z0-9_-]*/Serial Number                     : [REDACTED]/g' \
+            -e 's/Bus Id[[:space:]]*:[[:space:]]*[A-Za-z0-9:.]*[0-9][A-Za-z0-9:.]*/Bus Id                            : [REDACTED]/g' \
+            -e 's/Minor Number[[:space:]]*:[[:space:]]*[0-9]*/Minor Number                      : [REDACTED]/g' \
+            -e 's|/(var/)?home/[^/[:space:]]+/|/\1home/[REDACTED]/|g' \
+            | head -80 | scrub_journal_log || true
+        printf '```\n'
+    fi
+    if compgen -G '/sys/class/drm/card[0-9]*/device/gpu_busy_percent' &>/dev/null; then
+        printf '\n#### AMD / DRM sysfs\n\n'
+        printf '| Card | GPU %% | VRAM Used / Total | GTT Used / Total | Temp | Power |\n'
+        printf '|------|-------|-------------------|------------------|------|--------|\n'
+        local card card_id busy vram_used vram_total gtt_used gtt_total
+        local vram_used_h vram_total_h gtt_used_h gtt_total_h gpu_temp gpu_power hwmon raw
+        for card in /sys/class/drm/card[0-9]*/; do
+            [[ -f "${card}device/gpu_busy_percent" ]] || continue
+            card_id="${card%/}"; card_id="${card_id##*/}"
+            busy="$(cat "${card}device/gpu_busy_percent" 2>/dev/null || true)"
+            vram_used="$(cat "${card}device/mem_info_vram_used" 2>/dev/null || true)"
+            vram_total="$(cat "${card}device/mem_info_vram_total" 2>/dev/null || true)"
+            gtt_used="$(cat "${card}device/mem_info_gtt_used" 2>/dev/null || true)"
+            gtt_total="$(cat "${card}device/mem_info_gtt_total" 2>/dev/null || true)"
+            vram_used_h="$(numfmt --to=iec-i -- "$vram_used" 2>/dev/null || echo "N/A")"
+            vram_total_h="$(numfmt --to=iec-i -- "$vram_total" 2>/dev/null || echo "N/A")"
+            gtt_used_h="$(numfmt --to=iec-i -- "$gtt_used" 2>/dev/null || echo "N/A")"
+            gtt_total_h="$(numfmt --to=iec-i -- "$gtt_total" 2>/dev/null || echo "N/A")"
+            gpu_temp="N/A"; gpu_power="N/A"
+            for hwmon in "${card}device/hwmon/hwmon"[0-9]*/; do
+                [[ -d "$hwmon" ]] || continue
+                if [[ -f "${hwmon}temp1_input" ]]; then
+                    raw="$(cat "${hwmon}temp1_input" 2>/dev/null || true)"
+                    [[ -n "$raw" ]] && gpu_temp="$(( raw / 1000 ))°C"
+                fi
+                if [[ -f "${hwmon}power1_average" ]]; then
+                    raw="$(cat "${hwmon}power1_average" 2>/dev/null || true)"
+                    [[ -n "$raw" ]] && gpu_power="$(( raw / 1000000 ))W"
+                fi
+                break
+            done
+            printf '| %s | %s%% | %s / %s | %s / %s | %s | %s |\n' \
+                "$card_id" "${busy:-N/A}" "$vram_used_h" "$vram_total_h" \
+                "$gtt_used_h" "$gtt_total_h" "$gpu_temp" "$gpu_power"
+        done
+        printf '\n'
+    fi
+
+    printf '### Disks and storage controllers\n\n```\n'
+    if command -v lsblk &>/dev/null; then
+        lsblk -d -o NAME,SIZE,ROTA,TRAN,MODEL 2>/dev/null | head -40 | \
+            scrub_kernel_log || printf '_unavailable_\n'
+    else
+        printf '_lsblk unavailable_\n'
+    fi
+    printf '```\n\n'
+
+    printf '### PCI / USB inventory\n\n```\n'
+    if command -v lspci &>/dev/null; then
+        printf 'PCI devices:    %s\n' \
+            "$(lspci 2>/dev/null | wc -l | tr -d ' ')"
+    else
+        printf 'PCI devices:    _lspci unavailable_\n'
+    fi
+    if command -v lsusb &>/dev/null; then
+        printf 'USB devices:    %s\n' \
+            "$(lsusb 2>/dev/null | wc -l | tr -d ' ')"
+    else
+        printf 'USB devices:    _lsusb unavailable_\n'
+    fi
+    local -a net_ifaces=()
+    mapfile -t net_ifaces < <(net_interface_names)
+    printf 'Network ifaces: %s\n' "${#net_ifaces[@]}"
+    printf '\nNetwork interfaces (name only): %s\n' \
+        "$(printf '%s\n' "${net_ifaces[@]}" | grep -v '^lo$' | sort -u | paste -sd, -)"
+    printf '```\n\n'
+
+    printf '### Session software versions\n\n```\n'
+    {
+        if command -v gnome-shell &>/dev/null; then
+            printf 'GNOME:     %s\n' "$(gnome-shell --version 2>/dev/null || echo unknown)"
+        fi
+        printf 'Kernel:    %s\n' "$(uname -r)"
+        printf 'Arch:      %s\n' "$(uname -m)"
+        if command -v flatpak &>/dev/null; then
+            printf 'Flatpaks:  %s installed\n' \
+                "$(flatpak list --columns=application 2>/dev/null | wc -l | tr -d ' ')"
+        fi
+        if [[ -f /etc/os-release ]]; then
+            printf 'OS:        %s\n' \
+                "$(grep -E '^(NAME|VERSION)=' /etc/os-release | tr '\n' ' ')"
+        fi
+    } | scrub_kernel_log
+    printf '```\n'
+}
+
+profile_filename() {
+    case "$1" in
+        "Desktop / graphics") printf 'desktop-graphics.md\n' ;;
+        "Sleep / crash") printf 'sleep-crash.md\n' ;;
+        "Update / boot") printf 'update-boot.md\n' ;;
+        Networking) printf 'networking.md\n' ;;
+        "Flatpak / application") printf 'flatpak-application.md\n' ;;
+        Hardware) printf 'hardware.md\n' ;;
+        *) return 1 ;;
+    esac
+}
+
+collect_profile() {
+    local profile="$1"
+    local output="$2"
+    local limit="$3"
+
+    case "$profile" in
+        "Desktop / graphics") profile_desktop_graphics > "$output" ;;
+        "Sleep / crash") profile_sleep_crash > "$output" ;;
+        "Update / boot") profile_update_boot > "$output" ;;
+        Networking) profile_networking > "$output" ;;
+        "Flatpak / application") profile_flatpak_application > "$output" ;;
+        Hardware) profile_hardware > "$output" ;;
+        *) return 1 ;;
+    esac
+    limit_file "$output" "$limit"
+}
+
+choose_profiles() {
+    local profile
+    local selected
+
+    SELECTED_PROFILES=()
+    while IFS= read -r selected; do
+        case "$selected" in
+            "Desktop / graphics"|"Sleep / crash"|"Update / boot"|Networking|"Flatpak / application"|Hardware)
+                for profile in "${SELECTED_PROFILES[@]}"; do
+                    [[ "$profile" == "$selected" ]] && continue 2
+                done
+                SELECTED_PROFILES+=("$selected")
+                ;;
+        esac
+    done < <(gum choose --no-limit \
+        "Desktop / graphics" \
+        "Sleep / crash" \
+        "Update / boot" \
+        Networking \
+        "Flatpak / application" \
+        Hardware || true)
+}
+
+collect_profiles() {
+    local count="${#SELECTED_PROFILES[@]}"
+    local limit="$MAX_PROFILE_BYTES"
+    local profile
+    local filename
+
+    PROFILE_FILES=()
+    ((count == 0)) && return
+    if ((count * limit > MAX_BUNDLE_BYTES)); then
+        limit=$((MAX_BUNDLE_BYTES / count))
+    fi
+
+    for profile in "${SELECTED_PROFILES[@]}"; do
+        filename="$(profile_filename "$profile")"
+        collect_profile "$profile" "$DRAFT_DIR/$filename" "$limit"
+        PROFILE_FILES+=("$DRAFT_DIR/$filename")
+    done
+}
+
+write_profile_list() {
+    local file
+
+    : > "$DRAFT_DIR/profile-files.txt"
+    for file in "${PROFILE_FILES[@]}"; do
+        basename "$file" >> "$DRAFT_DIR/profile-files.txt"
+    done
+}
+
+collect_baseline() {
+    local title="$1"
+    local description="$2"
+    local reproduction="$3"
+    local failed_units
+    local current_errors
+    local hardware_summary
+    local load_avg dmi_vendor dmi_product
+
+    failed_units="$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | \
+        awk '{print $1}' | head -20 | scrub_journal_log || true)"
+    current_errors="$(journalctl -b 0 -p err..emerg --no-pager 2>/dev/null | \
+        tail -40 | scrub_journal_log || true)"
+    hardware_summary="$(collect_hardware_summary)"
+
+    if [[ -r /proc/loadavg ]]; then
+        load_avg="$(awk '{printf "%s / %s / %s", $1, $2, $3}' /proc/loadavg)"
+    else
+        load_avg="unknown"
+    fi
+    # Memory is reported once only, in the Hardware summary table below.
+    dmi_vendor="$(dmi_field sys_vendor || true)"
+    dmi_vendor="${dmi_vendor:-unknown}"
+    dmi_product="$(dmi_field product_name || true)"
+    dmi_product="${dmi_product:-unknown}"
+
+    {
+        printf '## %s\n\n' "$BONEDIGGER_BRAND"
+        printf '_Created with `ujust report`._\n\n'
+        printf '<!-- report-type: bug -->\n\n'
+        printf '### Summary\n\n%s\n\n' "$description"
+        printf '### Steps to reproduce\n\n%s\n\n' "$reproduction"
+        printf '### System\n\n'
+        printf '| Field | Value |\n| --- | --- |\n'
+        printf '| Image | `%s` |\n' "$IMAGE_REF"
+        printf '| Tag | `%s` |\n' "$IMAGE_TAG"
+        printf '| Version | `%s` |\n' "$IMAGE_VERSION"
+        printf '| Flavor | `%s` |\n' "$IMAGE_FLAVOR"
+        printf '| Kernel | `%s` |\n' "$(uname -r)"
+        printf '| Architecture | `%s` |\n' "$(uname -m)"
+        printf '| Booted digest | `%s` |\n' "$BOOTED_DIGEST"
+        printf '| Load (1m / 5m / 15m) | `%s` |\n' "$load_avg"
+        printf '| DMI vendor / product | `%s` / `%s` |\n\n' "$dmi_vendor" "$dmi_product"
+        printf '### Hardware summary\n\n'
+        printf '%s\n' "$hardware_summary"
+        printf '### Failed systemd units\n\n'
+        if [[ -n "$failed_units" ]]; then
+            printf '%s\n' "$failed_units" | sed 's/^/- /'
+        else
+            printf '_None reported._\n'
+        fi
+        printf '\n### Current boot errors\n\n```\n%s\n```\n' "${current_errors:-None reported.}"
+    } > "$DRAFT_DIR/issue.md"
+    printf '%s\n' "$title" > "$DRAFT_DIR/title.txt"
+    limit_file "$DRAFT_DIR/issue.md" "$MAX_BASELINE_CONTENT_BYTES"
+}
+
+# Compact hardware overview for the baseline summary table: CPU model,
+# GPU identity, total memory, root disk model and size, and the list of
+# physical network interface names (loopback plus VPN/tunnel/virtual
+# interfaces are filtered out because this table is always submitted).
+# Output is short (one line per item, Markdown-friendly), PII-
+# scrubbed, and tolerant of any single probe being missing — a missing
+# probe is reported as `_unavailable_` so triage can still see what was
+# actually probed. projectbluefin/common#1338.
+collect_hardware_summary() {
+    local cpu_model gpu_lines gpu_short mem_line disk_line net_line net_names
+
+    if command -v lscpu &>/dev/null; then
+        cpu_model="$(lscpu 2>/dev/null | awk -F: '/^Model name/{sub(/^[[:space:]]+/, "", $2); print $2; exit}' | scrub_kernel_log || true)"
+    elif [[ -r /proc/cpuinfo ]]; then
+        cpu_model="$(awk -F: '/^model name/{sub(/^[[:space:]]+/, "", $2); print $2; exit}' /proc/cpuinfo | scrub_kernel_log || true)"
+    fi
+    cpu_model="${cpu_model:-_unavailable_}"
+
+    gpu_lines="$(gpu_pci_lines)"
+    if [[ -n "$gpu_lines" ]]; then
+        gpu_short="$(printf '%s\n' "$gpu_lines" | head -1)"
+        gpu_short="${gpu_short#*: }"
+        gpu_short="$(printf '%s\n' "$gpu_short" | scrub_kernel_log || true)"
+        gpu_short="${gpu_short:-_unavailable_}"
+    else
+        gpu_short="_none detected_"
+    fi
+
+    if command -v free &>/dev/null; then
+        mem_line="$(free -h --si 2>/dev/null | awk '/^Mem:/{print $2" total / "$7" available"}' | scrub_kernel_log || true)"
+    else
+        mem_line=""
+    fi
+    mem_line="${mem_line:-_unavailable_}"
+
+    # MODEL is the last column of `lsblk -d -o NAME,SIZE,MODEL -n` and is
+    # routinely multi-word ("Samsung SSD 980 PRO 1TB"), so join fields 3..NF
+    # instead of printing $3 alone.
+    if command -v lsblk &>/dev/null; then
+        disk_line="$(lsblk -d -o NAME,SIZE,MODEL -n 2>/dev/null \
+            | awk '!/^(loop|sr|zd)/ {
+                       model = "";
+                       for (i = 3; i <= NF; i++) {
+                           model = (i == 3 ? $i : model " " $i);
+                       }
+                       if (model == "") { print $1" "$2 }
+                       else { print $1" "$2" "model }
+                   }' | head -3 \
+            | paste -sd, - | scrub_kernel_log || true)"
+    else
+        disk_line=""
+    fi
+    disk_line="${disk_line:-_unavailable_}"
+
+    # The baseline summary is always submitted, so keep VPN / tunnel /
+    # virtual interface names (tailscale0, wg0, proton0, tun0, docker0, ...)
+    # out of it — they advertise network topology the reporter never opted
+    # into sharing. The opt-in Hardware profile still lists every name.
+    # projectbluefin/common#1340.
+    net_names="$(net_interface_names || true)"
+    if [[ -z "$net_names" ]]; then
+        net_line="_unavailable_"
+    else
+        net_line="$(printf '%s\n' "$net_names" \
+            | grep -vE '^(lo|tun[0-9]*|tap[0-9]*|utun[0-9]*|wg[0-9]*|tailscale[0-9]*|proton[0-9]*|nordlynx|ipsec[0-9]*|zt[a-z0-9]*|ppp[0-9]*|docker[0-9]*|veth.*|virbr[0-9]*|vnet[0-9]*|br-.*|cni[0-9]*|flannel.*|kube.*)$' \
+            | sort -u | paste -sd, - || true)"
+        net_line="${net_line:-_none reportable_}"
+    fi
+
+    cat <<EOF
+| Item | Value |
+| --- | --- |
+| CPU | \`${cpu_model}\` |
+| GPU | \`${gpu_short}\` |
+| Memory | ${mem_line} |
+| Disks | \`${disk_line}\` |
+| Network interfaces | \`${net_line}\` |
+EOF
+}
+
+collect_feature_body() {
+    local title="$1"
+    local description="$2"
+
+    {
+        printf '## 🫐 Bluefin Feature Request\n\n'
+        printf '_Created with `ujust report`._\n\n'
+        printf '<!-- report-type: feature -->\n\n'
+        printf '### Requested change\n\n%s\n' "$description"
+    } > "$DRAFT_DIR/issue.md"
+    printf '%s\n' "$title" > "$DRAFT_DIR/title.txt"
+    limit_file "$DRAFT_DIR/issue.md" "$MAX_BASELINE_CONTENT_BYTES"
+}
+
+create_draft() {
+    local repo="$1"
+
+    mkdir -p "$DRAFT_ROOT"
+    DRAFT_DIR="$(mktemp -d "${DRAFT_ROOT}/draft-XXXXXX")"
+    printf '%s\n' "$repo" > "$DRAFT_DIR/repo.txt"
+}
+
+keep_draft() {
+    local draft_dir="$1"
+
+    printf '\nDraft preserved at: %s\n' "$draft_dir"
+    printf 'Resume with: ujust report --resume %q\n' "$draft_dir"
+}
+
+persist_local_copy() {
+    local file
+    local source
+    local destination
+
+    destination="$LOCAL_REPORT_ROOT/last"
+    rm -rf "$destination"
+    mkdir -p "$destination"
+
+    if [[ -f "$DRAFT_DIR/issue.md" ]]; then
+        cp -f -- "$DRAFT_DIR/issue.md" "$destination/summary.md"
+    fi
+    if [[ -f "$DRAFT_DIR/journal.txt" ]]; then
+        cp -f -- "$DRAFT_DIR/journal.txt" "$destination/journal.txt"
+    fi
+
+    for source in "$DRAFT_DIR"/*.md; do
+        [[ -f "$source" && "$(basename "$source")" != issue.md ]] || continue
+        cp -f -- "$source" "$destination/$(basename "$source")"
+    done
+}
+
+load_draft() {
+    local filename
+
+    if [[ ! -d "$RESUME_DIR" || ! -f "$RESUME_DIR/repo.txt" || \
+        ! -f "$RESUME_DIR/title.txt" || ! -f "$RESUME_DIR/issue.md" ]]; then
+        printf 'Invalid report draft: %s\n' "$RESUME_DIR" >&2
+        return 1
+    fi
+
+    DRAFT_DIR="$RESUME_DIR"
+    PROFILE_FILES=()
+    if [[ -f "$DRAFT_DIR/profile-files.txt" ]]; then
+        while IFS= read -r filename; do
+            [[ "$filename" =~ ^[a-z-]+\.md$ && -f "$DRAFT_DIR/$filename" ]] || continue
+            PROFILE_FILES+=("$DRAFT_DIR/$filename")
+        done < "$DRAFT_DIR/profile-files.txt"
+    fi
+}
+
+preview_draft() {
+    local file
+
+    printf '\nReview before anything is made public:\n\n'
+    if [[ -t 0 && -t 1 ]]; then
+        gum pager < "$DRAFT_DIR/issue.md"
+        for file in "${PROFILE_FILES[@]}"; do
+            printf '\nPreviewing %s\n' "$(basename "$file")"
+            gum pager < "$file"
+        done
+    else
+        cat "$DRAFT_DIR/issue.md"
+        for file in "${PROFILE_FILES[@]}"; do
+            printf '\n--- %s ---\n' "$(basename "$file")"
+            cat "$file"
+        done
+    fi
+}
+
+ensure_gh_ready() {
+    if ! command -v gh &>/dev/null; then
+        printf 'GitHub CLI (gh) is required to submit this report.\n' >&2
+        if ! gum confirm "Install gh with Homebrew now?"; then
+            printf 'GitHub CLI installation was declined.\n' >&2
+            return 1
+        fi
+        if ! command -v brew &>/dev/null || ! brew install gh; then
+            printf 'Could not install gh with Homebrew.\n' >&2
+            return 1
+        fi
+    fi
+
+    if ! gh auth status --active &>/dev/null; then
+        printf 'GitHub sign-in is required to create and track this report.\n' >&2
+        if ! gum confirm "Sign in to GitHub now?"; then
+            printf 'GitHub sign-in was declined.\n' >&2
+            return 1
+        fi
+        if ! gh auth login --web --skip-ssh-key || ! gh auth status --active &>/dev/null; then
+            printf 'GitHub sign-in did not complete.\n' >&2
+            return 1
+        fi
+    fi
+}
+
+publish_smart_logs() {
+    local gist_url
+
+    ((${#PROFILE_FILES[@]} == 0)) && return
+    if [[ -f "$DRAFT_DIR/gist-url.txt" ]]; then
+        gist_url="$(< "$DRAFT_DIR/gist-url.txt")"
+    else
+        if ! gist_url="$(gh gist create --public \
+            --desc "ujust report smart logs $(date -I)" "${PROFILE_FILES[@]}")"; then
+            printf 'Could not publish the selected smart logs.\n' >&2
+            return 1
+        fi
+        printf '%s\n' "$gist_url" > "$DRAFT_DIR/gist-url.txt"
+    fi
+
+    if ! grep -Fq "$gist_url" "$DRAFT_DIR/issue.md"; then
+        {
+            printf '\n### Selected smart logs\n\n'
+            printf 'The selected, redacted logs are public at: %s\n' "$gist_url"
+        } >> "$DRAFT_DIR/issue.md"
+        limit_file "$DRAFT_DIR/issue.md" "$MAX_BASELINE_BYTES"
+    fi
+}
+
+create_issue() {
+    local repo
+    local title
+    local issue_url
+    local -a args
+
+    repo="$(< "$DRAFT_DIR/repo.txt")"
+    title="$(< "$DRAFT_DIR/title.txt")"
+    args=(issue create --repo "$repo" --title "$title" --body-file "$DRAFT_DIR/issue.md")
+
+    if ! issue_url="$(gh "${args[@]}")"; then
+        printf 'Could not create the GitHub issue.\n' >&2
+        return 1
+    fi
+    printf '%s\n' "$issue_url"
+}
+
+offer_browser() {
+    local issue_url="$1"
+
+    if [[ -t 0 && -t 1 ]] && gum confirm "Open the issue in your browser?"; then
+        xdg-open "$issue_url" 2>/dev/null || \
+            printf 'Open this URL in a browser: %s\n' "$issue_url"
+    fi
+}
+
+submit_draft() {
+    local consent_message
+    local issue_url
+
+    preview_draft
+    if ! choose_automation_preference; then
+        printf 'Submission was cancelled before selecting an automation preference.\n'
+        keep_draft "$DRAFT_DIR"
+        return
+    fi
+    if ((${#PROFILE_FILES[@]} > 0)); then
+        consent_message="Publish the selected smart logs publicly and create this issue?"
+    else
+        consent_message="Create this public GitHub issue?"
+    fi
+    if ! gum confirm "$consent_message"; then
+        printf 'Submission was declined.\n'
+        keep_draft "$DRAFT_DIR"
+        return
+    fi
+
+    if ! ensure_gh_ready || ! publish_smart_logs; then
+        keep_draft "$DRAFT_DIR"
+        return 1
+    fi
+    if ! issue_url="$(create_issue)"; then
+        keep_draft "$DRAFT_DIR"
+        return 1
+    fi
+
+    if ! persist_local_copy; then
+        printf 'Report submitted, but the local copy could not be saved.\n' >&2
+    else
+        printf 'Local copy kept at: %s/\n' "$LOCAL_REPORT_ROOT/last"
+    fi
+
+    printf '\nReport submitted successfully.\n%s\n' "$issue_url"
+    rm -rf "$DRAFT_DIR"
+    offer_browser "$issue_url"
+}
+
+preference_for_choice() {
+    case "$1" in
+        "Machine analysis is welcome") printf 'analysis\n' ;;
+        "Human interaction only") printf 'human-only\n' ;;
+        "No preference") printf 'unspecified\n' ;;
+        *) return 1 ;;
+    esac
+}
+
+save_automation_preference() {
+    local preference="$1"
+
+    sed -i -E \
+        '/^<!-- ([[:alnum:]-]*queue-preference|automation-preference): .* -->$/d' \
+        "$DRAFT_DIR/issue.md"
+    printf '\n<!-- automation-preference: %s -->\n' "$preference" \
+        >> "$DRAFT_DIR/issue.md"
+}
+
+choose_automation_preference() {
+    local choice
+    local preference
+
+    gum style --bold --foreground 212 "Automation preference"
+    gum style --foreground 245 \
+        "This records consent to analysis, not approval to implement. A maintainer reviews the request first."
+    choice="$(gum choose \
+        "No preference" \
+        "Machine analysis is welcome" \
+        "Human interaction only")" || return
+    preference="$(preference_for_choice "$choice")" || return
+    save_automation_preference "$preference"
+}
+
+parse_confirm_target() {
+    local target="$1"
+    local fallback_repo="$2"
+
+    CONFIRM_ISSUE=""
+    CONFIRM_REPO=""
+    if [[ "$target" =~ ^[1-9][0-9]*$ ]]; then
+        CONFIRM_ISSUE="$target"
+        CONFIRM_REPO="$fallback_repo"
+    elif [[ "$target" =~ ^https://github\.com/([[:alnum:]_.-]+/[[:alnum:]_.-]+)/issues/([1-9][0-9]*)([/?#].*)?$ ]]; then
+        CONFIRM_REPO="${BASH_REMATCH[1]}"
+        CONFIRM_ISSUE="${BASH_REMATCH[2]}"
+    else
+        usage
+        return 1
+    fi
+}
+
+confirm_report() {
+    local issue_number="$1"
+    local issue_repo="$2"
+    local failed_units
+    local body
+    local comment_url
+
+    failed_units="$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | \
+        awk '{print $1}' | head -10 | scrub_journal_log || true)"
+    failed_units="${failed_units:-none}"
+    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n* Image: %s\n* Tag: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s' \
+        "$IMAGE_REF" "$IMAGE_TAG" "$IMAGE_VERSION" "${BOOTED_DIGEST:-unknown}" "$(uname -r)" "$(uname -m)" \
+        "$failed_units")"
+
+    printf '\nWill post to: https://github.com/%s/issues/%s\n\n%s\n\n' \
+        "$issue_repo" "$issue_number" "$body"
+    if ! ensure_gh_ready; then
+        return 1
+    fi
+    if [[ -t 0 && -t 1 ]] && ! gum confirm "Post this comment?"; then
+        printf 'Confirmation comment was declined.\n'
+        return
+    fi
+
+    if ! gh issue comment "$issue_number" --repo "$issue_repo" --body "$body"; then
+        printf 'Could not post the confirmation comment.\n' >&2
+        return 1
+    fi
+    comment_url="$(gh api "repos/${issue_repo}/issues/${issue_number}/comments" \
+        --jq '.[-1].html_url' 2>/dev/null || true)"
+    comment_url="${comment_url:-https://github.com/${issue_repo}/issues/${issue_number}}"
+    printf 'Confirmation posted: %s\n' "$comment_url"
+}
+
+prompt_required() {
+    local placeholder="$1"
+    local response
+
+    if ! response="$(gum input --placeholder "$placeholder")"; then
+        return 1
+    fi
+    [[ -n "$response" ]] || return 1
+    printf '%s\n' "$response"
+}
+
+show_help() {
+    printf '\nFor troubleshooting and questions, visit Bluefin Discussions:\n'
+    printf 'https://github.com/ublue-os/bluefin/discussions\n'
+    printf 'No issue was created.\n'
+}
+
+start_bug_report() {
+    local title
+    local description
+    local reproduction
+
+    read_image_info
+    # read_boot_status must run before routing: it corrects IMAGE_TAG
+    # from the booted bootc image, and lts routing keys off the tag.
+    read_boot_status
+    route_issue_repo
+    gum style --bold --foreground 212 "Bug report"
+    gum style --foreground 245 \
+        "This image routes bug reports to: https://github.com/%s/issues/new" "$BUG_REPO"
+    title="$(prompt_required "Short title")" || return
+    description="$(prompt_required "What happened?")" || return
+    reproduction="$(prompt_required "How can someone reproduce it?")" || return
+
+    printf '\nSelect any relevant smart-log profiles (or none):\n'
+    choose_profiles
+    create_draft "$BUG_REPO"
+    : > "$DRAFT_DIR/bug-report.txt"
+    collect_baseline "$title" "$description" "$reproduction"
+    collect_profiles
+    write_profile_list
+    submit_draft
+}
+
+start_feature_request() {
+    local title
+    local description
+
+    gum style --bold --foreground 212 "Feature request"
+    gum style --foreground 245 \
+        "Feature requests go to: https://github.com/projectbluefin/common/issues/new"
+    title="$(prompt_required "Short title")" || return
+    description="$(prompt_required "What would you like to see?")" || return
+    create_draft "projectbluefin/common"
+    collect_feature_body "$title" "$description"
+    write_profile_list
+    submit_draft
+}
+
+main() {
+    local intent
+
+    parse_args "$@"
+    if [[ -n "$CONFIRM_TARGET" ]]; then
+        read_image_info
+        read_boot_status
+        route_issue_repo
+        parse_confirm_target "$CONFIRM_TARGET" "$BUG_REPO"
+        confirm_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+        return
+    fi
+    if [[ -n "$RESUME_DIR" ]]; then
+        load_draft
+        submit_draft
+        return
+    fi
+
+    gum style --border rounded --border-foreground 99 --padding "1 3" --bold \
+        "$BONEDIGGER_BRAND"
+    gum style --bold --foreground 212 "What kind of report would you like to make?"
+    intent="$(gum choose "Bug report" "Feature request" "Get help" "Confirm an existing report")" || return
+    case "$intent" in
+        "Bug report") start_bug_report ;;
+        "Feature request") start_feature_request ;;
+        "Get help") show_help ;;
+        "Confirm an existing report")
+            printf 'Use: ujust report --confirm <issue-number-or-url>\n'
+            ;;
+    esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

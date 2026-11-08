@@ -1,0 +1,244 @@
+name: Build
+on:
+  pull_request:
+    branches:
+      - main
+    # Required build checks must report for documentation-only pull requests.
+  push:
+    branches:
+      - main
+  merge_group:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_NAME: common
+
+jobs:
+  image_changes:
+    name: Check image inputs
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      build_required: ${{ steps.detect.outputs.build_required }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: false
+
+      - name: Detect image input changes
+        if: github.event_name != 'workflow_dispatch'
+        id: detect
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if ! git fetch --no-tags --depth=1 origin "$BASE_SHA"; then
+            echo "::warning::Unable to fetch base commit; running the image build."
+            echo "build_required=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Docs-only main revisions still report native CI without rebuilding an unchanged image.
+          # '*.md' (not '**/*.md') because Markdown under system_files/ is copied
+          # into the image by the Containerfile, so it is a real build input.
+          # .github/workflows/** is intentionally NOT excluded: Renovate bumps action
+          # SHAs via digest PRs that only touch workflows; those must still build so
+          # the merge queue can satisfy the required Build checks.
+          if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- . \
+            ':(exclude,glob)*.md' \
+            ':(exclude,glob)LICENSE' \
+            ':(exclude,glob).gitignore' \
+            ':(exclude,glob)docs/**' \
+            ':(exclude,glob)AGENTS.md'; then
+            echo "build_required=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_required=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build_push:
+    name: Build and push image (${{ matrix.arch }})
+    needs: [image_changes]
+    if: ${{ always() && !cancelled() }}
+    env:
+      BUILD_REQUIRED: ${{ needs.image_changes.outputs.build_required || 'true' }}
+    runs-on: ${{ matrix.runs_on }}
+    permissions:
+      contents: read
+      packages: write
+      security-events: write  # SARIF upload for Trivy scan results
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runs_on: ubuntu-24.04
+            arch_suffix: amd64
+          - arch: aarch64
+            runs_on: ubuntu-24.04-arm
+            arch_suffix: arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: ${{ env.BUILD_REQUIRED == 'true' }}
+
+      - name: Setup runner
+        if: env.BUILD_REQUIRED == 'true'
+        uses: projectbluefin/actions/bootc-build/setup-runner@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        with:
+          storage-backend: btrfs
+          update-podman: "true"
+
+      - name: Generate tags
+        id: generate-tags
+        shell: bash
+        run: |
+          SHA_SHORT="${GITHUB_SHA::7}"
+          LOCAL_TAG="${SHA_SHORT}-${{ matrix.arch_suffix }}"
+          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "local_tag=${LOCAL_TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Image
+        id: build_image
+        if: env.BUILD_REQUIRED == 'true'
+        uses: redhat-actions/buildah-build@719e3c40d8af9790c23eca13f7daa339f2867034 # v3
+        with:
+          containerfiles: |
+            ./Containerfile
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
+          oci: true
+
+      - name: Export image for scanning
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores the image in rootless buildah storage.
+          # Use buildah push to export to docker-archive for Trivy.
+          buildah push \
+            "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
+
+      - name: Promote image to root storage for push
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores in rootless user storage; push-image uses
+          # sudo podman push which reads root storage (/var/lib/containers).
+          # Import the already-exported scan archive into root storage.
+          sudo skopeo copy \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "containers-storage:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
+
+      - name: Scan image for CVEs
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
+        uses: projectbluefin/actions/bootc-build/scan-image@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        with:
+          input: /tmp/scan-image.tar
+          severity-threshold: CRITICAL
+          exit-code: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        id: push
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        uses: projectbluefin/actions/bootc-build/push-image@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write digest to file
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.push.outputs.digest }}" > "/tmp/digests/${{ matrix.arch_suffix }}.txt"
+
+      - name: Upload digest
+        if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: digest-${{ matrix.arch_suffix }}
+          path: /tmp/digests/${{ matrix.arch_suffix }}.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: Create and sign multi-arch manifest
+    needs: [image_changes, build_push]
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && needs.image_changes.outputs.build_required != 'false'
+    runs-on: ubuntu-26.04
+    permissions:
+      packages: write
+      id-token: write      # keyless cosign signing via OIDC
+      attestations: write  # GitHub SBOM + SLSA provenance attestations
+
+    steps:
+      - name: Generate manifest tags
+        id: manifest-tags
+        shell: bash
+        run: |
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Download digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: digest-*
+          merge-multiple: true
+          path: /tmp/digests
+
+      - name: Build digests JSON
+        id: digests
+        shell: bash
+        run: |
+          AMD64=$(cat /tmp/digests/amd64.txt)
+          ARM64=$(cat /tmp/digests/arm64.txt)
+          echo "json={\"amd64\": \"${AMD64}\", \"arm64\": \"${ARM64}\"}" >> "$GITHUB_OUTPUT"
+
+      - name: Create multi-arch manifest
+        id: create-manifest
+        uses: projectbluefin/actions/bootc-build/create-manifest@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          digests-json: ${{ steps.digests.outputs.json }}
+          tags: |
+            latest
+            ${{ steps.manifest-tags.outputs.date }}
+            ${{ steps.manifest-tags.outputs.sha_short }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to registry for signing
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign, generate SBOM, and attest
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.create-manifest.outputs.digest }}
+          signing-mode: keyless
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: common
+          certificate-identity-regexp: >-
+            ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/

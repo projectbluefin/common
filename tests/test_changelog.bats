@@ -1,0 +1,215 @@
+#!/usr/bin/env bats
+# Tests for the changelog.just repo-selection and fetch logic
+#
+# Run: bats tests/test_changelog.bats
+#
+# Strategy: extract the bash body from changelog.just, inject it into a
+# sub-shell with mocked binaries (jq, curl, glow, grep) and a mock
+# image-info.json so we never hit the network or the real filesystem.
+
+CHANGELOG_JUST="$BATS_TEST_DIRNAME/../system_files/bluefin/usr/share/ublue-os/just/changelog.just"
+WORKDIR=""
+
+# Extract the bash body from the just recipe (skip recipe header + shebang,
+# strip the 4-space just indentation) and write it to a temp file.
+_extract_script() {
+    local out_file="$1"
+    awk '
+        /^    #!\/usr\/bin\/bash/ { found=1; next }
+        found { sub(/^    /, ""); print }
+    ' "${CHANGELOG_JUST}" > "${out_file}"
+}
+
+setup() {
+    WORKDIR="$(mktemp -d)"
+    MOCKDIR="${WORKDIR}/bin"
+    mkdir -p "${MOCKDIR}"
+
+    # Canonical repo-routing resolver used by the recipe under test.
+    export UBLUE_IMAGE_REPO_BIN="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/ublue-image-repo"
+
+    # Capture file — curl writes each URL it receives here
+    CURL_CALLS="${WORKDIR}/curl_calls"
+    touch "${CURL_CALLS}"
+    export CURL_CALLS
+
+    # Mock image-info.json — IMAGE_INFO_FILE env var override (see changelog.just)
+    # Without this, the shell redirect '< /usr/share/ublue-os/image-info.json'
+    # fails in CI before jq is invoked, leaving TAG empty.
+    IMAGE_INFO="${WORKDIR}/image-info.json"
+    echo '{"image-tag": "latest"}' > "${IMAGE_INFO}"
+    export IMAGE_INFO_FILE="${IMAGE_INFO}"
+
+    # Mock jq:
+    #   - '.["image-tag"]' query  → returns $MOCK_TAG
+    #   - '.["image-name"]' query → returns $MOCK_NAME
+    cat > "${MOCKDIR}/jq" << 'EOF'
+#!/bin/bash
+for arg in "$@"; do
+    if [[ "$arg" == *'image-tag'* ]]; then
+        echo "${MOCK_TAG:-latest}"
+        exit 0
+    elif [[ "$arg" == *'image-name'* ]]; then
+        echo "${MOCK_NAME:-bluefin}"
+        exit 0
+    fi
+done
+# Release body extraction or latest .body
+echo "mock changelog body"
+EOF
+    chmod +x "${MOCKDIR}/jq"
+
+    # Mock curl: record the URL, return a JSON array with one release entry
+    cat > "${MOCKDIR}/curl" << 'CURLEOF'
+#!/bin/bash
+for arg in "$@"; do
+    if [[ "$arg" =~ ^https:// ]]; then
+        echo "$arg" >> "${CURL_CALLS}"
+    fi
+done
+echo '[{"tag_name":"stable-20260601","body":"mock changelog"}]'
+CURLEOF
+    chmod +x "${MOCKDIR}/curl"
+
+    # Mock glow: passthrough (just print stdin)
+    printf '#!/bin/bash\ncat\n' > "${MOCKDIR}/glow"
+    chmod +x "${MOCKDIR}/glow"
+
+    # Mock grep: used for DATE extraction - return a fixed date string
+    cat > "${MOCKDIR}/grep" << 'EOF'
+#!/bin/bash
+# If called with -oP for OSTREE_VERSION date extraction, return fixed date
+if [[ "$*" == *OSTREE_VERSION* ]]; then
+    echo "20260601"
+    exit 0
+fi
+# Otherwise delegate to real grep
+/usr/bin/grep "$@"
+EOF
+    chmod +x "${MOCKDIR}/grep"
+
+    # An installed copy must never bypass native repository selection.
+    printf '#!/bin/bash\necho "unexpected bctl invocation" >&2\nexit 99\n' > "${MOCKDIR}/bctl"
+    chmod +x "${MOCKDIR}/bctl"
+    export PATH="${MOCKDIR}:${PATH}"
+
+    SCRIPT_FILE="${WORKDIR}/changelog.sh"
+    _extract_script "${SCRIPT_FILE}"
+}
+
+teardown() {
+    rm -rf "${WORKDIR}"
+}
+
+# ---------------------------------------------------------------------------
+# Repo selection - LTS stream
+# ---------------------------------------------------------------------------
+
+# Bluefin and Bluefin LTS destinations are archived, so the lts* tag no longer
+# selects a distinct repo: it falls through to the changelog caller default
+# (projectbluefin/bluefin). common#1499.
+
+@test "changelog: lts tag falls through to projectbluefin/bluefin repo" {
+    MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+@test "changelog: lts-hwe tag falls through to projectbluefin/bluefin repo" {
+    MOCK_TAG="lts-hwe" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+# ---------------------------------------------------------------------------
+# Repo selection - non-LTS streams
+# ---------------------------------------------------------------------------
+
+@test "changelog: stable tag selects projectbluefin/bluefin repo" {
+    MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+@test "changelog: gts tag selects projectbluefin/bluefin repo" {
+    MOCK_TAG="gts" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+@test "changelog: latest tag selects projectbluefin/bluefin repo (fallback)" {
+    MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+# ---------------------------------------------------------------------------
+# URL construction - release fetch path
+# ---------------------------------------------------------------------------
+
+@test "changelog: stable tag fetches from /releases endpoint (not /releases/latest)" {
+    MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    # Must hit the versioned releases list, not the latest shortcut
+    grep -q "api.github.com/repos/projectbluefin/bluefin/releases$" "${CURL_CALLS}" || \
+    grep -qP "api\.github\.com/repos/projectbluefin/bluefin/releases$" "${CURL_CALLS}"
+}
+
+@test "changelog: latest tag falls through to /releases/latest endpoint" {
+    MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "releases/latest" "${CURL_CALLS}"
+}
+
+@test "changelog: lts tag fetches from bluefin /releases endpoint" {
+    MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    # lts now falls through to the changelog caller default (bluefin); the
+    # versioned /releases endpoint is still used because the tag is lts*.
+    grep -q "api.github.com/repos/projectbluefin/bluefin/releases" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+# ---------------------------------------------------------------------------
+# Exit behaviour
+# ---------------------------------------------------------------------------
+
+@test "changelog: exits 0 on stable tag" {
+    MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+}
+
+@test "changelog: exits 0 on latest tag (fallback path)" {
+    MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+}
+
+@test "changelog: exits 0 on lts tag" {
+    MOCK_TAG="lts-20260601" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+}
+
+@test "changelog: dakota image name selects projectbluefin/dakota repo" {
+    MOCK_NAME="dakota" MOCK_TAG="latest" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/dakota" "${CURL_CALLS}"
+}
+
+@test "changelog: bluefin-lts image name falls through to bluefin repo" {
+    MOCK_NAME="bluefin-lts" MOCK_TAG="stable" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}
+
+@test "changelog: bluefin-lts-nvidia image name falls through to bluefin repo" {
+    MOCK_NAME="bluefin-lts-nvidia" MOCK_TAG="testing" run bash "${SCRIPT_FILE}"
+    [ "${status}" -eq 0 ]
+    grep -q "projectbluefin/bluefin" "${CURL_CALLS}"
+    ! grep -q "bluefin-lts" "${CURL_CALLS}"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "skills": [
+    {
+      "id": "bazaar",
+      "name": "bazaar",
+      "one_line_purpose": "Edit Bazaar config, blocklists, curated content, banner conversion, hooks, and previews.",
+      "entry_point": "skills/bazaar.md",
+      "description": "Documents Bazaar config, curated content, app blocklists, banner conversion, systemd service definitions, and hooks. Use when editing Bazaar settings in common. Covers modern rows schema, native JXL banners, and local ujust preview workflows.",
+      "category": "ci-ops",
+      "status": "active"
+    },
+    {
+      "id": "bootc",
+      "name": "bootc",
+      "one_line_purpose": "Work with bootc image build, update, and Containerfile mechanics.",
+      "entry_point": "skills/bootc.md",
+      "description": "bootc \u2014 foundational OS image tool. Use when working on Containerfiles, image build workflows, update mechanics, or OS image structure.",
+      "category": "ci-ops",
+      "status": "active"
+    },
+    {
+      "id": "brew-lifecycle",
+      "name": "brew-lifecycle",
+      "one_line_purpose": "Manage OS-managed Homebrew packages and RPM/brew placement.",
+      "entry_point": "skills/brew-lifecycle.md",
+      "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
+      "category": "ci-ops",
+      "status": "active"
+    },
+    {
+      "id": "devmode",
+      "name": "devmode",
+      "one_line_purpose": "Configure the Bluefin Developer Mode setup wizard.",
+      "entry_point": "skills/devmode.md",
+      "description": "Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX, tool selection, or the canonical ujust devmode command.",
+      "category": "test-authoring",
+      "status": "active"
+    },
+    {
+      "id": "image-identity",
+      "name": "image-identity",
+      "one_line_purpose": "Decide who owns image-identity and variant metadata across the org.",
+      "entry_point": "skills/image-identity.md",
+      "description": "Ownership map for image-identity and variant metadata across the factory: which layer common owns, which each repo owns, and the field drift between them. Use when adding a variant or writing image-info.json.",
+      "category": "ci-ops",
+      "status": "active"
+    },
+    {
+      "id": "image-registry",
+      "name": "image-registry",
+      "one_line_purpose": "Look up projectbluefin OCI image registry paths and tags.",
+      "entry_point": "skills/image-registry.md",
+      "description": "projectbluefin OCI image registry reference \u2014 all production images published at ghcr.io/projectbluefin/. Use when looking up image paths, tags, or registry structure.",
+      "category": "ci-ops",
+      "status": "active"
+    },
+    {
+      "id": "oem-hardware-hooks",
+      "name": "oem-hardware-hooks",
+      "one_line_purpose": "Add OEM hardware first-boot setup hooks safely.",
+      "entry_point": "skills/oem-hardware-hooks.md",
+      "description": "OEM hardware first-boot setup hooks in projectbluefin/common. Use when adding hardware-specific setup, understanding hook directories and versioning contract, or applying shellcheck requirements.",
+      "category": "test-authoring",
+      "status": "active"
+    },
+    {
+      "id": "secrets-policy",
+      "name": "secrets-policy",
+      "one_line_purpose": "Keep existing workflow authentication inside the factory security boundary.",
+      "entry_point": "skills/secrets-policy.md",
+      "description": "Existing workflow authentication and the prohibition on new credentials. Use when reviewing auth, diagnosing a missing existing secret, or checking whether a PAT or credential reference is allowed.",
+      "category": "meta",
+      "status": "active"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# AMD s2idle / s0ix deep-sleep fixes
+#
+# Disables the PS/2 keyboard controller (i8042/atkbd) as a wakeup source on
+# hardware where it prevents the AMD SoC from entering PC10/S0i3, causing the
+# kernel to log "amd_pmc: Last suspend didn't reach deepest state" on every resume
+# and significantly increasing sleep power draw.
+#
+# This is the userspace equivalent of the quirk_s2idle_spurious_8042 entries in
+# drivers/platform/x86/amd/pmc/pmc-quirks.c.  Entries here should be submitted
+# upstream to that file so this rule can eventually be removed.
+#
+# HP ZBook Ultra G1a 14 (board 8D01)
+ACTION=="add", SUBSYSTEM=="serio", DRIVERS=="atkbd", \
+  PROGRAM=="/bin/cat /sys/class/dmi/id/board_name", \
+  RESULT=="8D01", \
+  ATTR{power/wakeup}="disabled"

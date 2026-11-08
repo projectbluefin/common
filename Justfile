@@ -1,0 +1,175 @@
+just := just_executable()
+
+# test_libvirt_helper.bats is excluded — it runs unconditionally in CI (unit-tests.yml); the suite needs only a temp HOME, not a libvirtd session
+# Every suite in tests/ must be listed below or declared excluded above with a
+# reason; tests/test_suite_registration.bats enforces that.
+# Run unit tests (pytest for hooks.py, bats for shell scripts)
+test:
+    python3 -m pytest tests/test_hooks.py tests/test_python_install_pins.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_agent_bundle.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py tests/test_flatpark_remote.py tests/test_refresh_featured_apps.py -v
+    bats tests/test_libsetup.bats
+    bats tests/test_setup_scripts.bats
+    bats tests/test_bling.bats
+    bats tests/test_bling_sh.bats
+    bats tests/test_bling_preexec_rearm.bats
+    bats tests/test_luks_tpm2.bats
+    bats tests/test_rechunker_group_fix.bats
+    bats tests/test_bling_fastfetch.bats
+    bats tests/test_changelog.bats
+    bats tests/test_update_just.bats
+    bats tests/test_native_recipes.bats
+    bats tests/test_ujust.bats
+    bats tests/test_ujust_completion.bats
+    bats tests/test_ublue_fastfetch.bats
+    bats tests/test_motd_integration.bats
+    bats tests/test_clean_system_podman_path.bats
+    bats tests/test_clean_system_bootc.bats
+    bats tests/test_bootc_update_stage.bats
+    bats tests/test_default_just.bats
+    bats tests/test_justfile_syntax.bats
+    bats tests/test_ublue_image_info.bats
+    bats tests/test_profile_d.bats
+    bats tests/test_uwelcome_profile.bats
+    bats tests/test_dynamic_wallpaper.bats
+    bats tests/test_geoclue_latitude.bats
+    bats tests/test_clean_system.bats
+    bats tests/test_brew_preinstall.bats
+    bats tests/test_ai_tools_brewfile.bats
+    bats tests/test_validate_brewfiles.bats
+    bats tests/test_oem_brew.bats
+    bats tests/test_blur_my_shell.bats
+    bats tests/test_bonedigger_report.bats
+    bats tests/test_hardware_hooks.bats
+    bats tests/test_nvidia_suspend.bats
+    bats tests/test_theming_hook.bats
+    bats tests/test_dynamic_wallpaper_hook.bats
+    bats tests/test_damask_setup.bats
+    bats tests/test_system_just.bats
+    bats tests/test_bazaar_preview.bats
+    bats tests/test_brew_tap_trust.bats
+    bats tests/test_apps_just.bats
+    bats tests/test_image_repo.bats
+    bats tests/test_booted_image.bats
+    bats tests/test_flatpak_appstream_refresh.bats
+    bats tests/test_damask_service.bats
+    bats tests/test_suite_registration.bats
+    bats tests/test_shared_just.bats
+    bats tests/test_pwquality.bats
+    bats tests/test_udev_rules.bats
+    bats tests/test_projectbluefin_countme.bats
+    bats tests/test_toggle_devmode.bats
+    bats tests/test_compass.bats
+    bats tests/test_admit_evidence.bats
+
+# Preview Bazaar config from this checkout on the local machine
+bazaar-preview:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    sudo -v
+    flatpak info io.github.kolunmi.Bazaar >/dev/null
+
+    if [[ -d bluefin-branding/system_files/etc/bazaar ]]; then
+        sudo install -d -m0755 /etc/bazaar
+        sudo install -m0644 bluefin-branding/system_files/etc/bazaar/*.jxl /etc/bazaar/
+    fi
+    sudo install -d -m0755 /etc/bazaar
+    sudo install -m0644 system_files/bluefin/etc/bazaar/bazaar.yaml /etc/bazaar/bazaar.yaml
+    sudo install -m0644 system_files/bluefin/etc/bazaar/curated.yaml /etc/bazaar/curated.yaml
+    sudo install -m0644 system_files/bluefin/etc/bazaar/blocklist.yaml /etc/bazaar/blocklist.yaml
+    sudo install -m0755 system_files/bluefin/etc/bazaar/hooks.py /etc/bazaar/hooks.py
+    flatpak kill io.github.kolunmi.Bazaar 2>/dev/null || true
+    systemctl --user restart bazaar.service || systemctl --user start bazaar.service || true
+    sleep 0.5
+    if command -v setsid >/dev/null 2>&1; then
+        setsid -f flatpak run io.github.kolunmi.Bazaar >/dev/null 2>&1
+    else
+        nohup flatpak run io.github.kolunmi.Bazaar >/dev/null 2>&1 &
+    fi
+    echo "Bazaar preview updated and launched in background."
+
+# Build the bluefin-common container locally
+build:
+    git submodule update --init bluefin-branding
+    podman build -t localhost/bluefin-common:latest -f ./Containerfile .
+
+_fmt mode verb:
+    #!/usr/bin/bash
+    failed=0
+    while read -r file; do
+      echo "{{ verb }} syntax: $file"
+      {{ just }} --unstable --fmt {{ mode }} -f "$file" || failed=1
+    done < <(find . -type f -name "*.just")
+    echo "{{ verb }} syntax: Justfile"
+    {{ just }} --unstable --fmt {{ mode }} -f Justfile || failed=1
+    exit "$failed"
+
+# Check the ChairLift maintainer config against upstream's pinned schema.
+# Requires network access, so it is deliberately NOT wired into `check`:
+# .github/workflows/validate-chairlift-config.yaml owns this gate.
+check-chairlift-config:
+    python3 tests/check-chairlift-config
+
+# Networked metadata check; syncs/trusts declared taps but installs no packages.
+# Keep separate from the hermetic check recipe.
+check-brewfiles:
+    bash scripts/validate-brewfiles.sh
+
+check: (_fmt "--check" "Checking")
+
+fix: (_fmt "" "Fixing")
+
+# Inspect the directory structure of an OCI image
+tree IMAGE="localhost/bluefin-common:latest":
+    #!/usr/bin/env bash
+    cat > TreeContainerfile <<'EOF'
+    FROM alpine:latest
+    RUN apk add --no-cache tree
+    COPY --from={{ IMAGE }} / /mnt/root
+    CMD tree /mnt/root
+    EOF
+    podman build -t tree-temp -f TreeContainerfile .
+    podman run --rm tree-temp
+    rm -f TreeContainerfile
+    podman rmi tree-temp
+
+overlay $BLUEFIN_MERGE="1" $SOURCE="dir":
+    #!/usr/bin/env bash
+    ROOTFS_DIR="$(mktemp -d --tmpdir="${ROOTFS_BASE:-/tmp}")"
+    trap 'rm -rf "${ROOTFS_DIR}"' EXIT
+    NAME_TRIMMED=bfincommon
+
+    if [ "$SOURCE" == "dir" ] ; then
+        cp -a ./system_files/shared/. "${ROOTFS_DIR}"
+        if [ "${BLUEFIN_MERGE}" == "1" ] ; then
+            cp -a ./system_files/bluefin/. "${ROOTFS_DIR}"
+        fi
+    elif [ "$SOURCE" == "image" ] ; then
+        podman export "$(podman create ghcr.io/projectbluefin/common:latest)" -o - | tar -xvf - -C "${ROOTFS_DIR}"
+    fi
+
+    install -d -m0755 "${ROOTFS_DIR}/usr/lib/extension-release.d"
+    tee "${ROOTFS_DIR}/usr/lib/extension-release.d/extension-release.${NAME_TRIMMED}" <<EOF
+    ID="_any"
+    ARCHITECTURE="$(sed 's/_/-/g' <<< "$(arch)")"
+    EOF
+
+    if [ -e "${ROOTFS_DIR}/system_files" ] ; then
+        cp -a "${ROOTFS_DIR}/system_files/shared/." "${ROOTFS_DIR}"
+        if [ "${BLUEFIN_MERGE}" == "1" ] ; then
+            cp -a "${ROOTFS_DIR}/system_files/bluefin/." "${ROOTFS_DIR}"
+        fi
+        rm -r "${ROOTFS_DIR}/system_files"
+    fi
+
+    if [ -d "${ROOTFS_DIR}/etc" ] ; then
+        mv --no-clobber "${ROOTFS_DIR}/etc" "${ROOTFS_DIR}/usr/etc"
+    fi
+
+    for dir in "var" "run"; do
+        if [ -d "${ROOTFS_DIR}"/"${dir}" ] ; then
+            rm -r "${ROOTFS_DIR:?}/${dir}"
+        fi
+    done
+    filecontexts="/etc/selinux/targeted/contexts/files/file_contexts"
+    sudo setfiles -r "${ROOTFS_DIR}" "${filecontexts}" "${ROOTFS_DIR}"
+    sudo chcon --user=system_u --recursive "${ROOTFS_DIR}"
+    mkfs.erofs "${NAME_TRIMMED}.raw" "${ROOTFS_DIR}"

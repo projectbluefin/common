@@ -1,0 +1,85 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # v4.6.0
+    hooks:
+        - id: check-json
+          exclude: \.devcontainer\.json
+        - id: check-toml
+        - id: check-yaml
+        - id: end-of-file-fixer
+          # Verbatim upstream ChairLift artwork; keep it byte-identical to
+          # the release the cask pins so its sha256 stays verifiable.
+          exclude: ^system_files/shared/usr/share/icons/hicolor/.*/apps/io\.projectbluefin\.chairlift.*\.svg$
+        - id: trailing-whitespace
+        - id: check-merge-conflict
+        - id: detect-private-key
+        - id: check-added-large-files
+          # Same artwork: upstream ships these two app icons well over the
+          # 500 KiB default and we do not re-encode vendored assets.
+          exclude: ^system_files/shared/usr/share/icons/hicolor/scalable/apps/io\.projectbluefin\.chairlift.*\.svg$
+  - repo: https://github.com/rhysd/actionlint
+    rev: 03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f # v1.31.1
+    hooks:
+      # Workflow security audit. Runs in the required Validate PR check via
+      # `pre-commit run --all-files`; accepted findings and their reasons
+      # live in .github/zizmor.yml. --offline: the online audits need a
+      # GitHub token that pre-commit does not have.
+      - id: zizmor
+        args:
+          - --no-progress
+          - --offline
+          - --min-severity=medium
+          - --min-confidence=medium
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: f805888065fdb6162e1f800e50bb9460cbd223d6 # 0.37.2
+    hooks:
+      - id: check-jsonschema
+        name: Validate release-state.yaml
+        files: ^\.github/release-state\.yaml$
+        args:
+          - --schemafile
+          - https://raw.githubusercontent.com/projectbluefin/actions/e39c94703801a272245bf2a96416594f36fe6f93/docs/schemas/release-state.schema.json
+  - repo: local
+    hooks:
+      - id: no-floating-action-tags
+        name: Block floating GitHub Action tags (@main, @v*)
+        language: pygrep
+        entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'
+        types: [yaml]
+        files: '\.github/workflows/'
+      - id: no-floating-source-checkout
+        name: Block unpinned git checkouts (tags, branches) in build stages
+        language: pygrep
+        entry: 'checkout\s+(tags/|v[0-9]|main\b|master\b)|--branch'
+        files: '^Containerfile$'
+      - id: no-discord-token
+        name: Block Discord bot tokens
+        language: pygrep
+        entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
+        exclude: '\.pre-commit-config\.yaml$'
+      # Doc formatting is not a build gate: a typo in a skill page must never
+      # redden every open PR. This hook only guards the shipped on-device
+      # bundle, which is a real artifact.
+      - id: check-agent-bundle
+        name: Validate the shipped on-device agent bundle
+        language: system
+        entry: python3 scripts/generate_skill_index.py --check
+        pass_filenames: false
+        always_run: true
+      - id: check-actions-security
+        name: Validate GitHub Actions security baseline conformance
+        language: system
+        entry: python3 scripts/check-actions-security.py
+        pass_filenames: false
+        always_run: true
+      - id: check-actions-security-tests
+        name: Run GitHub Actions security baseline regression tests
+        language: python
+        additional_dependencies: [pytest, pyyaml]
+        entry: pytest tests/test_actions_security.py -q
+        pass_filenames: false
+        always_run: true

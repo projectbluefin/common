@@ -1,0 +1,142 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "display": {
+    "separator": "  ",
+    "color": {
+      "keys": "38;2;87;160;198"
+    }
+  },
+  "modules": [
+    {
+      "type": "title",
+      "key": "",
+      "color": {
+        "user": "38;2;87;160;198",
+        "at": "white",
+        "host": "bright_green"
+      }
+    },
+    "break",
+    {
+      "type": "command",
+      "key": "󱋩",
+      "keyColor": "#ad67d7",
+      "text": "/usr/bin/ublue-image-info.sh"
+    },
+    {
+      "type": "os",
+      "key": "󱍢",
+      "keyColor": "#57a0c6",
+      "format": "{pretty-name}"
+    },
+    {
+      "type": "kernel",
+      "key": "",
+      "keyColor": "#57a0c6",
+      "format": "{1} {2}"
+    },
+    {
+      "type": "uptime",
+      "key": "󰅐",
+      "keyColor": "#a6da95"
+    },
+    {
+      "type": "command",
+      "key": "󰔠",
+      "keyColor": "#eed49f",
+      "text": "date -d$(ls -alct /var/log --time-style=full-iso|tail -1|awk '{print $6}') +'Forged on %b %d %G'",
+      "shell": "/bin/bash"
+    },
+    "break",
+    {
+      "type": "command",
+      "key": "󱍢",
+      "keyColor": "#0066cc",
+      "text": "cat /usr/share/ublue-os/fastfetch-user-count",
+      "shell": "/bin/bash",
+      "format": "Murder Chickens: {1} (weekly)"
+    },
+    {
+      "type": "command",
+      "key": "",
+      "keyColor": "#ff5c00",
+      "text": "cat /usr/share/ublue-os/bazaar-install-count",
+      "shell": "/bin/bash",
+      "format": "Bazaar Installs: {1} (weekly)"
+    },
+    "break",
+    {
+      "type": "host",
+      "key": "󰾰",
+      "keyColor": "#57a0c6"
+    },
+    {
+      "type": "cpu",
+      "key": "󰻠",
+      "keyColor": "#8aadf4"
+    },
+    {
+      "type": "gpu",
+      "key": "󰍛",
+      "keyColor": "#c6a0f6"
+    },
+    {
+      "type": "memory",
+      "key": "󰧑",
+      "keyColor": "#f5bde6"
+    },
+    {
+      "type": "disk",
+      "key": "",
+      "keyColor": "#f5a97f",
+      "hideFS": "overlay"
+    },
+    {
+      "type": "display",
+      "key": "󰍹",
+      "keyColor": "#eed49f"
+    },
+    {
+      "type": "battery",
+      "key": "",
+      "keyColor": "#a6da95"
+    },
+    {
+      "type": "gamepad",
+      "key": "󰖺",
+      "keyColor": "#f38ba8"
+    },
+    "break",
+    {
+      "type": "de",
+      "key": "󰕮",
+      "keyColor": "#20a0f5"
+    },
+    {
+      "type": "wm",
+      "key": "",
+      "keyColor": "#20a0f5"
+    },
+    {
+      "type": "shell",
+      "key": "",
+      "keyColor": "#94e2d5"
+    },
+    {
+      "type": "terminal",
+      "key": "",
+      "keyColor": "#94e2d5"
+    },
+    {
+      "type": "packages",
+      "key": "󰏖",
+      "keyColor": "#fbb040",
+      "disabled": ["rpm"]
+    },
+    "break",
+    {
+      "type": "colors",
+      "paddingLeft": 2
+    }
+  ]
+}

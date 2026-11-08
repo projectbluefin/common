@@ -1,0 +1,61 @@
+name: Promotion Candidate E2E
+
+# Common cannot add a full installer gate for downstream repos by itself, but it
+# can continuously exercise the exact testing-stream tags that feed promotion.
+on:
+  schedule:
+    - cron: "0 3 * * 2"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Bluefin Testing
+            image: ghcr.io/projectbluefin/bluefin:testing
+            suites: smoke,common
+          - name: Bluefin LTS Testing
+            image: ghcr.io/projectbluefin/bluefin:lts-testing
+            suites: smoke,common
+    name: "E2E — ${{ matrix.name }}"
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/run-testsuite.yml
+    with:
+      image: ${{ matrix.image }}
+      suites: ${{ matrix.suites }}
+
+  notify-on-failure:
+    name: "File issue on E2E failure"
+    needs: [e2e]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: File promotion-blocker issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          DATE=$(date +'%Y-%m-%d')
+          gh issue create \
+            --repo "$REPO" \
+            --title "ci: promotion candidate E2E failed — ${DATE}" \
+            --label needs-human,kind/bug \
+            --body "The Tuesday promotion-candidate E2E suite failed before the promotion window. **Do NOT promote** the affected testing images until resolved. Workflow run: ${RUN_URL}
+
+          ## Maintainer
+          - Open the failed suite and logs at ${RUN_URL}.
+          - Identify the regression owner and agree on the fix scope.
+          - Require a passing candidate run before promotion.
+
+          ## Reporter
+          **Reporter action:** None unless additional evidence is requested."

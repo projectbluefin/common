@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="${HOME}/.config/libvirt"
+CONFIG_FILE="${CONFIG_DIR}/libvirt.conf"
+SESSION_URI='uri_default = "qemu:///session"'
+
+mkdir -p "${CONFIG_DIR}"
+grep -qxF "${SESSION_URI}" "${CONFIG_FILE}" 2>/dev/null || echo "${SESSION_URI}" >> "${CONFIG_FILE}"

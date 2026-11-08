@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+
+CHOOSE=false
+for arg in "$@"; do
+    if [[ "$arg" == "--choose" ]]; then
+        CHOOSE=true
+        break
+    fi
+done
+
+if [[ "${CHOOSE}" == true ]] && ! command -v fzf >/dev/null 2>&1; then
+    BREW_BIN="${BREW_BIN:-$(command -v brew 2>/dev/null || true)}"
+    BREW_BIN="${BREW_BIN:-/home/linuxbrew/.linuxbrew/bin/brew}"
+
+    if [[ ! -x "${BREW_BIN}" ]]; then
+        echo "ujust: fzf is missing and Homebrew was not found" >&2
+        exit 127
+    fi
+
+    echo "ujust: installing missing fzf with Homebrew..." >&2
+    if ! "${BREW_BIN}" install fzf; then
+        echo "ujust: failed to install fzf" >&2
+        exit 1
+    fi
+
+    SHELLENV_OUTPUT="$("${BREW_BIN}" shellenv)" || {
+        echo "ujust: failed to initialize Homebrew environment" >&2
+        exit 1
+    }
+    eval "${SHELLENV_OUTPUT}"
+
+    if ! command -v fzf >/dev/null 2>&1; then
+        echo "ujust: fzf is still unavailable after Homebrew setup" >&2
+        exit 127
+    fi
+fi
+
+exec just --justfile /usr/share/ublue-os/just/00-entry.just "${@}"

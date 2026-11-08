@@ -1,0 +1,26 @@
+[Default Applications]
+application/pdf=org.gnome.Papers.desktop
+application/vnd.flatpak.ref=io.github.kolunmi.Bazaar.desktop
+application/vnd.appimage=noop.desktop
+image/avif=org.gnome.Loupe.desktop
+image/bmp=org.gnome.Loupe.desktop
+image/gif=org.gnome.Loupe.desktop
+image/heic=org.gnome.Loupe.desktop
+image/jpeg=org.gnome.Loupe.desktop
+image/jxl=org.gnome.Loupe.desktop
+image/png=org.gnome.Loupe.desktop
+image/svg+xml=org.gnome.Loupe.desktop
+image/tiff=org.gnome.Loupe.desktop
+image/webp=org.gnome.Loupe.desktop
+video/3gpp=org.gnome.Showtime.desktop
+video/mp2t=org.gnome.Showtime.desktop
+video/mp4=org.gnome.Showtime.desktop
+video/mpeg=org.gnome.Showtime.desktop
+video/ogg=org.gnome.Showtime.desktop
+video/quicktime=org.gnome.Showtime.desktop
+video/webm=org.gnome.Showtime.desktop
+video/x-flv=org.gnome.Showtime.desktop
+video/x-m4v=org.gnome.Showtime.desktop
+video/x-matroska=org.gnome.Showtime.desktop
+video/x-msvideo=org.gnome.Showtime.desktop
+video/x-ms-wmv=org.gnome.Showtime.desktop

@@ -1,0 +1,195 @@
+# vim: set ft=make :
+# These are convenience shortcuts, they should not be specific to a desktop, aimed to be rather generic things for both Aurora and Bluefin
+
+# Boot into this device's BIOS/UEFI screen
+bios:
+    #!/usr/bin/bash
+    if [ ! -d /sys/firmware/efi ]; then
+      echo "Rebooting to legacy BIOS from OS is not supported."
+      exit 1
+    fi
+
+    if gum confirm "Reboot into BIOS?" ; then
+      systemctl reboot --firmware-setup
+    fi
+
+# Show BIOS info
+bios-info:
+    #!/usr/bin/bash
+    sudo bash <<'EOF'
+    echo "Manufacturer: $(dmidecode -s baseboard-manufacturer)"
+    echo "Product Name: $(dmidecode -s baseboard-product-name)"
+    echo "Version: $(dmidecode -s bios-version)"
+    echo "Release Date: $(dmidecode -s bios-release-date)"
+    EOF
+
+clean-system:
+    #!/usr/bin/bash
+    # No `--format` here on purpose: a bare Go-template placeholder is not a
+    # valid `just` token and aborts the parse of this whole file. It can be
+    # written as `{{{{.Repository}}` (just's literal-brace escape), but the
+    # default `podman image ls` table already carries the same columns, so the
+    # placeholder buys nothing. Rationale + gate: tests/test_justfile_syntax.bats
+    # and docs/skills/e2e-ci/SKILL.md.
+    if gum confirm "Prune unused (dangling) Podman images and volumes?"; then
+        echo "Images that would be pruned:"
+        /usr/bin/podman image ls --filter dangling=true 2>/dev/null
+        echo "Volumes that would be pruned:"
+        /usr/bin/podman volume ls --filter dangling=true --quiet 2>/dev/null
+        if gum confirm "Proceed with pruning Podman images and volumes?"; then
+            # prune -f, not -af: the preview above lists dangling images only,
+            # so prune the same set. -af would also delete named images pulled on
+            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
+            /usr/bin/podman image prune -f
+            /usr/bin/podman volume prune -f
+        fi
+    fi
+
+    if command -v docker >/dev/null 2>&1; then
+      if gum confirm "Prune unused (dangling) Docker images and volumes?"; then
+        echo "Images that would be pruned:"
+        docker image ls --filter dangling=true 2>/dev/null
+        echo "Volumes that would be pruned:"
+        docker volume ls --filter dangling=true --quiet 2>/dev/null
+        if gum confirm "Proceed with pruning Docker images and volumes?"; then
+            # prune -f, not -af: the preview above lists dangling images only,
+            # so prune the same set. -af would also delete named images pulled on
+            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
+            docker image prune -f
+            docker volume prune -f
+        fi
+      fi
+    fi
+
+    flatpak uninstall --unused
+    if command -v rpm-ostree >/dev/null 2>&1; then
+        rpm-ostree cleanup -bm
+    fi
+    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+        brew autoremove
+        brew cleanup
+    fi
+
+# Show all messages from this boot
+logs-this-boot:
+    sudo journalctl --no-hostname -b 0
+
+# Show all messages from last boot
+logs-last-boot:
+    sudo journalctl --no-hostname -b -1
+
+# Enroll Nvidia driver & KMOD signing key for secure boot - Enter password "universalblue" if prompted
+enroll-secure-boot-key:
+    #!/usr/bin/bash
+    ENROLLMENT_PASSWORD="universalblue"
+    sudo bash <<EOF
+    mokutil --timeout -1
+    echo -e "$ENROLLMENT_PASSWORD\n$ENROLLMENT_PASSWORD" | mokutil --import "/etc/pki/akmods/certs/akmods-ublue.der"
+    EOF
+    echo 'At next reboot, the mokutil UEFI menu UI will be displayed (*QWERTY* keyboard input and navigation).\nThen, select "Enroll MOK", and input "universalblue" as the password'
+
+# Toggle display of the welcome banner in terminal
+# Note: uwelcome owns its own state at ~/.config/uwelcome/disabled. This recipe
+# is a compatibility shim for users with muscle memory for the old name.
+toggle-user-motd:
+    uwelcome toggle
+
+# Check for local overrides
+check-local-overrides:
+    #!/usr/bin/bash
+    RESET="\x1b[0m"
+    if [ "${NO_COLOR}" == 1 ]; then
+        BLUE_COLOR=""
+        GREEN_COLOR=""
+        YELLOW_COLOR=""
+        RESET=""
+        DIFF_COLOR="never"
+    else
+        DIFF_COLOR="always"
+        BLUE_COLOR="${BLUE_COLOR:-\x1b[38;5;117m}"
+        GREEN_COLOR="${GREEN_COLOR:-\x1b[38;5;85m}"
+        YELLOW_COLOR="${YELLOW_COLOR:-\x1b[93m}"
+    fi
+
+    diff -qr \
+      --suppress-common-lines \
+      --color="${DIFF_COLOR}" \
+      --exclude "passwd*" \
+      --exclude "group*" \
+      --exclude="subgid*" \
+      --exclude="subuid*" \
+      --exclude="machine-id" \
+      --exclude="adjtime" \
+      --exclude="fstab" \
+      --exclude="system-connections" \
+      --exclude="shadow*" \
+      --exclude="gshadow*" \
+      --exclude="ssh_host*" \
+      --exclude="cmdline" \
+      --exclude="crypttab" \
+      --exclude="hostname" \
+      --exclude="localtime" \
+      --exclude="locale*" \
+      --exclude="*lock" \
+      --exclude=".updated" \
+      --exclude="*LOCK" \
+      --exclude="vconsole*" \
+      --exclude="00-keyboard.conf" \
+      --exclude="grub" \
+      --exclude="system.control*" \
+      --exclude="cdi" \
+      --exclude="default.target" \
+      /usr/etc /etc 2>/dev/null | sed \
+          -e '/Binary\ files\ /d ; /Common subdirectories/d' \
+          -e "/Files/ s/^/${BLUE_COLOR}&/g" \
+          -e "/Files/ s/\$/&${RESET}/g" \
+          -e "/Only in/ s/^/${GREEN_COLOR}&/g" \
+          -e "/Only in/ s/\$/&${RESET}/g" \
+          -e "s/\:.*/${RESET}${YELLOW_COLOR}&${RESET}/g"
+
+# Gather device info to a pastebin
+device-info:
+    #!/usr/bin/bash
+    if ! gum confirm "Submit information to the CentOS pastebin?" ; then
+        exit 0
+    fi
+
+    cat &> /tmp/deviceinfo-out <<EOF
+    --#--# bootc status --verbose:
+    $(bootc status --verbose)
+    --#--# fpaste --sysinfo --printonly:
+    $(fpaste --sysinfo --printonly)
+    --#--# flatpak list --columns=application,version,options:
+    $(flatpak list --columns=application,version,options)
+    EOF
+
+    cat /tmp/deviceinfo-out | fpaste
+
+# Measure Idle Power Draw
+check-idle-power-draw:
+    #!/usr/bin/bash
+    if ! command -v powerstat ; then
+        echo "Powerstat is not available"
+        exit 1
+    fi
+    sudo powerstat -a -r
+
+# Run a one minute system benchmark
+[group('System')]
+benchmark:
+    #!/usr/bin/env bash
+    if ! command -v "stress-ng" ; then
+        if gum confirm "Stress does not seem to be on your path, do you wish to install it?" ; then
+            set -eu
+            brew install stress-ng
+            brew link stress-ng
+            set +eu
+        else
+            exit 0
+        fi
+    fi
+
+    echo "Running a 1 minute benchmark ..."
+    trap popd EXIT
+    pushd "$(mktemp -d)"
+    stress-ng --matrix 0 -t 1m --times

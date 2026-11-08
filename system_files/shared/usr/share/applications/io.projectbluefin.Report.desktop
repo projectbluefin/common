@@ -1,0 +1,21 @@
+[Desktop Entry]
+# Vendored from bluefin-report 26.11.2 (data/io.projectbluefin.Report.desktop),
+# https://github.com/projectbluefin/bluefin-report — Apache-2.0. The only edit
+# is the absolute Exec= path below.
+#
+# The bluefin-report cask installs this entry and its icons under the
+# *installing* user's ~/.local/share. Homebrew uses one shared prefix on
+# Bluefin, so every user after the first sees the cask as already installed
+# and never receives those artifacts. Shipping them from the image is what
+# makes Report a Problem appear for all users; see
+# docs/skills/brew-lifecycle/references/service-mechanics.md.
+Type=Application
+Name=Report a Problem
+GenericName=Problem Reporter
+Comment=Report a bug, crash, freeze or error to Bluefin with a reviewed system report
+Exec=/home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper
+Icon=io.projectbluefin.Report
+Terminal=false
+Categories=Utility;X-GNOME-Utilities;GTK;
+Keywords=bug;crash;freeze;error;issue;problem;report;feedback;support;help;logs;diagnostics;troubleshoot;GitHub;systemd;
+StartupNotify=true

@@ -1,0 +1,202 @@
+# bluefin-common
+
+Shared OCI layer containing common configuration files used across all Bluefin variants (bluefin, bluefin-dx, bluefin-lts).
+
+## Directory Structure
+
+This repository organizes configuration files into two main directories, these are important:
+
+### `system_files/bluefin/` - Bluefin Specific Configuration
+Files specific to Bluefin:
+
+- GNOME desktop settings and theming.
+- Bluefin wallpapers and branding.
+- Desktop-specific environment variables.
+- GNOME Initial Setup configuration.
+
+### `system_files/shared/` - Shared Configuration
+Files shared with [Aurora](https://getaurora.dev) — Aurora maintainers can cherry-pick commits touching this directory. Edit directly here; changes propagate to all Bluefin variants on next build.
+
+This includes:
+- `Just` recipes for system management.
+- Brewfiles for application bundles.
+- Setup hooks (privileged, system, user).
+- Container policies and security settings.
+- MOTD templates and CLI bling.
+- Common shell configurations.
+
+## Usage in Containerfile
+
+Reference this layer as a build stage and copy the directories you need:
+
+### Copy everything:
+```dockerfile
+FROM ghcr.io/projectbluefin/common:latest AS bluefin-common
+
+# Copy all system files
+COPY --from=bluefin-common /system_files /
+```
+
+### Copy only system configuration:
+
+```dockerfile
+FROM ghcr.io/projectbluefin/common:latest AS bluefin-common
+
+# Copy only /etc configuration
+COPY --from=bluefin-common /system_files/etc /etc
+```
+
+### Copy only the image opinion:
+```dockerfile
+FROM ghcr.io/projectbluefin/common:latest AS bluefin-common
+
+# Copy only /usr/share configuration
+COPY --from=bluefin-common /system_files/usr /usr
+```
+
+## Flatpak Customization
+
+Bluefin-common provides a comprehensive Flatpak customization system with multiple layers:
+
+### System Flatpak Brewfiles
+
+Default Flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
+
+- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (36 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
+- **`system-dx-flatpaks.Brewfile`** - Additional development-focused Flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox).
+
+These can be installed using:
+```bash
+ujust install-system-flatpaks
+```
+
+### Flatpak Overrides
+
+Two types of Flatpak overrides are provided to grant additional permissions to specific applications:
+
+**System-level overrides** (`/usr/share/ublue-os/flatpak-overrides/`):
+- `io.github.kolunmi.Bazaar` - Grants access to `host-etc` for system configuration.
+
+**User-level overrides** (`/etc/skel/.local/share/flatpak/overrides/`):
+- `com.visualstudio.code` - Enables Wayland support and Podman socket access.
+- `com.google.Chrome` - Grants access to local applications and icons directories.
+
+These overrides are automatically applied to new user accounts through the `/etc/skel` template.
+
+### Flatpak Update Schedule
+
+Automatic updates are handled by `uupd`, which updates the system image,
+Flatpaks, Distrobox containers, and Homebrew together. To keep image updates
+enabled while choosing a different Flatpak cadence, disable only uupd's
+Flatpak module.
+
+`/etc/uupd/config.json` ships on every image — it already sets
+`modules.distrobox.disable = true` — so it always exists and must be edited
+with `jq`, never overwritten with a fresh payload. This snippet refuses to
+install an empty or invalid result, so a missing `jq` or a failed edit cannot
+wipe the shipped config:
+
+```bash
+command -v jq   # required; install jq first if this prints nothing
+tmp="$(mktemp)"
+sudo jq '.modules.flatpak.disable = true' /etc/uupd/config.json >"$tmp" \
+    && jq -e . "$tmp" >/dev/null \
+    && sudo install -m 0644 "$tmp" /etc/uupd/config.json
+rm -f "$tmp"
+```
+
+The configuration is read on each uupd run, so it applies to the next
+scheduled update. Do not edit `/usr/lib/systemd/system/uupd.timer`; image
+updates replace files there. To change only the schedule, write a drop-in
+with `sudo systemctl edit uupd.timer`, which lives under `/etc` and survives
+image updates.
+
+After disabling the module, create local systemd service and timer units under
+`/etc/systemd/system` (or user units under `~/.config/systemd/user`) that run
+`flatpak update --system --noninteractive` and/or
+`flatpak update --user --noninteractive` at the cadence you want. For example,
+this system-wide timer runs Flatpak updates every 60 days:
+
+```ini
+# /etc/systemd/system/flatpak-system-update.service
+[Unit]
+Description=Update system Flatpaks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak update --system --noninteractive
+```
+
+```ini
+# /etc/systemd/system/flatpak-system-update.timer
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=60d
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable it with `sudo systemctl daemon-reload` and
+`sudo systemctl enable --now flatpak-system-update.timer`. Keep custom units
+under `/etc` or `~/.config` so they survive image updates. Set
+`modules.flatpak.disable` to `false` or remove it to return Flatpak updates to
+the normal `uupd.timer` schedule.
+
+## Animated wallpaper
+
+To use the shipped Bluefin movie with Hidamari, follow the
+[Hidamari setup guide](docs/hidamari.md). It includes the required copy into
+your Videos folder so the Flatpak can find the movie.
+
+## Brewfiles
+The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/homebrew/`
+(desktop-specific Flatpaks) and `system_files/shared/usr/share/ublue-os/homebrew/`
+(cross-variant CLI, tools, fonts, and developer environments):
+
+- **`system-flatpaks.Brewfile`** - Default system-wide Flatpaks for Bluefin variants.
+- **`system-dx-flatpaks.Brewfile`** - Additional Flatpaks for DX (Developer Experience) mode.
+- **`full-desktop.Brewfile`** - GNOME Circle and community Flatpaks for full desktop.
+- **`fonts.Brewfile`** / **`fonts-dev.Brewfile`** - System and monospace developer fonts.
+- **`cli.Brewfile`** - Common command-line utilities.
+- **`ai-tools.Brewfile`** - Local AI and machine learning tools.
+- **`cncf.Brewfile`** / **`k8s-tools.Brewfile`** - Cloud Native and Kubernetes toolsets.
+- **`ide.Brewfile`** / **`experimental-ide.Brewfile`** - Integrated development environments.
+- **`artwork.Brewfile`** - Graphics, design, and artwork applications.
+- **`swift.Brewfile`** - Swift toolchain and dependencies.
+- **`nsl.Brewfile`** - Neural Style and creative AI toolset.
+- **`video-wallpaper.Brewfile`** / **`wallpaper-slideshow.Brewfile`** - Background management bundles.
+
+Users can install opt-in bundles via ChairLift or the `ujust bbrew` command.
+The local Bluespeed stack can be installed directly with `ujust bluespeed`.
+
+## CI / Testing
+
+Changes are validated in three layers:
+
+If you need the per-workflow purpose and ownership map, start with
+[`docs/skills/workflow-map.md`](docs/skills/workflow-map.md).
+
+**On every PR**:
+- `validate.yml` — `just check`, shellcheck, pre-commit, submodule drift, registry/dconf guards.
+- `unit-tests.yml` — pytest hooks and bats unit test suites.
+- `build.yml` — builds the OCI image with `buildah`.
+- `pr-e2e.yml` — advisory composed-image common-suite check against a downstream Bluefin base.
+**On merge to main** — full layer validation via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite):
+- Runs the [`common` behave suite](https://github.com/projectbluefin/testsuite/tree/main/tests/common) against Bluefin LTS, Bluefin Stable, and Dakota.
+- SSH-mode: behave runs from the GHA runner over SSH into a QEMU VM — no full GNOME session needed, completes in ~15 min.
+- Validates dconf defaults, locked keys, `ujust`, setup scripts, desktop entries, and shell configuration as they land in the composed images.
+
+**Before downstream testing → stable promotions**:
+- `promotion-candidate-e2e.yml` runs `smoke,common` against `ghcr.io/projectbluefin/bluefin:{testing,lts-testing}` on Tuesdays, giving `common` a repo-local signal on the exact candidate tags that feed promotion.
+
+## Building Locally
+
+```bash
+just build
+```
+
+## Contributor Metrics
+
+![Alt](https://repobeats.axiom.co/api/embed/45dffc43196101fdeb340b462af3f7babe39eee3.svg "Repobeats analytics image")

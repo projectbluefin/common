@@ -1,0 +1,25 @@
+# zizmor baseline for the pre-commit `zizmor` hook, which runs inside the
+# required Validate PR check (`pre-commit run --all-files`) at
+# --min-severity=medium --min-confidence=medium and must stay green.
+#
+# Every entry below names a finding that exists on main today and says why
+# it is accepted. Remove an entry as soon as the site it covers is fixed;
+# never add one to silence a finding on new code without a reason next to it.
+#
+# Regenerate the list of current findings with:
+#   zizmor --offline --no-config --min-severity=medium --min-confidence=medium .
+#
+# (--no-config is required: zizmor auto-discovers this file, so without it
+# every baselined finding is suppressed and the command reports nothing.)
+#
+# Prefer filename:line over a bare filename so that a new finding elsewhere
+# in the same file still fails the check.
+
+rules:
+  dangerous-triggers:
+    ignore:
+      # Prow needs a write token for fork pull requests so it can label and
+      # merge them. Safe: nothing in prow.yml checks out or runs pull request
+      # code; the reusable workflow only checks out cncf/prow-github-actions.
+      - prow.yml:15 # issue_comment
+      - prow.yml:20 # pull_request_target

@@ -1,0 +1,41 @@
+# bash completion for ujust
+#
+# Flags come from the ujust-flags data file shipped next to the entry
+# justfile (one flag per line). When `just --help` gains flags, update the
+# data file — the completions read it at TAB time, no per-shell edits needed.
+
+_ujust() {
+    local cur words cword
+    if declare -F _init_completion >/dev/null 2>&1; then
+        _init_completion || return
+    else
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        words=("${COMP_WORDS[@]}")
+        cword="${COMP_CWORD}"
+    fi
+
+    # UJUST_JUSTFILE / UJUST_FLAGS_FILE overrides exist for testing;
+    # defaults are the image entry justfile and the flags list next to it.
+    local justfile="${UJUST_JUSTFILE:-/usr/share/ublue-os/just/00-entry.just}"
+    local flags_file="${UJUST_FLAGS_FILE:-${justfile%/*}/ujust-flags}"
+
+    if [[ "${cur}" == -* ]]; then
+        local flags=()
+        if [[ -f "${flags_file}" ]]; then
+            mapfile -t flags < "${flags_file}"
+        fi
+        COMPREPLY=( $(compgen -W "${flags[*]}" -- "${cur}") )
+        return 0
+    fi
+
+    # Recipe completion: if just is installed and entry justfile exists, fetch recipe list
+    if [[ -f "${justfile}" ]] && command -v just >/dev/null 2>&1; then
+        local recipes
+        recipes=$(just --summary --justfile "${justfile}" 2>/dev/null)
+        COMPREPLY=( $(compgen -W "${recipes}" -- "${cur}") )
+        return 0
+    fi
+}
+
+complete -F _ujust ujust

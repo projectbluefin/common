@@ -1,0 +1,123 @@
+"""Regression checks for Bazaar curated config and app policy."""
+
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).parent.parent
+CURATED = ROOT / "system_files/bluefin/etc/bazaar/curated.yaml"
+BAZAAR = ROOT / "system_files/bluefin/etc/bazaar/bazaar.yaml"
+BLOCKLIST = ROOT / "system_files/bluefin/etc/bazaar/blocklist.yaml"
+FLATPARK_FILTER = ROOT / "system_files/shared/usr/share/flatpak/flatpark.filter"
+
+
+def _load_yaml(path: Path):
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def test_curated_uses_modern_schema_shape():
+    data = _load_yaml(CURATED)
+
+    assert isinstance(data, dict)
+    assert "css" not in data  # modern schema does not use root css block
+    assert "rows" in data
+    assert isinstance(data["rows"], list)
+    assert len(data["rows"]) > 0
+
+    section_titles = []
+    for row in data["rows"]:
+        assert isinstance(row, dict)
+        if "banner" in row:
+            banner = row["banner"]
+            assert "image" in banner
+            img = banner["image"]
+            assert "light-uri" in img
+            assert "dark-uri" in img
+            # Shipped Bazaar 0.9.x natively loads .jxl banners
+            assert img["light-uri"].endswith(".jxl")
+            assert img["dark-uri"].endswith(".jxl")
+        elif "section" in row:
+            section = row["section"]
+            assert "title" in section
+            assert "appids" in section
+            assert "list" in section["appids"]
+            assert isinstance(section["appids"]["list"], list)
+            title = section["title"]
+            section_titles.append(title if isinstance(title, str) else title.get("en"))
+
+    assert "Desktop Development" in section_titles
+    assert "Cloud Native Development" in section_titles
+    assert "AI and Machine Learning" in section_titles
+
+    curated_ids = {
+        appid
+        for row in data["rows"]
+        if "section" in row
+        for appid in row["section"]["appids"]["list"]
+    }
+
+    denied_prefixes = {
+        line.split()[1].removeprefix("app/").removesuffix("/*")
+        for line in FLATPARK_FILTER.read_text(encoding="utf-8").splitlines()
+        if line.startswith("deny app/")
+    }
+    for expected_appid in [
+        "com.openai.ChatGPT",
+        "com.anthropic.ClaudeDesktop",
+        "co.anysphere.cursor",
+        "com.google.AntigravityIDE",
+    ]:
+        assert expected_appid in curated_ids
+        assert expected_appid not in denied_prefixes
+
+
+def test_blocklisted_apps_stay_out_of_curated_content():
+    blocklist = _load_yaml(BLOCKLIST)
+    curated = _load_yaml(CURATED)
+
+    blocked_ids = {
+        appid
+        for group in blocklist["blocklists"]
+        for appid in group.get("block", [])
+    }
+    curated_ids = {
+        appid
+        for row in curated["rows"]
+        for content in row.values()
+        if isinstance(content, dict)
+        for appid in content.get("appids", {}).get("list", [])
+    }
+
+    assert blocked_ids.isdisjoint(curated_ids)
+    # Steam stays discoverable so the `steam` before-transaction hook can intercept it.
+    assert "com.valvesoftware.Steam" not in blocked_ids
+    assert "com.valvesoftware.SteamLink" in curated_ids
+
+
+def test_bazaar_config_valid():
+    data = _load_yaml(BAZAAR)
+
+    assert "curated-config-paths" in data
+    assert "hooks" in data
+    hook_ids = {h["id"] for h in data["hooks"]}
+    expected_hooks = {
+        "jetbrains-toolbox",
+        "vscode",
+        "vscodium",
+        "zed",
+        "steam",
+    }
+    assert expected_hooks.issubset(hook_ids)
+
+    for hook in data["hooks"]:
+        assert "when" in hook
+        assert "check-appid-regex" in hook
+        assert "dialogs" in hook
+        for dialog in hook["dialogs"]:
+            assert "options" in dialog
+            option_ids = {opt["id"] for opt in dialog["options"]}
+            assert "cancel" in option_ids
+            if hook["id"] == "steam":
+                assert "open-chairlift" in option_ids
+            else:
+                assert "run-devmode" in option_ids

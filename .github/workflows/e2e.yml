@@ -1,0 +1,134 @@
+# Post-merge E2E — common layer validation
+#
+# Runs AFTER a merge to main (not on PRs). PRs get validate/build plus the
+# advisory composed-image gate in pr-e2e.yml.
+#
+# Uses the local run-testsuite wrapper with the `common` suite, which validates
+# that the files shipped by this repo (dconf defaults, ujust, setup scripts,
+# desktop entries, shell config) are present and functional in the downstream
+# images.
+#
+# The `common` suite runs in SSH mode from the GHA runner — no full GNOME
+# session needed, so jobs complete in ~15 min vs ~60 min for GUI suites.
+
+name: E2E
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "**.md"
+      - "docs/**"
+      - "AGENTS.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Bluefin LTS is deliberately absent. Its common suite fails on every
+          # run (bootupd missing, bootloader-update.service failing,
+          # LockLayering blocking rpm-ostree) — see
+          # https://github.com/projectbluefin/bluefin-lts/issues/492.
+          #
+          # A permanently red advisory check teaches everyone to ignore it, and
+          # GitHub does not allow `continue-on-error` on a job that calls a
+          # reusable workflow, so the entry cannot simply be soft-failed here.
+          #
+          # LTS is still covered: promotion-candidate-e2e.yml runs `smoke,common`
+          # against bluefin:lts-testing every Tuesday. Restore this entry once
+          # bluefin-lts#492 is fixed.
+          - name: Bluefin Stable
+            image: ghcr.io/projectbluefin/bluefin:testing
+            suites: common
+          - name: Dakota
+            image: ghcr.io/projectbluefin/dakota:testing
+            suites: common
+    name: "E2E — ${{ matrix.name }}"
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/run-testsuite.yml
+    with:
+      image: ${{ matrix.image }}
+      suites: ${{ matrix.suites }}
+
+  # This workflow is advisory — it is not a required check and does not gate
+  # publication (common:latest is already pushed by the time it runs). Without
+  # a report, a red run is only visible to whoever happens to open the Actions
+  # tab; it went unnoticed for four days in July 2026. This reports, it does
+  # not block.
+  report-failure:
+    name: "Report E2E failure"
+    needs: [e2e]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          TITLE="ci: post-merge E2E is failing on main"
+
+          # Post-merge runs are frequent, so reuse one tracking issue rather
+          # than filing a new one per merge.
+          existing=$(gh issue list --repo "$REPO" --state open --limit 100 \
+            --json number,title \
+            | jq -r --arg t "$TITLE" '[.[] | select(.title == $t)][0].number // empty')
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPO" \
+              --body "Still failing on \`${SHA:0:7}\` — ${RUN_URL}
+
+          ## Maintainer
+          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Identify the owning repository and record the regression scope.
+          - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
+
+          ## Reporter
+          **Reporter action:** None unless a maintainer requests additional evidence."
+            echo "Updated existing issue #${existing}"
+          else
+            gh issue create --repo "$REPO" --title "$TITLE" \
+              --label needs-human,kind/bug --body \
+          "Post-merge E2E failed on \`${SHA:0:7}\`.
+
+          Run: ${RUN_URL}
+
+          This workflow is **advisory** — it is not a required check and does not
+          gate publication. \`common:latest\` was already pushed before this ran,
+          so a failure here means a regression is already shipped, not that a
+          release was blocked.
+
+          It exercises the downstream \`*-testing\` images, so the cause may be in
+          a downstream base image rather than in \`system_files/\`. Check which
+          matrix entry failed before assuming otherwise.
+
+          This issue is reused for subsequent failures. Close it once the run is
+          green again.
+
+          ## Maintainer
+          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Identify the owning repository and record the regression scope.
+          - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
+
+          ## Reporter
+          **Reporter action:** None unless a maintainer requests additional evidence."
+          fi

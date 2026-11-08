@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+# Thin wrapper: the dispatcher itself lives in hookrunner.sh so that
+# ublue-system-setup, ublue-user-setup and ublue-privileged-setup cannot drift.
+
+HOOKRUNNER="${HOOKRUNNER:-/usr/lib/ublue/setup-services/hookrunner.sh}"
+# shellcheck source=/dev/null
+source "${HOOKRUNNER}"
+
+run_setup_hooks "system-hooks-directory" "/usr/share/ublue-os/system-setup.hooks.d"

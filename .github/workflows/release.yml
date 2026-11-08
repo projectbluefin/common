@@ -1,0 +1,129 @@
+name: Monthly Release
+
+on:
+  schedule:
+    # Run on the 1st of every month at 00:00 UTC
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Check release cadence
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      due: ${{ steps.check.outputs.due }}
+    steps:
+      - name: Check if release is due
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip if a release was published within the last 20 days
+          LAST_RELEASE=$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 1 \
+            --json publishedAt \
+            --jq '.[0].publishedAt // empty')
+
+          if [ -n "$LAST_RELEASE" ]; then
+            LAST_TS=$(date -d "$LAST_RELEASE" +%s)
+            NOW_TS=$(date +%s)
+            DAYS_SINCE=$(( (NOW_TS - LAST_TS) / 86400 ))
+            if [ "$DAYS_SINCE" -lt 20 ]; then
+              echo "Last release was ${DAYS_SINCE} days ago — not due yet"
+              echo "due=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          # Skip if any PR against main is intentionally paused
+          DNM_COUNT=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --search "label:hold" \
+            --base main \
+            --json number \
+            --jq 'length')
+
+          if [ "$DNM_COUNT" -gt 0 ]; then
+            echo "::warning::${DNM_COUNT} PRs on hold — skipping release"
+            echo "due=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "due=true" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Create monthly snapshot release
+    needs: [check]
+    if: needs.check.outputs.due == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Pinned release binary, checksum-verified by the action. Never build it
+      # from crates.io or pipe an installer to a shell in this job: it runs
+      # beside the contents: write release step (#1518).
+      - name: Install git-cliff
+        uses: taiki-e/install-action@b80e2bb2635f28eb98b9fce1e2f0887e1535c6b2 # v2
+        with:
+          tool: git-cliff@2.14.2
+
+      - name: Check git-cliff
+        run: git-cliff --version
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          TAG="v$(date +'%Y.%m')"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${TAG}"
+
+      - name: Generate changelog with git-cliff
+        id: changelog
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.tag.outputs.tag }}"
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            NOTES="Monthly snapshot release ${TAG}\n\nFirst release — no previous tag."
+          else
+            NOTES=$(git cliff "${PREVIOUS_TAG}..HEAD" --strip header 2>/dev/null || \
+              git log "${PREVIOUS_TAG}..HEAD" --pretty=format:'- %s (%h)' --no-merges)
+          fi
+
+          echo "$NOTES" > /tmp/release-notes.md
+          {
+            echo "## Monthly Snapshot: ${TAG}"
+            echo ""
+            cat /tmp/release-notes.md
+            echo ""
+            echo "---"
+            echo "*Automated monthly snapshot of bluefin-common configuration files.*"
+          } > /tmp/full-notes.md
+
+      - name: Create Release
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          bodyFile: /tmp/full-notes.md
+          draft: false
+          prerelease: false
+          makeLatest: true
+          allowUpdates: true
+          skipIfReleaseExists: false

@@ -1,0 +1,50 @@
+# We have this script so that people using images with `nss-altfiles` (`/usr/lib/g{roup,shadow}`)
+# do not break their systems when rebasing to an image without that
+# This usually happens when using https://github.com/hhd-dev/rechunk then rebasing to an image without it.
+# Please DO NOT remove this unless this is fully, completely obsolete.
+# This is exactly what is making it break: https://github.com/ublue-os/legacy-rechunk/blob/1d2b0c2e99afbdc2eb06788ae28e157a88b03d70/1_prune.sh#L41-L47
+# Users WILL experience black screens and systems will NOT boot if this script malfunctions. Please test this properly and always make sure this works
+# Relevant issues:
+# - https://github.com/bootc-dev/bootc/issues/1179#issuecomment-2708305926
+# - https://github.com/ublue-os/main/issues/759
+# - https://github.com/ublue-os/bluefin-lts/issues/918
+# - https://github.com/ublue-os/image-template/issues/177
+# - https://github.com/ublue-os/aurora/issues/1468
+# - https://github.com/ublue-os/bluefin/issues/3852
+# This got created on Tue, 16 Dec 2025 00:44:58 -0300
+[Unit]
+Description=Fix groups for Legacy rechunker
+ConditionPathExists=/run/ostree-booted
+DefaultDependencies=no
+# No local-fs.target ordering. Pulling in Wants=local-fs.target /
+# After=local-fs.target created an ordering cycle
+# (local-fs.target -> this unit -> systemd-sysusers.service ->
+# systemd-tmpfiles-setup-dev.service -> local-fs-pre.target -> local-fs.target)
+# that systemd broke by dropping local-fs-pre.target, leaving /var and other
+# fstab mounts unmounted and hanging the boot (common#918, bluefin-lts#391).
+#
+# /etc must be writable before the ExecStart= lines below touch it. Order
+# directly after systemd-remount-fs.service (remounts / read-write) and
+# systemd-tmpfiles-setup-dev-early.service, exactly as systemd-sysusers.service
+# does. Both are Before=local-fs-pre.target, so these edges add no cycle.
+# Do NOT rely on bootc-sysusers-shadow-sync.service for that ordering: it is
+# absent on rpm-ostree images and on bootc < 1.16, where After= silently
+# becomes a no-op.
+After=systemd-remount-fs.service
+After=systemd-tmpfiles-setup-dev-early.service
+After=bootc-sysusers-shadow-sync.service
+Before=systemd-sysusers.service
+
+[Service]
+Type=oneshot
+ExecStart=bash -c 'touch /etc/gshadow && chmod 600 /etc/gshadow'
+ExecStart=bash -c 'rm /etc/gshadow'
+ExecStart=systemd-sysusers
+ExecStart=rechunker-group-fix
+# Scoped to /etc: this unit is ordered before local-fs-pre.target (via
+# Before=systemd-sysusers.service), so /var is not mounted yet and a full
+# --create --remove pass would hit EROFS and fail the unit on every boot.
+ExecStart=systemd-tmpfiles --create --remove --boot --prefix=/etc
+
+[Install]
+WantedBy=default.target multi-user.target

@@ -1,0 +1,16 @@
+tap "buildpacks/tap"
+brew "buildpacks/tap/pack", trusted: true
+tap "k0sproject/tap"
+brew "k0sproject/tap/k0sctl", trusted: true
+brew "cdk8s"
+brew "dagger"
+brew "grype"
+brew "helm"
+brew "k3sup"
+brew "k9s"
+brew "kind"
+brew "kubectl"
+brew "kubectx"
+brew "rancher-cli"
+brew "rancher-machine"
+brew "syft"
