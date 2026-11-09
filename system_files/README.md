@@ -29,7 +29,7 @@ Applied to the **NVIDIA GPU** image variant. Contains only NVIDIA-specific runti
 The Containerfile also copies generated artifacts into the layers:
 - `shared/usr/share/ublue-os/` — ujust completions (from build stage)
 - `shared/usr/lib/udev/rules.d/` — YubiKey U2F rules and game-devices-udev rules (fetched + SHA256-verified)
-- `shared/usr/bin/` — umotd and uwelcome binaries (from build stages)
+- `shared/usr/bin/` — uwelcome binaries (from build stages)
 
 ## OEM hardware
 

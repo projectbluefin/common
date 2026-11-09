@@ -1,14 +1,7 @@
-FROM docker.io/library/golang:alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS umotd-build
-RUN apk add git && \
-    git clone https://github.com/projectbluefin/umotd /src && \
-    git -C /src checkout 0b43d1c14a1d3066953341d26b532177ec15ae65
-WORKDIR /src
-RUN go build -ldflags="-s -w" -o /umotd .
-
 FROM docker.io/library/golang:alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
-    git -C /src checkout a66a41b4bfda893fc040a66dfb296c614db74447
+    git -C /src checkout c0a8748cb00eebfe313a985e6d3e47b0aa99795b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
@@ -118,7 +111,6 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
-COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
 # Ujust gate: the tailored completions checked into system_files/shared must bind `ujust`

@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
-# Tests for the uwelcome + umotd integration:
+# Tests for the uwelcome integration:
 #   - system_files/shared/etc/profile.d/uwelcome.sh
 #   - system_files/shared/usr/share/fish/vendor_conf.d/fish_greeting.fish
 #   - toggle-user-motd compatibility recipe in default.just
-#   - etc/uwelcome/config.json
+#   - etc/uwelcome/config.toml
 #
 # Behavioral contract:
 #   - uwelcome owns the opt-out decision. Its state lives at
@@ -21,7 +21,8 @@ bats_require_minimum_version 1.5.0
 UWELCOME_PROFILE="${BATS_TEST_DIRNAME}/../system_files/shared/etc/profile.d/uwelcome.sh"
 FISH_GREETING="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/fish/vendor_conf.d/fish_greeting.fish"
 DEFAULT_JUST="${BATS_TEST_DIRNAME}/../system_files/shared/usr/share/ublue-os/just/default.just"
-UWELCOME_CONFIG="${BATS_TEST_DIRNAME}/../system_files/shared/etc/uwelcome/config.json"
+UWELCOME_CONFIG="${BATS_TEST_DIRNAME}/../system_files/shared/etc/uwelcome/config.toml"
+UWELCOME_CONFIG_VERSION=1
 
 WORKDIR=""
 
@@ -176,29 +177,68 @@ teardown() {
 # Shipped configuration — must match the upstream schemas
 # ---------------------------------------------------------------------------
 
-@test "uwelcome config: is valid JSON" {
-    run jq empty "${UWELCOME_CONFIG}"
+@test "uwelcome config: is valid TOML" {
+    run python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "${UWELCOME_CONFIG}"
     [ "${status}" -eq 0 ]
 }
 
 @test "uwelcome config: command descriptions use known translation keys" {
-    # Unknown keys render as the raw identifier in the banner. Upstream
-    # v0.3.5 docs/configuration.md lists the valid set.
-    local known
-    known='["cmd_list","cli_pkg","term_bling","banner_toggle","sys_info","man_upd","cmd_report"]'
-    run jq -e --argjson known "${known}" \
-        'all(.commands[].desc; . as $d | $known | index($d) != null)' \
-        "${UWELCOME_CONFIG}"
+    run python3 - "${UWELCOME_CONFIG}" <<'PY'
+import sys, tomllib
+
+with open(sys.argv[1], "rb") as f:
+    cfg = tomllib.load(f)
+
+known = {
+    "cmd_list",
+    "cli_pkg",
+    "term_bling",
+    "banner_toggle",
+    "sys_info",
+    "man_upd",
+    "cmd_report",
+}
+
+commands = cfg.get("commands", [])
+assert isinstance(commands, list), "commands must be an array"
+assert all(isinstance(command, dict) and isinstance(command.get("desc"), str) for command in commands), \
+    "every command must have a string description"
+
+descs = {command["desc"] for command in commands}
+unknown = sorted(descs - known)
+assert not unknown, f"unknown command descriptions: {unknown}"
+PY
     [ "${status}" -eq 0 ]
 }
 
 @test "uwelcome config: banner toggle points at the uwelcome subcommand" {
-    run jq -e -r '.commands[] | select(.desc == "banner_toggle") | .cmd' "${UWELCOME_CONFIG}"
+    run python3 - "${UWELCOME_CONFIG}" <<'PY'
+import sys, tomllib
+
+with open(sys.argv[1], "rb") as f:
+    cfg = tomllib.load(f)
+
+commands = cfg.get("commands", [])
+toggle_commands = [
+    command.get("cmd")
+    for command in commands
+    if isinstance(command, dict) and command.get("desc") == "banner_toggle"
+]
+assert toggle_commands == ["uwelcome toggle"], f"unexpected banner toggle commands: {toggle_commands!r}"
+PY
     [ "${status}" -eq 0 ]
-    [ "${output}" = "uwelcome toggle" ]
 }
 
-@test "uwelcome config: motd is sourced from umotd" {
-    run jq -e -r '.motd.commands | index("umotd")' "${UWELCOME_CONFIG}"
+@test "uwelcome config: has the expected version" {
+    run python3 - "${UWELCOME_CONFIG}" "${UWELCOME_CONFIG_VERSION}" <<'PY'
+import sys, tomllib
+
+with open(sys.argv[1], "rb") as f:
+    cfg = tomllib.load(f)
+
+expected = int(sys.argv[2])
+actual = cfg.get("version")
+assert type(actual) is int and actual == expected, f"expected config version {expected}, got {actual!r}"
+PY
     [ "${status}" -eq 0 ]
 }
