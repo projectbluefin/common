@@ -76,6 +76,15 @@ Pass Cursor's experimental tap to the handler so it taps and trusts the same
 source that supplies the cask. Keep Cancel as the default and intercept only
 installs; updates and removals must pass through.
 
+Hook dialog `title`/`body` text is static: Bazaar does not substitute the
+app ID or name. To name the app being installed, define one dialog per app in
+the hook's `dialogs` list and have the `setup-dialog` stage return `ok` only for
+the dialog matching `BAZAAR_TS_APPID` and `pass` for the rest (Bazaar sets the
+transaction env vars on every stage). The `jetbrains-toolbox` hook does this:
+`android-studio-warning` for `com.google.AndroidStudio`, `jetbrains-warning`
+for every `com.jetbrains.*` app. Exactly one dialog must match each app; if all
+pass, Bazaar runs the action stage without asking the user.
+
 ### Developer Experience redirection (`run-devmode`)
 
 Every intercepted IDE dialog (`jetbrains-toolbox` plus each `IDE_HOOKS` entry) presents a `run-devmode` option. Choosing it executes `spawn_chairlift_dx_mode()`, launching ChairLift directly to its Developer Mode toggle screen via `flatpak-spawn --host /home/linuxbrew/.linuxbrew/bin/chairlift-wrapper --dx-mode`. `--dx-mode` first shipped in ChairLift v26.10.11 (projectbluefin/chairlift#629); older releases exit 1 with `Unknown option`, so keep `ARG CHAIRLIFT_RELEASE` and the `projectbluefin/tap` cask at or above it.

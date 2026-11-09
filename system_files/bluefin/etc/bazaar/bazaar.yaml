@@ -26,6 +26,21 @@ hooks:
           - id: run-ujust
             string: "Download JetBrains Toolbox"
             style: suggested
+      - id: android-studio-warning
+        title: >-
+          Install Android Studio (Host Integration)
+        body-use-markup: true
+        body: >-
+          Android Studio on Bluefin is installed and updated through <b>JetBrains Toolbox</b>, where it is listed alongside the JetBrains IDEs. Toolbox provides native host integration, seamless SDK detection, and container toolchain support.
+        default-response-id: cancel
+        options:
+          - id: cancel
+            string: "Cancel"
+          - id: run-devmode
+            string: "Enable Full Devmode (Developer Experience)"
+          - id: run-ujust
+            string: "Download JetBrains Toolbox"
+            style: suggested
     shell: exec python3 /run/host/etc/bazaar/hooks.py
 
   - id: vscode
