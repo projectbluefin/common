@@ -12,6 +12,7 @@ MAX_PROFILE_BYTES=$((500 * 1024))
 MAX_BUNDLE_BYTES=$((2 * 1024 * 1024))
 
 CONFIRM_TARGET=""
+VERIFY_TARGET=""
 RESUME_DIR=""
 IMAGE_NAME=""
 IMAGE_REF=""
@@ -26,7 +27,9 @@ SELECTED_PROFILES=()
 PROFILE_FILES=()
 
 usage() {
-    printf 'Usage: ujust report [--confirm <issue-number-or-url>] [--resume <draft-directory>]\n' >&2
+    printf 'Usage: ujust report [--confirm <issue-number-or-url>] [--verify <issue-number-or-url>] [--resume <draft-directory>]\n' >&2
+    printf '  An issue is a number (in the repository this image reports to), repo#number\n' >&2
+    printf '  (another projectbluefin repository), owner/repo#number, or a GitHub issue URL.\n' >&2
 }
 
 parse_args() {
@@ -38,6 +41,14 @@ parse_args() {
                     return 1
                 fi
                 CONFIRM_TARGET="$2"
+                shift 2
+                ;;
+            --verify)
+                if (($# < 2)); then
+                    usage
+                    return 1
+                fi
+                VERIFY_TARGET="$2"
                 shift 2
                 ;;
             --resume)
@@ -55,7 +66,11 @@ parse_args() {
         esac
     done
 
-    if [[ -n "$CONFIRM_TARGET" && -n "$RESUME_DIR" ]]; then
+    local modes=0
+    [[ -n "$CONFIRM_TARGET" ]] && ((++modes))
+    [[ -n "$VERIFY_TARGET" ]] && ((++modes))
+    [[ -n "$RESUME_DIR" ]] && ((++modes))
+    if ((modes > 1)); then
         usage
         return 1
     fi
@@ -871,25 +886,51 @@ parse_confirm_target() {
     elif [[ "$target" =~ ^https://github\.com/([[:alnum:]_.-]+/[[:alnum:]_.-]+)/issues/([1-9][0-9]*)([/?#].*)?$ ]]; then
         CONFIRM_REPO="${BASH_REMATCH[1]}"
         CONFIRM_ISSUE="${BASH_REMATCH[2]}"
+    elif [[ "$target" =~ ^([[:alnum:]_.-]+/[[:alnum:]_.-]+)#([1-9][0-9]*)$ ]]; then
+        CONFIRM_REPO="${BASH_REMATCH[1]}"
+        CONFIRM_ISSUE="${BASH_REMATCH[2]}"
+    elif [[ "$target" =~ ^([[:alnum:]_.-]+)#([1-9][0-9]*)$ ]]; then
+        # Bluefin features such as the printing stack live in their own
+        # projectbluefin repositories (common#1655).
+        CONFIRM_REPO="projectbluefin/${BASH_REMATCH[1]}"
+        CONFIRM_ISSUE="${BASH_REMATCH[2]}"
     else
         usage
         return 1
     fi
 }
 
-confirm_report() {
-    local issue_number="$1"
-    local issue_repo="$2"
+system_fingerprint() {
     local failed_units
-    local body
-    local comment_url
 
     failed_units="$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | \
         awk '{print $1}' | head -10 | scrub_journal_log || true)"
     failed_units="${failed_units:-none}"
-    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n* Image: %s\n* Tag: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s' \
+    printf '* Image: %s\n* Tag: %s\n* Version: %s\n* Digest: %s\n* Kernel: %s\n* Arch: %s\n* Failed units: %s' \
         "$IMAGE_REF" "$IMAGE_TAG" "$IMAGE_VERSION" "${BOOTED_DIGEST:-unknown}" "$(uname -r)" "$(uname -m)" \
-        "$failed_units")"
+        "$failed_units"
+}
+
+# Prints the URL of the posted comment.
+post_issue_comment() {
+    local issue_number="$1"
+    local issue_repo="$2"
+    local body="$3"
+    local comment_url
+
+    gh issue comment "$issue_number" --repo "$issue_repo" --body "$body" >/dev/null || return 1
+    comment_url="$(gh api "repos/${issue_repo}/issues/${issue_number}/comments" \
+        --jq '.[-1].html_url' 2>/dev/null || true)"
+    printf '%s\n' "${comment_url:-https://github.com/${issue_repo}/issues/${issue_number}}"
+}
+
+confirm_report() {
+    local issue_number="$1"
+    local issue_repo="$2"
+    local body
+    local comment_url
+
+    body="$(printf '**System fingerprint** (via `ujust report --confirm`)\n\n%s' "$(system_fingerprint)")"
 
     printf '\nWill post to: https://github.com/%s/issues/%s\n\n%s\n\n' \
         "$issue_repo" "$issue_number" "$body"
@@ -901,14 +942,94 @@ confirm_report() {
         return
     fi
 
-    if ! gh issue comment "$issue_number" --repo "$issue_repo" --body "$body"; then
+    if ! comment_url="$(post_issue_comment "$issue_number" "$issue_repo" "$body")"; then
         printf 'Could not post the confirmation comment.\n' >&2
         return 1
     fi
-    comment_url="$(gh api "repos/${issue_repo}/issues/${issue_number}/comments" \
-        --jq '.[-1].html_url' 2>/dev/null || true)"
-    comment_url="${comment_url:-https://github.com/${issue_repo}/issues/${issue_number}}"
     printf 'Confirmation posted: %s\n' "$comment_url"
+}
+
+# Maintainers can put steps in a ```verify fenced block in the issue body.
+extract_verify_steps() {
+    tr -d '\r' | awk '
+        /^```verify[[:space:]]*$/ { in_block = 1; next }
+        in_block && /^```/ { exit }
+        in_block { print }
+    '
+}
+
+verification_result_for_choice() {
+    case "$1" in
+        "Fixed: the problem is gone") printf 'fixed\n' ;;
+        "Still broken") printf 'still-broken\n' ;;
+        "Changed, but not fixed") printf 'different\n' ;;
+        "Cannot tell: I never had this problem") printf 'cannot-confirm\n' ;;
+        *) return 1 ;;
+    esac
+}
+
+verify_report() {
+    local issue_number="$1"
+    local issue_repo="$2"
+    local issue_url="https://github.com/${issue_repo}/issues/${issue_number}"
+    local title
+    local steps
+    local choice
+    local result
+    local notes=""
+    local body
+    local comment_url
+
+    if ! ensure_gh_ready; then
+        return 1
+    fi
+    if ! title="$(gh issue view "$issue_number" --repo "$issue_repo" --json title --jq '.title')"; then
+        printf 'Could not read %s\n' "$issue_url" >&2
+        return 1
+    fi
+    steps="$(gh issue view "$issue_number" --repo "$issue_repo" --json body --jq '.body' 2>/dev/null | \
+        extract_verify_steps || true)"
+
+    printf '\nVerifying the fix for: %s\n%s\n\n' "$issue_url" "$title"
+    if [[ -n "$steps" ]]; then
+        printf 'Verification steps from the maintainers:\n\n%s\n\n' "$steps"
+    else
+        printf 'This issue lists no verification steps. Check whether the problem you\n'
+        printf 'reported still happens on this system after updating.\n\n'
+    fi
+
+    choice="$(gum choose \
+        "Fixed: the problem is gone" \
+        "Still broken" \
+        "Changed, but not fixed" \
+        "Cannot tell: I never had this problem")" || {
+        printf 'No verification was posted.\n'
+        return
+    }
+    result="$(verification_result_for_choice "$choice")" || return
+    if [[ "$result" == still-broken || "$result" == different ]]; then
+        notes="$(gum write --placeholder "What still happens? (optional)" | scrub_journal_log || true)"
+    fi
+
+    body="$(printf '**Fix verification** (via `ujust report --verify`)\n\n* Result: %s\n%s' \
+        "$choice" "$(system_fingerprint)")"
+    if [[ -n "$notes" ]]; then
+        body+=$'\n\n**What still happens**\n\n'"$notes"
+    fi
+    # Lifecycle automation reads this marker; keep its format stable.
+    body+=$'\n\n'"<!-- verification-result: ${result} -->"
+
+    printf '\nWill post to: %s\n\n%s\n\n' "$issue_url" "$body"
+    if [[ -t 0 && -t 1 ]] && ! gum confirm "Post this verification?"; then
+        printf 'Verification comment was declined.\n'
+        return
+    fi
+
+    if ! comment_url="$(post_issue_comment "$issue_number" "$issue_repo" "$body")"; then
+        printf 'Could not post the verification comment.\n' >&2
+        return 1
+    fi
+    printf 'Verification posted: %s\n' "$comment_url"
 }
 
 prompt_required() {
@@ -974,12 +1095,17 @@ main() {
     local intent
 
     parse_args "$@"
-    if [[ -n "$CONFIRM_TARGET" ]]; then
+    if [[ -n "$CONFIRM_TARGET" || -n "$VERIFY_TARGET" ]]; then
         read_image_info
         read_boot_status
         route_issue_repo
-        parse_confirm_target "$CONFIRM_TARGET" "$BUG_REPO"
-        confirm_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+        if [[ -n "$CONFIRM_TARGET" ]]; then
+            parse_confirm_target "$CONFIRM_TARGET" "$BUG_REPO"
+            confirm_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+        else
+            parse_confirm_target "$VERIFY_TARGET" "$BUG_REPO"
+            verify_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+        fi
         return
     fi
     if [[ -n "$RESUME_DIR" ]]; then
@@ -991,13 +1117,16 @@ main() {
     gum style --border rounded --border-foreground 99 --padding "1 3" --bold \
         "$BONEDIGGER_BRAND"
     gum style --bold --foreground 212 "What kind of report would you like to make?"
-    intent="$(gum choose "Bug report" "Feature request" "Get help" "Confirm an existing report")" || return
+    intent="$(gum choose "Bug report" "Feature request" "Get help" "Confirm an existing report" "Verify a fix")" || return
     case "$intent" in
         "Bug report") start_bug_report ;;
         "Feature request") start_feature_request ;;
         "Get help") show_help ;;
         "Confirm an existing report")
             printf 'Use: ujust report --confirm <issue-number-or-url>\n'
+            ;;
+        "Verify a fix")
+            printf 'Use: ujust report --verify <issue-number-or-url>\n'
             ;;
     esac
 }

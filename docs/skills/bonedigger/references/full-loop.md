@@ -38,7 +38,7 @@ real shell implementation in `/usr/libexec/bonedigger-report`. Keep the
 ### Creating a report
 
 `ujust report` begins by asking the user's intent: report a bug, get help,
-request a feature, or confirm an existing issue. Help points to Bluefin
+request a feature, confirm an existing issue, or verify a fix. Help points to Bluefin
 Discussions without creating an issue. Feature requests always target
 `projectbluefin/common`; bugs use the image mapping below and show that target
 before collecting data.
@@ -89,12 +89,28 @@ booted image's normal routing: Bluefin and Bluefin LTS now fall through to the
 caller default, which for bug reports is `projectbluefin/common` (both former
 destinations are archived and refuse new issues); Dakota to `projectbluefin/dakota`,
 and unknown variants to `projectbluefin/common`. A GitHub issue URL uses its
-repository and issue number directly.
+repository and issue number directly. Features that ship from their own
+repository (for example the printing stack in `projectbluefin/hplip-printer-app`)
+are reachable with `repo#number`, which means `projectbluefin/repo`, or
+`owner/repo#number` (`common#1655`).
 
 Issue numbers must be positive integers. In a terminal, the exact comment is
 shown and requires confirmation before posting; non-interactive use posts after
 printing the preview. A signed-in GitHub CLI is required (`gh auth login`);
 QR login is intentionally out of scope.
+
+### Verify a fix
+
+Use `ujust report --verify <issue-number-or-url>` after updating to an image
+that carries a fix. It accepts the same issue forms as `--confirm`, prints the
+issue title and any maintainer steps from a fenced `verify` block in the issue
+body, and asks for a verdict: fixed, still broken, changed but not fixed, or
+cannot tell. For still broken or changed, the reporter may add a short note,
+which passes through the journal redaction filter. The previewed comment carries
+the same fingerprint as `--confirm` plus a stable
+`<!-- verification-result: fixed|still-broken|different|cannot-confirm -->`
+marker, so closure automation can wait for the reporter's verdict instead of
+closing on merge.
 
 ## bonedigger — what it does NOT do
 

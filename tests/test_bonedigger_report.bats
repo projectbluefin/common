@@ -804,6 +804,112 @@ EOF
     [ "$output" = "projectbluefin/common|73" ]
 }
 
+@test "confirmation accepts short repository references for other projectbluefin repos" {
+    run bash -c '
+        source "$1"
+        parse_confirm_target "hplip-printer-app#12" projectbluefin/bluefin
+        printf "%s|%s\n" "$CONFIRM_REPO" "$CONFIRM_ISSUE"
+        parse_confirm_target "OpenPrinting/cups#7" projectbluefin/bluefin
+        printf "%s|%s\n" "$CONFIRM_REPO" "$CONFIRM_ISSUE"
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "projectbluefin/hplip-printer-app|12" ]
+    [ "${lines[1]}" = "OpenPrinting/cups|7" ]
+
+    run bash -c 'source "$1"; parse_confirm_target "$2" projectbluefin/common' _ \
+        "$BONEDIGGER_SCRIPT" "hplip-printer-app#0"
+    [ "$status" -eq 1 ]
+}
+
+@test "report modes are mutually exclusive" {
+    run bash -c 'source "$1"; parse_args --confirm 1 --verify 2' _ "$BONEDIGGER_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"--verify <issue-number-or-url>"* ]]
+}
+
+@test "verification shows maintainer steps and posts the verdict to another repository" {
+    cat << 'EOF' > "$WORKDIR/bin/systemctl"
+#!/usr/bin/bash
+printf 'cups.service loaded failed failed\n'
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+case "$1" in
+    choose) printf 'Still broken\n' ;;
+    write) printf 'Printer is still offline, mail me at someone@example.com\n' ;;
+    *) exit 0 ;;
+esac
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+case "$1 $2" in
+    "auth status") exit 0 ;;
+    "issue view")
+        if [[ "$*" == *"--json title"* ]]; then
+            printf 'Printer goes offline after resume\n'
+        else
+            printf 'Description\r\n\r\n```verify\r\nlpstat -p\r\n```\r\nnot a step\r\n'
+        fi
+        ;;
+    "issue comment")
+        printf '%s\n' "$*" >> "$CALLS_FILE"
+        ;;
+    "api "*)
+        printf 'https://github.com/projectbluefin/hplip-printer-app/issues/12#issuecomment-9\n'
+        ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/systemctl" "$WORKDIR/bin/gum" "$WORKDIR/bin/gh"
+    export CALLS_FILE="$WORKDIR/gh-calls"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        parse_confirm_target "hplip-printer-app#12" projectbluefin/bluefin
+        IMAGE_REF="ghcr.io/projectbluefin/bluefin"
+        IMAGE_TAG="stable"
+        BOOTED_DIGEST="sha256:abc123"
+        verify_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+    ' _ "$BONEDIGGER_SCRIPT" < /dev/null
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Printer goes offline after resume"* ]]
+    [[ "$output" == *"lpstat -p"* ]]
+    [[ "$output" != *"not a step"* ]]
+    [[ "$output" == *"Verification posted: https://github.com/projectbluefin/hplip-printer-app/issues/12#issuecomment-9"* ]]
+    grep -qF "issue comment 12 --repo projectbluefin/hplip-printer-app --body" "$CALLS_FILE"
+    grep -qF "* Result: Still broken" "$CALLS_FILE"
+    grep -qF "* Failed units: cups.service" "$CALLS_FILE"
+    grep -qF "Printer is still offline" "$CALLS_FILE"
+    grep -qF "<!-- verification-result: still-broken -->" "$CALLS_FILE"
+    ! grep -qF "someone@example.com" "$CALLS_FILE"
+}
+
+@test "cancelling the verification verdict posts nothing" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+[[ "$1" == choose ]] && exit 130
+exit 0
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+[[ "$1 $2" == "issue comment" ]] && printf 'posted\n' >> "$CALLS_FILE"
+[[ "$1 $2" == "issue view" ]] && printf 'Title\n'
+exit 0
+EOF
+    chmod +x "$WORKDIR/bin/gum" "$WORKDIR/bin/gh"
+    export CALLS_FILE="$WORKDIR/gh-calls"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        verify_report 5 projectbluefin/common
+    ' _ "$BONEDIGGER_SCRIPT" < /dev/null
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"No verification was posted."* ]]
+    [ ! -e "$CALLS_FILE" ]
+}
+
 @test "declining submission preserves the draft and resume command" {
     cat << 'EOF' > "$WORKDIR/bin/gum"
 #!/usr/bin/bash
