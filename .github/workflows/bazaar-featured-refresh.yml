@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned Python deps
-        run: pip install -r tests/requirements.txt
+        run: "pip install --require-hashes --only-binary=:all: -r tests/requirements.txt"
 
       - name: Score apps and rewrite the Recommends row
         # Exits non-zero (no PR) if a source is down, stale, or a pin is invalid.

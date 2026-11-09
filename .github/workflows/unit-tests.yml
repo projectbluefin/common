@@ -36,7 +36,7 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "$(/home/linuxbrew/.linuxbrew/bin/brew --prefix)/bin" >> "$GITHUB_PATH"
           brew install bats-core fish zsh
-          pip install -r tests/requirements.txt
+          pip install --require-hashes --only-binary=:all: -r tests/requirements.txt
 
       - name: Install just
         uses: taiki-e/install-action@0b43677d266e02f8bd34a2096b57e23a01a92aff # just

@@ -84,16 +84,24 @@ uses: actions/checkout@main
 
 ## Python tool pinning
 
-Install Python tools in workflows with `pip install -r tests/requirements.txt`.
-Every direct requirement must use an exact `==` version; Renovate can propose
-updates through its requirements-file manager. Transitive dependencies are not
-locked by this gate.
+Install Python tools in workflows with `pip install --require-hashes
+--only-binary=:all: -r tests/requirements.txt`. Direct requirements live in
+`tests/requirements.in` with an exact `==` version. `tests/requirements.txt`
+is generated from that file with `uv pip compile --universal --python-version
+3.12 --generate-hashes --output-file tests/requirements.txt
+tests/requirements.in` and Renovate regenerates it on every update, so every
+package -- including transitive dependencies -- is locked to an exact version
+with a checksum. Pin a tool by editing `tests/requirements.in` and regenerating.
+
+Renovate manages `tests/requirements.txt` through its `pip-compile` manager
+(`pip_requirements` is disabled so the file is not updated twice). New
+installer forms or shell wrappers need matching guard fixtures.
 
 `tests/test_python_install_pins.py` checks workflow `run` steps and the root
 Justfile for `pip`, `pip3`, and `python -m pip` installs, following requirements
 files recursively. It rejects loose versions, missing files, and cycles.
 The unit-test workflow runs it on workflow changes, and `just test` runs it
-locally. New installer forms or shell wrappers need matching guard fixtures.
+locally.
 
 ---
 

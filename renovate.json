@@ -8,6 +8,14 @@
       "/^\\.github/copilot-setup-steps\\.yml$/"
     ]
   },
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^tests/requirements\\.txt$/"
+    ]
+  },
+  "pip_requirements": {
+    "enabled": false
+  },
   "customManagers": [
     {
       "customType": "regex",
