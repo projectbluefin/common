@@ -28,6 +28,7 @@ test:
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
+    bats tests/test_container_trust.bats
     bats tests/test_uwelcome_profile.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
