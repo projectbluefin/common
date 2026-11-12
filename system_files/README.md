@@ -31,6 +31,10 @@ The Containerfile also copies generated artifacts into the layers:
 - `shared/usr/lib/udev/rules.d/` — YubiKey U2F rules and game-devices-udev rules (fetched + SHA256-verified)
 - `shared/usr/bin/` — uwelcome binaries (from build stages)
 
+### Personal welcome-banner settings
+
+The updated welcome banner no longer reads `~/.config/uwelcome/config.json`. Personal settings are not migrated automatically. To keep custom settings, convert them to `~/.config/uwelcome/config.toml` with top-level `version = 1`; otherwise the banner uses the system settings. The banner's disabled marker is unchanged.
+
 ## OEM hardware
 
 OEM-specific hooks, udev rules, and assets all live in `shared/` so they are present on every variant. Hooks detect hardware at runtime via DMI strings and exit immediately on non-matching hardware — runtime cost is negligible.

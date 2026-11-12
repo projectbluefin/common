@@ -242,3 +242,15 @@ assert type(actual) is int and actual == expected, f"expected config version {ex
 PY
     [ "${status}" -eq 0 ]
 }
+
+
+@test "uwelcome config: explicitly disables built-in and command tips" {
+    run python3 - "${UWELCOME_CONFIG}" <<'PY'
+import sys, tomllib
+
+with open(sys.argv[1], "rb") as f:
+    cfg = tomllib.load(f)
+assert cfg.get("motd") == {"messages": [], "commands": []}
+PY
+    [ "${status}" -eq 0 ]
+}

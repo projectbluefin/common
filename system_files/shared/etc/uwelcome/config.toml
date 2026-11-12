@@ -1,6 +1,10 @@
 version = 1
 color = "auto"
 
+[motd]
+messages = []
+commands = []
+
 [greeting]
 prefix = "󱍢 "
 
