@@ -35,6 +35,10 @@ the source tree assume a checkout, not this image.
 
 All Bluefin images are published to `ghcr.io/projectbluefin/`. The org migration from `ublue-os` is complete — `projectbluefin` is fully standalone.
 
+The PR validation check groups documented tags by image, scanning each image's
+package versions once and stopping when all requested tags are found. Registry
+outages leave unresolved tags unverified rather than reporting them missing.
+
 > **Do not write image names or tags from memory.** This file is derived from source.
 > Re-derive any time you suspect drift — see [Verification](#verification) below.
 
