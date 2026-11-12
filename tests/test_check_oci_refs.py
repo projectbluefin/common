@@ -474,3 +474,56 @@ class TestMain:
         )
         with patch("urllib.request.urlopen", return_value=_mock_urlopen(["stable"])):
             assert main(tmp_path) == 1
+
+
+def test_main_pages_each_image_only_once(tmp_path, capsys):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/guide.md").write_text(
+        "ghcr.io/projectbluefin/bluefin:first\n"
+        "ghcr.io/projectbluefin/bluefin:second\n"
+        "ghcr.io/projectbluefin/bluefin:third\n"
+    )
+    pages = []
+    for tag in ("first", "second", "third"):
+        response = _mock_urlopen([tag])
+        response.read.return_value = json.dumps(
+            [{"metadata": {"container": {"tags": [tag]}}}] + [{}] * 99
+        ).encode()
+        pages.append(response)
+    with patch("urllib.request.urlopen", side_effect=pages) as urlopen:
+        assert main(tmp_path) == 0
+    assert [call.args[0].full_url.rsplit("=", 1)[-1] for call in urlopen.call_args_list] == [
+        "1", "2", "3"
+    ]
+    output = capsys.readouterr().out
+    assert all(f"bluefin:{tag}" in output for tag in ("first", "second", "third"))
+
+
+def test_main_stops_after_all_tags_found(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/guide.md").write_text(
+        "ghcr.io/projectbluefin/bluefin:first\n"
+        "ghcr.io/projectbluefin/bluefin:second\n"
+        "ghcr.io/projectbluefin/bluefin:third\n"
+    )
+    response = _mock_urlopen([])
+    response.read.return_value = json.dumps(
+        [{"metadata": {"container": {"tags": ["first", "second", "third"]}}}] + [{}] * 99
+    ).encode()
+    with patch("urllib.request.urlopen", return_value=response) as urlopen:
+        assert main(tmp_path) == 0
+    assert urlopen.call_count == 1
+
+
+def test_partial_results_survive_later_transient_error():
+    response = _mock_urlopen([])
+    response.read.return_value = json.dumps(
+        [{"metadata": {"container": {"tags": ["first"]}}}] + [{}] * 99
+    ).encode()
+    with patch(
+        "urllib.request.urlopen",
+        side_effect=[response] + [urllib.error.URLError("offline")] * 4,
+    ), patch("time.sleep"):
+        assert _mod.tags_exist_in_ghcr("bluefin", {"first", "second"}) == {
+            "first": True, "second": None
+        }
