@@ -17,7 +17,12 @@ permissions: {}
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 15 min, not 10: the job does a lot of cold-runner network work every
+    # PR — taiki-e just install, apt-get shellcheck, pip install (numpy),
+    # pre-commit hook installs (zizmor/actionlint binaries + schema fetch),
+    # and GHCR ref checks. 10 min was a hard floor and the job ran 10m12s on
+    # a cold runner (#1670 validate timed out). Keep the checks; give them room.
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: read
