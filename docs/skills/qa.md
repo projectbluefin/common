@@ -39,7 +39,6 @@ metadata:
 | [#419](https://github.com/projectbluefin/common/issues/419) | software.feature tests GNOME Software, not Bazaar | P0 | open |
 | [#420](https://github.com/projectbluefin/common/issues/420) | No regression contract across streams | P1 | open |
 | [#422](https://github.com/projectbluefin/common/issues/422) | Hardware-only bug classes invisible to gate | P1 | open |
-| [#424](https://github.com/projectbluefin/common/issues/424) | bonedigger not wired into promotion | P1 | open |
 | [#421](https://github.com/projectbluefin/common/issues/421) | No pre-merge composition gate for common | P0 | ✅ closed |
 | [#423](https://github.com/projectbluefin/common/issues/423) | No installability gate before promotion | P1 | ✅ closed |
 | [#425](https://github.com/projectbluefin/common/issues/425) | bluefin-lts testing→stable gate too weak | P1 | ✅ closed |
@@ -109,10 +108,6 @@ bst show elements/...   # validate BST elements
 go test ./...           # unit tests
 just bats               # BATS integration tests
 ```
-
-## bonedigger integration
-
-bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger/SKILL.md](bonedigger/SKILL.md).
 
 ## libsetup.sh — setup versioning
 

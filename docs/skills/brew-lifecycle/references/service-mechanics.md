@@ -1,6 +1,6 @@
 # Service Mechanics — brew-lifecycle
 
-Part of [brew-lifecycle](../SKILL.md) — how brew-preinstall.service works, state file format, the per-login flow, the long-time-user removal scenario, bonedigger-report integration, variant-specific Brewfiles, merging order, and path conventions.
+Part of [brew-lifecycle](../SKILL.md) — how brew-preinstall.service works, state file format, the per-login flow, the long-time-user removal scenario, Report a Problem integration, variant-specific Brewfiles, merging order, and path conventions.
 
 ---
 
@@ -325,26 +325,20 @@ the loaded schemas still accept the config.
 
 ---
 
-## Confirming the service is working — bonedigger-report
+## Confirming the service is working — Report a Problem
 
-`bonedigger-report` (`ujust report`) captures `systemctl list-units --state=failed`.
-If `brew-preinstall.service` fails for a user, it appears in the **Failed Systemd
-Units** section of their gist report. This is the primary signal available today.
+`ujust report` (the Report a Problem app) shows the failed units that
+`systemd-report` returns, which includes `systemctl list-units --state=failed`.
+If `brew-preinstall.service` fails for a user, it appears in their report. This
+is the primary signal available today.
 
 **What is not captured today:**
 - The brew-preinstall state file contents (`~/.local/share/ublue-os/brew-preinstall-state.json`)
 - The brew-preinstall journal log (success path, hash, packages installed/removed)
 - Whether the service ran successfully vs was skipped (brew not installed)
 
-To add brew-preinstall health to bonedigger-report, append to the summary block
-in `system_files/bluefin/usr/libexec/bonedigger-report`:
-```bash
-BREW_STATE="$(cat ~/.local/share/ublue-os/brew-preinstall-state.json 2>/dev/null || echo 'state file absent')"
-BREW_SVC_STATUS="$(systemctl --user is-active brew-preinstall.service 2>/dev/null || echo unknown)"
-BREW_SVC_LOG="$(journalctl --user -u brew-preinstall.service --no-pager -n 20 2>/dev/null || true)"
-```
-Then include these in the report markdown. This would let maintainers see at
-a glance whether the service ran, which hash it applied, and what it installed.
+Capturing these belongs in the report app's opt-in diagnostics
+(`projectbluefin/bluefin-report`); common ships no collector of its own.
 
 ---
 

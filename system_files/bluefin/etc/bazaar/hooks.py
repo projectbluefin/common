@@ -85,9 +85,16 @@ def handle_steam():
         case 'teardown':
             return 'deny'
 
+ANDROID_STUDIO_APPID = 'com.google.AndroidStudio'
+
 def handle_jetbrains():
     def appid_is_jetbrains(appid):
-        return appid.startswith('com.jetbrains.') or appid == ('com.google.AndroidStudio')
+        return appid.startswith('com.jetbrains.') or appid == ANDROID_STUDIO_APPID
+
+    # Bazaar dialogs are static text, so the hook defines one dialog per app
+    # family and shows only the one naming the app being installed.
+    def dialog_for(appid):
+        return 'android-studio-warning' if appid == ANDROID_STUDIO_APPID else 'jetbrains-warning'
 
     match stage:
         case 'setup':
@@ -97,7 +104,7 @@ def handle_jetbrains():
                 return 'pass'
 
         case 'setup-dialog':
-            return 'ok'
+            return 'ok' if dialog_id == dialog_for(transaction_appid) else 'pass'
 
         case 'teardown-dialog':
             if dialog_response_id in ('run-ujust', 'run-devmode'):

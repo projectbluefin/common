@@ -24,7 +24,7 @@ INSTALL = re.compile(
 )
 FLAGS = {"-q", "--quiet", "-U", "--upgrade", "--user", "--no-deps",
          "--no-cache-dir", "--require-hashes", "--break-system-packages",
-         "--disable-pip-version-check", "--no-input"}
+         "--disable-pip-version-check", "--no-input", "--only-binary=:all:"}
 
 
 def logical_lines(text):
@@ -154,6 +154,7 @@ class PythonInstallPinTests(unittest.TestCase):
                 "pip install pyyaml==6.0.3 jsonschema==4.26.0",
                 "pip3 install -q 'pyyaml==6.0.3' # comment",
                 "python3 -m pip install --quiet -r requirements.txt",
+                "pip install --require-hashes --only-binary=:all: -r requirements.txt",
                 "pip install --requirement=requirements.txt",
                 "pip install -rrequirements.txt",
                 "pip install pyyaml==6.0.3 2>/dev/null || true",
@@ -163,6 +164,7 @@ class PythonInstallPinTests(unittest.TestCase):
                 with self.subTest(command=command):
                     self.assertEqual(install_errors(root, command, "fixture"), [])
             for command in (
+                "pip install --only-binary=:all: pyyaml",
                 "pip install pyyaml", "pip3 install pyyaml>=6",
                 "python -m pip install pyyaml==6.*", "pip install -r missing.txt",
                 "pip install pyyaml==6.0.3 jsonschema",
@@ -185,6 +187,13 @@ class PythonInstallPinTests(unittest.TestCase):
             (root / "nested.txt").write_text('pyyaml==6.0.3 ; python_version >= "3.10"\n')
             (root / "requirements.txt").write_text("-r nested.txt\njsonschema==4.26.0 \\\n --hash=sha256:abc\n")
             self.assertEqual(requirement_errors(root, "requirements.txt"), [])
+            for entry in (
+                "cfgv==3.5.0 \\\n    --hash=sha256:aaa \\\n    --hash=sha256:bbb\n    # via pre-commit\n",
+                "colorama==0.4.6 ; sys_platform == 'win32' \\\n    --hash=sha256:ccc\n",
+            ):
+                with self.subTest(entry=entry):
+                    (root / "requirements.txt").write_text(entry)
+                    self.assertEqual(requirement_errors(root, "requirements.txt"), [])
 
     def test_workflow_requirements_regression(self):
         with tempfile.TemporaryDirectory() as tmp:

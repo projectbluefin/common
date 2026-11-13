@@ -28,6 +28,7 @@ test:
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
+    bats tests/test_container_trust.bats
     bats tests/test_uwelcome_profile.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
@@ -37,7 +38,6 @@ test:
     bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_blur_my_shell.bats
-    bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_suspend.bats
     bats tests/test_theming_hook.bats

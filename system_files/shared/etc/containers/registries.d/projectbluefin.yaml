@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/projectbluefin:
+    use-sigstore-attachments: true
