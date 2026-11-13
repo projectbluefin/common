@@ -95,7 +95,7 @@ jobs:
 
       - name: Setup runner
         if: env.BUILD_REQUIRED == 'true'
-        uses: projectbluefin/actions/bootc-build/setup-runner@6453818f6279a2f2c1282919aad0009a88c01819 # v1
+        uses: kylerankin/actions/bootc-build/setup-runner@e038f9c780668955b1fd7dadfbb8b59f835b242f # actions#731 head (consumer validation)
         with:
           storage-backend: btrfs
           update-podman: "true"
