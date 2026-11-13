@@ -169,7 +169,6 @@ SC2207 (arrays from command output) is suppressed globally in the shellcheck ste
 
 | Binary | Source | Renovate pattern |
 |---|---|---|
-| `bonedigger` | `projectbluefin/bonedigger` GitHub releases | `BONEDIGGER_VERSION` in `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` |
 | `opentabletdriver` | `OpenTabletDriver/OpenTabletDriver` GitHub releases | `OTD_RELEASE="v…"` in `system_files/shared/usr/share/ublue-os/just/apps.just` |
 
 When adding a new binary pinned to a specific version in a script or just file, add a corresponding regex manager entry in `renovate.json` so the version stays current automatically.

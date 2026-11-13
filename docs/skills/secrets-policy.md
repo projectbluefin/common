@@ -48,8 +48,8 @@ workflow use and the owning repo's security review before relying on one.
 | Secret | Type | Where | Purpose |
 |---|---|---|---|
 | `GITHUB_TOKEN` | Built-in (automatic) | All repos | Default — use this first |
-| `MERGERAPTOR_APP_ID` | GitHub App ID | common, dakota, bonedigger | MERGERAPTOR bot identity |
-| `MERGERAPTOR_PRIVATE_KEY` | GitHub App private key | common, dakota, bonedigger | MERGERAPTOR bot auth |
+| `MERGERAPTOR_APP_ID` | GitHub App ID | common, dakota | MERGERAPTOR bot identity |
+| `MERGERAPTOR_PRIVATE_KEY` | GitHub App private key | common, dakota | MERGERAPTOR bot auth |
 | `CASD_CLIENT_KEY` | TLS client certificate key | dakota | BuildStream remote CAS auth |
 
 `common/build.yml` now signs with keyless OIDC. Do not reintroduce
