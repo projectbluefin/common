@@ -55,7 +55,9 @@ jobs:
           sign-commits: true
           base: main
           branch: automation/bazaar-featured-refresh
-          add-paths: system_files/bluefin/etc/bazaar/curated.yaml
+          add-paths: |
+            system_files/bluefin/etc/bazaar/curated.yaml
+            system_files/shared/usr/share/flatpak/flatpark.filter
           commit-message: "feat(bazaar): refresh Bluefin Recommends row"
           title: "feat(bazaar): refresh Bluefin Recommends row"
           body-path: ${{ runner.temp }}/featured-pr.md
