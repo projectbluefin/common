@@ -25,9 +25,11 @@ metadata:
 
 All Bluefin images are published to `ghcr.io/projectbluefin/`. The org migration from `ublue-os` is complete — `projectbluefin` is fully standalone.
 
-The PR validation check groups documented tags by image, scanning each image's
-package versions once and stopping when all requested tags are found. Registry
-outages leave unresolved tags unverified rather than reporting them missing.
+The PR validation check (`scripts/check-oci-refs.py`) asks the registry
+directly: one anonymous pull-token request per image, then one manifest `HEAD`
+per documented tag, so its cost does not grow with an image's tag history. A
+404 on the manifest, or a denied token for an unknown image, fails the check.
+Registry outages leave tags unverified rather than reporting them missing.
 
 > **Do not write image names or tags from memory.** This file is derived from source.
 > Re-derive any time you suspect drift — see [Verification](#verification) below.
@@ -191,6 +193,12 @@ gh api 'repos/projectbluefin/bluefin/contents/.github/workflows/build-image-test
 # live tags in GHCR (cross-check):
 gh api 'orgs/projectbluefin/packages/container/bluefin/versions' \
   --jq '.[].metadata.container.tags[]' | grep -v '^[0-9a-f]\{64\}$' | sort -u
+
+# does one tag exist? (what the PR check does; 200 = yes, 404 = no)
+tok=$(curl -s 'https://ghcr.io/token?scope=repository:projectbluefin/bluefin:pull' | jq -r .token)
+curl -s -o /dev/null -w '%{http_code}\n' -I -H "Authorization: Bearer $tok" \
+  -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json' \
+  https://ghcr.io/v2/projectbluefin/bluefin/manifests/stable
 ```
 
 This is how the current table was derived. Run it, compare, update if anything differs.
