@@ -126,7 +126,7 @@ rows:
         string: "Our Favorite Applications"
       appids:
         list:
-          - app.drey.Damask
+          - io.github.tunix.valhalla
           - app.freelens.Freelens
 ```
 

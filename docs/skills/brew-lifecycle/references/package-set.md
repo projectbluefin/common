@@ -113,8 +113,6 @@ These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
 - `k8s-tools.Brewfile`
 - `nsl.Brewfile` — NSL development machines (requires host virtualization support)
 - `swift.Brewfile`
-- `video-wallpaper.Brewfile` — Hidamari, video wallpaper
-- `wallpaper-slideshow.Brewfile` — Damask, wallpaper slideshow
 
 `artwork.Brewfile` installs `bluefin-wallpapers-extra` from
 `projectbluefin/tap`. `brew bundle` matches installed casks by bare token, so
