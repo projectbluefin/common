@@ -1,13 +1,13 @@
 # Prow: /commands on issues and pull requests, needs-kind, reviewers and approvers from
 # OWNERS, merging through the merge queue on lgtm + approved, and labels from the org config
 # at projectbluefin/.project/prow.yaml.
-# Upstream template: cncf/prow-github-actions v3.0.1 templates/workflow-templates/prow.yml.
+# Upstream template: cncf/prow-github-actions v3.5.0 templates/workflow-templates/prow.yml.
 # Deviations from the template (projectbluefin Actions security baseline):
 #   - permissions: {} at the top, write scopes granted per job
-#   - reusable workflow pinned to the v3.0.1 commit SHA
+#   - reusable workflow pinned to the v3.5.0 commit SHA
 #   - prow-commands limited to the commands whose labels exist in the org config
 #   - triage/priority and generic label commands require the canonical YAML roster
-# Docs: https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/installing.md
+# Docs: https://github.com/cncf/prow-github-actions/blob/v3.5.0/docs/installing.md
 name: Prow
 on:
   issues:
@@ -23,9 +23,11 @@ on:
     types: [submitted, dismissed]
   check_suite:
     types: [completed]
-  # backstop for merges missed by the events above
+  # Reconcile every four hours: lower runner use trades off merge-backstop latency.
   schedule:
-    - cron: '0 * * * *'
+    - cron: '7 */4 * * *'
+    # Sync org labels weekly on Sunday, separately from merge reconciliation.
+    - cron: '7 3 * * 0'
   # label-sync: run by hand after installing and after every change to the org config
   workflow_dispatch:
   push:
@@ -38,7 +40,7 @@ permissions: {}
 # so a pending `synchronize` run can only be superseded by a newer `synchronize` run.
 # Never cancel a run that may be merging.
 concurrency:
-  group: prow-${{ github.event_name }}-${{ github.event.action }}-${{ github.event.comment.id || github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  group: prow-${{ github.event_name }}-${{ github.event.action }}-${{ github.event.comment.id || github.event.pull_request.number || github.event.issue.number || (github.event_name == 'schedule' && 'scheduled' || github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -46,13 +48,13 @@ jobs:
     if: github.event_name == 'issue_comment'
     permissions:
       contents: read
-    uses: projectbluefin/.project/.github/workflows/prow-authorize.yml@b9bc39596ad836f08dade24b454bd3356b5e179f
+    uses: projectbluefin/.project/.github/workflows/prow-authorize.yml@b081ded6f69f4cf9d04085639bda93d8355de0ef
 
   prow:
     needs: authorize
     # Explicit status check keeps non-comment events running when authorize is skipped.
     # A failed roster lookup blocks execution rather than granting public triage access.
-    if: ${{ !cancelled() && (needs.authorize.result == 'success' || needs.authorize.result == 'skipped') && github.event_name != 'workflow_dispatch' && github.event_name != 'push' }}
+    if: ${{ !cancelled() && (needs.authorize.result == 'success' || needs.authorize.result == 'skipped') && github.event_name != 'workflow_dispatch' && github.event_name != 'push' && (github.event_name != 'schedule' || github.event.schedule == '7 */4 * * *') }}
     permissions:
       contents: write
       issues: write
@@ -61,6 +63,7 @@ jobs:
       actions: write
     uses: cncf/prow-github-actions/.github/workflows/prow.yml@a192ee15687d4ede4d553ff0929b2b296666afd7 # v3.5.0
     with:
+      jobs: ${{ github.event_name == 'schedule' && 'sweep lgtm' || 'lgtm' }}
       # Aliases inherit their base command: /remove-triage and /remove-priority are gated too.
       # Keep generic /label gated so a verbatim allowlist cannot bypass the restriction.
       prow-commands: /kind /area /hold /lgtm /approve /assign /unassign /cc /uncc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels ${{ needs.authorize.outputs.triage == 'true' && '/triage /priority /label' || '' }}
@@ -70,20 +73,20 @@ jobs:
     if: needs.authorize.outputs.triage == 'true' && github.event_name == 'issue_comment'
     permissions:
       issues: write
-    uses: projectbluefin/.project/.github/workflows/prow-transfer.yml@db427290d0012fe4aabf63030d468ee2a71b3987
+    uses: projectbluefin/.project/.github/workflows/prow-transfer.yml@b081ded6f69f4cf9d04085639bda93d8355de0ef
     with:
       authorized: ${{ needs.authorize.outputs.triage }}
       # Pin to the same SHA the reusable workflow file is pinned to so the parser
       # code that runs (scripts/prow-transfer.cjs) matches the SHA the caller
       # reviewed; without this the SHA pin only pins the caller and the parser
       # floats on the mutable default branch (projectbluefin/common#1446).
-      app-ref: db427290d0012fe4aabf63030d468ee2a71b3987
+      app-ref: b081ded6f69f4cf9d04085639bda93d8355de0ef
     secrets:
       MERGERAPTOR_APP_ID: ${{ secrets.MERGERAPTOR_APP_ID }}
       MERGERAPTOR_PRIVATE_KEY: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
 
   label-sync:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && github.event.schedule == '7 3 * * 0')
     permissions:
       contents: write
       issues: write
