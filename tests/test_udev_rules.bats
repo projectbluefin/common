@@ -10,6 +10,8 @@
 
 RULES_DIR="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/udev/rules.d"
 VIIA_RULES="${RULES_DIR}/70-viia.rules"
+# Issue #1681: rootless printer apps need write access to USB printer nodes.
+PRINTER_RULES="${RULES_DIR}/70-usb-printer-uaccess.rules"
 
 # Print the rule lines (comments and blanks stripped) of a rules file.
 _rule_lines() {
@@ -31,6 +33,26 @@ _rule_lines() {
     run _rule_lines "${VIIA_RULES}"
     [ "$status" -eq 0 ]
     [[ "$output" != *'MODE'* ]]
+}
+
+@test "70-usb-printer-uaccess.rules exists in the shared system files" {
+    [ -f "${PRINTER_RULES}" ]
+}
+
+@test "70-usb-printer-uaccess.rules tags USB printer-class devices with uaccess" {
+    run _rule_lines "${PRINTER_RULES}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'SUBSYSTEM=="usb"'* ]]
+    [[ "$output" == *'ENV{DEVTYPE}=="usb_device"'* ]]
+    [[ "$output" == *'ENV{ID_USB_INTERFACES}=="*:0701??:*"'* ]]
+    [[ "$output" == *'TAG+="uaccess"'* ]]
+}
+
+@test "70-usb-printer-uaccess.rules leaves MODE and GROUP to systemd" {
+    run _rule_lines "${PRINTER_RULES}"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'MODE'* ]]
+    [[ "$output" != *'GROUP'* ]]
 }
 
 @test "uaccess rules sort before systemd's 73-seat-late.rules" {
