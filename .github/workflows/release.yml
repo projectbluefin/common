@@ -77,7 +77,7 @@ jobs:
       # from crates.io or pipe an installer to a shell in this job: it runs
       # beside the contents: write release step (#1518).
       - name: Install git-cliff
-        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2
+        uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2
         with:
           tool: git-cliff@2.14.2
 
