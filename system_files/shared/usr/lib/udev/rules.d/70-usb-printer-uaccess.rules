@@ -1,0 +1,8 @@
+# Give the active seat user read/write access to USB printers.
+# systemd leaves a USB printer's node as root:lp 0664, and nobody is in lp on a
+# default install, so a printer application running as the user (rootless
+# container) can open the printer but not send it a job. uaccess adds a seat
+# ACL for the logged-in user on top; lp keeps its access, so no MODE or GROUP.
+# 0701 is the USB printer interface class.
+# https://github.com/projectbluefin/common/issues/1681
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ENV{ID_USB_INTERFACES}=="*:0701??:*", TAG+="uaccess"
