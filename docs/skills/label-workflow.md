@@ -24,7 +24,7 @@ metadata:
 # How issues and PRs work here
 
 projectbluefin repositories use [Prow](https://github.com/cncf/prow-github-actions)
-(cncf/prow-github-actions v3.0.1). You drive it with `/commands` in comments.
+(cncf/prow-github-actions v3.5.0). You drive it with `/commands` in comments.
 Reporters never need labels or commands: just reply normally.
 
 ## How an issue flows
@@ -59,6 +59,12 @@ Hive only hands out issues that have `triage/accepted` and neither
 5. **Paused?** `/hold` stops the merge; `/hold cancel` releases it.
 
 Link issues with `Fixes #NNN` or `Refs #NNN` as usual.
+
+Prow runs `lgtm` on supported events and `sweep lgtm` every four hours as a
+merge backstop, with a six-hour sweep lookback in the org config. This trades
+lower scheduled runner use for up to four hours until the next reconciliation,
+plus GitHub scheduling delays; green CI does not guarantee immediate enqueueing.
+Required reviews, checks, holds, and the native merge queue still apply.
 
 ## Labels
 
@@ -114,7 +120,7 @@ Non-comment events and the scheduled merge backstop do not consult the roster.
 `/area`, `/remove-area`, `/kind` and `/hold` remain public. Triagers are not
 added to `OWNERS`, so this role does not grant `/lgtm`, `/approve`, GitHub
 repository permissions, or organization membership. Other commands retain the
-upstream [command policies](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md).
+upstream [command policies](https://github.com/cncf/prow-github-actions/blob/v3.5.0/docs/commands.md).
 
 ## Where the config lives
 
@@ -122,6 +128,8 @@ upstream [command policies](https://github.com/cncf/prow-github-actions/blob/v3.
   [`prow.yaml`](https://github.com/projectbluefin/.project/blob/main/prow.yaml)
   in `projectbluefin/.project`, shared by every repository. After changing it,
   run **Actions → Prow → Run workflow** in each repository to sync labels.
+  A separate Sunday 03:xx UTC schedule also syncs labels weekly; its minute is
+  staggered per repository. The four-hour reconciliation does not sync labels.
 - **Who reviews and approves:** `maintainers.yaml` in `projectbluefin/.project`.
   A sync job copies it into each repository's root `OWNERS` file through a PR;
   never edit `OWNERS` by hand.
