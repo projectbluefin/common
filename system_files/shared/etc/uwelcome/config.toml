@@ -1,0 +1,37 @@
+version = 1
+color = "auto"
+
+[motd]
+messages = []
+commands = []
+
+[greeting]
+prefix = "󱍢 "
+
+[[commands]]
+cmd = "ujust --choose"
+desc = "cmd_list"
+
+[[commands]]
+cmd = "uwelcome toggle"
+desc = "banner_toggle"
+
+[[commands]]
+cmd = "ujust bluefin-cli"
+desc = "term_bling"
+
+[[commands]]
+cmd = "brew help"
+desc = "cli_pkg"
+
+[[commands]]
+cmd = "ujust report"
+desc = "cmd_report"
+
+[[links]]
+name = "issues"
+url = "https://issues.projectbluefin.io/"
+
+[[links]]
+name = "docs"
+url = "https://docs.projectbluefin.io/"

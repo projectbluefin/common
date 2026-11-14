@@ -7,10 +7,6 @@ Part of [containerfile](../SKILL.md) — full stage definitions, wallpaper sourc
 The Containerfile uses four named stages:
 
 ```
-FROM golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS umotd-build
-  └─ git clone projectbluefin/umotd@<COMMIT_SHA>
-  └─ go build -ldflags="-s -w" -o /umotd
-
 FROM golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
   └─ git clone projectbluefin/uwelcome@<COMMIT_SHA>
   └─ go build -ldflags="-s -w" -o /uwelcome
@@ -21,7 +17,6 @@ FROM alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6ee
        ├─ ujust completions (generated from just binary)
        ├─ game-devices-udev rules
        ├─ U2F udev rules
-       ├─ COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
        └─ COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
 FROM scratch AS ctx
@@ -31,25 +26,24 @@ FROM scratch AS ctx
 
 The final `ctx` stage is a scratch image — it contains only the file tree that downstream image builds overlay onto their base. There is no executable entry point.
 
-**`umotd-build` / `uwelcome-build` stages — Go compilers for the banner pair:**
+**`uwelcome-build` stages — Go compilers for the banner pair:**
 
-`umotd` (translatable MOTD tips) and `uwelcome` (the CLI welcome banner that
-renders them) are two separate upstream projects, each built from source with
-its own Go builder stage. Do NOT download a pre-built binary — use the builder
-stage pattern:
+`uwelcome` (the CLI welcome banner that renders tips) is an upstream projects
+built from source with its own Go builder stage. Do NOT download a pre-built
+binary — use the builder stage pattern:
 
 ```dockerfile
-FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS umotd-build
-RUN apk add git && git clone https://github.com/projectbluefin/umotd /src && \
+FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
+RUN apk add git && git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout <COMMIT_SHA>
 WORKDIR /src
-RUN go build -ldflags="-s -w" -o /umotd .
+RUN go build -ldflags="-s -w" -o /uwelcome .
 ```
 
-Then in the `build` stage: `COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd`
+Then in the `build` stage: `COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome`
 
 When updating either version: find the target commit SHA on
-`projectbluefin/umotd` or `projectbluefin/uwelcome` and update that stage's
+`projectbluefin/uwelcome` and update that stage's
 `git -C /src checkout <COMMIT_SHA>` line. Do not use `--branch` or a tag —
 git tags are mutable and bypass the immutable pin, even when the tag currently
 points at the commit you want.
@@ -64,14 +58,14 @@ A tag-for-SHA swap is invisible to CI — the image still builds, because the ta
 resolves to a real commit. Nothing but review catches it, so treat any
 `checkout tags/...` or `--branch` in a diff as a blocking finding.
 
-**Config.** Only `uwelcome` reads a config file; `umotd` has none. It is shipped
+**Config.** Only `uwelcome` reads a config file. It is shipped
 from `system_files/shared/`:
 
 | File | Owner | Contents |
 |---|---|---|
-| `etc/uwelcome/config.json` | uwelcome | greeting, commands, links, color, which command supplies the motd |
+| `etc/uwelcome/config.toml` | uwelcome | greeting, commands, links, color, which command supplies the motd |
 
-Command `desc` values and link `name` values in `config.json` are translation
+Command `desc` values and link `name` values in `config.toml` are translation
 keys, not free text — an unknown key renders as the raw identifier in the
 banner. The valid sets are listed in each project's `docs/configuration.md`;
 `tests/test_motd_integration.bats` pins both so a typo fails CI rather than
