@@ -223,3 +223,20 @@ _assert_brew_bundle() {
     grep -qFx 'cask "ublue-os/tap/asusctl-linux"' "${ASUS_BREWFILE}"
     grep -qFx 'cask "ublue-os/tap/rog-control-center-linux"' "${ASUS_BREWFILE}"
 }
+
+@test "oem-brew: Framework links wallpapers for secondary users when cask already installed" {
+    printf '%s\n' "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
+    local caskroom="${WORKDIR}/Caskroom/framework-wallpapers/2025-12-14"
+    mkdir -p "${caskroom}/images" "${caskroom}/gnome-background-properties"
+    touch "${caskroom}/images/framework-day.svg"
+    touch "${caskroom}/images/framework-night.svg"
+    touch "${caskroom}/gnome-background-properties/framework.xml"
+
+    # Simulate secondary user where brew bundle does nothing / cask is already installed
+    HOMEBREW_PREFIX="${WORKDIR}" run bash "$(_patched_script)"
+    [ "${status}" -eq 0 ]
+
+    [ -L "${HOME}/.local/share/backgrounds/framework/framework-day.svg" ]
+    [ -L "${HOME}/.local/share/backgrounds/framework/framework-night.svg" ]
+    [ -L "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
+}
