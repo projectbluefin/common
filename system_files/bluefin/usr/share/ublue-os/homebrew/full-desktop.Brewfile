@@ -9,7 +9,6 @@
 # apps and other well-maintained community applications.
 
 flatpak "app.drey.Biblioteca"
-flatpak "app.drey.Damask"
 flatpak "app.drey.Dialect"
 flatpak "app.drey.EarTag"
 flatpak "app.drey.Elastic"

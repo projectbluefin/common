@@ -5,7 +5,7 @@ just := just_executable()
 # reason; tests/test_suite_registration.bats enforces that.
 # Run unit tests (pytest for hooks.py, bats for shell scripts)
 test:
-    python3 -m pytest tests/test_hooks.py tests/test_python_install_pins.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_agent_bundle.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_render_hidamari_movie.py tests/test_flatpark_remote.py tests/test_refresh_featured_apps.py -v
+    python3 -m pytest tests/test_hooks.py tests/test_python_install_pins.py tests/test_actions_security.py tests/test_check_oci_refs.py tests/test_curated_config.py tests/test_agent_bundle.py tests/test_chairlift_config.py tests/test_renovate_config.py tests/test_flatpark_remote.py tests/test_refresh_featured_apps.py -v
     bats tests/test_libsetup.bats
     bats tests/test_setup_scripts.bats
     bats tests/test_bling.bats
@@ -42,7 +42,6 @@ test:
     bats tests/test_nvidia_suspend.bats
     bats tests/test_theming_hook.bats
     bats tests/test_dynamic_wallpaper_hook.bats
-    bats tests/test_damask_setup.bats
     bats tests/test_system_just.bats
     bats tests/test_bazaar_preview.bats
     bats tests/test_brew_tap_trust.bats
@@ -50,7 +49,6 @@ test:
     bats tests/test_image_repo.bats
     bats tests/test_booted_image.bats
     bats tests/test_flatpak_appstream_refresh.bats
-    bats tests/test_damask_service.bats
     bats tests/test_suite_registration.bats
     bats tests/test_shared_just.bats
     bats tests/test_pwquality.bats

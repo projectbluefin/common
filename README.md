@@ -144,12 +144,6 @@ under `/etc` or `~/.config` so they survive image updates. Set
 `modules.flatpak.disable` to `false` or remove it to return Flatpak updates to
 the normal `uupd.timer` schedule.
 
-## Animated wallpaper
-
-To use the shipped Bluefin movie with Hidamari, follow the
-[Hidamari setup guide](docs/hidamari.md). It includes the required copy into
-your Videos folder so the Flatpak can find the movie.
-
 ## Brewfiles
 The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/homebrew/`
 (desktop-specific Flatpaks) and `system_files/shared/usr/share/ublue-os/homebrew/`
@@ -166,7 +160,6 @@ The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/ho
 - **`artwork.Brewfile`** - Graphics, design, and artwork applications.
 - **`swift.Brewfile`** - Swift toolchain and dependencies.
 - **`nsl.Brewfile`** - Neural Style and creative AI toolset.
-- **`video-wallpaper.Brewfile`** / **`wallpaper-slideshow.Brewfile`** - Background management bundles.
 
 Users can install opt-in bundles via ChairLift or the `ujust bbrew` command.
 The local Bluespeed stack can be installed directly with `ujust bluespeed`.
