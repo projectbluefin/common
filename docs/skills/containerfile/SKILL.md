@@ -35,7 +35,7 @@ Containerfiles outside `projectbluefin/common`.
 
 ## Build Stages Overview
 
-The Containerfile uses four named stages:
+The Containerfile uses three named stages:
 
 | Stage | Purpose |
 |---|---|

@@ -4,7 +4,7 @@ Part of [containerfile](../SKILL.md) — full stage definitions, wallpaper sourc
 
 ## Build stages
 
-The Containerfile uses four named stages:
+The Containerfile uses three named stages:
 
 ```
 FROM golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
@@ -26,9 +26,9 @@ FROM scratch AS ctx
 
 The final `ctx` stage is a scratch image — it contains only the file tree that downstream image builds overlay onto their base. There is no executable entry point.
 
-**`uwelcome-build` stages — Go compilers for the banner pair:**
+**`uwelcome-build` stage — Go compiler for the welcome banner:**
 
-`uwelcome` (the CLI welcome banner that renders tips) is an upstream projects
+`uwelcome` (the CLI welcome banner that renders tips) is an upstream project
 built from source with its own Go builder stage. Do NOT download a pre-built
 binary — use the builder stage pattern:
 
@@ -42,7 +42,7 @@ RUN go build -ldflags="-s -w" -o /uwelcome .
 
 Then in the `build` stage: `COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome`
 
-When updating either version: find the target commit SHA on
+When updating uwelcome: find the target commit SHA on
 `projectbluefin/uwelcome` and update that stage's
 `git -C /src checkout <COMMIT_SHA>` line. Do not use `--branch` or a tag —
 git tags are mutable and bypass the immutable pin, even when the tag currently
