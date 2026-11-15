@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:eb61c3873c97416fff0116553fff65d67a3549f72e11d9758849a689cdd8b523 AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout c0a8748cb00eebfe313a985e6d3e47b0aa99795b

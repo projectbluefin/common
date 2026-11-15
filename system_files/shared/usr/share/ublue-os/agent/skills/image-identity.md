@@ -86,10 +86,10 @@ are genuinely cross-repo and are what common's readers consume:
   `ref`, `name` or `tag` of what bootc actually booted (falling back to
   `/run/ublue-os/booted-image` when unprivileged `bootc status` fails), and
   exits 1 when nothing is booted so callers keep the baked value. Use it
-  instead of re-deriving the booted ref; `ublue-image-info.sh` and
-  `bonedigger-report` already route through it.
+  instead of re-deriving the booted ref; `ublue-image-info.sh` already routes
+  through it.
 - `usr/bin/ublue-image-info.sh` — the reader.
-- Consumers: `changelog.just`, `system.just`, `bonedigger-report`.
+- Consumers: `changelog.just`, `system.just`.
 
 **What common does *not* own, and cannot:** the *writers*. Each repo generates
 `image-info.json` during its own build, in its own build system, so the write

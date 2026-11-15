@@ -93,6 +93,6 @@ with:
 Factory callers that combined `owner: projectbluefin` with a
 `repositories:` list for `actions/create-github-app-token@v3` reported
 `Invalid keyData` during cross-installation token creation. This is not proof
-that the private key is malformed. Bonedigger's template-sync caller supplies
-`repositories:` without `owner:`; inspect the owning repo's existing inputs
-and App installation before changing scope. Do not add a new credential.
+that the private key is malformed. Some callers supply `repositories:` without
+`owner:`; inspect the owning repo's existing inputs and App installation before
+changing scope. Do not add a new credential.

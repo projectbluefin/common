@@ -1,0 +1,8 @@
+# Python tools CI installs. Direct tools only, exact == pins.
+# tests/requirements.txt is GENERATED from this file -- see
+# docs/skills/ci-tooling/SKILL.md ("Python tool pinning").
+pre-commit==4.7.0
+pytest==9.2.0
+pytest-cov==7.1.0
+pyyaml==6.0.3
+numpy==2.5.4

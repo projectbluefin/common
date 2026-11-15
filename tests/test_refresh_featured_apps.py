@@ -257,13 +257,26 @@ def test_load_flathub_complete_and_truncated():
         m.load_flathub(_fake(_flathub_routes(served=1400)))
 
 
+def test_duplicate_filter_uses_complete_catalog_and_sorts():
+    assert m.render_flatpark_filter({"org.z.App", "org.a.App", "org.only.Flatpark"}, {"org.a.App", "org.z.App", "org.only.Flathub"}) == (
+        "# Generated monthly by scripts/refresh-featured-apps.py; do not edit.\n"
+        "deny app/org.a.App/*\n"
+        "deny app/org.z.App/*\n"
+    )
+
+
+def test_flathub_catalog_rejects_incomplete_data():
+    with pytest.raises(m.Abort, match="incomplete or invalid"):
+        m.load_flathub_ids(_fake({f"{m.FLATHUB}/appstream": []}))
+
+
 def _flatpark_routes(through=TODAY - timedelta(days=2), n_apps=60):
     routes = {
         f"{m.FLATPARK_STATS}/totals.json": {
             "since": "2026-10-04", "through": through.isoformat(),
             "apps": {f"org.fp.A{k}": {"installs30": k} for k in range(n_apps)},
         },
-        m.FLATPARK_INDEX: [{"id": "org.fp.A1"}],
+        m.FLATPARK_INDEX: [{"id": f"org.fp.A{k}"} for k in range(n_apps)],
     }
     for k in range(m.TREND_DAYS):
         day = (through - timedelta(days=k)).isoformat()
@@ -273,7 +286,7 @@ def _flatpark_routes(through=TODAY - timedelta(days=2), n_apps=60):
 
 def test_load_flatpark_ok():
     _, series, listed = m.load_flatpark(_fake(_flatpark_routes()), TODAY)
-    assert listed == {"org.fp.A1"}
+    assert listed == {f"org.fp.A{k}" for k in range(60)}
     assert series["org.fp.A1"] == list(range(20, -1, -1))
 
 
@@ -290,11 +303,12 @@ def test_load_flatpark_missing_daily_file_raises():
 
 
 def test_check_pins_raises_for_unknown_or_denied_pin():
-    m.check_pins(["a", "b"], {"a"}, {"b"}, set(), set())
+    # A pin in both catalogs is installable from Flathub even if FlatPark is filtered.
+    m.check_pins(["a", "b", "c"], {"a", "c"}, {"b", "c"}, set())
     with pytest.raises(m.Abort, match="neither"):
-        m.check_pins(["a", "zzz"], {"a"}, set(), set(), set())
-    with pytest.raises(m.Abort, match="denied"):
-        m.check_pins(["a"], {"a"}, set(), {"a"}, set())
+        m.check_pins(["a", "zzz"], {"a"}, set(), set())
+    with pytest.raises(m.Abort, match=r"^pin a is denied by blocklist\.yaml$"):
+        m.check_pins(["a"], {"a"}, set(), {"a"})
 
 
 def test_parse_added_dates_keeps_earliest():
@@ -329,6 +343,7 @@ def _world(flatpark_through=TODAY - timedelta(days=1)):
         for p in range(1, pages + 1)
     }
     routes[f"{m.FLATHUB}/eol/message"] = {}
+    routes[f"{m.FLATHUB}/appstream"] = [h["app_id"] for h in hits] + ["org.fp.App00"]
     fp_ids = [f"org.fp.App{k:02d}" for k in range(m.FLATPARK_MIN_APPS)]
     routes[f"{m.FLATPARK_STATS}/totals.json"] = {
         "since": "2026-10-01", "through": flatpark_through.isoformat(), "generated": "2026-10-31T01:30:00Z",
@@ -351,6 +366,9 @@ def curated_copy(tmp_path, monkeypatch):
     copy = tmp_path / "curated.yaml"
     shutil.copy(CURATED, copy)
     monkeypatch.setattr(m, "CURATED", copy)
+    filter_copy = tmp_path / "flatpark.filter"
+    filter_copy.write_text("deny app/org.old.App/*\n", encoding="utf-8")
+    monkeypatch.setattr(m, "FLATPARK_FILTER", filter_copy)
     monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
     return copy
 
@@ -375,16 +393,24 @@ def test_main_writes_recommends_row(curated_copy, tmp_path):
     assert "Monthly hotness refresh of the Bluefin Recommends row in Bazaar for 2026-10." in text
     assert "totalHits {}".format(m.FLATHUB_MIN_HITS + len(CONFIG_PINS)) in text
     assert "## How this PR merges" in text
+    assert m.FLATPARK_FILTER.read_text(encoding="utf-8") == (
+        "# Generated monthly by scripts/refresh-featured-apps.py; do not edit.\n"
+        "deny app/org.fp.App00/*\n"
+    )
+    assert "Added:\n- `org.fp.App00`" in text
+    assert "Removed:\n- `org.old.App`" in text
     assert "- Run:" not in text
 
 
 def test_main_dry_run_prints_and_leaves_curated_alone(curated_copy, capsys):
     before = curated_copy.read_text(encoding="utf-8")
+    before_filter = m.FLATPARK_FILTER.read_text(encoding="utf-8")
     fetch, added = _world()
 
     assert m.main(["--dry-run"], fetch=fetch, added_dates=added, now=NOW) == 0
 
     assert curated_copy.read_text(encoding="utf-8") == before
+    assert m.FLATPARK_FILTER.read_text(encoding="utf-8") == before_filter
     out = capsys.readouterr().out
     printed_row = out.split("\n\n", 1)[0].splitlines()
     assert len(printed_row) == m.ROW_SIZE and printed_row[0] == CONFIG_PINS[0]

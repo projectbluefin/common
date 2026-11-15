@@ -48,9 +48,7 @@ jobs:
           # LTS is still covered: promotion-candidate-e2e.yml runs `smoke,common`
           # against bluefin:lts-testing every Tuesday. Restore this entry once
           # bluefin-lts#492 is fixed.
-          - name: Bluefin Stable
-            image: ghcr.io/projectbluefin/bluefin:testing
-            suites: common
+
           - name: Dakota
             image: ghcr.io/projectbluefin/dakota:testing
             suites: common

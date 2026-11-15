@@ -110,43 +110,6 @@ def test_wallpaper_custom_regex_manager():
     assert match_found, "Wallpaper regex pattern did not match Containerfile content"
 
 
-def test_bonedigger_custom_regex_manager():
-    """Verify the custom regex manager for BONEDIGGER_VERSION in 60-bonedigger.just."""
-    config = _load_config()
-    custom_managers = config.get("customManagers", [])
-
-    manager = next(
-        (
-            m
-            for m in custom_managers
-            if m.get("customType") == "regex"
-            and any("60-bonedigger" in pattern for pattern in m.get("managerFilePatterns", []))
-        ),
-        None,
-    )
-    assert manager is not None, "Custom regex manager for 60-bonedigger.just not found"
-
-    assert manager.get("datasourceTemplate") == "github-releases"
-    assert manager.get("depNameTemplate") == "projectbluefin/bonedigger"
-
-    just_path = ROOT / "system_files" / "bluefin" / "usr" / "share" / "ublue-os" / "just" / "60-bonedigger.just"
-    assert just_path.is_file()
-    content = just_path.read_text(encoding="utf-8")
-
-    match_found = False
-    for match_str in manager.get("matchStrings", []):
-        py_regex = _js_regex_to_python(match_str)
-        match = re.search(py_regex, content)
-        if match:
-            groups = match.groupdict()
-            assert "currentValue" in groups
-            assert re.match(r"^v?[0-9.]+$", groups["currentValue"])
-            match_found = True
-            break
-
-    assert match_found, "Bonedigger regex pattern did not match 60-bonedigger.just content"
-
-
 def test_github_actions_minor_patch_updates_require_review():
     config = _load_config()
     rules = config["packageRules"]

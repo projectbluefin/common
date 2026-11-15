@@ -38,7 +38,6 @@ test:
     bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_blur_my_shell.bats
-    bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_suspend.bats
     bats tests/test_theming_hook.bats

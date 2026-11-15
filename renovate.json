@@ -8,6 +8,14 @@
       "/^\\.github/copilot-setup-steps\\.yml$/"
     ]
   },
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^tests/requirements\\.txt$/"
+    ]
+  },
+  "pip_requirements": {
+    "enabled": false
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -19,17 +27,6 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^system_files/bluefin/usr/share/ublue-os/just/60-bonedigger\\.just$/"
-      ],
-      "matchStrings": [
-        "BONEDIGGER_VERSION\\s*:=\\s*\"(?<currentValue>v?[0-9.]+)\""
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "projectbluefin/bonedigger"
     },
     {
       "customType": "regex",

@@ -36,6 +36,14 @@
       "format": "{1} {2}"
     },
     {
+      "type": "command",
+      "key": "󰫓",
+      "keyColor": "#57a0c6",
+      "text": ". /usr/lib/os-release && test -n \"${FDSDK_VERSION:-}\" && printf '%s\\n' \"$FDSDK_VERSION\"",
+      "shell": "/bin/sh",
+      "format": "Freedesktop SDK {1}"
+    },
+    {
       "type": "uptime",
       "key": "󰅐",
       "keyColor": "#a6da95"
