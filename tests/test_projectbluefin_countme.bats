@@ -219,3 +219,18 @@ sent_image() {
     [ "$status" -eq 0 ]
     [ ! -e "${TEST_TMPDIR}/curl.log" ]
 }
+
+@test "composefs hosts read the .origin file from /sysroot/state/deploy" {
+    image_info dakota main
+    export COUNTME_SYSROOT="${TEST_TMPDIR}/sysroot"
+    mkdir -p "${COUNTME_SYSROOT}/state/deploy/abc123"
+    printf '[origin]\ncontainer-image-reference=ostree-unverified-registry:ghcr.io/projectbluefin/dakota:testing\n' \
+        > "${COUNTME_SYSROOT}/state/deploy/abc123/abc123.origin"
+    for arg in composefs=abc123 composefs.digest=sha512:abc123; do
+        rm -f "${TEST_TMPDIR}/curl.log" "${STATE_DIRECTORY}/last"
+        echo "BOOT_IMAGE=/vmlinuz ${arg} rw" > "${COUNTME_CMDLINE}"
+        run "${SCRIPT}"
+        [ "$status" -eq 0 ]
+        [ "$(sent_image)" = '"image":"dakota/main:testing"' ]
+    done
+}

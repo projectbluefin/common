@@ -28,31 +28,40 @@ esac
 # unconfined_service_t, and its SELinux probe (a chcon to a test label) is
 # denied mac_admin, logging two AVC denials every boot
 # (projectbluefin/utah#1198). The ref is read from files instead:
-#   1. the booted deployment's .origin keyfile, found through ostree= on the
-#      kernel command line;
-#   2. the boot-time snapshot some images write (/run/ublue-os/booted-image),
-#      for hosts with no ostree= (composefs-booted).
+#   1. the booted deployment's .origin keyfile: found through ostree= on the
+#      kernel command line, or through composefs=<id> /
+#      composefs.digest=<algo>:<id> for composefs-booted hosts (the same
+#      lookup as utah's ublue-booted-image-sync);
+#   2. the boot-time snapshot some images write (/run/ublue-os/booted-image).
 booted_ref() {
-        local cmdline arg dir origin v
-        read -r cmdline < "${COUNTME_CMDLINE:-/proc/cmdline}" 2>/dev/null
+        local cmdline arg id snap origin="" v=""
+        read -r cmdline < "${COUNTME_CMDLINE:-/proc/cmdline}" || cmdline=""
         for arg in $cmdline; do
-                [[ $arg == ostree=* ]] || continue
-                dir=$(readlink -f -- "${arg#ostree=}") || continue
-                origin="$dir.origin"
-                [[ -r $origin ]] || continue
-                v=$(sed -n 's/^container-image-reference=//p' "$origin" | head -n1)
-                # Drop the ostree transport, optional remote name and docker://.
+                case $arg in
+                        ostree=*)
+                                origin="$(readlink -f -- "${arg#ostree=}").origin" ;;
+                        composefs=*|composefs.digest=*)
+                                id=${arg#*=}; id=${id##*:}
+                                origin="${COUNTME_SYSROOT:-/sysroot}/state/deploy/$id/$id.origin" ;;
+                esac
+                [[ -n $origin ]] && break
+        done
+        if [[ -n $origin && -r $origin ]]; then
+                v=$(sed -n 's/^[[:space:]]*container-image-reference[[:space:]]*=[[:space:]]*//p' "$origin" | head -n1)
+                # Drop the transport: ostree-image-signed:docker://, ostree-
+                # unverified-registry:, ostree-remote-image:<remote>:docker://.
                 v=${v#ostree-remote-registry:*:}
                 v=${v#ostree-remote-image:*:}
                 v=${v#ostree-unverified-registry:}
                 v=${v#ostree-unverified-image:}
                 v=${v#ostree-image-signed:}
                 v=${v#docker://}
-                if [[ -n $v ]]; then printf '%s\n' "$v"; return 0; fi
-        done
-        local snap="${UBLUE_BOOTED_IMAGE_FILE:-/run/ublue-os/booted-image}"
-        [[ -r $snap ]] && read -r v < "$snap" && [[ -n $v ]] && printf '%s\n' "$v"
-        return 0
+        fi
+        if [[ -z $v ]]; then
+                snap="${UBLUE_BOOTED_IMAGE_FILE:-/run/ublue-os/booted-image}"
+                [[ -r $snap ]] && read -r v < "$snap"
+        fi
+        printf '%s\n' "$v"
 }
 ref=$(booted_ref)
 tag=""
