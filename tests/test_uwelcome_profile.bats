@@ -49,6 +49,12 @@ not_called() {
     [ ! -f "${WORKDIR}/calls" ]
 }
 
+# The greeting only runs on a terminal, so tests that exercise the greeting
+# guards run the profile under script(1), which gives it a pty.
+run_tty() {
+    run script -qec "$1" /dev/null
+}
+
 @test "legacy no-show-user-motd marker migrates to uwelcome/disabled" {
     stub_id 1000
     touch "${HOME}/.config/no-show-user-motd"
@@ -86,7 +92,7 @@ not_called() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    run bash "$UWELCOME_PROFILE"
+    run_tty "bash '$UWELCOME_PROFILE'"
 
     [ "$status" -eq 0 ]
     called
@@ -96,7 +102,7 @@ not_called() {
 @test "uwelcome is skipped for root" {
     stub_id 0
 
-    run bash "$UWELCOME_PROFILE"
+    run_tty "bash '$UWELCOME_PROFILE'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -106,7 +112,7 @@ not_called() {
     stub_id 1000
     export UWELCOME_SHOWN=1
 
-    run bash "$UWELCOME_PROFILE"
+    run_tty "bash '$UWELCOME_PROFILE'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -117,7 +123,7 @@ not_called() {
     unset UWELCOME_SHOWN
 
     # Source the profile, then start a child shell that sources it again.
-    run bash -c '. "$1"; bash "$1"' _ "$UWELCOME_PROFILE"
+    run_tty "bash -c '. \"$UWELCOME_PROFILE\"; bash \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     [ "$(wc -l < "${WORKDIR}/calls")" -eq 1 ]
@@ -138,8 +144,18 @@ not_called() {
     stub_id 1000
     export UWELCOME_SHOWN=""
 
-    run bash "$UWELCOME_PROFILE"
+    run_tty "bash '$UWELCOME_PROFILE'"
 
     [ "$status" -eq 0 ]
     called
+}
+
+@test "uwelcome is skipped without a terminal (GDM's login shell)" {
+    stub_id 1000
+    unset UWELCOME_SHOWN
+
+    run bash "$UWELCOME_PROFILE" < /dev/null > /dev/null
+
+    [ "$status" -eq 0 ]
+    not_called
 }
