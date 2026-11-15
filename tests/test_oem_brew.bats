@@ -223,3 +223,65 @@ _assert_brew_bundle() {
     grep -qFx 'cask "ublue-os/tap/asusctl-linux"' "${ASUS_BREWFILE}"
     grep -qFx 'cask "ublue-os/tap/rog-control-center-linux"' "${ASUS_BREWFILE}"
 }
+
+@test "oem-brew: Framework links wallpapers for secondary users when cask already installed" {
+    printf '%s\n' "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
+    local caskroom="${WORKDIR}/Caskroom/framework-wallpapers/2025-12-14"
+    mkdir -p "${caskroom}/images" "${caskroom}/gnome-background-properties"
+    touch "${caskroom}/images/framework-day.svg"
+    touch "${caskroom}/images/framework-night.svg"
+    cat << 'EOF' > "${caskroom}/gnome-background-properties/framework.xml"
+<?xml version="1.0"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Framework</name>
+    <filename>/var/home/firstuser/.local/share/backgrounds/framework/framework-day.svg</filename>
+  </wallpaper>
+</wallpapers>
+EOF
+
+    # Simulate secondary user where brew bundle does nothing / cask is already installed
+    HOMEBREW_PREFIX="${WORKDIR}" run bash "$(_patched_script)"
+    [ "${status}" -eq 0 ]
+
+    [ -L "${HOME}/.local/share/backgrounds/framework/framework-day.svg" ]
+    [ -L "${HOME}/.local/share/backgrounds/framework/framework-night.svg" ]
+    [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
+    grep -q "${caskroom}/images/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+    ! grep -q "/var/home/firstuser" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+}
+
+@test "oem-brew: Framework safely replaces existing wallpaper XML symlink without truncating Caskroom source" {
+    printf '%s\n' "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
+    local caskroom="${WORKDIR}/Caskroom/framework-wallpapers/2025-12-14"
+    mkdir -p "${caskroom}/images" "${caskroom}/gnome-background-properties"
+    touch "${caskroom}/images/framework-day.svg"
+    cat << 'EOF' > "${caskroom}/gnome-background-properties/framework.xml"
+<?xml version="1.0"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Framework</name>
+    <filename>/var/home/firstuser/.local/share/backgrounds/framework/framework-day.svg</filename>
+  </wallpaper>
+</wallpapers>
+EOF
+
+    # Simulate first user who already has a symlink created by cask postflight
+    mkdir -p "${HOME}/.local/share/gnome-background-properties"
+    ln -sfn "${caskroom}/gnome-background-properties/framework.xml" \
+        "${HOME}/.local/share/gnome-background-properties/framework.xml"
+
+    HOMEBREW_PREFIX="${WORKDIR}" run bash "$(_patched_script)"
+    [ "${status}" -eq 0 ]
+
+    # Caskroom source must not have been truncated
+    [ -s "${caskroom}/gnome-background-properties/framework.xml" ]
+    grep -q "/var/home/firstuser" "${caskroom}/gnome-background-properties/framework.xml"
+
+    # User destination must now be a regular file pointing to Caskroom images
+    [ ! -L "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
+    [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
+    grep -q "${caskroom}/images/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+}

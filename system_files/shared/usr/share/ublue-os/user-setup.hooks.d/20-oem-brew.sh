@@ -49,6 +49,43 @@ if version-script-check "oem-${VENDOR}" user 2; then
     version-script-commit "oem-${VENDOR}" user 2
 fi
 
+# Multi-user Framework wallpaper linking:
+# In a multi-user setup with a shared Homebrew prefix (/home/linuxbrew/.linuxbrew),
+# users logging in after the first see framework-wallpapers already installed and
+# Homebrew does not rerun the cask postflight for secondary accounts.
+# Ensure every Framework user has wallpapers linked into their ~/.local/share.
+if [[ "${VENDOR}" == "Framework" ]]; then
+    CASKROOM_DIR="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/Caskroom/framework-wallpapers"
+    if [[ -d "${CASKROOM_DIR}" ]]; then
+        # Find the newest installed version directory
+        LATEST_VERSION_DIR=$(find "${CASKROOM_DIR}" -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n1)
+        if [[ -n "${LATEST_VERSION_DIR}" && -d "${LATEST_VERSION_DIR}" ]]; then
+            install -d "${HOME}/.local/share/backgrounds/framework"
+            install -d "${HOME}/.local/share/gnome-background-properties"
+            if [[ -d "${LATEST_VERSION_DIR}/images" ]]; then
+                for img in "${LATEST_VERSION_DIR}"/images/*; do
+                    [[ -f "${img}" ]] && ln -sfn "${img}" "${HOME}/.local/share/backgrounds/framework/$(basename "${img}")"
+                done
+            fi
+            # GNOME background property XMLs rewritten during cask install reference
+            # the first user's home directory. Point them directly to the readable
+            # Caskroom images directory for all users.
+            # Note: Write to a temp file and mv -f into place so existing symlinks
+            # created by the cask postflight are replaced rather than followed and truncated.
+            # These regular-file copies outlive a cask uninstall.
+            if [[ -d "${LATEST_VERSION_DIR}/gnome-background-properties" ]]; then
+                for prop in "${LATEST_VERSION_DIR}"/gnome-background-properties/*.xml; do
+                    [[ -f "${prop}" ]] || continue
+                    dest="${HOME}/.local/share/gnome-background-properties/$(basename "${prop}")"
+                    tmp="${dest}.tmp.$$"
+                    sed -E "s|/[^<\"]*/\.local/share/backgrounds/framework/|${LATEST_VERSION_DIR}/images/|g" \
+                        "${prop}" > "${tmp}" && mv -f "${tmp}" "${dest}"
+                done
+            fi
+        fi
+    fi
+fi
+
 if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \
     [[ -f "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" ]]; then
     install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"

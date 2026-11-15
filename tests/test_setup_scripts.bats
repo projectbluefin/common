@@ -127,3 +127,27 @@ _smoke() {
     grep -q 'run_setup_hooks ' "${wrapper}"
   done
 }
+
+@test "ublue-user-setup: skips transient GDM greeter and initial-setup sessions" {
+  export HOOKS_DIR="${WORKDIR}/gdm-check-hooks"
+  mkdir -p "${HOOKS_DIR}"
+  printf '#!/bin/bash\ntouch %s/ran\n' "${WORKDIR}" > "${HOOKS_DIR}/01-check.sh"
+  chmod +x "${HOOKS_DIR}/01-check.sh"
+
+  export SETUP_CONFIG_FILE="${WORKDIR}/setup.json"
+  echo "{\"user-hooks-directory\": \"${HOOKS_DIR}\"}" > "${SETUP_CONFIG_FILE}"
+
+  for gdm_user in gdm gdm-greeter gdm-initial-setup; do
+    rm -f "${WORKDIR}/ran"
+    USER="${gdm_user}" bash "${USER_SETUP}"
+    [ ! -f "${WORKDIR}/ran" ]
+  done
+
+  rm -f "${WORKDIR}/ran"
+  USER="transient" HOME="/run/gdm/home/transient" bash "${USER_SETUP}"
+  [ ! -f "${WORKDIR}/ran" ]
+
+  rm -f "${WORKDIR}/ran"
+  USER="regularuser" HOME="${WORKDIR}" bash "${USER_SETUP}"
+  [ -f "${WORKDIR}/ran" ]
+}
