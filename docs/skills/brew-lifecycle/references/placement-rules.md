@@ -45,7 +45,7 @@ Anything with those kinds of dependencies stays on the image as an RPM.
 - `gum`, `just`, `zenity` — used by ujust scripts
 - `gcc`, `gcc-c++`, `make`, `git` — required by brew's build toolchain
 - `bootc`, `uupd` — OS update stack
-- `fastfetch` — exec'd by `/usr/bin/ublue-fastfetch` on first login, before brew is available. (There is no `ublue-motd`; the MOTD stack is `umotd` + `uwelcome`.)
+- `fastfetch` — exec'd by `/usr/bin/ublue-fastfetch` on first login, before brew is available. (There is no `ublue-motd`; the MOTD stack was `umotd` + `uwelcome`. Due to rapid changes only `uwelcome` remains for the time being.)
 
 ---
 
