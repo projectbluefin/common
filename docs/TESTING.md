@@ -65,6 +65,14 @@ in [`projectbluefin/actions`](https://github.com/projectbluefin/actions) so ever
 factory repo inherits it; this section is the `common`-side statement of the
 same contract.
 
+## End-to-End Integration Lanes
+
+Common changes validate against a composed Dakota testing base before merge and on main:
+
+- **Pre-merge gate (`.github/workflows/pr-e2e.yml`)**: Builds the Common candidate layer and composes it on `ghcr.io/projectbluefin/dakota:testing` as `dakota-common:e2e-pr-<number>-<sha>`. Executes testsuite's `common` suite over SSH in a booted KVM VM. Exposes `workflow_call` and `workflow_dispatch`.
+- **Post-merge gate (`.github/workflows/e2e.yml`)**: Reuses the candidate composition pipeline for merged main commits as `dakota-common:e2e-main-<sha>`. Bluefin LTS is omitted from post-merge common validation due to LockLayering constraints (projectbluefin/bluefin-lts#492).
+- **Weekly candidate promotion (`.github/workflows/promotion-candidate-e2e.yml`)**: Exercises downstream candidate tags (`dakota:testing` and `bluefin:lts-testing`) with `smoke,common` before promotion.
+
 ## Hardware Gate Boundary
 
 Some scripts interact with hardware that cannot be present in CI:

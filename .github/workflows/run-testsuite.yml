@@ -14,6 +14,11 @@ on:
         description: "Comma-separated test suites to run"
         required: true
         type: string
+      test_ref:
+        description: "Git ref for testsuite checkout (default: v1)"
+        required: false
+        type: string
+        default: "v1"
 
 permissions: {}
 
@@ -26,3 +31,4 @@ jobs:
     with:
       image: ${{ inputs.image }}
       suites: ${{ inputs.suites }}
+      test_ref: ${{ inputs.test_ref }}
