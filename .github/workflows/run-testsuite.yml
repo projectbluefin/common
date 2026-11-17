@@ -19,7 +19,7 @@ permissions: {}
 
 jobs:
   e2e:
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@d071de95a9c891064b91d4d0405eeee539abd328 # v1
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@ab5e9e15e121fede870a75bd7ab20ec92a66186b # v1
     permissions:
       contents: read
       packages: write
