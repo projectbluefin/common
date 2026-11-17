@@ -72,6 +72,24 @@ _extract_script() {
 
 Then run: `bash "${extracted_script}"` with mocked PATH binaries.
 
+## Validating TOML configuration
+
+Use Python's standard-library `tomllib` to parse TOML, then assert on the
+resulting dictionaries and lists. Pass the file path as an argument and use
+Bats `run` so parser or assertion failures are reported through `${status}`:
+
+```bash
+run python3 - "${CONFIG_FILE}" <<'PY'
+import sys, tomllib
+
+with open(sys.argv[1], "rb") as f:
+    config = tomllib.load(f)
+
+assert config.get("version") == 1
+PY
+[ "${status}" -eq 0 ]
+```
+
 ## Pitfall: literal `*` in bats grep assertions
 
 `grep -q "^name:!*::"` treats `*` as a regex quantifier (zero-or-more `!`) —
