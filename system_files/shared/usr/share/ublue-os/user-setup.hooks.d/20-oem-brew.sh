@@ -68,8 +68,8 @@ if [[ "${VENDOR}" == "Framework" ]]; then
                 done
             fi
             # GNOME background property XMLs rewritten during cask install reference
-            # the first user's home directory. Point them directly to the readable
-            # Caskroom images directory for all users.
+            # the first user's home directory. Point them to the per-user backgrounds dir
+            # for all users so selections remain valid across cask upgrades.
             # Note: Write to a temp file and mv -f into place so existing symlinks
             # created by the cask postflight are replaced rather than followed and truncated.
             # These regular-file copies outlive a cask uninstall.
@@ -78,7 +78,7 @@ if [[ "${VENDOR}" == "Framework" ]]; then
                     [[ -f "${prop}" ]] || continue
                     dest="${HOME}/.local/share/gnome-background-properties/$(basename "${prop}")"
                     tmp="${dest}.tmp.$$"
-                    sed -E "s|/[^<\"]*/\.local/share/backgrounds/framework/|${LATEST_VERSION_DIR}/images/|g" \
+                    sed -E "s|/[^<\"]*/\.local/share/backgrounds/framework/|${HOME}/.local/share/backgrounds/framework/|g" \
                         "${prop}" > "${tmp}" && mv -f "${tmp}" "${dest}"
                 done
             fi

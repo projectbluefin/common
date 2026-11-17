@@ -248,7 +248,7 @@ EOF
     [ -L "${HOME}/.local/share/backgrounds/framework/framework-day.svg" ]
     [ -L "${HOME}/.local/share/backgrounds/framework/framework-night.svg" ]
     [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
-    grep -q "${caskroom}/images/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+    grep -q "${HOME}/.local/share/backgrounds/framework/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
     ! grep -q "/var/home/firstuser" "${HOME}/.local/share/gnome-background-properties/framework.xml"
 }
 
@@ -283,5 +283,5 @@ EOF
     # User destination must now be a regular file pointing to Caskroom images
     [ ! -L "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
     [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
-    grep -q "${caskroom}/images/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+    grep -q "${HOME}/.local/share/backgrounds/framework/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
 }
