@@ -9,10 +9,7 @@ on:
       - "Unit Tests"
     types: [completed]
 
-permissions:
-  actions: read
-  contents: read
-  issues: write
+permissions: {}
 
 concurrency:
   # One alert issue per workflow, so runs of different workflows don't queue behind each other.
@@ -31,6 +28,10 @@ jobs:
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
     env:
       # Through env, never inline: the run name is data, not code.
       WORKFLOW: ${{ github.event.workflow_run.name }}
