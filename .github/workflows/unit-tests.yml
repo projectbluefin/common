@@ -1,15 +1,11 @@
 name: Unit Tests
 
 on:
+  # Every pull request, so the jobs can be required checks: a path filter would
+  # leave a required check missing on pull requests that don't match it.
   pull_request:
     branches:
       - main
-    paths:
-      - "system_files/**"
-      - "tests/**"
-      - "scripts/**"
-      - "Justfile"
-      - ".github/workflows/**"
   push:
     branches:
       - main
