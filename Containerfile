@@ -20,7 +20,7 @@ RUN apk add just curl
 
 # ChairLift ships only as a user-scoped Homebrew cask, which cannot install
 # root-owned files. Install the pkexec helper, its PolicyKit policy and the
-# three GSettings schemas from the release archive so every image gets them
+# four GSettings schemas from the release archive so every image gets them
 # from common; the composed image runs glib-compile-schemas after overlaying
 # system_files. The release's checksums.txt is verified against its Sigstore
 # bundle, signed by ChairLift's release workflow for exactly this tag, and the
@@ -57,7 +57,8 @@ RUN set -eu; \
       data/io.projectbluefin.chairlift.ublue.policy \
       data/io.projectbluefin.chairlift.livery.gschema.xml \
       data/io.projectbluefin.chairlift.updates.gschema.xml \
-      data/io.projectbluefin.chairlift.firstrun.gschema.xml; \
+      data/io.projectbluefin.chairlift.firstrun.gschema.xml \
+      data/io.projectbluefin.chairlift.printers.gschema.xml; \
     policy=/tmp/chairlift/data/io.projectbluefin.chairlift.ublue.policy; \
     grep -qF '<annotate key="org.freedesktop.policykit.exec.path">/usr/bin/chairlift-helper</annotate>' "$policy"; \
     if grep -F 'org.freedesktop.policykit.exec.path' "$policy" | grep -vqF '>/usr/bin/chairlift-helper<'; then \
@@ -67,7 +68,8 @@ RUN set -eu; \
     install -Dm0644 "$policy" /out/shared/usr/share/polkit-1/actions/io.projectbluefin.chairlift.ublue.policy; \
     install -Dm0644 /tmp/chairlift/data/io.projectbluefin.chairlift.livery.gschema.xml /out/shared/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.livery.gschema.xml; \
     install -Dm0644 /tmp/chairlift/data/io.projectbluefin.chairlift.updates.gschema.xml /out/shared/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.updates.gschema.xml; \
-    install -Dm0644 /tmp/chairlift/data/io.projectbluefin.chairlift.firstrun.gschema.xml /out/shared/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.firstrun.gschema.xml
+    install -Dm0644 /tmp/chairlift/data/io.projectbluefin.chairlift.firstrun.gschema.xml /out/shared/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.firstrun.gschema.xml; \
+    install -Dm0644 /tmp/chairlift/data/io.projectbluefin.chairlift.printers.gschema.xml /out/shared/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.printers.gschema.xml
 
 # Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
