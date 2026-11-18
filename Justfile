@@ -40,6 +40,7 @@ test:
     bats tests/test_oem_brew.bats
     bats tests/test_blur_my_shell.bats
     bats tests/test_hardware_hooks.bats
+    bats tests/test_preview_office.bats
     bats tests/test_nvidia_suspend.bats
     bats tests/test_theming_hook.bats
     bats tests/test_dynamic_wallpaper_hook.bats
