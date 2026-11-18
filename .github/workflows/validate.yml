@@ -17,7 +17,8 @@ permissions: {}
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # GHCR tag validation paginates package versions and can take over 10 minutes.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: read
@@ -60,7 +61,7 @@ jobs:
         # taiki-e/install-action resolves just from its bundled manifest;
         # extractions/setup-just calls the releases REST API every run and
         # exhausted the installation rate limit in merge groups (#1466).
-        uses: taiki-e/install-action@66f567e72f7d264686a8d5f09f38f0829b4feb80 # just
+        uses: taiki-e/install-action@4ccefd7d26b61bbb81f4ff01165e8a6880a1bd59 # just
         with:
           tool: just
 
@@ -105,7 +106,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/check-oci-refs.py
+        run: python -u scripts/check-oci-refs.py
 
       - name: Validate dconf lock/override parity
         shell: bash

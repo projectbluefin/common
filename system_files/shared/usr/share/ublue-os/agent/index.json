@@ -49,9 +49,9 @@
     {
       "id": "image-registry",
       "name": "image-registry",
-      "one_line_purpose": "Look up projectbluefin OCI image registry paths and tags.",
+      "one_line_purpose": "Look up projectbluefin OCI image registry paths and wallpaper sources.",
       "entry_point": "skills/image-registry.md",
-      "description": "projectbluefin OCI image registry reference \u2014 all production images published at ghcr.io/projectbluefin/. Use when looking up image paths, tags, or registry structure.",
+      "description": "projectbluefin OCI image registry and wallpaper source reference. Use when looking up image paths, tags, or registry structure, or repairing wallpapers.",
       "category": "ci-ops",
       "status": "active"
     },
