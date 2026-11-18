@@ -29,7 +29,13 @@ Applied to the **NVIDIA GPU** image variant. Contains only NVIDIA-specific runti
 The Containerfile also copies generated artifacts into the layers:
 - `shared/usr/share/ublue-os/` — ujust completions (from build stage)
 - `shared/usr/lib/udev/rules.d/` — YubiKey U2F rules and game-devices-udev rules (fetched + SHA256-verified)
-- `shared/usr/bin/` — umotd and uwelcome binaries (from build stages)
+- `shared/usr/bin/` — uwelcome binaries (from build stages)
+
+### Personal welcome-banner settings
+
+The updated welcome banner no longer reads `~/.config/uwelcome/config.json`. Personal settings are not migrated automatically. To keep custom settings, convert them to `~/.config/uwelcome/config.toml` with top-level `version = 1`; otherwise the banner uses the system settings. The banner's disabled marker is unchanged.
+
+When converting a personal config that calls `umotd`, remove or replace that command: the image no longer ships `umotd`. To keep tips blank, include `[motd]` with both `messages = []` and `commands = []`; omitting the table enables uwelcome's built-in tips.
 
 ## OEM hardware
 

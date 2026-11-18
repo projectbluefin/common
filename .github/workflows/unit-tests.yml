@@ -1,15 +1,11 @@
 name: Unit Tests
 
 on:
+  # Every pull request, so the jobs can be required checks: a path filter would
+  # leave a required check missing on pull requests that don't match it.
   pull_request:
     branches:
       - main
-    paths:
-      - "system_files/**"
-      - "tests/**"
-      - "scripts/**"
-      - "Justfile"
-      - ".github/workflows/**"
   push:
     branches:
       - main
@@ -24,6 +20,28 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  zsh-fedora:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    container: registry.fedoraproject.org/fedora:44@sha256:98b558564d3510363f0f706a44b1ee9de461b030373d741c5729ae3f24d8cb26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Fedora zsh and test dependencies
+        run: dnf install -y zsh bats diffutils
+
+      - name: Install the startup files at their image paths
+        run: |
+          install -m 0644 system_files/bluefin/etc/zshenv /etc/zshenv
+          install -m 0644 system_files/bluefin/etc/zshrc /etc/zshrc
+          install -m 0644 system_files/bluefin/etc/zlogin /etc/zlogin
+
+      - name: Test Fedora startup file discovery and behavior
+        env:
+          ZSH_TEST_INSTALLED: "1"
+        run: bats --print-output-on-failure tests/test_zsh_config.bats
+
   test:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -39,7 +57,7 @@ jobs:
           pip install --require-hashes --only-binary=:all: -r tests/requirements.txt
 
       - name: Install just
-        uses: taiki-e/install-action@66f567e72f7d264686a8d5f09f38f0829b4feb80 # just
+        uses: taiki-e/install-action@4ccefd7d26b61bbb81f4ff01165e8a6880a1bd59 # just
         with:
           tool: just
 
