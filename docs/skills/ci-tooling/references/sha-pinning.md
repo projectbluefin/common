@@ -41,9 +41,9 @@ gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.sha'
 2. Update the `uses:` line: `@<new-sha> # <new-version>`
 3. Renovate handles most updates automatically once pins are tracked
 
-### Internal `projectbluefin/` refs — managed tags, not SHA pins
+### Internal `projectbluefin/` refs — managed tags and exceptions
 
-**`projectbluefin/` internal workflow refs use managed floating tags (`@main` or `@v1`), not SHA pins — with one documented exception: common's own `run-testsuite.yml` testsuite pin, described below.**
+**`projectbluefin/` internal workflow refs generally use managed floating tags (`@main` or `@v1`), with the SHA-pin exceptions described below.**
 
 The `no-floating-action-tags` pre-commit hook exempts all `projectbluefin/` refs via a negative lookahead. External refs (`actions/`, `docker/`, `taiki-e/`, etc.) are still required to be SHA-pinned.
 
@@ -53,20 +53,15 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
-| `run-testsuite.yml` | common | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin (`7da50e5b6f165a4704159b0ce5a4898caff6466a`, annotated `# v1`) |
+| `run-testsuite.yml` | common | `projectbluefin/testsuite/.github/workflows/e2e.yml` | full SHA pin, annotated `# v1` |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@v1` |
+| `build.yml` | common | `projectbluefin/actions/bootc-build/*` | full SHA pins, annotated `# v1`; advanced by Renovate digest PRs |
+| `prow.yml` | common | `projectbluefin/.project` authorization and transfer reusable workflows | full SHA pins |
 
 The testsuite pin's `# v1` comment identifies the tag Renovate tracks; the pinned
 commit can lag behind the tag until an update is merged.
 
-**Note:** common's `run-testsuite.yml` is the one internal ref that is a full SHA
-pin rather than a managed floating tag. The pinned commit resolves to a file
-that still exists, so it does not hit the `startup_failure` cascade.
-
-**Anti-pattern to avoid:** SHA-pinning `projectbluefin/actions` workflow refs.
-When a SHA predates the file's existence in the repo, GitHub emits
-`startup_failure: This run likely failed because of a workflow file issue` with
-no further diagnosis.
+For common's exceptions, see [`ACTIONS-SECURITY.md`](../../../../ACTIONS-SECURITY.md).
 
 **Trap: refs that do not contain the called file.** A valid tag or SHA does not
 guarantee that the requested workflow exists at that ref. Verify the exact
@@ -81,7 +76,7 @@ supported managed tag rather than an old semver tag.
 
 **Regex:** `uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])`
 
-The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. All `projectbluefin/` refs are exempted via negative lookahead — they use managed floating tags by design. All external refs are subject to the hook.
+The `no-floating-action-tags` hook blocks commits of workflow files containing floating `uses:` refs. It scans `.github/workflows/` YAML files. All `projectbluefin/` refs are exempted via negative lookahead, including the documented SHA pins and managed tags. All external refs are subject to the hook.
 
 ### If you narrow the exemption, include reusable-workflow subpaths
 
