@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eoux pipefail
+set -eou pipefail
 
 BLING_CLI_DIRECTORY="${BLING_CLI_DIRECTORY:-/usr/share/ublue-os/bling}"
 
