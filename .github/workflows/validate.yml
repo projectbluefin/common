@@ -61,7 +61,7 @@ jobs:
         # taiki-e/install-action resolves just from its bundled manifest;
         # extractions/setup-just calls the releases REST API every run and
         # exhausted the installation rate limit in merge groups (#1466).
-        uses: taiki-e/install-action@4ccefd7d26b61bbb81f4ff01165e8a6880a1bd59 # just
+        uses: taiki-e/install-action@095eb8638cdbc7cb34348b01db1cd4aec8d835ae # just
         with:
           tool: just
 

@@ -23,7 +23,7 @@ jobs:
   zsh-fedora:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
-    container: registry.fedoraproject.org/fedora:44@sha256:98b558564d3510363f0f706a44b1ee9de461b030373d741c5729ae3f24d8cb26
+    container: registry.fedoraproject.org/fedora:44@sha256:7c3386912aadb548067b267d51dc4a3de32273e8e7af4f03b7518a8fefb0bce5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -57,7 +57,7 @@ jobs:
           pip install --require-hashes --only-binary=:all: -r tests/requirements.txt
 
       - name: Install just
-        uses: taiki-e/install-action@4ccefd7d26b61bbb81f4ff01165e8a6880a1bd59 # just
+        uses: taiki-e/install-action@095eb8638cdbc7cb34348b01db1cd4aec8d835ae # just
         with:
           tool: just
 
