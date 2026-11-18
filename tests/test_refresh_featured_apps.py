@@ -3,7 +3,7 @@
 import importlib.util
 import json
 import shutil
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -257,13 +257,26 @@ def test_load_flathub_complete_and_truncated():
         m.load_flathub(_fake(_flathub_routes(served=1400)))
 
 
+def test_duplicate_filter_uses_complete_catalog_and_sorts():
+    assert m.render_flatpark_filter({"org.z.App", "org.a.App", "org.only.Flatpark"}, {"org.a.App", "org.z.App", "org.only.Flathub"}) == (
+        "# Generated monthly by scripts/refresh-featured-apps.py; do not edit.\n"
+        "deny app/org.a.App/*\n"
+        "deny app/org.z.App/*\n"
+    )
+
+
+def test_flathub_catalog_rejects_incomplete_data():
+    with pytest.raises(m.Abort, match="incomplete or invalid"):
+        m.load_flathub_ids(_fake({f"{m.FLATHUB}/appstream": []}))
+
+
 def _flatpark_routes(through=TODAY - timedelta(days=2), n_apps=60):
     routes = {
         f"{m.FLATPARK_STATS}/totals.json": {
             "since": "2026-10-04", "through": through.isoformat(),
             "apps": {f"org.fp.A{k}": {"installs30": k} for k in range(n_apps)},
         },
-        m.FLATPARK_INDEX: [{"id": "org.fp.A1"}],
+        m.FLATPARK_INDEX: [{"id": f"org.fp.A{k}"} for k in range(n_apps)],
     }
     for k in range(m.TREND_DAYS):
         day = (through - timedelta(days=k)).isoformat()
@@ -273,7 +286,7 @@ def _flatpark_routes(through=TODAY - timedelta(days=2), n_apps=60):
 
 def test_load_flatpark_ok():
     _, series, listed = m.load_flatpark(_fake(_flatpark_routes()), TODAY)
-    assert listed == {"org.fp.A1"}
+    assert listed == {f"org.fp.A{k}" for k in range(60)}
     assert series["org.fp.A1"] == list(range(20, -1, -1))
 
 
@@ -290,13 +303,155 @@ def test_load_flatpark_missing_daily_file_raises():
 
 
 def test_check_pins_raises_for_unknown_or_denied_pin():
-    m.check_pins(["a", "b"], {"a"}, {"b"}, set(), set())
+    # A pin in both catalogs is installable from Flathub even if FlatPark is filtered.
+    m.check_pins(["a", "b", "c"], {"a", "c"}, {"b", "c"}, set())
     with pytest.raises(m.Abort, match="neither"):
-        m.check_pins(["a", "zzz"], {"a"}, set(), set(), set())
-    with pytest.raises(m.Abort, match="denied"):
-        m.check_pins(["a"], {"a"}, set(), {"a"}, set())
+        m.check_pins(["a", "zzz"], {"a"}, set(), set())
+    with pytest.raises(m.Abort, match=r"^pin a is denied by blocklist\.yaml$"):
+        m.check_pins(["a"], {"a"}, set(), {"a"})
 
 
 def test_parse_added_dates_keeps_earliest():
     log = "@2026-10-20\n\nregistry/a.B/flatpark.yml\n@2026-09-01\n\nregistry/a.B/flatpark.yml\nregistry/c.D/flatpark.yml\n"
     assert m.parse_added_dates(log) == {"a.B": date(2026, 9, 1), "c.D": date(2026, 9, 1)}
+
+
+# --- main (end to end, offline) -------------------------------------------
+
+NOW = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
+CONFIG_PINS = yaml.safe_load(m.CONFIG.read_text(encoding="utf-8"))["pins"]
+
+
+def _world(flatpark_through=TODAY - timedelta(days=1)):
+    """Fake Flathub + FlatPark sources big enough to pass every completeness check."""
+    ts = NOW.timestamp()
+    hits = [
+        {
+            "app_id": f"org.test.Hot{k:04d}", "type": "desktop-application", "is_free_license": True,
+            "installs_last_month": 10_000 - k, "trending": 15 - k * 0.01,
+            "added_at": ts - 30 * 86400, "updated_at": ts - 86400,
+        }
+        for k in range(m.FLATHUB_MIN_HITS)
+    ]
+    hits += [{"app_id": p, "type": "desktop-application"} for p in CONFIG_PINS]
+    per = 250
+    pages = -(-len(hits) // per)
+    routes = {
+        f"{m.FLATHUB}/collection/popular?per_page=250&page={p}": {
+            "totalHits": len(hits), "totalPages": pages, "hits": hits[(p - 1) * per:p * per],
+        }
+        for p in range(1, pages + 1)
+    }
+    routes[f"{m.FLATHUB}/eol/message"] = {}
+    routes[f"{m.FLATHUB}/appstream"] = [h["app_id"] for h in hits] + ["org.fp.App00"]
+    fp_ids = [f"org.fp.App{k:02d}" for k in range(m.FLATPARK_MIN_APPS)]
+    routes[f"{m.FLATPARK_STATS}/totals.json"] = {
+        "since": "2026-10-01", "through": flatpark_through.isoformat(), "generated": "2026-10-31T01:30:00Z",
+        "apps": {i: {"installs30": 500 + k} for k, i in enumerate(fp_ids)},
+    }
+    for k in range(m.TREND_DAYS):
+        day = (flatpark_through - timedelta(days=k)).isoformat()
+        routes[f"{m.FLATPARK_STATS}/daily/{day}.json"] = {
+            "date": day, "apps": {i: {"installs": 40 - k} for i in fp_ids},
+        }
+    routes[m.FLATPARK_INDEX] = [{"id": i} for i in fp_ids]
+    for i in fp_ids:
+        routes[f"{m.FLATPARK_RAW}/{i}/flatpark.yml"] = "policy:\n  proprietary: false\n"
+    added = {i: TODAY - timedelta(days=10) for i in fp_ids}
+    return _fake(routes), (lambda: added)
+
+
+@pytest.fixture
+def curated_copy(tmp_path, monkeypatch):
+    copy = tmp_path / "curated.yaml"
+    shutil.copy(CURATED, copy)
+    monkeypatch.setattr(m, "CURATED", copy)
+    filter_copy = tmp_path / "flatpark.filter"
+    filter_copy.write_text("deny app/org.old.App/*\n", encoding="utf-8")
+    monkeypatch.setattr(m, "FLATPARK_FILTER", filter_copy)
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+    return copy
+
+
+def test_main_writes_recommends_row(curated_copy, tmp_path):
+    before = curated_copy.read_text(encoding="utf-8")
+    fetch, added = _world()
+    report = tmp_path / "report.md"
+
+    assert m.main(["--report", str(report)], fetch=fetch, added_dates=added, now=NOW) == 0
+
+    after = curated_copy.read_text(encoding="utf-8")
+    row = m.recommends_section(yaml.safe_load(after))["appids"]["list"]
+    assert len(row) == m.ROW_SIZE
+    assert [i for i in row if i in CONFIG_PINS] == CONFIG_PINS
+    assert row[0] == CONFIG_PINS[0] and row[1] not in CONFIG_PINS
+    assert sum(i.startswith("org.fp.") for i in row) == m.FLATPARK_MAX
+    expected = yaml.safe_load(before)
+    m.recommends_section(expected)["appids"]["list"] = row
+    assert yaml.safe_load(after) == expected
+    text = report.read_text(encoding="utf-8")
+    assert "Monthly hotness refresh of the Bluefin Recommends row in Bazaar for 2026-10." in text
+    assert "totalHits {}".format(m.FLATHUB_MIN_HITS + len(CONFIG_PINS)) in text
+    assert "## How this PR merges" in text
+    assert m.FLATPARK_FILTER.read_text(encoding="utf-8") == (
+        "# Generated monthly by scripts/refresh-featured-apps.py; do not edit.\n"
+        "deny app/org.fp.App00/*\n"
+    )
+    assert "Added:\n- `org.fp.App00`" in text
+    assert "Removed:\n- `org.old.App`" in text
+    assert "- Run:" not in text
+
+
+def test_main_dry_run_prints_and_leaves_curated_alone(curated_copy, capsys):
+    before = curated_copy.read_text(encoding="utf-8")
+    before_filter = m.FLATPARK_FILTER.read_text(encoding="utf-8")
+    fetch, added = _world()
+
+    assert m.main(["--dry-run"], fetch=fetch, added_dates=added, now=NOW) == 0
+
+    assert curated_copy.read_text(encoding="utf-8") == before
+    assert m.FLATPARK_FILTER.read_text(encoding="utf-8") == before_filter
+    out = capsys.readouterr().out
+    printed_row = out.split("\n\n", 1)[0].splitlines()
+    assert len(printed_row) == m.ROW_SIZE and printed_row[0] == CONFIG_PINS[0]
+    assert "### Added" in out and "### Removed" in out and "### Runners-up (next 5 per source)" in out
+    old_row = m.recommends_section(yaml.safe_load(before))["appids"]["list"]
+    gone = next(i for i in old_row if i not in printed_row)
+    assert f"- `{gone}`: " in out
+
+
+def test_main_report_links_the_actions_run(curated_copy, tmp_path, monkeypatch):
+    monkeypatch.setenv("GITHUB_RUN_ID", "42")
+    monkeypatch.setenv("GITHUB_SERVER_URL", "https://github.com")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "projectbluefin/common")
+    fetch, added = _world()
+    report = tmp_path / "report.md"
+
+    assert m.main(["--dry-run", "--report", str(report)], fetch=fetch, added_dates=added, now=NOW) == 0
+
+    assert "- Run: https://github.com/projectbluefin/common/actions/runs/42" in report.read_text(encoding="utf-8")
+
+
+def test_main_aborts_without_writing_on_bad_source(curated_copy, tmp_path, capsys):
+    before = curated_copy.read_text(encoding="utf-8")
+    fetch, added = _world(flatpark_through=TODAY - timedelta(days=m.FLATPARK_MAX_LAG_DAYS + 2))
+    report = tmp_path / "report.md"
+
+    assert m.main(["--report", str(report)], fetch=fetch, added_dates=added, now=NOW) == 1
+
+    assert curated_copy.read_text(encoding="utf-8") == before
+    assert not report.exists()
+    assert "error: FlatPark stats stale" in capsys.readouterr().err
+
+
+def test_main_aborts_on_unexpected_source_shape(curated_copy, capsys):
+    before = curated_copy.read_text(encoding="utf-8")
+    fetch, added = _world()
+
+    def broken(url):
+        return "{}" if url.endswith("/totals.json") else fetch(url)
+
+    assert m.main([], fetch=broken, added_dates=added, now=NOW) == 1
+
+    assert curated_copy.read_text(encoding="utf-8") == before
+    assert "error: unexpected source or file shape: KeyError('through')" in capsys.readouterr().err

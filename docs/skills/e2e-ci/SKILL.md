@@ -82,7 +82,7 @@ This is **not** a full installer gate. It is the smallest safe repo-local improv
 - `testsuite#210` tracks the `bash -lc` PATH mismatch affecting `zsh`/`fish` checks in the CI user environment
 - GNOME Software scenarios are intentionally `@quarantine` after `testsuite#258`; they should not be treated as active software-store coverage
 - Bazaar coverage is currently a `@pending` placeholder tied to the same gap
-- `ujust report --confirm` scenario (`system_health.feature`) is `@quarantine` — the `--confirm` mode is not implemented in any current image variant; the step skip-detection used the wrong error string. See testsuite PR #259. Re-enable when `report --confirm` lands in the image Justfile.
+- `ujust report --confirm` scenario (`system_health.feature`) is `@quarantine` — the recipe launches the Report a Problem app and takes no `--confirm` flag in any image variant; the step skip-detection also used the wrong error string. See testsuite PR #259.
 
 ## Reading a Promotion Candidate E2E failure
 

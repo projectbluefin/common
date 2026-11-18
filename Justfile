@@ -11,6 +11,7 @@ test:
     bats tests/test_bling.bats
     bats tests/test_bling_sh.bats
     bats tests/test_bling_preexec_rearm.bats
+    bats tests/test_zsh_config.bats
     bats tests/test_luks_tpm2.bats
     bats tests/test_rechunker_group_fix.bats
     bats tests/test_bling_fastfetch.bats
@@ -28,6 +29,7 @@ test:
     bats tests/test_justfile_syntax.bats
     bats tests/test_ublue_image_info.bats
     bats tests/test_profile_d.bats
+    bats tests/test_container_trust.bats
     bats tests/test_uwelcome_profile.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
@@ -37,7 +39,6 @@ test:
     bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_blur_my_shell.bats
-    bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_suspend.bats
     bats tests/test_theming_hook.bats

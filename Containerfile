@@ -1,20 +1,13 @@
-FROM docker.io/library/golang:alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS umotd-build
-RUN apk add git && \
-    git clone https://github.com/projectbluefin/umotd /src && \
-    git -C /src checkout 0b43d1c14a1d3066953341d26b532177ec15ae65
-WORKDIR /src
-RUN go build -ldflags="-s -w" -o /umotd .
-
-FROM docker.io/library/golang:alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
-    git -C /src checkout a66a41b4bfda893fc040a66dfb296c614db74447
+    git -C /src checkout c0a8748cb00eebfe313a985e6d3e47b0aa99795b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
-FROM docker.io/library/alpine:latest@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS build
+FROM docker.io/library/alpine:latest@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS build
 
-COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:94084099dbd9a6c3a8c6254410e3e12179c053fca535d23c46adb1e27372d425 / /out/bluefin/usr/share
+COPY --from=ghcr.io/projectbluefin/bluefin-wallpapers-gnome:latest@sha256:379227aa1d8c1832ba6ff9c50d4fdc9e36fc2eff5a6c10771d71e49850ce4c07 / /out/bluefin/usr/share
 
 RUN apk add just curl
 
@@ -25,7 +18,7 @@ RUN apk add just curl
 # system_files. The release's checksums.txt is verified against its Sigstore
 # bundle, signed by ChairLift's release workflow for exactly this tag, and the
 # archive against its checksums.txt entry, so a bump changes CHAIRLIFT_RELEASE only.
-ARG CHAIRLIFT_RELEASE=v26.11.2
+ARG CHAIRLIFT_RELEASE=v26.11.4
 ARG TARGETARCH
 COPY --from=ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d /ko-app/cosign /usr/local/bin/cosign
 RUN set -eu; \
@@ -118,7 +111,6 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
   curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
     echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
-COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
 COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
 # Ujust gate: the tailored completions checked into system_files/shared must bind `ujust`

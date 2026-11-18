@@ -95,7 +95,7 @@ jobs:
 
       - name: Setup runner
         if: env.BUILD_REQUIRED == 'true'
-        uses: projectbluefin/actions/bootc-build/setup-runner@b692a857860b9007e78243dea980b8ee6828f882 # v1
+        uses: projectbluefin/actions/bootc-build/setup-runner@d1f65645c53d413462117fe1f05d00b9d9382f89 # v1
         with:
           storage-backend: btrfs
           update-podman: "true"
@@ -148,7 +148,7 @@ jobs:
 
       - name: Scan image for CVEs
         if: env.BUILD_REQUIRED == 'true' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/scan-image@b692a857860b9007e78243dea980b8ee6828f882 # v1
+        uses: projectbluefin/actions/bootc-build/scan-image@d1f65645c53d413462117fe1f05d00b9d9382f89 # v1
         with:
           input: /tmp/scan-image.tar
           severity-threshold: CRITICAL
@@ -158,7 +158,7 @@ jobs:
       - name: Push image
         id: push
         if: env.BUILD_REQUIRED == 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
-        uses: projectbluefin/actions/bootc-build/push-image@b692a857860b9007e78243dea980b8ee6828f882 # v1
+        uses: projectbluefin/actions/bootc-build/push-image@d1f65645c53d413462117fe1f05d00b9d9382f89 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.generate-tags.outputs.local_tag }}
@@ -215,7 +215,7 @@ jobs:
 
       - name: Create multi-arch manifest
         id: create-manifest
-        uses: projectbluefin/actions/bootc-build/create-manifest@b692a857860b9007e78243dea980b8ee6828f882 # v1
+        uses: projectbluefin/actions/bootc-build/create-manifest@d1f65645c53d413462117fe1f05d00b9d9382f89 # v1
         with:
           image-name: ${{ env.IMAGE_NAME }}
           digests-json: ${{ steps.digests.outputs.json }}
@@ -226,14 +226,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to registry for signing
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign, generate SBOM, and attest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@b692a857860b9007e78243dea980b8ee6828f882 # v1
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@d1f65645c53d413462117fe1f05d00b9d9382f89 # v1
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           digest: ${{ steps.create-manifest.outputs.digest }}

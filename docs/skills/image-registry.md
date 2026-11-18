@@ -1,9 +1,9 @@
 ---
 name: image-registry
 version: "1.0"
-last_updated: "2026-06-29"
+last_updated: "2026-11-14"
 id: image-registry
-one_line_purpose: Look up projectbluefin OCI image registry paths and tags.
+one_line_purpose: Look up projectbluefin OCI image registry paths and wallpaper sources.
 entry_point: docs/skills/image-registry.md
 category: ci-ops
 mcp_compliance_level: partial
@@ -11,11 +11,10 @@ optimization_status: draft
 status: active
 scope: on-device
 dependencies: []
-tags: [registry, ghcr, images]
+tags: [registry, ghcr, images, wallpapers]
 description: >-
-  projectbluefin OCI image registry reference — all production images
-  published at ghcr.io/projectbluefin/. Use when looking up image paths,
-  tags, or registry structure.
+  projectbluefin OCI image registry and wallpaper source reference. Use when
+  looking up image paths, tags, or registry structure, or repairing wallpapers.
 metadata:
   type: reference
   context7-sources:
@@ -25,6 +24,10 @@ metadata:
 # Image Registry
 
 All Bluefin images are published to `ghcr.io/projectbluefin/`. The org migration from `ublue-os` is complete — `projectbluefin` is fully standalone.
+
+The PR validation check groups documented tags by image, scanning each image's
+package versions once and stopping when all requested tags are found. Registry
+outages leave unresolved tags unverified rather than reporting them missing.
 
 > **Do not write image names or tags from memory.** This file is derived from source.
 > Re-derive any time you suspect drift — see [Verification](#verification) below.
@@ -98,9 +101,17 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 `image-vendor` is set at build time via `00-image-info.sh`. The helper reads it dynamically — do not hardcode the registry path.
 
-## Build-time wallpaper source
+## Wallpaper source and live repairs
 
 The Containerfile pulls wallpaper artwork from `ghcr.io/projectbluefin/bluefin-wallpapers-gnome` as a **build-time COPY source**. The wallpaper package is built directly by `projectbluefin/artwork`. See [`containerfile/SKILL.md`](containerfile/SKILL.md) for details.
+
+For desktop wallpaper repairs, use source images and XML metadata from
+[`projectbluefin/artwork`](https://github.com/projectbluefin/artwork).
+Installed Homebrew cask metadata can predate the organization migration;
+resolve current asset paths in that repository before downloading.
+Lazy Days uses `wallpapers/lazy-days/lazy-days.jxl` directly, not a cached PNG.
+Compare the installed image with the current source: an older JXL can retain
+image defects even when it decodes successfully.
 
 ## CountMe reporting (Dakota, Utah, and Server)
 
@@ -143,11 +154,10 @@ Project Bluefin counts.
 ## Runtime repository selection
 
 Repository routing for booted images is canonically resolved by
-`/usr/libexec/ublue-image-repo` (consumed by `ujust changelogs` and
-`bonedigger-report`). `dakota` images use `projectbluefin/dakota`; every other
-image name — including `bluefin` and `bluefin-lts` — falls through to the
-caller-supplied default (`projectbluefin/bluefin` for changelogs,
-`projectbluefin/common` for bug reports). The archived `projectbluefin/bluefin`
+`/usr/libexec/ublue-image-repo` (consumed by `ujust changelogs`). `dakota` images
+use `projectbluefin/dakota`; every other image name — including `bluefin` and
+`bluefin-lts` — falls through to the caller-supplied default
+(`projectbluefin/bluefin` for changelogs). The archived `projectbluefin/bluefin`
 and `projectbluefin/bluefin-lts` destinations no longer keep their own routing,
 so do not infer the repository from the image name or the tag: LTS images may
 use `stable`, `testing`, or `lts` aliases.

@@ -119,11 +119,10 @@ def collect_tag_refs(root=None):
     return refs
 
 
-def tag_exists_in_ghcr(image: str, tag: str):
-    """Return True/False if image:tag existence in GHCR is known, or None if
-    the GHCR packages API could not be reached after retries (transient
-    outage/rate limit) -- callers must treat None as "unknown, don't fail"."""
+def tags_exist_in_ghcr(image: str, wanted: set[str]):
+    """Return each requested tag's status; None means the API was unreachable."""
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
+    found = set()
     page = 1
     while True:
         url = (
@@ -151,7 +150,7 @@ def tag_exists_in_ghcr(image: str, tag: str):
                 break
             except urllib.error.HTTPError as e:
                 if e.code == 404:
-                    return False  # image doesn't exist at all
+                    return {tag: tag in found for tag in wanted}
                 is_rate_limit_403 = False
                 if e.code == 403 and e.headers is not None:
                     # Treat 403 as transient only if rate-limit headers confirm it
@@ -190,20 +189,21 @@ def tag_exists_in_ghcr(image: str, tag: str):
             print(
                 f"  \u26a0 GHCR packages API returned {reason} for "
                 f"{image} after {MAX_RETRIES + 1} attempts -- skipping existence "
-                "check for this ref (transient error, not a ref regression)."
+                "check for unresolved refs (transient error, not a ref regression)."
             )
-            return None
+            return {tag: True if tag in found else None for tag in wanted}
 
-        if not versions:
-            return False
         for version in versions:
             tags = version.get("metadata", {}).get("container", {}).get("tags", [])
-            if tag in tags:
-                return True
-        if len(versions) < 100:
-            break
+            found.update(wanted.intersection(tags))
+        if found == wanted or len(versions) < 100:
+            return {tag: tag in found for tag in wanted}
         page += 1
-    return False
+
+
+def tag_exists_in_ghcr(image: str, tag: str):
+    """Return True, False, or None for one tag."""
+    return tags_exist_in_ghcr(image, {tag})[tag]
 
 
 def main(root=None):
@@ -224,11 +224,20 @@ def main(root=None):
         print("✓ No projectbluefin image:tag refs found in docs.")
         return 0
 
+    image_tags = {}
+    for key in refs:
+        image, tag = key.rsplit(":", 1)
+        image_tags.setdefault(image, set()).add(tag)
+
     missing = []
     skipped = []
+    results = {}
+    for image, tags in sorted(image_tags.items()):
+        print(f"Checking ghcr.io/projectbluefin/{image}...")
+        results[image] = tags_exist_in_ghcr(image, tags)
     for key, locations in sorted(refs.items()):
         image, tag = key.rsplit(":", 1)
-        exists = tag_exists_in_ghcr(image, tag)
+        exists = results[image][tag]
         if exists is None:
             # Transient GHCR API error after retries — don't fail the build
             # over a registry hiccup, but don't silently claim it's fine.

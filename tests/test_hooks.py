@@ -20,6 +20,7 @@ HOOKS_PATH = (
     Path(__file__).parent.parent
     / "system_files/bluefin/etc/bazaar/hooks.py"
 )
+BAZAAR_YAML = HOOKS_PATH.with_name("bazaar.yaml")
 
 
 def _load_hooks(env: dict) -> str:
@@ -117,12 +118,39 @@ class TestJetbrainsHook:
         })
         assert resp == "pass"
 
-    def test_setup_dialog_returns_ok(self):
+    @pytest.mark.parametrize("appid,dialog,expected", [
+        ("com.jetbrains.IntelliJ-IDEA-Community", "jetbrains-warning", "ok"),
+        ("com.jetbrains.IntelliJ-IDEA-Community", "android-studio-warning", "pass"),
+        ("com.google.AndroidStudio", "android-studio-warning", "ok"),
+        ("com.google.AndroidStudio", "jetbrains-warning", "pass"),
+    ])
+    def test_setup_dialog_shows_only_dialog_naming_the_app(self, appid, dialog, expected):
         resp = _load_hooks({
             "BAZAAR_HOOK_ID": "jetbrains-toolbox",
             "BAZAAR_HOOK_STAGE": "setup-dialog",
+            "BAZAAR_HOOK_DIALOG_ID": dialog,
+            "BAZAAR_TS_TYPE": "install",
+            "BAZAAR_TS_APPID": appid,
         })
-        assert resp == "ok"
+        assert resp == expected
+
+    def test_every_app_gets_a_dialog_defined_in_bazaar_yaml(self):
+        # If setup-dialog passes on every dialog, Bazaar proceeds straight to
+        # the action stage without asking, so each app must match one dialog.
+        config = yaml.safe_load(BAZAAR_YAML.read_text())
+        hook = next(h for h in config["hooks"] if h["id"] == "jetbrains-toolbox")
+        for appid in ("com.jetbrains.PyCharm-Community", "com.google.AndroidStudio"):
+            shown = [
+                d["id"] for d in hook["dialogs"]
+                if _load_hooks({
+                    "BAZAAR_HOOK_ID": "jetbrains-toolbox",
+                    "BAZAAR_HOOK_STAGE": "setup-dialog",
+                    "BAZAAR_HOOK_DIALOG_ID": d["id"],
+                    "BAZAAR_TS_TYPE": "install",
+                    "BAZAAR_TS_APPID": appid,
+                }) == "ok"
+            ]
+            assert len(shown) == 1, (appid, shown)
 
     def test_teardown_dialog_run_ujust_returns_ok(self):
         resp = _load_hooks({
