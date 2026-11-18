@@ -61,12 +61,19 @@ jobs:
       pull-requests: write
       statuses: write
       actions: write
-    uses: cncf/prow-github-actions/.github/workflows/prow.yml@a192ee15687d4ede4d553ff0929b2b296666afd7 # v3.5.0
+    # Runs Prow v3.5.0 with a MERGERAPTOR App token instead of GITHUB_TOKEN, so a pull
+    # request Prow adds to the merge queue gets its merge_group checks (GitHub starts no
+    # workflow runs for GITHUB_TOKEN events; chairlift#757). Falls back to GITHUB_TOKEN
+    # when the secrets are unavailable or the token can't be created.
+    uses: projectbluefin/.project/.github/workflows/prow-run.yml@74cbec45040147f57af41d16ab116f20ce38c1c7
     with:
       jobs: ${{ github.event_name == 'schedule' && 'sweep lgtm' || 'lgtm' }}
       # Aliases inherit their base command: /remove-triage and /remove-priority are gated too.
       # Keep generic /label gated so a verbatim allowlist cannot bypass the restriction.
       prow-commands: /kind /area /hold /lgtm /approve /assign /unassign /cc /uncc /close /reopen /retest /test /ok-to-test /help /good-first-issue /check-required-labels ${{ needs.authorize.outputs.triage == 'true' && '/triage /priority /label' || '' }}
+    secrets:
+      MERGERAPTOR_APP_ID: ${{ secrets.MERGERAPTOR_APP_ID }}
+      MERGERAPTOR_PRIVATE_KEY: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
 
   transfer:
     needs: authorize
