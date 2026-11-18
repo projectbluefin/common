@@ -96,7 +96,11 @@ run_condition() {
 
 @test "shipped units: no Exec*= directive sits outside [Service] or [Socket]" {
     local misplaced
+    # D-Bus activation files (system_files/**/dbus-1/services/*.service) also
+    # carry an Exec= line, but under [D-Bus Service], not [Service]. They are
+    # not systemd units, so exclude them from this systemd-unit guard.
     misplaced="$(find "${SYSTEM_FILES}" -type f \
+        -not -path '*dbus-1/services/*' \
         \( -name '*.service' -o -name '*.timer' -o -name '*.socket' -o -name '*.path' -o -name '*.mount' \) \
         -exec awk '
             /^\[/ { section = $0; next }
