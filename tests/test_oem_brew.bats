@@ -285,3 +285,46 @@ EOF
     [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
     grep -q "${HOME}/.local/share/backgrounds/framework/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
 }
+
+@test "oem-brew: Framework links wallpapers even when brew bundle fails for a secondary user" {
+    printf '%s\n' "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
+    local caskroom="${WORKDIR}/Caskroom/framework-wallpapers/2025-12-14"
+    mkdir -p "${caskroom}/images" "${caskroom}/gnome-background-properties"
+    touch "${caskroom}/images/framework-day.svg"
+    cat << 'EOF' > "${caskroom}/gnome-background-properties/framework.xml"
+<?xml version="1.0"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Framework</name>
+    <filename>/var/home/firstuser/.local/share/backgrounds/framework/framework-day.svg</filename>
+  </wallpaper>
+</wallpapers>
+EOF
+
+    # Secondary user on the shared prefix: brew bundle cannot write it and fails.
+    # Under `set -euo pipefail` the hook must still have linked the wallpapers first,
+    # otherwise a failed bundle aborts before the symlinks exist.
+    cat > "${WORKDIR}/bin/brew" << 'BREW_MOCK_FAIL'
+#!/usr/bin/env bash
+printf 'brew %s\n' "$*" >> "${WORKDIR}/brew.log"
+if [[ "$1" == "shellenv" ]]; then
+    printf '# brew shellenv mock\n'
+    exit 0
+fi
+if [[ "$1" == "bundle" ]]; then
+    echo "Error: /home/linuxbrew/.linuxbrew is not writable" >&2
+    exit 1
+fi
+BREW_MOCK_FAIL
+    chmod +x "${WORKDIR}/bin/brew"
+
+    HOMEBREW_PREFIX="${WORKDIR}" run bash "$(_patched_script)"
+    [ "${status}" -ne 0 ]
+
+    # The failing bundle aborts before the version commit, but linking already ran.
+    grep -q "brew bundle" "${WORKDIR}/brew.log"
+    [ -L "${HOME}/.local/share/backgrounds/framework/framework-day.svg" ]
+    [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
+    grep -q "${HOME}/.local/share/backgrounds/framework/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+}

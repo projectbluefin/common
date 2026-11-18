@@ -31,29 +31,14 @@ fi
 set -xeuo pipefail
 eval "$("${BREW_BIN}" shellenv)"
 
-if version-script-check "oem-${VENDOR}" user 2; then
-    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
-
-    if [[ "${VENDOR}" == "ASUS" ]]; then
-        systemctl --user daemon-reload
-        systemctl --user enable --now asusd-user.service || true
-    fi
-
-    if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
-        dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
-            "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
-    fi
-
-    # Record success only after brew bundle ran, so a failed install retries on
-    # the next login instead of being permanently skipped.
-    version-script-commit "oem-${VENDOR}" user 2
-fi
-
 # Multi-user Framework wallpaper linking:
 # In a multi-user setup with a shared Homebrew prefix (/home/linuxbrew/.linuxbrew),
 # users logging in after the first see framework-wallpapers already installed and
 # Homebrew does not rerun the cask postflight for secondary accounts.
 # Ensure every Framework user has wallpapers linked into their ~/.local/share.
+# This runs BEFORE the version-gated brew bundle on purpose: a secondary user cannot
+# write the shared prefix, so brew bundle fails, and under `set -euo pipefail` a bundle
+# placed first would abort the hook before these symlinks exist.
 if [[ "${VENDOR}" == "Framework" ]]; then
     CASKROOM_DIR="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/Caskroom/framework-wallpapers"
     if [[ -d "${CASKROOM_DIR}" ]]; then
@@ -84,6 +69,24 @@ if [[ "${VENDOR}" == "Framework" ]]; then
             fi
         fi
     fi
+fi
+
+if version-script-check "oem-${VENDOR}" user 2; then
+    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
+
+    if [[ "${VENDOR}" == "ASUS" ]]; then
+        systemctl --user daemon-reload
+        systemctl --user enable --now asusd-user.service || true
+    fi
+
+    if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
+        dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
+            "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
+    fi
+
+    # Record success only after brew bundle ran, so a failed install retries on
+    # the next login instead of being permanently skipped.
+    version-script-commit "oem-${VENDOR}" user 2
 fi
 
 if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \
