@@ -1,0 +1,15 @@
+[Unit]
+Description=Launch ChairLift in setup mode on first graphical login
+After=graphical-session.target brew-preinstall.service
+Wants=graphical-session.target
+PartOf=graphical-session.target
+ConditionUser=!@system
+
+[Service]
+Type=oneshot
+Slice=background.slice
+ExecStart=/usr/libexec/chairlift-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target
