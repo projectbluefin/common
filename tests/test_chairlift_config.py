@@ -376,6 +376,10 @@ CHAIRLIFT_SYSTEM_FILES = {
         "0644",
         "data/io.projectbluefin.chairlift.firstrun.gschema.xml",
     ),
+    "/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.printers.gschema.xml": (
+        "0644",
+        "data/io.projectbluefin.chairlift.printers.gschema.xml",
+    ),
 }
 
 
