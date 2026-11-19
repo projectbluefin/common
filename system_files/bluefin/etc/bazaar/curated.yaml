@@ -21,15 +21,15 @@ rows:
     appids:
       list:
       - com.blackmagic.Resolve
-      - de.schmidhuberj.DieBahn
+      - io.github.phase1geo.minder
       - com.anthropic.ClaudeDesktop
-      - io.speedofsound.SpeedOfSound
+      - org.eurooffice.desktopeditors
       - com.openai.ChatGPT
-      - org.gnome.gitlab.YaLTeR.VideoTrimmer
+      - io.github.screwys.Rufin
       - co.anysphere.cursor
-      - app.fotema.Fotema
+      - org.quadrahq.Quadra
       - com.epicgames.eglv2
-      - re.sonny.Eloquent
+      - de.schmidhuberj.DieBahn
       - ai.storyteller.wordcraft
       - com.rustdesk.RustDesk
 - banner:
