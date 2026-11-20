@@ -1,0 +1,3 @@
+[Flatpak Preinstall org.gnome.Papers]
+Branch=stable
+IsRuntime=false
