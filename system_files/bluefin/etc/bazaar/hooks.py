@@ -133,7 +133,7 @@ IDE_HOOKS = {
     'vscodium': (lambda appid: appid == 'com.vscodium.codium',   'ublue-os/tap/vscodium-linux'),
     'zed':      (lambda appid: appid.startswith('dev.zed.Zed'),  'zed'),
     'cursor':   (lambda appid: appid == 'co.anysphere.cursor',  'ublue-os/experimental-tap/cursor-linux', 'ublue-os/experimental-tap'),
-    'antigravity': (lambda appid: appid == 'com.google.AntigravityIDE', 'ublue-os/tap/antigravity-linux'),
+    'antigravity': (lambda appid: appid == 'com.google.AntigravityIDE', 'ublue-os/tap/antigravity-ide-linux'),
 }
 
 def handle_ide(appid_matches, brew_pkg, tap='ublue-os/tap'):

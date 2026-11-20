@@ -166,7 +166,7 @@ flatpak install --system --noninteractive flathub io.podman_desktop.PodmanDeskto
 brew install lima
 brew install --cask ublue-os/tap/visual-studio-code-linux
 brew install --cask ublue-os/tap/vscodium-linux
-brew install --cask ublue-os/tap/antigravity-linux
+brew install --cask ublue-os/tap/antigravity-ide-linux
 brew install --cask zed
 brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 brew install nvim

@@ -76,7 +76,7 @@ This replicates the Windows WSL2 + Dev Containers workflow:
 | Virtualization | Lima | brew install lima + `setup-lima` automated setup |
 | IDE | VS Code | `ublue-os/tap/visual-studio-code-linux` |
 | IDE | VSCodium | `ublue-os/tap/vscodium-linux` |
-| IDE | Antigravity | `ublue-os/tap/antigravity-linux` |
+| IDE | Antigravity | `ublue-os/tap/antigravity-ide-linux` |
 | IDE | Zed | `zed` (homebrew/cask) |
 | IDE | JetBrains Toolbox | `ublue-os/tap/jetbrains-toolbox-linux` |
 | CLI Editors | Neovim | brew nvim |
