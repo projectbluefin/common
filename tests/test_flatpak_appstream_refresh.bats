@@ -1,14 +1,21 @@
 #!/usr/bin/env bats
 # Tests for system_files/shared/usr/lib/systemd/system/flatpak-appstream-refresh.service
+# and the .timer that starts it.
 #
-# The service refreshes Flatpak catalog metadata on every boot, and must skip
+# The service refreshes Flatpak catalog metadata once per boot, and must skip
 # the download on connections NetworkManager reports as metered. systemd
 # silently ignores an ExecCondition= placed outside [Service] (#1520), so these
 # tests pin both where the guard lives and what it decides.
 #
+# A boot target waits for the oneshot units it wants, so a WantedBy= target on
+# the service held graphical.target for minutes while the refresh retried
+# offline (projectbluefin/utah#1131). The timer starts it instead.
+#
 # Run: bats tests/test_flatpak_appstream_refresh.bats
 
 SERVICE_FILE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system/flatpak-appstream-refresh.service"
+TIMER_FILE="${SERVICE_FILE%.service}.timer"
+PRESET_FILE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system-preset/02-flatpak-appstream-refresh.preset"
 SYSTEM_FILES="$BATS_TEST_DIRNAME/../system_files"
 WORKDIR=""
 
@@ -92,6 +99,42 @@ run_condition() {
 @test "appstream refresh: refresh command still runs after the guard" {
     [ "$(section_values "${SERVICE_FILE}" Service ExecStart)" = "/usr/bin/flatpak update --appstream --system --noninteractive" ]
     [ "$(section_values "${SERVICE_FILE}" Service Type)" = "oneshot" ]
+}
+
+@test "appstream refresh: no boot target pulls in the service" {
+    local key
+    for key in WantedBy RequiredBy UpheldBy; do
+        [ -z "$(section_values "${SERVICE_FILE}" Install "${key}")" ]
+    done
+    # `systemctl enable flatpak-appstream-refresh.service` enables the timer.
+    [ "$(section_values "${SERVICE_FILE}" Install Also)" = "flatpak-appstream-refresh.timer" ]
+}
+
+@test "appstream refresh: the timer starts the service once, after boot" {
+    [ -f "${TIMER_FILE}" ]
+    [ -n "$(section_values "${TIMER_FILE}" Timer OnBootSec)" ]
+    # No Unit=: the timer starts the service of the same name.
+    [ -z "$(section_values "${TIMER_FILE}" Timer Unit)" ]
+    [ "$(section_values "${TIMER_FILE}" Install WantedBy)" = "timers.target" ]
+}
+
+@test "appstream refresh: the preset enables the timer" {
+    grep -qx 'enable flatpak-appstream-refresh.timer' "${PRESET_FILE}"
+}
+
+@test "appstream refresh: preset-all links only the timer, even under a catch-all disable" {
+    command -v systemctl >/dev/null || skip "systemctl is required"
+    local root="${WORKDIR}/root" unitdir presetdir links
+    unitdir="${root}/usr/lib/systemd/system"
+    presetdir="${root}/usr/lib/systemd/system-preset"
+    mkdir -p "${unitdir}" "${presetdir}" "${root}/etc"
+    cp "${SERVICE_FILE}" "${TIMER_FILE}" "${unitdir}/"
+    cp "${PRESET_FILE}" "${presetdir}/"
+    echo 'disable *' > "${presetdir}/99-default.preset"
+    run systemctl --root="${root}" preset-all
+    [ "${status}" -eq 0 ]
+    links="$(cd "${root}/etc/systemd/system" && find . -type l | sort)"
+    [ "${links}" = "./timers.target.wants/flatpak-appstream-refresh.timer" ]
 }
 
 @test "shipped units: no Exec*= directive sits outside [Service] or [Socket]" {
