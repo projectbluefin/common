@@ -15,5 +15,9 @@ RemainAfterExit=yes
 Restart=on-failure
 RestartSec=60
 
+# Started by flatpak-appstream-refresh.timer, never by a boot target: a target
+# waits for the oneshot units it wants, so offline the retries held
+# graphical.target for minutes. `systemctl enable` of this service enables
+# the timer.
 [Install]
-WantedBy=graphical.target
+Also=flatpak-appstream-refresh.timer

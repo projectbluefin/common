@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh Flatpak remote metadata after boot
+Documentation=https://docs.projectbluefin.io
+
+[Timer]
+OnBootSec=2min
+
+[Install]
+WantedBy=timers.target

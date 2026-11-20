@@ -1,2 +1,5 @@
+# The timer starts the refresh after boot. The service line only keeps a
+# downstream catch-all `disable *` from disabling the timer through its Also=.
+enable flatpak-appstream-refresh.timer
 enable flatpak-appstream-refresh.service
 enable flatpark-filter-copy.path
