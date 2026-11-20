@@ -22,7 +22,8 @@ Type=simple
 ExecStart=/usr/libexec/projectbluefin-countme
 StateDirectory=projectbluefin-countme
 
-# Run as root (no DynamicUser) so bootc status can query status.
+# Run as root (no DynamicUser) so the script can read the booted deployment's
+# .origin file under /sysroot. It does not run bootc (projectbluefin/utah#1198).
 # Hardened sandbox:
 PrivateTmp=yes
 ProtectSystem=strict

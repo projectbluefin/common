@@ -20,10 +20,50 @@ esac
 
 [[ -e $last ]] && (( $(date +%s) - $(stat -c %Y "$last") < 86400 )) && exit 0
 
-# Stream comes from the booted bootc ref when one is available. Digest suffix
+# Stream comes from the booted image ref when one is available. Digest suffix
 # is stripped; anything outside the known channels (`stable`, `testing`,
 # `latest`) becomes `unknown`.
-ref=$(bootc status --json 2>/dev/null | jq -r '.status.booted.image.image.image // empty' 2>/dev/null)
+#
+# This never runs `bootc`. A bootc started from this service runs in
+# unconfined_service_t, and its SELinux probe (a chcon to a test label) is
+# denied mac_admin, logging two AVC denials every boot
+# (projectbluefin/utah#1198). The ref is read from files instead:
+#   1. the booted deployment's .origin keyfile: found through ostree= on the
+#      kernel command line, or through composefs=<id> /
+#      composefs.digest=<algo>:<id> for composefs-booted hosts (the same
+#      lookup as utah's ublue-booted-image-sync);
+#   2. the boot-time snapshot some images write (/run/ublue-os/booted-image).
+booted_ref() {
+        local cmdline arg id snap origin="" v=""
+        read -r cmdline < "${COUNTME_CMDLINE:-/proc/cmdline}" || cmdline=""
+        for arg in $cmdline; do
+                case $arg in
+                        ostree=*)
+                                origin="$(readlink -f -- "${arg#ostree=}").origin" ;;
+                        composefs=*|composefs.digest=*)
+                                id=${arg#*=}; id=${id##*:}
+                                origin="${COUNTME_SYSROOT:-/sysroot}/state/deploy/$id/$id.origin" ;;
+                esac
+                [[ -n $origin ]] && break
+        done
+        if [[ -n $origin && -r $origin ]]; then
+                v=$(sed -n 's/^[[:space:]]*container-image-reference[[:space:]]*=[[:space:]]*//p' "$origin" | head -n1)
+                # Drop the transport: ostree-image-signed:docker://, ostree-
+                # unverified-registry:, ostree-remote-image:<remote>:docker://.
+                v=${v#ostree-remote-registry:*:}
+                v=${v#ostree-remote-image:*:}
+                v=${v#ostree-unverified-registry:}
+                v=${v#ostree-unverified-image:}
+                v=${v#ostree-image-signed:}
+                v=${v#docker://}
+        fi
+        if [[ -z $v ]]; then
+                snap="${UBLUE_BOOTED_IMAGE_FILE:-/run/ublue-os/booted-image}"
+                [[ -r $snap ]] && read -r v < "$snap"
+        fi
+        printf '%s\n' "$v"
+}
+ref=$(booted_ref)
 tag=""
 if [[ -n $ref ]]; then
         ref=${ref%%@*}
