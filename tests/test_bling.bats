@@ -171,3 +171,15 @@ teardown() {
     # Should not contain the debug 'hello' leak
     [[ "${output}" != *"hello"* ]]
 }
+
+# ---------------------------------------------------------------------------
+# No shell trace output (`ujust bluefin-cli` must stay quiet, see #1672)
+# ---------------------------------------------------------------------------
+
+@test "ublue-bling: does not print shell trace output" {
+    export SHELL="/bin/bash"
+    export PS4='+TRACE: '
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"+TRACE: "* ]]
+}
