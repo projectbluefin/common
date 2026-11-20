@@ -178,8 +178,8 @@ teardown() {
 
 @test "ublue-bling: does not print shell trace output" {
     export SHELL="/bin/bash"
-    export PS4='+TRACE: '
-    run bash "${BLING_SCRIPT}"
+    # Set the trace prefix for the child shell only, so PS4 does not leak
+    run env PS4='+TRACE: ' bash "${BLING_SCRIPT}"
     [ "${status}" -eq 0 ]
     [[ "${output}" != *"+TRACE: "* ]]
 }
