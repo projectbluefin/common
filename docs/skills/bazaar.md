@@ -71,7 +71,7 @@ When adding an editor interception, update both the YAML dialog and `IDE_HOOKS`
 and extend `IDE_CASES` in `tests/test_hooks.py` to cover the wiring and actions.
 Use the cask and tap from the shared Homebrew manifests: Cursor uses
 `ublue-os/experimental-tap/cursor-linux` from `experimental-ide.Brewfile`;
-Antigravity uses `ublue-os/tap/antigravity-linux` from `ide.Brewfile`.
+Antigravity uses `ublue-os/tap/antigravity-ide-linux` from `ide.Brewfile`.
 Pass Cursor's experimental tap to the handler so it taps and trusts the same
 source that supplies the cask. Keep Cancel as the default and intercept only
 installs; updates and removals must pass through.

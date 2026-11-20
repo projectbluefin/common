@@ -225,7 +225,7 @@ IDE_CASES = [
     ("vscodium", "com.vscodium.codium", "com.visualstudio.code", "ublue-os/tap/vscodium-linux"),
     ("zed", "dev.zed.Zed", "org.mozilla.firefox", "zed"),
     ("cursor", "co.anysphere.cursor", "com.google.AntigravityIDE", "ublue-os/experimental-tap/cursor-linux"),
-    ("antigravity", "com.google.AntigravityIDE", "co.anysphere.cursor", "ublue-os/tap/antigravity-linux"),
+    ("antigravity", "com.google.AntigravityIDE", "co.anysphere.cursor", "ublue-os/tap/antigravity-ide-linux"),
 ]
 
 

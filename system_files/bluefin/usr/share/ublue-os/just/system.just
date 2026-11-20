@@ -153,7 +153,7 @@ toggle-devmode:
     [ "${INSTALL_LIMA}"    -eq 1 ] && _dx_add "Lima"             "brew install lima"
     _dx_wants -F "  VS Code"      && _dx_add "VS Code"           "brew install --cask ublue-os/tap/visual-studio-code-linux"
     _dx_wants    "VSCodium"       && _dx_add "VSCodium"          "brew install --cask ublue-os/tap/vscodium-linux"
-    _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-linux"
+    _dx_wants    "Antigravity"    && _dx_add "Antigravity"       "brew install --cask ublue-os/tap/antigravity-ide-linux"
     _dx_wants    "Zed"            && _dx_add "Zed"               "brew install --cask zed"
     _dx_wants    "JetBrains"      && _dx_add "JetBrains Toolbox" "brew install --cask ublue-os/tap/jetbrains-toolbox-linux"
     _dx_wants    "Neovim"         && _dx_add "Neovim"            "brew install nvim"
