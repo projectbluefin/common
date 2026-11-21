@@ -23,7 +23,7 @@ jobs:
   zsh-fedora:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
-    container: registry.fedoraproject.org/fedora:44@sha256:fda16b8254a181b9f010930f16f0b33c8dc7cb680a8f6c934bc9da5b3c3a5fed
+    container: registry.fedoraproject.org/fedora:46@sha256:fe07221648d8016255ff68e4c59b138d988ab3517a4ae552e799b2fb47e98175
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
