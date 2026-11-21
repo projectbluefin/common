@@ -38,6 +38,13 @@ initial-setup sessions as transient `gdm-*` accounts (HOME under
 `/run/gdm/home/`) that are not `@system` users and cannot write the shared
 prefix, so the script exits 0 for those sessions before any tap or bundle work.
 
+Homebrew allows one owner per prefix. Every other user can run what the prefix
+installed but cannot tap, bundle or uninstall, so the script also exits 0, with
+a "belongs to ... skipping" line, when the logged-in user does not own
+`/home/linuxbrew/.linuxbrew`. The owner's login applies the OS packages for
+everyone. Which user owns the prefix is decided by the image (for example
+ublue-os/brew's `brew-setup.service`), not by this service.
+
 ### State file
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`

@@ -287,6 +287,31 @@ EOF
     [ ! -e "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
 }
 
+@test "brew-preinstall: a user who does not own the Homebrew prefix skips before any brew call" {
+    # Point the ownership check at a directory the test user cannot own.
+    [[ "${EUID}" -ne 0 ]] || skip "root owns /, so the non-owner case cannot be built"
+    sed -i 's|^brew_prefix=.*|brew_prefix=/|' "${PATCHED_SCRIPT}"
+    grep -Fxq 'brew_prefix=/' "${PATCHED_SCRIPT}"
+    printf 'tap "projectbluefin/tap"\nbrew "ripgrep"\n' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"/ belongs to "*", not bluefin-test, skipping"* ]]
+    [ ! -e "${WORKDIR}/brew.log" ]
+    [ ! -e "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: the owner of the Homebrew prefix runs" {
+    # setup() puts the mock prefix in WORKDIR, which the test user owns.
+    [ -O "${WORKDIR}" ]
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"belongs to"* ]]
+    grep -q "brew bundle" "${WORKDIR}/brew.log"
+}
+
 @test "brew-preinstall: a real user whose name starts with gdm still runs" {
     echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
 

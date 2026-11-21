@@ -48,6 +48,16 @@ if [[ ! -x "${BREW_BIN}" ]]; then
     exit 0
 fi
 
+# Homebrew allows one owner per prefix. Other users can run what it installed
+# but cannot tap, bundle or uninstall, so for them every run fails with
+# "Permission denied" until the unit's start limit. The owner's own login
+# applies the OS packages for everyone; skip before any tap or bundle work.
+brew_prefix="${BREW_BIN%/bin/brew}"
+if [[ ! -O "${brew_prefix}" ]]; then
+    echo "brew-preinstall: ${brew_prefix} belongs to $(stat -c '%U (uid %u)' "${brew_prefix}" 2>/dev/null || echo 'another user'), not ${current_user}, skipping"
+    exit 0
+fi
+
 if [[ ! -d "${PREINSTALL_DIR}" ]]; then
     echo "brew-preinstall: no preinstall.d at ${PREINSTALL_DIR}, skipping"
     exit 0
