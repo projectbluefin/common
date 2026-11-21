@@ -30,8 +30,8 @@ triggers, runner versions, permissions, and dependency pins.
 | [validate-brewfiles.yaml](../../.github/workflows/validate-brewfiles.yaml) | Networked Homebrew metadata validation |
 | [validate-chairlift-config.yaml](../../.github/workflows/validate-chairlift-config.yaml) | ChairLift config against the schema selected by its release pin |
 | [build.yml](../../.github/workflows/build.yml) | Per-architecture layer builds, publication, multi-arch manifest, signing and attestations |
-| [pr-e2e.yml](../../.github/workflows/pr-e2e.yml) | Compose the PR layer into a downstream test image before merge |
-| [e2e.yml](../../.github/workflows/e2e.yml) | Advisory post-merge checks of downstream testing images; failure reporting |
+| [pr-e2e.yml](../../.github/workflows/pr-e2e.yml) | Compose the candidate layer into a downstream test image before merge; reusable via `workflow_call` |
+| [e2e.yml](../../.github/workflows/e2e.yml) | Advisory post-merge common suite on merged commit composed onto `dakota:testing` via `pr-e2e.yml`; failure reporting |
 | [run-testsuite.yml](../../.github/workflows/run-testsuite.yml) | Shared testsuite entrypoint and pin |
 | [promotion-candidate-e2e.yml](../../.github/workflows/promotion-candidate-e2e.yml) | Scheduled downstream promotion-candidate checks |
 | [release.yml](../../.github/workflows/release.yml) | Scheduled/manual versioned layer releases |
