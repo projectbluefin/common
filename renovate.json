@@ -102,6 +102,16 @@
       "ignoreUnstable": false,
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "Unit-test containers follow released Fedora only. Raise this when Fedora 46 is released (fedoraproject.org/releases.json lists it).",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "registry.fedoraproject.org/fedora"
+      ],
+      "allowedVersions": "<=45"
     }
   ]
 }
