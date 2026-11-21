@@ -1,5 +1,7 @@
 [Unit]
 Description=Preinstall OS-managed Homebrew packages
+# Ordering alone does not start the OEM/user hooks on images with default-off presets.
+Wants=ublue-user-setup.service
 After=ublue-user-setup.service graphical-session.target
 ConditionUser=!@system
 ConditionPathExists=/home/linuxbrew/.linuxbrew/bin/brew
