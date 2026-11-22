@@ -1,4 +1,10 @@
 #!/usr/bin/bash
+# Skip transient GDM sessions (greeter, initial setup) where user hooks must not run
+current_user="${USER:-$(id -un)}"
+if [[ "${current_user}" == gdm || "${current_user}" == gdm-* || "${HOME}" == /run/gdm/home/* ]]; then
+    exit 0
+fi
+
 # Thin wrapper: the dispatcher itself lives in hookrunner.sh so that
 # ublue-system-setup, ublue-user-setup and ublue-privileged-setup cannot drift.
 
