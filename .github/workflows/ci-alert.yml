@@ -47,7 +47,7 @@ jobs:
           RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
         run: |
           set -euo pipefail
-          newer=$(gh api --paginate --slurp -G \
+          newer=$(gh api --paginate --slurp -X GET \
             "repos/${REPO}/actions/workflows/${WORKFLOW_ID}/runs" \
             -f branch="$BRANCH" -f event=push -f per_page=100 |
             jq -r --argjson number "$RUN_NUMBER" \
