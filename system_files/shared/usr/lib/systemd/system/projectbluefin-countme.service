@@ -2,6 +2,12 @@
 Description=Send daily active-system ping to Project Bluefin
 Documentation=https://docs.projectbluefin.io/analytics
 Wants=network-online.target
+# Tolerate start bursts: the testsuite's printing scenarios restart units in a
+# loop and started this one 5 times in ~3s, tripping systemd's default limit
+# (5 per 10s) and leaving a failed unit. Each start exits 0, so this is
+# limiter accounting, not a crash loop; a genuinely failing unit still fails.
+StartLimitBurst=20
+StartLimitIntervalSec=120
 After=network-online.target
 # Trigger conditions (|): run if /home is not empty OR the host is not
 # ostree-booted. Bluefin Server is a DDI without /run/ostree-booted and is

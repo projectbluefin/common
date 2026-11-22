@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# GDM sources /etc/profile before graphical-session.target is active.
+# Avoid portal activation and exporting UWELCOME_SHOWN into the desktop.
+# Only interactive shells should run the greeting.
+case $- in
+    *i*) ;;
+    *) return 0 ;;
+esac
+
 if [ -e ~/.config/no-show-user-motd ]; then
 	mkdir -p ~/.config/uwelcome
 	mv ~/.config/no-show-user-motd ~/.config/uwelcome/disabled 2>/dev/null

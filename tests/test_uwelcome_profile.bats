@@ -122,8 +122,9 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    # Source the profile, then start a child shell that sources it again.
-    run_tty "bash -c '. \"$UWELCOME_PROFILE\"; bash \"$UWELCOME_PROFILE\"'"
+    # Source the profile in an interactive shell, then start a child
+    # interactive shell that sources it again.
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"; bash --norc -ic \". \\\"$UWELCOME_PROFILE\\\"\"'"
 
     [ "$status" -eq 0 ]
     [ "$(wc -l < "${WORKDIR}/calls")" -eq 1 ]
@@ -157,5 +158,17 @@ run_tty() {
     run bash "$UWELCOME_PROFILE" < /dev/null > /dev/null
 
     [ "$status" -eq 0 ]
+    not_called
+}
+
+@test "a non-interactive shell sourcing the profile neither greets nor exports UWELCOME_SHOWN" {
+    stub_id 1000
+    unset UWELCOME_SHOWN
+
+    # A pty is present, as for GDM's session shell; only interactivity is missing.
+    run_tty "bash --norc -c '. \"$UWELCOME_PROFILE\"; echo \"shown=\${UWELCOME_SHOWN-unset}\"'"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shown=unset"* ]]
     not_called
 }

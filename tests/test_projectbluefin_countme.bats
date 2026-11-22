@@ -134,6 +134,12 @@ sent_image() {
     grep -qx 'ProtectHome=yes' "$unit"
 }
 
+@test "unit tolerates harness start bursts instead of hitting the default start limit" {
+    unit="${BATS_TEST_DIRNAME}/../system_files/shared/usr/lib/systemd/system/projectbluefin-countme.service"
+    grep -qx 'StartLimitBurst=20' "$unit"
+    grep -qx 'StartLimitIntervalSec=120' "$unit"
+}
+
 @test "Bluefin Classic and LTS never contact the service" {
     for name in bluefin bluefin-lts; do
         image_info "$name" main

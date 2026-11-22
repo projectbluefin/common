@@ -9,6 +9,11 @@ cask "colindean/fonts-nonfree/font-microsoft-aptos"
 cask "colindean/fonts-nonfree/font-microsoft-fluent"
 cask "colindean/fonts-nonfree/font-microsoft-office"
 
+# === Accessibility fonts ===
+# The Nerd Font release is used because the original OpenDyslexic cask's
+# archive is broken.
+cask "font-opendyslexic-nerd-font"
+
 # === Other common fonts ===
 cask "font-dejavu"
 cask "font-fira-sans"
