@@ -59,7 +59,7 @@ run_tty() {
     stub_id 1000
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -69,7 +69,7 @@ run_tty() {
 @test "no uwelcome config directory is created when the legacy marker is absent" {
     stub_id 1000
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ ! -d "${HOME}/.config/uwelcome" ]
@@ -81,7 +81,7 @@ run_tty() {
     echo "keep-me" > "${HOME}/.config/uwelcome/state"
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -92,7 +92,7 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     called
@@ -102,7 +102,7 @@ run_tty() {
 @test "uwelcome is skipped for root" {
     stub_id 0
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -112,7 +112,7 @@ run_tty() {
     stub_id 1000
     export UWELCOME_SHOWN=1
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -134,7 +134,7 @@ run_tty() {
     stub_id 0
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -145,7 +145,7 @@ run_tty() {
     stub_id 1000
     export UWELCOME_SHOWN=""
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     called
@@ -155,7 +155,7 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    run bash "$UWELCOME_PROFILE" < /dev/null > /dev/null
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE" < /dev/null > /dev/null
 
     [ "$status" -eq 0 ]
     not_called
