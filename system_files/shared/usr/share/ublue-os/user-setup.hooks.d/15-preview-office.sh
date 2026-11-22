@@ -25,9 +25,11 @@ if [[ ! -f "${SERVICE_FILE}" || ! -x "${TARGET}" ]]; then
 fi
 
 if version-script "preview-office" user 1; then
-    # Make the running session aware of the shipped service. The switch takes
-    # effect on the next login regardless; this only helps the current one.
-    systemctl --user daemon-reload || true
+    # The shipped service becomes the active previewer on the next login; a
+    # setup hook runs at login, so no in-session reload is needed. A
+    # `systemctl --user daemon-reload` only reloads systemd user units, not the
+    # session bus's D-Bus service directories (dbus-broker rescans those on its
+    # own), so it would be a no-op here and is intentionally omitted.
     echo "preview-office: host Sushi is the Nautilus floating previewer"
 
     if [[ -f "${USER_SERVICE}" ]]; then

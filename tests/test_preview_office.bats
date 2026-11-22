@@ -52,10 +52,11 @@ _patched_script() {
     printf '%s\n' "${patched_script}"
 }
 
-@test "preview-office: first run installs the service and reloads the user D-Bus" {
+@test "preview-office: first run installs the service (active on next login)" {
     run bash "$(_patched_script)"
     [ "${status}" -eq 0 ]
-    grep -Fx -- 'systemctl --user daemon-reload' "${WORKDIR}/systemctl.log"
+    # No in-session reload: the active previewer takes effect on next login.
+    [ ! -e "${WORKDIR}/systemctl.log" ]
     [[ "${output}" == *"host Sushi is the Nautilus floating previewer"* ]]
 }
 
