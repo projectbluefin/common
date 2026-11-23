@@ -183,3 +183,61 @@ teardown() {
     [ "${status}" -eq 0 ]
     [[ "${output}" != *"+TRACE: "* ]]
 }
+
+# ---------------------------------------------------------------------------
+# bluefin-cli installed: it replaces bling (#1719)
+# ---------------------------------------------------------------------------
+
+mock_bluefin_cli() {
+    export BLUEFIN_CLI_CALLS="${WORKDIR}/bluefin-cli.calls"
+    printf '#!/bin/bash\necho "bluefin-cli $*" >> "${BLUEFIN_CLI_CALLS}"\n' > "${WORKDIR}/bin/bluefin-cli"
+    chmod +x "${WORKDIR}/bin/bluefin-cli"
+}
+
+@test "ublue-bling: with bluefin-cli, enabling turns on bluefin-cli instead of writing bling's block" {
+    mock_bluefin_cli
+    export SHELL="/bin/bash"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ "$(cat "${BLUEFIN_CLI_CALLS}")" = "bluefin-cli shell bash on" ]
+    [ ! -f "${HOME}/.bashrc" ]
+}
+
+@test "ublue-bling: with bluefin-cli, its rc line counts as enabled and is turned off" {
+    mock_bluefin_cli
+    export SHELL="/bin/zsh"
+    unset ZDOTDIR
+    echo 'eval "$(bluefin-cli init zsh)" # bluefin-cli shell-config' > "${HOME}/.zshrc"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [ "$(cat "${BLUEFIN_CLI_CALLS}")" = "bluefin-cli shell zsh off" ]
+}
+
+@test "ublue-bling: with bluefin-cli, an old bling block is removed and the shell turned off" {
+    mock_bluefin_cli
+    export SHELL="/bin/fish"
+    mkdir -p "${HOME}/.config/fish"
+    printf '### bling.fish source start\ntest -f %s/bling.fish && source %s/bling.fish\n### bling.fish source end\n' \
+        "${BLING_CLI_DIRECTORY}" "${BLING_CLI_DIRECTORY}" > "${HOME}/.config/fish/config.fish"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -qF "bling.fish" "${HOME}/.config/fish/config.fish"
+    [ "$(cat "${BLUEFIN_CLI_CALLS}")" = "bluefin-cli shell fish off" ]
+}
+
+@test "ublue-bling: with bluefin-cli, declining makes no bluefin-cli call" {
+    mock_bluefin_cli
+    export SHELL="/bin/bash"
+    printf '#!/bin/bash\nexit 1\n' > "${WORKDIR}/bin/gum"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -ne 0 ]
+    [ ! -f "${BLUEFIN_CLI_CALLS}" ]
+}
+
+@test "ublue-bling: without bluefin-cli, its rc line alone is not treated as bling" {
+    export SHELL="/bin/bash"
+    echo 'eval "$(bluefin-cli init bash)" # bluefin-cli shell-config' > "${HOME}/.bashrc"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "### bling.sh source start" "${HOME}/.bashrc"
+}

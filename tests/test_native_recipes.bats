@@ -191,6 +191,27 @@ FAILBREW
     grep -q '^brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile$' "${COMMAND_LOG}"
 }
 
+@test "native bluefin-cli: with bluefin-cli, enabling installs its cli bundle instead of brew bundle" {
+    printf '#!/bin/bash\necho "bluefin-cli $*" >> "${COMMAND_LOG}"\n' > "${WORKDIR}/bin/bluefin-cli"
+    chmod +x "${WORKDIR}/bin/bluefin-cli"
+    _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    grep -q '^bluefin-cli install cli$' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
+@test "native bluefin-cli: with bluefin-cli, disabling its rc line installs nothing" {
+    printf '#!/bin/bash\necho "bluefin-cli $*" >> "${COMMAND_LOG}"\n' > "${WORKDIR}/bin/bluefin-cli"
+    chmod +x "${WORKDIR}/bin/bluefin-cli"
+    echo 'eval "$(bluefin-cli init bash)" # bluefin-cli shell-config' > "${HOME}/.bashrc"
+    _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    run ! grep -q '^bluefin-cli install' "${COMMAND_LOG}"
+    run ! grep -q '^brew ' "${COMMAND_LOG}"
+}
+
 @test "native devmode: compatibility entry point opens the native wizard" {
     _run_recipe "${SYSTEM_JUST}" devmode
     [ "${status}" -eq 0 ]

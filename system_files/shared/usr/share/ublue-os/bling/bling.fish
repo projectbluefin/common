@@ -3,6 +3,14 @@
 if status is-interactive
     test "$BLING_SOURCED" = 1; and return; or set -g BLING_SOURCED 1
 
+    # bluefin-cli (https://github.com/tuna-os/bluefin-cli) replaces bling
+    # (projectbluefin/common#1719): where it is installed, config.fish files
+    # that still source this file get its shell experience instead.
+    if type -q bluefin-cli
+        bluefin-cli init fish | source
+        return
+    end
+
     function __bling_abbr -d "Create an abbreviation or alias"
         test "$BLING_USE_ABBR" != 0; and abbr -a $argv; or alias $argv
     end

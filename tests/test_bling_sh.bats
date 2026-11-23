@@ -179,3 +179,34 @@ fi
     [ "$output" = "missing|missing|missing|missing" ]
     [ ! -s "$CALL_LOG" ]
 }
+
+@test "bling.sh hands over to bluefin-cli when it is installed" {
+    make_mock bluefin-cli '
+printf "%s\\n" "bluefin-cli $*" >> "$CALL_LOG"
+printf "export BLUEFIN_CLI_INIT=%s\\n" "$2"
+'
+    make_mock eza 'exit 0'
+    make_direnv_mock
+    make_starship_mock
+
+    run_bling 'source "$BLING_SCRIPT"; printf "%s|" "${BLUEFIN_CLI_INIT:-missing}"; alias ll 2>/dev/null || printf "no-ll"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "bash|no-ll" ]
+    [ "$(cat "$CALL_LOG")" = "bluefin-cli init bash" ]
+}
+
+@test "bling.fish hands over to bluefin-cli when it is installed" {
+    command -v fish >/dev/null || skip "fish is not installed"
+    make_mock bluefin-cli '
+printf "%s\\n" "bluefin-cli $*" >> "$CALL_LOG"
+printf "set -g BLUEFIN_CLI_INIT %s\\n" "$2"
+'
+    make_mock eza 'exit 0'
+
+    run env -i PATH="$MOCKDIR:$BASEBIN:$(dirname "$(command -v fish)")" HOME="$WORKDIR/home" CALL_LOG="$CALL_LOG" \
+        fish --no-config --interactive -c "source ${BLING_SCRIPT%.sh}.fish; echo \$BLUEFIN_CLI_INIT; abbr -q ll; or echo no-ll"
+    [ "$status" -eq 0 ]
+    [ "${lines[-2]}" = "fish" ]
+    [ "${lines[-1]}" = "no-ll" ]
+    [ "$(cat "$CALL_LOG")" = "bluefin-cli init fish" ]
+}

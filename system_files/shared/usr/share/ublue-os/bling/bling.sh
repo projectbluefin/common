@@ -6,6 +6,17 @@
 [ "${BLING_SOURCED:-0}" -eq 1 ] && return
 BLING_SOURCED=1
 
+BLING_SHELL="$(basename "$(readlink /proc/$$/exe)")"
+
+# bluefin-cli (https://github.com/tuna-os/bluefin-cli) replaces bling
+# (projectbluefin/common#1719): where it is installed, rc files that still
+# source this file get its shell experience, which carries everything below.
+# `ujust bluefin-cli` and `ublue-bling` toggle bluefin-cli's own rc line.
+if [ "$(command -v bluefin-cli)" ]; then
+    eval "$(bluefin-cli init "${BLING_SHELL}")"
+    return
+fi
+
 # ls aliases
 if [ "$(command -v eza)" ]; then
     alias ll='eza -l --icons=auto --group-directories-first'
@@ -33,8 +44,6 @@ fi
 if [ "$(command -v xdg-open)" ]; then
     alias open='xdg-open >/dev/null 2>&1'
 fi
-
-BLING_SHELL="$(basename "$(readlink /proc/$$/exe)")"
 
 # Initialize direnv before bash-preexec to avoid PROMPT_COMMAND conflicts
 # See: https://github.com/rcaloras/bash-preexec/pull/143

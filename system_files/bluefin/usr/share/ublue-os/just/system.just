@@ -2,7 +2,9 @@
 # This file should only contain bluefin specific stuff
 
 # Configure Bluefin-CLI Terminal Experience with Brew
-# Only installs brew packages when enabling bling (not when disabling)
+# Only installs brew packages when enabling bling (not when disabling).
+# Where bluefin-cli is installed it replaces bling (projectbluefin/common#1719):
+# ublue-bling toggles bluefin-cli's rc line, and bluefin-cli installs the bundle.
 [group('System')]
 [no-exit-message]
 bluefin-cli:
@@ -15,28 +17,39 @@ bluefin-cli:
         fish)
             BLING_SCRIPT="bling.fish"
             TARGET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/fish/config.fish"
+            BLUEFIN_CLI_RC="${HOME}/.config/fish/config.fish"
             ;;
         zsh)
             TARGET_FILE="${ZDOTDIR:-$HOME}/.zshrc"
+            BLUEFIN_CLI_RC="${HOME}/.zshrc"
             ;;
         bash)
             TARGET_FILE="${HOME}/.bashrc"
+            BLUEFIN_CLI_RC="${HOME}/.bashrc"
             ;;
         *)
             echo "Unknown shell: ${SHELL_NAME}"
             exit 1
             ;;
     esac
+    HAS_BLUEFIN_CLI=1
+    command -v bluefin-cli >/dev/null 2>&1 && HAS_BLUEFIN_CLI=0
     # Check if bling is currently installed before toggling
     BLING_WAS_INSTALLED=1
     if [ -f "${TARGET_FILE}" ] && grep -q "source ${BLING_SRC_DIR}/${BLING_SCRIPT}" "${TARGET_FILE}" 2>/dev/null; then
+        BLING_WAS_INSTALLED=0
+    elif [ "${HAS_BLUEFIN_CLI}" -eq 0 ] && [ -f "${BLUEFIN_CLI_RC}" ] && grep -qF "# bluefin-cli shell-config" "${BLUEFIN_CLI_RC}" 2>/dev/null; then
         BLING_WAS_INSTALLED=0
     fi
     # Toggle bling (ublue-bling will remove if installed, add if not)
     ublue-bling
     # Only install brew packages when enabling (bling was not installed before)
     if [ "${BLING_WAS_INSTALLED}" -ne 0 ]; then
-        brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
+        if [ "${HAS_BLUEFIN_CLI}" -eq 0 ]; then
+            bluefin-cli install cli
+        else
+            brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile
+        fi
     fi
 
 # alias for toggle-devmode
