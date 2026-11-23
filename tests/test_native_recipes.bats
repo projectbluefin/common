@@ -212,6 +212,17 @@ FAILBREW
     run ! grep -q '^brew ' "${COMMAND_LOG}"
 }
 
+@test "native bluefin-cli: with bluefin-cli and ZDOTDIR set, a marker in the unread HOME rc still installs the bundle" {
+    printf '#!/bin/bash\necho "bluefin-cli $*" >> "${COMMAND_LOG}"\n' > "${WORKDIR}/bin/bluefin-cli"
+    chmod +x "${WORKDIR}/bin/bluefin-cli"
+    mkdir -p "${WORKDIR}/zdot"
+    echo 'eval "$(bluefin-cli init zsh)" # bluefin-cli shell-config' > "${HOME}/.zshrc"
+    SHELL=/usr/bin/zsh ZDOTDIR="${WORKDIR}/zdot" _run_recipe "${SYSTEM_JUST}" bluefin-cli
+    [ "${status}" -eq 0 ]
+    grep -q '^ublue-bling ' "${COMMAND_LOG}"
+    grep -q '^bluefin-cli install cli$' "${COMMAND_LOG}"
+}
+
 @test "native devmode: compatibility entry point opens the native wizard" {
     _run_recipe "${SYSTEM_JUST}" devmode
     [ "${status}" -eq 0 ]

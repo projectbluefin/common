@@ -38,7 +38,8 @@ bluefin-cli:
     BLING_WAS_INSTALLED=1
     if [ -f "${TARGET_FILE}" ] && grep -q "source ${BLING_SRC_DIR}/${BLING_SCRIPT}" "${TARGET_FILE}" 2>/dev/null; then
         BLING_WAS_INSTALLED=0
-    elif [ "${HAS_BLUEFIN_CLI}" -eq 0 ] && [ -f "${BLUEFIN_CLI_RC}" ] && grep -qF "# bluefin-cli shell-config" "${BLUEFIN_CLI_RC}" 2>/dev/null; then
+    # Same test as ublue-bling: bluefin-cli's line only counts in the rc file the shell reads.
+    elif [ "${HAS_BLUEFIN_CLI}" -eq 0 ] && [ "$(realpath -m "${BLUEFIN_CLI_RC}")" = "$(realpath -m "${TARGET_FILE}")" ] && [ -f "${TARGET_FILE}" ] && grep -qF "# bluefin-cli shell-config" "${TARGET_FILE}" 2>/dev/null; then
         BLING_WAS_INSTALLED=0
     fi
     # Toggle bling (ublue-bling will remove if installed, add if not)
