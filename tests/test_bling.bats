@@ -241,3 +241,50 @@ mock_bluefin_cli() {
     [ "${status}" -eq 0 ]
     grep -qF "### bling.sh source start" "${HOME}/.bashrc"
 }
+
+@test "ublue-bling: with bluefin-cli and ZDOTDIR set, enabling writes bling's block where zsh reads it" {
+    mock_bluefin_cli
+    export SHELL="/bin/zsh"
+    export ZDOTDIR="${WORKDIR}/zdot"
+    mkdir -p "${ZDOTDIR}"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "source ${BLING_CLI_DIRECTORY}/bling.sh" "${ZDOTDIR}/.zshrc"
+    [ ! -f "${BLUEFIN_CLI_CALLS}" ]
+    [ ! -f "${HOME}/.zshrc" ]
+}
+
+@test "ublue-bling: with bluefin-cli and XDG_CONFIG_HOME set, enabling writes bling's block where fish reads it" {
+    mock_bluefin_cli
+    export SHELL="/bin/fish"
+    export XDG_CONFIG_HOME="${WORKDIR}/xdg"
+    mkdir -p "${XDG_CONFIG_HOME}/fish"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "source ${BLING_CLI_DIRECTORY}/bling.fish" "${XDG_CONFIG_HOME}/fish/config.fish"
+    [ ! -f "${BLUEFIN_CLI_CALLS}" ]
+}
+
+@test "ublue-bling: with bluefin-cli and ZDOTDIR set, a bluefin-cli line in an unread HOME rc is not enabled" {
+    mock_bluefin_cli
+    export SHELL="/bin/zsh"
+    export ZDOTDIR="${WORKDIR}/zdot"
+    mkdir -p "${ZDOTDIR}"
+    echo 'eval "$(bluefin-cli init zsh)" # bluefin-cli shell-config' > "${HOME}/.zshrc"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "### bling.sh source start" "${ZDOTDIR}/.zshrc"
+}
+
+@test "ublue-bling: with bluefin-cli and ZDOTDIR set, the bling block is removed without a bluefin-cli call" {
+    mock_bluefin_cli
+    export SHELL="/bin/zsh"
+    export ZDOTDIR="${WORKDIR}/zdot"
+    mkdir -p "${ZDOTDIR}"
+    printf '### bling.sh source start\ntest -f %s/bling.sh && source %s/bling.sh\n### bling.sh source end\n' \
+        "${BLING_CLI_DIRECTORY}" "${BLING_CLI_DIRECTORY}" > "${ZDOTDIR}/.zshrc"
+    run bash "${BLING_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    ! grep -qF "bling.sh" "${ZDOTDIR}/.zshrc"
+    [ ! -f "${BLUEFIN_CLI_CALLS}" ]
+}

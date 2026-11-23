@@ -8,6 +8,9 @@ BLING_CLI_DIRECTORY="${BLING_CLI_DIRECTORY:-/usr/share/ublue-os/bling}"
 # (projectbluefin/common#1719). Where it is installed, this command turns its
 # shell experience on or off instead: bluefin-cli writes one line ending in
 # this marker into the rc file in $HOME and removes bling's lines from it.
+# bluefin-cli ignores ZDOTDIR and XDG_CONFIG_HOME, so when they move the rc
+# file the shell reads, this command writes bling's block there instead;
+# bling.sh and bling.fish hand over to `bluefin-cli init` themselves.
 BLUEFIN_CLI_MARKER="# bluefin-cli shell-config"
 
 BLING_SCRIPT_SOURCE=""
@@ -40,11 +43,16 @@ function has-bluefin-cli() {
     command -v bluefin-cli >/dev/null 2>&1
 }
 
+# bluefin-cli's rc file is the one the shell actually reads.
+function bluefin-cli-owns-rc() {
+    has-bluefin-cli && [ "$(realpath -m "$BLUEFIN_CLI_RC")" = "$(realpath -m "$TARGET_CONFIG_FILE")" ]
+}
+
 function is-bling-installed() {
     if [ -f "$TARGET_CONFIG_FILE" ] && grep -q "source $BLING_CLI_DIRECTORY/$BLING_SCRIPT_SOURCE" "$TARGET_CONFIG_FILE"; then
         return 0
     fi
-    has-bluefin-cli && [ -f "$BLUEFIN_CLI_RC" ] && grep -qF "$BLUEFIN_CLI_MARKER" "$BLUEFIN_CLI_RC"
+    bluefin-cli-owns-rc && [ -f "$TARGET_CONFIG_FILE" ] && grep -qF "$BLUEFIN_CLI_MARKER" "$TARGET_CONFIG_FILE"
 }
 
 function remove-bling-block() {
@@ -63,13 +71,13 @@ BLING_MESSAGE_DISABLE="${BLING_MESSAGE_DISABLE:-Disable bling for ${shell}?}"
 if is-bling-installed; then
     gum confirm "${BLING_MESSAGE_DISABLE}"
     remove-bling-block
-    if has-bluefin-cli; then
+    if bluefin-cli-owns-rc; then
         bluefin-cli shell "${shell}" off
     fi
     echo "Bling removed. Reopen your terminal so that the configurations may be removed"
 else
     gum confirm "${BLING_MESSAGE_ENABLE}" --affirmative="Bling me up!" --negative "No, I'm boring"
-    if has-bluefin-cli; then
+    if bluefin-cli-owns-rc; then
         bluefin-cli shell "${shell}" on
     else
         echo "Adding bling to your $(basename "${TARGET_CONFIG_FILE}")"
