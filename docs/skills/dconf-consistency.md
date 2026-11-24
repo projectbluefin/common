@@ -97,36 +97,6 @@ Custom GNOME media-keys keybindings are relocatable schemas. Because they cannot
 
 When overriding a built-in shortcut (e.g., remapping `<Super>e` from default GNOME home focus to launching a new window), unbind the built-in key in the gschema override (`home=['']`) and register the custom keybinding with its flags.
 
-### Compass launcher
-
-Common ships the `compass` custom shortcut, the image-scoped
-`system_files/bluefin/usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile`,
-and `compass.service` plus its user preset. Preserve the other registered
-custom shortcut paths. Input-source switching keeps `<Shift><Super>space`
-and adds `XF86Keyboard` (backward: `<Shift>XF86Keyboard`); it does not conflict
-with Super+Space, which goes to `compass toggle`.
-
-Dakota owns the Shell extension build and its higher-priority
-`zz3-bluefin-unsupported-stuff.gschema.override`; adding the UUID to common's
-override alone does not enable it there. Package the extension from the same
-release as the Homebrew engine and verify the versioned D-Bus contract when
-either changes. Compass v0.28.2's extension supports GNOME 50 and 51.
-
-A user preset is policy, not an enablement operation. The consuming image must
-apply it or ship the equivalent graphical-session wants link. The launcher is
-ordered after `brew-preinstall.service` so an initial package sync finishes
-before its binary condition is evaluated. Do not run systemctl in common's
-scratch `ctx` stage. Source: systemd `docs/PRESET.md`, "The Logic".
-
-Compass v0.28.2 exposes `serve --no-hotkey`, but `start --hidden` does not
-forward that option. An explicitly empty `launcher.hotkey` disables the
-launcher binding; other configured command shortcuts can still use the
-portal. Do not replace writable user settings with an immutable
-`COMPASS_CONFIG` file. Distribution-controlled startup without a launcher
-portal request requires an upstream `start` opt-out or system-default layer.
-Source: [Compass v0.28.2](https://github.com/tuna-os/compass/tree/a1bab693dc59124fbaecb79037f70882b72f74a7),
-`crates/compass/src/{cli,lib}.rs` and `crates/compass-core/src/global_shortcuts.rs`.
-
 ### Goose shortcuts
 
 The shipped defaults launch `/home/linuxbrew/.linuxbrew/bin/goose-desktop`
@@ -169,10 +139,6 @@ GSETTINGS_BACKEND=memory GSETTINGS_SCHEMA_DIR="$tmp" gsettings get org.gnome.she
 rm -r "$tmp"
 ```
 
-`tests/test_compass.bats` runs these compiled-schema and dconf checks for the
-Compass defaults, but only locally: the unit-tests CI job lacks GNOME schemas
-and dconf tooling, so it skips there. Run it on a GNOME host when changing
-these files.
 
 The E2E `common` suite validates dconf state post-merge.
 
