@@ -21,7 +21,12 @@ concurrency:
 env:
   BASE_IMAGE: ghcr.io/projectbluefin/dakota:testing
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
-  IMAGE_NAME: dakota-common
+  # testsuite picks the scenario set from this name alone. It must contain
+  # "dakota" and none of "bluefin", "bazzite", "utah" or "common": any of those
+  # marks the image as Bluefin and runs Fedora-Bluefin-only checks that fail on
+  # a Dakota base (#1741). Keep it in step with dakota:testing, which the
+  # post-merge E2E run classifies as Dakota.
+  IMAGE_NAME: dakota-e2e
 
 permissions: {}
 
