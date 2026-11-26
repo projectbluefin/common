@@ -31,7 +31,7 @@ real systemd unit activation, services that need device nodes, and cold-start ti
 | Signal you want | Use |
 |---|---|
 | Pre-merge: does this common change compose correctly? | `pr-e2e.yml` (PR gate) |
-| Post-merge: does the shared layer regress any variant? | `e2e.yml` (post-merge E2E) |
+| Post-merge: does the shared layer regress Dakota? | `e2e.yml` (post-merge E2E composed on Dakota) |
 | **Real systemd journal — any service failures?** | **Lab: `log-scan-*` workflows** |
 | Boot time, startup ordering, GNOME session smoke | Lab: `bluefin-qa-pipeline suites=smoke` |
 | System contract (bootc, read-only /usr, staged deploy) | Lab: `bluefin-qa-pipeline suites=system` |
@@ -103,7 +103,7 @@ common PR
     │
     ├─► [merge to main]
     │
-    ├─► e2e.yml  ───────────  post-merge: smoke+common on all 3 tags
+    ├─► e2e.yml  ───────────  post-merge: common suite on composed Dakota testing
     │                         (QEMU, ubuntu-latest, ~15 min)
     │
     └─► lab (on demand) ───── real KVM boot, systemd journal, system suite

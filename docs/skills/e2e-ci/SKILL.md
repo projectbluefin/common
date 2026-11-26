@@ -37,11 +37,8 @@ Actions authoring unrelated to the `common` test workflows.
 
 - Runs after merges to `main`
 - Calls the local `.github/workflows/run-testsuite.yml` wrapper, which centralizes the pinned `projectbluefin/testsuite` SHA
-- Validates the common layer against three downstream images:
-  - `ghcr.io/projectbluefin/bluefin:latest`
-  - `ghcr.io/projectbluefin/bluefin:lts`
-  - `ghcr.io/projectbluefin/dakota:testing`
-- Uses SSH-mode tests from the runner, so the common suite does not require a full GNOME session
+- Validates the common layer by composing the merged candidate on `ghcr.io/projectbluefin/dakota:testing` via `.github/workflows/pr-e2e.yml`
+- Uses SSH-mode tests from the runner against a booted VM with an active GNOME session (GDM autologin)
 
 ## Pre-merge gate
 
@@ -49,7 +46,7 @@ Actions authoring unrelated to the `common` test workflows.
 
 - Runs on PRs to `main` and on `merge_group`
 - Builds the PR's `common` layer candidate first
-- Composes a downstream test image from `ghcr.io/projectbluefin/bluefin:testing` by overlaying `/system_files/shared` and `/system_files/bluefin`
+- Composes a downstream test image from `ghcr.io/projectbluefin/dakota:testing` as `dakota-common:e2e-pr-<number>-<sha>` by overlaying `/system_files/shared` and `/system_files/bluefin`
 - Recompiles GSettings schemas in the composed image
 - Pushes the composed image to GHCR and runs the local testsuite wrapper with `suites: common`
 
@@ -69,7 +66,7 @@ the PR gate should use. A maintainer must choose before changing the workflow.
 
 - Runs weekly on Tuesdays before the downstream Bluefin promotion workflows
 - Tests the exact candidate tags used for promotion from common's side:
-  - `ghcr.io/projectbluefin/bluefin:testing`
+  - `ghcr.io/projectbluefin/dakota:testing`
   - `ghcr.io/projectbluefin/bluefin:lts-testing`
 - Runs `smoke,common` to add a boot/basic-usage signal on top of the shared-layer checks
 - Uses the same local testsuite wrapper as PR/post-merge workflows, so the testsuite SHA stays aligned

@@ -7,9 +7,8 @@
 # that the files shipped by this repo (dconf defaults, ujust, setup scripts,
 # desktop entries, shell config) are present and functional in the downstream
 # images.
-#
-# The `common` suite runs in SSH mode from the GHA runner — no full GNOME
-# session needed, so jobs complete in ~15 min vs ~60 min for GUI suites.
+# The `common` suite runs over SSH from the GHA runner against a booted VM with an
+# active GNOME session (GDM autologin), validating user-session dconf and desktop integration.
 
 name: E2E
 
@@ -31,36 +30,17 @@ on:
 permissions: {}
 
 jobs:
+  # Bluefin LTS is deliberately omitted from post-merge common validation:
+  # its common suite fails on LockLayering / rpm-ostree locks
+  # (projectbluefin/bluefin-lts#492) and reusable workflow calls cannot
+  # soft-fail via continue-on-error. Restore LTS once bluefin-lts#492 is fixed.
+  # LTS is still covered weekly by promotion-candidate-e2e.yml.
   e2e:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Bluefin LTS is deliberately absent. Its common suite fails on every
-          # run (bootupd missing, bootloader-update.service failing,
-          # LockLayering blocking rpm-ostree) — see
-          # https://github.com/projectbluefin/bluefin-lts/issues/492.
-          #
-          # A permanently red advisory check teaches everyone to ignore it, and
-          # GitHub does not allow `continue-on-error` on a job that calls a
-          # reusable workflow, so the entry cannot simply be soft-failed here.
-          #
-          # LTS is still covered: promotion-candidate-e2e.yml runs `smoke,common`
-          # against bluefin:lts-testing every Tuesday. Restore this entry once
-          # bluefin-lts#492 is fixed.
-
-          - name: Dakota
-            image: ghcr.io/projectbluefin/dakota:testing
-            suites: common
-    name: "E2E — ${{ matrix.name }}"
+    name: E2E — composed common suite
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/run-testsuite.yml
-    with:
-      image: ${{ matrix.image }}
-      suites: ${{ matrix.suites }}
-
+    uses: ./.github/workflows/pr-e2e.yml
   # This workflow is advisory — it is not a required check and does not gate
   # publication (common:latest is already pushed by the time it runs). Without
   # a report, a red run is only visible to whoever happens to open the Actions
@@ -96,7 +76,7 @@ jobs:
               --body "Still failing on \`${SHA:0:7}\` — ${RUN_URL}
 
           ## Maintainer
-          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Open the failed composed-suite job and logs at ${RUN_URL}.
           - Identify the owning repository and record the regression scope.
           - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
 
@@ -115,15 +95,15 @@ jobs:
           so a failure here means a regression is already shipped, not that a
           release was blocked.
 
-          It exercises the downstream \`*-testing\` images, so the cause may be in
-          a downstream base image rather than in \`system_files/\`. Check which
-          matrix entry failed before assuming otherwise.
+          It exercises the merged Common commit composed on top of Dakota testing
+          (dakota-common:e2e-main-<sha>). Check the composed suite logs before
+          attributing failures to downstream base drift.
 
           This issue is reused for subsequent failures. Close it once the run is
           green again.
 
           ## Maintainer
-          - Open the failed matrix entry and logs at ${RUN_URL}.
+          - Open the failed composed-suite job and logs at ${RUN_URL}.
           - Identify the owning repository and record the regression scope.
           - Accept the fix with \`/triage accepted\` and assign it; do not assume a new reference PR fixed it.
 

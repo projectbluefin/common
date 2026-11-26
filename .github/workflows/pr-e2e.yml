@@ -11,8 +11,9 @@ on:
       - ".gitattributes"
       - "docs/**"
       - "AGENTS.md"
-      - ".github/workflows/**"
   merge_group:
+  workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
@@ -48,8 +49,10 @@ jobs:
           sha_short="${GITHUB_SHA::7}"
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             compose_tag="e2e-pr-${{ github.event.pull_request.number }}-${sha_short}"
-          else
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
             compose_tag="e2e-merge-group-${sha_short}"
+          else
+            compose_tag="e2e-main-${sha_short}"
           fi
           {
             echo "common_tag=${sha_short}"

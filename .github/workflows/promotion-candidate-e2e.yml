@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Bluefin Testing
-            image: ghcr.io/projectbluefin/bluefin:testing
+          - name: Dakota Testing
+            image: ghcr.io/projectbluefin/dakota:testing
             suites: smoke,common
           - name: Bluefin LTS Testing
             image: ghcr.io/projectbluefin/bluefin:lts-testing
