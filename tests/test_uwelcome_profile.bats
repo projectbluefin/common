@@ -59,7 +59,7 @@ run_tty() {
     stub_id 1000
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -69,7 +69,7 @@ run_tty() {
 @test "no uwelcome config directory is created when the legacy marker is absent" {
     stub_id 1000
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ ! -d "${HOME}/.config/uwelcome" ]
@@ -81,7 +81,7 @@ run_tty() {
     echo "keep-me" > "${HOME}/.config/uwelcome/state"
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -92,7 +92,7 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     called
@@ -102,7 +102,7 @@ run_tty() {
 @test "uwelcome is skipped for root" {
     stub_id 0
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -112,7 +112,7 @@ run_tty() {
     stub_id 1000
     export UWELCOME_SHOWN=1
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     not_called
@@ -122,8 +122,9 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    # Source the profile, then start a child shell that sources it again.
-    run_tty "bash -c '. \"$UWELCOME_PROFILE\"; bash \"$UWELCOME_PROFILE\"'"
+    # Source the profile in an interactive shell, then start a child
+    # interactive shell that sources it again.
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"; bash --norc -ic \". \\\"$UWELCOME_PROFILE\\\"\"'"
 
     [ "$status" -eq 0 ]
     [ "$(wc -l < "${WORKDIR}/calls")" -eq 1 ]
@@ -133,7 +134,7 @@ run_tty() {
     stub_id 0
     touch "${HOME}/.config/no-show-user-motd"
 
-    run bash "$UWELCOME_PROFILE"
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE"
 
     [ "$status" -eq 0 ]
     [ -f "${HOME}/.config/uwelcome/disabled" ]
@@ -144,7 +145,7 @@ run_tty() {
     stub_id 1000
     export UWELCOME_SHOWN=""
 
-    run_tty "bash '$UWELCOME_PROFILE'"
+    run_tty "bash --norc -ic '. \"$UWELCOME_PROFILE\"'"
 
     [ "$status" -eq 0 ]
     called
@@ -154,8 +155,20 @@ run_tty() {
     stub_id 1000
     unset UWELCOME_SHOWN
 
-    run bash "$UWELCOME_PROFILE" < /dev/null > /dev/null
+    run bash --norc -ic '. "$1"' _ "$UWELCOME_PROFILE" < /dev/null > /dev/null
 
     [ "$status" -eq 0 ]
+    not_called
+}
+
+@test "a non-interactive shell sourcing the profile neither greets nor exports UWELCOME_SHOWN" {
+    stub_id 1000
+    unset UWELCOME_SHOWN
+
+    # A pty is present, as for GDM's session shell; only interactivity is missing.
+    run_tty "bash --norc -c '. \"$UWELCOME_PROFILE\"; echo \"shown=\${UWELCOME_SHOWN-unset}\"'"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shown=unset"* ]]
     not_called
 }

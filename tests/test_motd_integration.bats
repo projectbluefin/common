@@ -49,14 +49,14 @@ teardown() {
 # ---------------------------------------------------------------------------
 
 @test "uwelcome.sh: invokes uwelcome" {
-    run script -qec "bash '${UWELCOME_PROFILE}'" /dev/null
+    run script -qec "bash --norc -ic '. \"${UWELCOME_PROFILE}\"'" /dev/null
     [ "${status}" -eq 0 ]
     [ -f "${WORKDIR}/uwelcome.log" ]
 }
 
 @test "uwelcome.sh: migrates legacy opt-out and still runs uwelcome" {
     touch "${HOME}/.config/no-show-user-motd"
-    run script -qec "bash '${UWELCOME_PROFILE}'" /dev/null
+    run script -qec "bash --norc -ic '. \"${UWELCOME_PROFILE}\"'" /dev/null
     [ "${status}" -eq 0 ]
     # Legacy marker is consumed, not left behind to retry every login
     [ ! -e "${HOME}/.config/no-show-user-motd" ]
@@ -70,13 +70,13 @@ teardown() {
     # so the opt-out silently failed to migrate on a fresh system.
     [ ! -d "${HOME}/.config/uwelcome" ]
     touch "${HOME}/.config/no-show-user-motd"
-    run bash "${UWELCOME_PROFILE}"
+    run bash --norc -ic '. "$1"' _ "${UWELCOME_PROFILE}"
     [ "${status}" -eq 0 ]
     [ -e "${HOME}/.config/uwelcome/disabled" ]
 }
 
 @test "uwelcome.sh: is a no-op migration when no legacy marker exists" {
-    run script -qec "bash '${UWELCOME_PROFILE}'" /dev/null
+    run script -qec "bash --norc -ic '. \"${UWELCOME_PROFILE}\"'" /dev/null
     [ "${status}" -eq 0 ]
     [ ! -e "${HOME}/.config/uwelcome/disabled" ]
     [ -f "${WORKDIR}/uwelcome.log" ]
@@ -84,9 +84,9 @@ teardown() {
 
 @test "uwelcome.sh: migration is idempotent across repeated logins" {
     touch "${HOME}/.config/no-show-user-motd"
-    run bash "${UWELCOME_PROFILE}"
+    run bash --norc -ic '. "$1"' _ "${UWELCOME_PROFILE}"
     [ "${status}" -eq 0 ]
-    run bash "${UWELCOME_PROFILE}"
+    run bash --norc -ic '. "$1"' _ "${UWELCOME_PROFILE}"
     [ "${status}" -eq 0 ]
     [ -e "${HOME}/.config/uwelcome/disabled" ]
     [ ! -e "${HOME}/.config/no-show-user-motd" ]
@@ -107,7 +107,7 @@ teardown() {
 
 @test "uwelcome.sh: skips invocation if UWELCOME_SHOWN is set" {
     export UWELCOME_SHOWN=1
-    run script -qec "bash '${UWELCOME_PROFILE}'" /dev/null
+    run script -qec "bash --norc -ic '. \"${UWELCOME_PROFILE}\"'" /dev/null
     [ "${status}" -eq 0 ]
     [ ! -f "${WORKDIR}/uwelcome.log" ]
 }
