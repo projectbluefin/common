@@ -11,7 +11,8 @@
 #
 # IMAGE_NAME/IMAGE_TAG may also be supplied via the environment variables of
 # the same name. --default sets the repo returned when nothing matches
-# (callers differ: the default is common, changelogs pass bluefin), and defaults to projectbluefin/common.
+# (changelogs pass projectbluefin/bluefin), and defaults to
+# projectbluefin/common.
 
 set -euo pipefail
 
@@ -47,8 +48,8 @@ case "$IMAGE_NAME" in
     *)
         # No name, an unrecognised fork, or a Bluefin-family image: Bluefin and
         # Bluefin LTS destinations are archived and refuse new issues, so these
-        # fall through to the caller-supplied default (projectbluefin/common for
-        # reports, projectbluefin/bluefin for changelogs) rather than the old
+        # fall through to the caller-supplied default (changelogs pass
+        # projectbluefin/bluefin) rather than the old
         # bluefin / bluefin-lts arms removed in common#1499.
         printf '%s\n' "$UBLUE_IMAGE_REPO_DEFAULT"
         ;;

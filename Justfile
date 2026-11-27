@@ -48,6 +48,7 @@ test:
     bats tests/test_brew_tap_trust.bats
     bats tests/test_apps_just.bats
     bats tests/test_image_repo.bats
+    bats tests/test_report_just.bats
     bats tests/test_booted_image.bats
     bats tests/test_flatpak_appstream_refresh.bats
     bats tests/test_suite_registration.bats

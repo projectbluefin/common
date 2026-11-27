@@ -25,6 +25,8 @@ teardown() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"not installed"* ]]
     [[ "$output" == *"brew-preinstall"* ]]
+    [[ "$output" == *"projectbluefin/tap/bluefin-report"* ]]
+    [[ "$output" != *"ujust brew-preinstall"* ]]
 }
 
 @test "report: present wrapper is executed with the given args" {
