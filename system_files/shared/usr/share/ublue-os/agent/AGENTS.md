@@ -44,7 +44,8 @@ system itself. Here is where to look and what actually works:
 
 - Logs: `ujust logs-this-boot`, `ujust logs-last-boot`, or `journalctl -b`.
 - Report a problem: where available (the Bluefin layer ships it), `ujust report`
-  gathers a bug report and selects its tracker via `/usr/libexec/ublue-image-repo`.
+  opens the Report a Problem app, which gathers the report and selects its
+  tracker itself.
 - Change something for real: user-level overrides under your home directory, or
   a new image. There is no way to make a persistent system change by writing to
   `/` — see "What to do when asked to change something" for the read-only rule.

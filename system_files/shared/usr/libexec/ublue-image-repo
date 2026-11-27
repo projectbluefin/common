@@ -2,16 +2,16 @@
 # ublue-image-repo — canonical image-name/tag -> upstream GitHub repo resolver.
 #
 # Single source of truth for "which repository owns this booted image".
-# Every consumer (ujust report, ujust changelogs, ...) must route through
-# here so the grammar cannot drift per call site.
+# Every .just consumer (currently ujust changelogs) must route through here so
+# the grammar cannot drift per call site. ujust report does not use this
+# helper: the Report a Problem app does its own routing.
 #
 # Usage:
 #   ublue-image-repo [--default REPO] [IMAGE_NAME] [IMAGE_TAG]
 #
 # IMAGE_NAME/IMAGE_TAG may also be supplied via the environment variables of
 # the same name. --default sets the repo returned when nothing matches
-# (callers differ: issue reporting falls back to common, changelogs to
-# bluefin), and defaults to projectbluefin/common.
+# (callers differ: the default is common, changelogs pass bluefin), and defaults to projectbluefin/common.
 
 set -euo pipefail
 

@@ -5,4 +5,11 @@
 # wrapper puts Homebrew's gh on PATH.
 [group('System')]
 report *args:
-    /home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper {{ args }}
+    #!/usr/bin/bash
+    WRAPPER="${BLUEFIN_REPORT_WRAPPER:-/home/linuxbrew/.linuxbrew/bin/bluefin-report-wrapper}"
+    if [[ ! -x "$WRAPPER" ]]; then
+        echo "The Report a Problem app is not installed yet ($WRAPPER not found)." >&2
+        echo "Run 'ujust brew-preinstall' (or install it with 'brew install --cask bluefin-report'), then try again." >&2
+        exit 1
+    fi
+    exec "$WRAPPER" {{ args }}
