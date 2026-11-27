@@ -71,27 +71,27 @@ if [[ "${VENDOR}" == "Framework" ]]; then
     fi
 fi
 
+if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \
+    [[ -f "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" ]]; then
+    install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"
+    install -m 0644 "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" \
+        "${HOME}/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf"
+fi
+
 if version-script-check "oem-${VENDOR}" user 2; then
-    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
+    if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
+        dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
+            "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
+    fi
 
     if [[ "${VENDOR}" == "ASUS" ]]; then
         systemctl --user daemon-reload
         systemctl --user enable --now asusd-user.service || true
     fi
 
-    if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
-        dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
-            "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
-    fi
+    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
 
     # Record success only after brew bundle ran, so a failed install retries on
     # the next login instead of being permanently skipped.
     version-script-commit "oem-${VENDOR}" user 2
-fi
-
-if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] && \
-    [[ -f "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" ]]; then
-    install -d "${HOME}/.config/wireplumber/wireplumber.conf.d"
-    install -m 0644 "${OEM_DIR}/${VENDOR}/51-framework-desktop.conf" \
-        "${HOME}/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf"
 fi

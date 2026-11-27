@@ -288,6 +288,9 @@ EOF
 
 @test "oem-brew: Framework links wallpapers even when brew bundle fails for a secondary user" {
     printf '%s\n' "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
+    printf '%s\n' "Framework Desktop" > "${WORKDIR}/sys/devices/virtual/dmi/id/product_name"
+    printf '%s\n' "framework-logo-symbolic" > "${WORKDIR}/oem/Framework/logo"
+    printf '%s\n' '# wireplumber config' > "${WORKDIR}/oem/Framework/51-framework-desktop.conf"
     local caskroom="${WORKDIR}/Caskroom/framework-wallpapers/2025-12-14"
     mkdir -p "${caskroom}/images" "${caskroom}/gnome-background-properties"
     touch "${caskroom}/images/framework-day.svg"
@@ -327,4 +330,9 @@ BREW_MOCK_FAIL
     [ -L "${HOME}/.local/share/backgrounds/framework/framework-day.svg" ]
     [ -f "${HOME}/.local/share/gnome-background-properties/framework.xml" ]
     grep -q "${HOME}/.local/share/backgrounds/framework/framework-day.svg" "${HOME}/.local/share/gnome-background-properties/framework.xml"
+    grep -Fx -- "dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting 'framework-logo-symbolic'" \
+        "${WORKDIR}/dconf.log"
+    local wp_conf="${HOME}/.config/wireplumber/wireplumber.conf.d/51-framework-desktop.conf"
+    [ -f "${wp_conf}" ]
+    cmp -s "${WORKDIR}/oem/Framework/51-framework-desktop.conf" "${wp_conf}"
 }
