@@ -11,8 +11,6 @@
 #   - benchmark               (stress-ng install prompt + run)
 #
 # Deliberately NOT covered here:
-#   - clean-system  — already covered by tests/test_clean_system_podman_path.bats
-#   - device-info   — in flight in PR #1003
 #
 # Every shebang recipe body is extracted verbatim and executed against stubbed
 # binaries, so the real control flow is exercised rather than grepped. Absolute

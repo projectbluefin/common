@@ -103,8 +103,8 @@ The shipped defaults launch `/home/linuxbrew/.linuxbrew/bin/goose-desktop`
 directly from `custom3` (`<Control><Alt>BackSpace`) and `custom5`
 (`<Super><Shift>Return`, the Copilot+Enter combination on the configured
 keyboard). These are desktop defaults, not troubleshooting or Agent Mode
-switches. They do not install Goose; users need the `goose-linux` cask from
-`ujust install-ai-tools` or their existing Goose installation.
+switches. They do not install Goose; users need the `goose-linux` cask or their
+existing Goose installation.
 
 Use the absolute Homebrew binary path: GNOME shortcut commands do not inherit
 a login shell's `PATH`. Keep the existing custom shortcut slots stable and

@@ -65,10 +65,7 @@ Default Flatpaks are now managed via Homebrew Brewfiles, allowing for declarativ
 - **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (36 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities).
 - **`system-dx-flatpaks.Brewfile`** - Additional development-focused Flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox).
 
-These can be installed using:
-```bash
-ujust install-system-flatpaks
-```
+These are discoverable and installable from ChairLift's App Collections page.
 
 ### Flatpak Overrides
 
@@ -161,8 +158,7 @@ The Homebrew bundle files live under `system_files/bluefin/usr/share/ublue-os/ho
 - **`swift.Brewfile`** - Swift toolchain and dependencies.
 - **`nsl.Brewfile`** - Neural Style and creative AI toolset.
 
-Users can install opt-in bundles via ChairLift or the `ujust bbrew` command.
-The local Bluespeed stack can be installed directly with `ujust bluespeed`.
+Users install opt-in bundles from ChairLift's Applications page.
 
 ## CI / Testing
 

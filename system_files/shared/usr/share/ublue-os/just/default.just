@@ -23,61 +23,6 @@ bios-info:
     echo "Release Date: $(dmidecode -s bios-release-date)"
     EOF
 
-clean-system:
-    #!/usr/bin/bash
-    # No `--format` here on purpose: a bare Go-template placeholder is not a
-    # valid `just` token and aborts the parse of this whole file. It can be
-    # written as `{{{{.Repository}}` (just's literal-brace escape), but the
-    # default `podman image ls` table already carries the same columns, so the
-    # placeholder buys nothing. Rationale + gate: tests/test_justfile_syntax.bats
-    # and docs/skills/e2e-ci/SKILL.md.
-    if gum confirm "Prune unused (dangling) Podman images and volumes?"; then
-        echo "Images that would be pruned:"
-        /usr/bin/podman image ls --filter dangling=true 2>/dev/null
-        echo "Volumes that would be pruned:"
-        /usr/bin/podman volume ls --filter dangling=true --quiet 2>/dev/null
-        if gum confirm "Proceed with pruning Podman images and volumes?"; then
-            # prune -f, not -af: the preview above lists dangling images only,
-            # so prune the same set. -af would also delete named images pulled on
-            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
-            /usr/bin/podman image prune -f
-            /usr/bin/podman volume prune -f
-        fi
-    fi
-
-    if command -v docker >/dev/null 2>&1; then
-      if gum confirm "Prune unused (dangling) Docker images and volumes?"; then
-        echo "Images that would be pruned:"
-        docker image ls --filter dangling=true 2>/dev/null
-        echo "Volumes that would be pruned:"
-        docker volume ls --filter dangling=true --quiet 2>/dev/null
-        if gum confirm "Proceed with pruning Docker images and volumes?"; then
-            # prune -f, not -af: the preview above lists dangling images only,
-            # so prune the same set. -af would also delete named images pulled on
-            # purpose (toolbox/distrobox bases, dev/test images) the preview never showed.
-            docker image prune -f
-            docker volume prune -f
-        fi
-      fi
-    fi
-
-    flatpak uninstall --unused
-    if command -v rpm-ostree >/dev/null 2>&1; then
-        rpm-ostree cleanup -bm
-    fi
-    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-        brew autoremove
-        brew cleanup
-    fi
-
-# Show all messages from this boot
-logs-this-boot:
-    sudo journalctl --no-hostname -b 0
-
-# Show all messages from last boot
-logs-last-boot:
-    sudo journalctl --no-hostname -b -1
-
 # Enroll Nvidia driver & KMOD signing key for secure boot - Enter password "universalblue" if prompted
 enroll-secure-boot-key:
     #!/usr/bin/bash
@@ -146,24 +91,6 @@ check-local-overrides:
           -e "/Only in/ s/^/${GREEN_COLOR}&/g" \
           -e "/Only in/ s/\$/&${RESET}/g" \
           -e "s/\:.*/${RESET}${YELLOW_COLOR}&${RESET}/g"
-
-# Gather device info to a pastebin
-device-info:
-    #!/usr/bin/bash
-    if ! gum confirm "Submit information to the CentOS pastebin?" ; then
-        exit 0
-    fi
-
-    cat &> /tmp/deviceinfo-out <<EOF
-    --#--# bootc status --verbose:
-    $(bootc status --verbose)
-    --#--# fpaste --sysinfo --printonly:
-    $(fpaste --sysinfo --printonly)
-    --#--# flatpak list --columns=application,version,options:
-    $(flatpak list --columns=application,version,options)
-    EOF
-
-    cat /tmp/deviceinfo-out | fpaste
 
 # Measure Idle Power Draw
 check-idle-power-draw:

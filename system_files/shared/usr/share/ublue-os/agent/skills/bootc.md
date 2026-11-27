@@ -158,10 +158,7 @@ file the upstream bug from the description above. Do not duplicate the
 workaround in `bootc-update-stage` or `update.just` — those callers already
 invoke plain `bootc upgrade` (the contract tested by
 `tests/test_chairlift_config.py::test_bootc_stage_script_is_executable_and_stages_only`),
-which is the upstream-recommended verb. `ujust toggle-testing` is not in that
-list — it already runs `pkexec bootc switch --enforce-container-sigpolicy`
-(`system_files/bluefin/usr/share/ublue-os/just/system.just`), which takes the
-working `pull` path.
+which is the upstream-recommended verb.
 
 **User-side workaround (for end-user reports):**
 

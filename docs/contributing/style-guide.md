@@ -83,13 +83,11 @@ Common groups: `System`, `Apps`, `Update`, `Developer`
 ### Recipe Documentation
 Add a brief comment above each recipe:
 ```just
-# Factory reset this device (experimental)
+# Toggle LUKS auto-unlock via TPM2
 [group('System')]
-powerwash:
-    #!/usr/bin/bash
-    # ... implementation
+toggle-tpm2:
+    @/usr/bin/luks-tpm2-autounlock
 ```
-
 ### Inline Scripts
 For multi-line recipes, use bash shebang:
 ```just

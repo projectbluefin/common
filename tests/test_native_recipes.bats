@@ -39,7 +39,6 @@ setup() {
     sed "s|/usr/libexec/ensure-libvirt-session-config|${WORKDIR}/bin/ensure-libvirt-session-config|g" \
         "${ROOT}/system_files/bluefin/usr/share/ublue-os/just/system.just" > "${SYSTEM_JUST}"
     _extract_recipe "${SYSTEM_JUST}" setup-vms > "${WORKDIR}/setup-vms.sh"
-    _extract_recipe "${SYSTEM_JUST}" setup-lima > "${WORKDIR}/setup-lima.sh"
     export IMAGE_INFO_FILE="${WORKDIR}/image-info.json"
     printf '{"image-tag":"stable","image-ref":"ostree-image-signed:docker://ghcr.io/projectbluefin/bluefin"}' > "${IMAGE_INFO_FILE}"
 
@@ -54,8 +53,6 @@ setup() {
 if [[ "$1" == "--justfile" && "$2" == "${SYSTEM_JUST}" ]]; then
     if [[ "$3" == "setup-vms" ]]; then
         exec bash "${WORKDIR}/setup-vms.sh"
-    elif [[ "$3" == "setup-lima" ]]; then
-        exec bash "${WORKDIR}/setup-lima.sh"
     fi
 fi
 exit 99
@@ -191,44 +188,6 @@ FAILBREW
     grep -q '^brew bundle --file=/usr/share/ublue-os/homebrew/cli.Brewfile$' "${COMMAND_LOG}"
 }
 
-@test "native devmode: compatibility entry point opens the native wizard" {
-    _run_recipe "${SYSTEM_JUST}" devmode
-    [ "${status}" -eq 0 ]
-    grep -q '^ujust toggle-devmode$' "${COMMAND_LOG}"
-}
-
-@test "native toggle-devmode: declining installation makes no package or privilege calls" {
-    _run_recipe "${SYSTEM_JUST}" toggle-devmode
-    [ "${status}" -eq 0 ]
-    grep -q '^gum confirm Install now?$' "${COMMAND_LOG}"
-    run ! grep -qE '^(brew|flatpak|pkexec|sudo) ' "${COMMAND_LOG}"
-    [ ! -e "${HOME}/.config/bluefin/devmode" ]
-}
-
-@test "native toggle-testing: all supported channels retain signature enforcement" {
-    local source target
-    while read -r source target; do
-        printf '{"image-tag":"%s","image-ref":"ostree-image-signed:docker://ghcr.io/projectbluefin/bluefin"}' "${source}" > "${IMAGE_INFO_FILE}"
-        : > "${COMMAND_LOG}"
-        MOCK_CONFIRM_STATUS=0 _run_recipe "${SYSTEM_JUST}" toggle-testing
-        [ "${status}" -eq 0 ]
-        grep -qFx "pkexec bootc switch --enforce-container-sigpolicy ghcr.io/projectbluefin/bluefin:${target}" "${COMMAND_LOG}"
-    done <<'CHANNELS'
-stable testing
-latest testing
-testing stable
-lts lts-testing
-lts-testing lts
-lts-hwe lts-hwe-testing
-lts-hwe-testing lts-hwe
-CHANNELS
-}
-
-@test "native toggle-testing: declining confirmation does not switch images" {
-    _run_recipe "${SYSTEM_JUST}" toggle-testing
-    [ "${status}" -eq 0 ]
-    run ! grep -qE '^(pkexec|bootc) ' "${COMMAND_LOG}"
-}
 
 @test "native setup-vms: installs both flatpaks and runs the libvirt helper" {
     _run_recipe "${SYSTEM_JUST}" setup-vms
@@ -249,89 +208,4 @@ CHANNELS
     [ "${status}" -eq 0 ]
     grep -q '^gum confirm Remove the VM stack' "${COMMAND_LOG}"
     run ! grep -q '^flatpak uninstall ' "${COMMAND_LOG}"
-}
-
-@test "native setup-lima: fails when kvm device is absent" {
-    KVM_PATH="${WORKDIR}/missing_kvm" _run_recipe "${SYSTEM_JUST}" setup-lima
-    [ "${status}" -ne 0 ]
-    [[ "${output}" == *"Error:"*"not found"* ]]
-    run ! grep -q '^brew install lima' "${COMMAND_LOG}"
-}
-
-@test "native setup-lima: full setup installs lima, wires ssh config, starts vm, and enables autostart" {
-    local fake_kvm="${WORKDIR}/fake_kvm"
-    touch "${fake_kvm}"
-    chmod 666 "${fake_kvm}"
-    mkdir -p "${HOME}/.ssh"
-    printf 'Host myhost\n    HostName 1.2.3.4\nHost *\n    IdentityFile ~/.ssh/id_rsa\n' > "${HOME}/.ssh/config"
-    mkdir -p "${HOME}/.lima/ubuntu"
-    printf 'Host lima-ubuntu\n    Hostname 127.0.0.1\n    Port 60022\n' > "${HOME}/.lima/ubuntu/ssh.config"
-
-    KVM_PATH="${fake_kvm}" _run_recipe "${SYSTEM_JUST}" setup-lima
-    [ "${status}" -eq 0 ]
-
-    # Verify brew install
-    grep -qFx 'brew install lima' "${COMMAND_LOG}"
-
-    # Verify ssh config wired before the first Host block
-    grep -qF 'Include ~/.lima/*/ssh.config' "${HOME}/.ssh/config"
-    run python3 -c '
-with open("'"${HOME}"'/.ssh/config") as f:
-    content = f.read()
-idx_inc = content.find("Include ~/.lima/*/ssh.config")
-idx_first_host = content.find("Host myhost")
-idx_host_star = content.find("Host *")
-assert idx_inc != -1 and idx_first_host != -1 and idx_host_star != -1
-assert idx_inc < idx_first_host < idx_host_star
-'
-    [ "${status}" -eq 0 ]
-
-    # Verify ssh resolves lima-ubuntu correctly using the included configuration
-    run ssh -F "${HOME}/.ssh/config" -G lima-ubuntu
-    [ "${status}" -eq 0 ]
-    [[ "${output}" == *"hostname 127.0.0.1"* ]]
-    [[ "${output}" == *"port 60022"* ]]
-
-    # Verify limactl commands
-    grep -q 'limactl start --name ubuntu --mount-writable --tty=false template:ubuntu-lts' "${COMMAND_LOG}"
-    grep -q 'limactl autostart enable ubuntu' "${COMMAND_LOG}"
-    grep -q 'limactl shell ubuntu true' "${COMMAND_LOG}"
-}
-
-@test "native install-system-flatpaks: confirmation is required by default" {
-    _run_recipe "${SYSTEM_JUST}" install-system-flatpaks
-    [ "${status}" -eq 0 ]
-    grep -q '^gum confirm Install system flatpaks?' "${COMMAND_LOG}"
-    run ! grep -q '^brew ' "${COMMAND_LOG}"
-}
-
-@test "native install-system-flatpaks: explicit noninteractive mode bundles flatpaks" {
-    _run_recipe "${SYSTEM_JUST}" install-system-flatpaks 0
-    [ "${status}" -eq 0 ]
-    grep -qFx 'brew bundle --file=/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile' "${COMMAND_LOG}"
-    run ! grep -q '^gum confirm ' "${COMMAND_LOG}"
-}
-
-@test "native powerwash: declining first confirmation cancels reset" {
-    _run_recipe "${SHARED_JUST}" powerwash
-    [ "${status}" -eq 0 ]
-    [[ "${output}" == *"Powerwash cancelled."* ]]
-    [ "$(grep -c '^gum choose ' "${COMMAND_LOG}")" -eq 1 ]
-    run ! grep -qE '^(sudo|bootc) ' "${COMMAND_LOG}"
-}
-
-@test "native powerwash: declining second confirmation cancels reset" {
-    MOCK_FIRST_CHOICE='Yes - wipe this machine' _run_recipe "${SHARED_JUST}" powerwash
-    [ "${status}" -eq 0 ]
-    [[ "${output}" == *"Powerwash cancelled."* ]]
-    [ "$(grep -c '^gum choose ' "${COMMAND_LOG}")" -eq 2 ]
-    run ! grep -qE '^(sudo|bootc) ' "${COMMAND_LOG}"
-}
-
-@test "native powerwash: only two explicit confirmations reach the mocked reset" {
-    MOCK_FIRST_CHOICE='Yes - wipe this machine' MOCK_SECOND_CHOICE='Yes - wipe this machine' \
-        _run_recipe "${SHARED_JUST}" powerwash
-    [ "${status}" -eq 0 ]
-    [ "$(grep -c '^gum choose ' "${COMMAND_LOG}")" -eq 2 ]
-    grep -qFx 'sudo bootc install reset --experimental' "${COMMAND_LOG}"
 }

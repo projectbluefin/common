@@ -42,7 +42,7 @@ names or tags from memory.
 The root filesystem is read-only on a running machine, so you cannot edit the
 system itself. Here is where to look and what actually works:
 
-- Logs: `ujust logs-this-boot`, `ujust logs-last-boot`, or `journalctl -b`.
+- Logs: `journalctl -b` for this boot, or `journalctl -b -1` for the previous boot.
 - Report a problem: where available (the Bluefin layer ships it), `ujust report`
   gathers a bug report and selects its tracker via `/usr/libexec/ublue-image-repo`.
 - Change something for real: user-level overrides under your home directory, or

@@ -1,7 +1,5 @@
 #!/usr/bin/env bats
-# Tests for system.just recipes: toggle-testing, toggle-vms,
-# install-system-flatpaks, check-sb-key
-#
+# Tests for system.just recipes: toggle-vms, check-sb-key
 # Each recipe body is extracted out of the justfile into a standalone bash
 # script, then run against mocked jq/gum/pkexec/bootc/flatpak/brew/just so the
 # channel-mapping and confirmation logic can be exercised without touching the
@@ -46,9 +44,7 @@ setup() {
     mkdir -p "${MOCKDIR}"
     : > "${COMMAND_LOG}"
 
-    _extract_recipe "toggle-testing" "${WORKDIR}/toggle-testing.sh"
     _extract_recipe "toggle-vms" "${WORKDIR}/toggle-vms.sh"
-    _extract_recipe "install-system-flatpaks" "${WORKDIR}/install-system-flatpaks.sh"
 
     # jq -r '."image-tag"' < file — read the field the recipe asks for.
     _write_mock "jq" <<'MOCK'
@@ -115,145 +111,6 @@ _run_recipe() {
         HOME="${HOME}" "$@" bash "${WORKDIR}/${script}"
 }
 
-# --- toggle-testing: stable -> testing direction -------------------------
-
-@test "toggle-testing: stable switches to the testing tag" {
-    _write_image_info "stable" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/bluefin:testing" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: latest switches to the testing tag" {
-    _write_image_info "latest" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin:testing$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: lts switches to lts-testing" {
-    _write_image_info "lts" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin-lts"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin-lts:lts-testing$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: lts-hwe switches to lts-hwe-testing" {
-    _write_image_info "lts-hwe" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin-lts"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin-lts:lts-hwe-testing$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: an unrecognised channel refuses to switch" {
-    _write_image_info "gts" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"Cannot toggle testing from channel 'gts'"* ]]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: warns that testing images may be unstable" {
-    _write_image_info "stable" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [[ "$output" == *"not recommended for daily use"* ]]
-}
-
-# --- toggle-testing: testing -> stable direction -------------------------
-
-@test "toggle-testing: bare testing returns to stable" {
-    _write_image_info "testing" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin:stable$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: lts-testing returns to lts, not stable" {
-    _write_image_info "lts-testing" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin-lts"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin-lts:lts$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: lts-hwe-testing returns to lts-hwe" {
-    _write_image_info "lts-hwe-testing" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin-lts"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bluefin-lts:lts-hwe$" "${COMMAND_LOG}"
-}
-
-# --- toggle-testing: transport prefixes and confirmation -----------------
-
-@test "toggle-testing: strips an ostree-unverified-registry prefix" {
-    _write_image_info "stable" "ostree-unverified-registry:ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/bluefin:testing" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: an untagged bare registry ref is left intact" {
-    _write_image_info "stable" "ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 0 ]
-    grep -q "bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/bluefin:testing" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: declining the prompt switches nothing" {
-    _write_image_info "stable" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh" MOCK_CONFIRM=1
-    [ "$status" -eq 0 ]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: declining the testing-to-stable prompt switches nothing" {
-    _write_image_info "testing" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh" MOCK_CONFIRM=1
-    [ "$status" -eq 0 ]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: the switch runs through pkexec" {
-    _write_image_info "stable" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh"
-    grep -q "^pkexec bootc switch" "${COMMAND_LOG}"
-}
-
-# --- toggle-testing: testing-only images (e.g. Utah) ---------------------
-
-@test "toggle-testing: a dated testing tag refuses instead of no-op switching" {
-    _write_image_info "testing-20260929-362ea44" "ostree-image-signed:docker://ghcr.io/ublue-os/utah"
-    _run_recipe "toggle-testing.sh"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"no second stream to toggle to"* ]]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-    ! grep -q "gum confirm" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: bare testing refuses when the registry has no stable" {
-    _write_image_info "testing" "ostree-image-signed:docker://ghcr.io/ublue-os/utah"
-    _run_recipe "toggle-testing.sh" MOCK_TAGS='"testing","testing-20260929-362ea44"'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"does not exist for ghcr.io/ublue-os/utah"* ]]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-    ! grep -q "gum confirm" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: bare testing switches when stable exists" {
-    _write_image_info "testing" "ostree-image-signed:docker://ghcr.io/ublue-os/bluefin"
-    _run_recipe "toggle-testing.sh" MOCK_TAGS='"stable","testing","latest"'
-    [ "$status" -eq 0 ]
-    grep -q "bluefin:stable$" "${COMMAND_LOG}"
-}
-
-@test "toggle-testing: refuses when the mapped testing tag is absent" {
-    _write_image_info "lts" "ostree-image-signed:docker://ghcr.io/ublue-os/utah-lts"
-    _run_recipe "toggle-testing.sh" MOCK_TAGS='"stable","latest"'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"does not exist for ghcr.io/ublue-os/utah-lts"* ]]
-    ! grep -q "bootc switch" "${COMMAND_LOG}"
-    ! grep -q "gum confirm" "${COMMAND_LOG}"
-}
-
 # --- toggle-vms ----------------------------------------------------------
 
 @test "toggle-vms: installs the stack when virt-manager is absent" {
@@ -295,35 +152,6 @@ _run_recipe() {
     [ "$status" -eq 0 ]
     ! grep -q "uri_default" "${HOME}/.config/libvirt/libvirt.conf"
     grep -q "keep_me" "${HOME}/.config/libvirt/libvirt.conf"
-}
-
-# --- install-system-flatpaks --------------------------------------------
-
-@test "install-system-flatpaks: confirm=0 skips the prompt and installs" {
-    _run_recipe "install-system-flatpaks.sh" confirm=0
-    [ "$status" -eq 0 ]
-    ! grep -q "gum confirm" "${COMMAND_LOG}"
-    grep -q "brew bundle --file=/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile" "${COMMAND_LOG}"
-}
-
-@test "install-system-flatpaks: confirm=1 prompts before installing" {
-    _run_recipe "install-system-flatpaks.sh" confirm=1
-    [ "$status" -eq 0 ]
-    grep -q "gum confirm Install system flatpaks?" "${COMMAND_LOG}"
-    grep -q "brew bundle" "${COMMAND_LOG}"
-}
-
-@test "install-system-flatpaks: declining the prompt installs nothing" {
-    _run_recipe "install-system-flatpaks.sh" confirm=1 MOCK_CONFIRM=1
-    [ "$status" -eq 0 ]
-    ! grep -q "brew bundle" "${COMMAND_LOG}"
-}
-
-@test "install-system-flatpaks: TARGET_FLATPAK_FILE overrides the Brewfile" {
-    _run_recipe "install-system-flatpaks.sh" confirm=0 \
-        TARGET_FLATPAK_FILE="${WORKDIR}/custom.Brewfile"
-    [ "$status" -eq 0 ]
-    grep -q "brew bundle --file=${WORKDIR}/custom.Brewfile" "${COMMAND_LOG}"
 }
 
 # --- check-sb-key --------------------------------------------------------

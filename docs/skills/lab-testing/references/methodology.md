@@ -5,7 +5,7 @@ Detailed procedures referenced from [`../SKILL.md`](../SKILL.md). Read the top-l
 ## Contents
 
 - [Golden disk status and build times](#golden-disk-status-and-build-times)
-- [Live toggle-testing methodology (production-accurate rebase testing)](#live-toggle-testing-methodology-production-accurate-rebase-testing)
+- [Live channel-switch methodology (production-accurate rebase testing)](#live-channel-switch-methodology-production-accurate-rebase-testing)
 - [How to fire up all three variants](#how-to-fire-up-all-three-variants)
 - [What to look for in journal output](#what-to-look-for-in-journal-output)
 - [Quick-start: submit smoke+system for a PR](#quick-start-submit-smoke+system-for-a-pr)
@@ -42,35 +42,29 @@ but `bib-img-pull` uses `image` verbatim — so always include the tag in `image
 BST cache kept warm by `bst-cache-warm` CronWorkflow (every 6h on ghost).
 The last successful nightly build is the benchmark: if it ran < 6h ago, dakota builds fast.
 
-## Live toggle-testing methodology (production-accurate rebase testing)
+## Live channel-switch methodology (production-accurate rebase testing)
 
-**Purpose:** Verify that the native `ujust toggle-testing` recipe works correctly
+**Purpose:** Verify that switching image channels via `bootc switch` works correctly
 for real production users — not by testing with a pre-baked testing disk, but by starting
 from a **stable** VM and rebasing live to **testing** exactly as a user would.
 
 ### Why this matters
 
-There are two approaches to testing the toggle-testing recipe:
+There are two approaches to testing channel switching:
 
-| Approach | Start | Toggle to | What it proves |
+| Approach | Start | Switch to | What it proves |
 |---|---|---|---|
 | **Disk-bake test** | `:testing` golden disk | `:stable` | Mechanics work; not production flow |
-| **Live toggle test** ✅ | `:stable` golden disk | `:testing` (live GHCR pull) | Production user experience |
+| **Live switch test** ✅ | `:stable` golden disk | `:testing` (live GHCR pull) | Production user experience |
 
-The live toggle test is the correct methodology because:
-- It tests the actual recipe logic: reading `image-info.json`, detecting `stable` tag,
-  constructing `ghcr.io/projectbluefin/bluefin:testing`, calling `bootc switch`
+The live switch test is the correct methodology because:
 - The `:testing` image is pulled live from GHCR during the test — not from a local cache
-- It must execute the native `ujust toggle-testing` recipe, not a separate wrapper
 - It exercises `--enforce-container-sigpolicy` against the real production cosign signatures
-
 ### Live toggle workflow pattern
 
 Inspect the deployed `toggle-testing-rebase` WorkflowTemplate before using it
-with stable as the starting point. Templates that still invoke `bctl` or
-substitute a direct `bootc switch` after recipe failure need updating in their
-owning repository. They do not prove the native recipe works. The requirements
-below do not imply that the deployed template has already been updated:
+with stable as the starting point. The workflow exercises live channel switches
+via `bootc switch` and verifies image signatures against GHCR:
 
 ```yaml
 # Bluefin: stable → testing → stable (production user flow)
@@ -117,10 +111,8 @@ For LTS:
 2. provision-vm   → btrfs reflink clone (~32ms), boot VM with stable image
 3. pre-state      → collect-evidence: bootc status shows booted=stable ✓
 4. toggle-to-target →
-   a. Verify the VM contains the recipe revision under test
-   b. Run ujust toggle-testing and accept its gum confirmation in a TTY
-   c. Verify: bootc status shows staged=testing (live pull from GHCR)
-   d. Fail if the recipe fails or no target is staged; do not bypass it
+   a. Switch channels via bootc switch
+   b. Verify: bootc status shows staged=testing (live pull from GHCR)
 5. reboot-forward → VM reboots into the newly staged :testing image
 6. verify-on-target → collect-evidence: bootc status shows booted=testing ✓
 7. toggle-back    → same process, testing → stable (tests the reverse direction)
@@ -129,21 +121,14 @@ For LTS:
 10. teardown      → delete VM + disk.raw
 ```
 
-### Required toggle-testing evidence
+### Required channel-switch evidence
 
 For each VM, per direction (forward + backward):
-- **Recipe revision**: does the VM contain the change being tested?
-- **Native recipe**: does `ujust toggle-testing` succeed after confirmation?
-- **ujust toggle-testing logic** (verify actual behavior, not just a reimplementation):
-  - Reads `image-tag` from `/usr/share/ublue-os/image-info.json`
-  - Applies the same mapping logic as the recipe (`stable→testing`, `lts→lts-testing`, etc.)
-  - Confirms computed target matches expected
 - **bootc switch**: does `bootc switch --enforce-container-sigpolicy <image>:<tag>` succeed?
 - **Post-reboot state**: does `bootc status` show the correct booted image after reboot?
+### Image tag mapping
 
-### Image tag mapping (toggle-testing recipe logic)
-
-| Starting tag | Toggles to | Channel |
+| Starting tag | Switches to | Channel |
 |---|---|---|
 | `stable` or `latest` | `testing` | Bluefin stable → testing |
 | `testing` | `stable` | Bluefin testing → stable |
@@ -152,17 +137,7 @@ For each VM, per direction (forward + backward):
 | `lts-hwe` | `lts-hwe-testing` | LTS HWE stable → testing |
 | `lts-hwe-testing` | `lts-hwe` | LTS HWE testing → stable |
 
-Anything else produces: `Cannot toggle testing from channel '<tag>'`
-
-Two newer inputs are refused rather than toggled — both exit 1 without running
-`bootc switch`, so lab evidence should treat exit 1 + the refusal message as
-correct, not as a recipe failure:
-
-| Starting tag | Outcome | Reason |
-|---|---|---|
-| `testing-YYYYMMDD-sha` (dated) | refuse, exit 1 | No `-testing` suffix to strip; the mapped target equals the current tag, so a switch would be a no-op. |
-| `testing` on a testing-only image (e.g. Utah) | refuse, exit 1 | The mapped target (`:stable`) is absent from the registry; skopeo confirms it and the recipe refuses before `bootc` would fail with a manifest error. |
-
+Channel transitions use standard `bootc switch --enforce-container-sigpolicy <image>:<tag>` targets.
 ### Coverage matrix
 
 Run all three live toggle workflows in parallel:

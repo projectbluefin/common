@@ -69,67 +69,6 @@ _assert_tap_then_trust() {
     [ "$status" -ne 0 ]
 }
 
-@test "install-jetbrains-toolbox taps then trusts ublue-os/tap" {
-    run just --justfile "${APPS_JUST}" --working-directory "${WORKDIR}" install-jetbrains-toolbox
-    [ "$status" -eq 0 ]
-    _assert_tap_then_trust "ublue-os/tap"
-    run grep -c -- "--trust" "${WORKDIR}/brew.log"
-    [ "$status" -ne 0 ]
-}
-
-@test "install-jetbrains-toolbox still installs the cask after trusting" {
-    run just --justfile "${APPS_JUST}" --working-directory "${WORKDIR}" install-jetbrains-toolbox
-    [ "$status" -eq 0 ]
-    grep -qx "brew install --cask ublue-os/tap/jetbrains-toolbox-linux" "${WORKDIR}/brew.log"
-}
-
-@test "install-asus taps then trusts ublue-os/tap without aborting the recipe" {
-    run just --justfile "${APPS_JUST}" --working-directory "${WORKDIR}" install-asus
-    [ "$status" -eq 0 ]
-    _assert_tap_then_trust "ublue-os/tap"
-    grep -qx "brew install --cask ublue-os/tap/asusctl-linux" "${WORKDIR}/brew.log"
-    grep -qx "brew install --cask ublue-os/tap/rog-control-center-linux" "${WORKDIR}/brew.log"
-}
-
-@test "install-asus survives a tap that already exists under set -euo pipefail" {
-    # A second run exercises the "tap already tapped" path: brew errors, and
-    # the `|| true` guard must keep the pipefail recipe alive.
-    cat > "${WORKDIR}/bin/brew" << 'BREW_MOCK'
-#!/usr/bin/env bash
-printf 'brew %s\n' "$*" >> "${WORKDIR}/brew.log"
-if [[ "$1" == "tap" || "$1" == "trust" ]]; then
-    printf 'Error: Tap already installed\n' >&2
-    exit 1
-fi
-BREW_MOCK
-    chmod +x "${WORKDIR}/bin/brew"
-
-    run just --justfile "${APPS_JUST}" --working-directory "${WORKDIR}" install-asus
-    [ "$status" -eq 0 ]
-    grep -qx "brew install --cask ublue-os/tap/asusctl-linux" "${WORKDIR}/brew.log"
-}
-
-@test "system.just dx tap block taps then trusts ublue-os/tap" {
-    # Extract just the tap/trust lines from the dx recipe and run them, so the
-    # test does not need to drive the whole interactive gum menu.
-    sed -n '/# Taps are silent\/fast/,/^$/p' "${SYSTEM_JUST}" \
-        | sed -e 's/_dx_wants[^;]*;/true;/' > "${WORKDIR}/dx-taps.sh"
-    grep -q "brew tap ublue-os/tap" "${WORKDIR}/dx-taps.sh"
-    grep -q "brew trust ublue-os/tap" "${WORKDIR}/dx-taps.sh"
-
-    {
-        printf '%s\n' '#!/usr/bin/env bash'
-        printf '%s\n' 'set -euo pipefail'
-        printf '%s\n' '_dx_wants() { return 0; }'
-        sed -e 's/^    //' "${WORKDIR}/dx-taps.sh"
-    } > "${WORKDIR}/dx-taps-run.sh"
-    chmod +x "${WORKDIR}/dx-taps-run.sh"
-
-    run "${WORKDIR}/dx-taps-run.sh"
-    [ "$status" -eq 0 ]
-    _assert_tap_then_trust "ublue-os/tap"
-}
-
 @test "bazaar hooks.py spawn_brew issues tap and trust as separate commands" {
     # spawn_brew builds a single `bash -c` string; assert on its shape.
     grep -q "brew} tap {tap}; {brew} trust {tap}" "${BAZAAR_HOOKS}"
