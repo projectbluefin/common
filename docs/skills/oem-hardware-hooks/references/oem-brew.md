@@ -8,8 +8,9 @@ Part of [oem-hardware-hooks](../SKILL.md) — OEM brew hook data-driven pattern;
 
 `20-oem-brew.sh` is a single generic hook. It detects the vendor, looks up
 `/usr/share/ublue-os/oem/<Vendor>/`, installs packages, and sets the logo.
-The logo in the top-left menu reflects that HWE brew packages are installed
-and active — a plain `u` means stock, a vendor logo means the OEM stack is running.
+The logo in the top-left menu is set only after `brew bundle` succeeds for that
+user. A secondary user whose bundle fails (shared prefix not writable) keeps the
+stock logo; the logo does not by itself prove packages are installed.
 
 ### Adding a new OEM
 

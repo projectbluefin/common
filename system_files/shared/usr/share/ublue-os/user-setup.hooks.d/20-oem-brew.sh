@@ -79,6 +79,8 @@ if [[ "${VENDOR}" == "Framework" && "${PRODUCT_NAME}" == "Framework Desktop" ]] 
 fi
 
 if version-script-check "oem-${VENDOR}" user 2; then
+    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
+
     if [[ -f "${OEM_DIR}/${VENDOR}/logo" ]]; then
         dconf write /org/gnome/shell/extensions/custom-command-list/menuicon-setting \
             "'$(cat "${OEM_DIR}/${VENDOR}/logo")'"
@@ -89,8 +91,8 @@ if version-script-check "oem-${VENDOR}" user 2; then
         systemctl --user enable --now asusd-user.service || true
     fi
 
-    brew bundle --file="${OEM_DIR}/${VENDOR}/packages.Brewfile"
-
+    # Logo and unit enable run only after the bundle succeeds (set -e aborts
+    # otherwise), so they never repeat for users whose bundle always fails.
     # Record success only after brew bundle ran, so a failed install retries on
     # the next login instead of being permanently skipped.
     version-script-commit "oem-${VENDOR}" user 2
