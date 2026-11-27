@@ -186,45 +186,90 @@ class TestCollectTagRefs:
 
 
 # ---------------------------------------------------------------------------
-# tag_exists_in_ghcr
+# tag_exists_in_ghcr / tags_exist_in_ghcr (registry token + manifest HEAD)
 # ---------------------------------------------------------------------------
 
-def _mock_urlopen(tags):
-    """Build a mock urllib context-manager returning one version with given tags."""
-    data = json.dumps([
-        {"metadata": {"container": {"tags": tags}}}
-    ]).encode()
+TOKEN = "anonymous-test-token"
+
+
+def _response(body=b"", status=200):
+    """Build a mock urllib context-manager response."""
     mock_resp = MagicMock()
-    mock_resp.read.return_value = data
+    mock_resp.status = status
+    mock_resp.read.return_value = body
     mock_resp.__enter__ = lambda s: s
     mock_resp.__exit__ = MagicMock(return_value=False)
     return mock_resp
 
 
+def _token_response(token=TOKEN):
+    """A 200 from ghcr.io/token."""
+    return _response(json.dumps({"token": token}).encode())
+
+
+def _found():
+    """A 200 from a manifest HEAD."""
+    return _response()
+
+
+def _http_error(code, hdrs=None):
+    return urllib.error.HTTPError(url="", code=code, msg="", hdrs=hdrs, fp=None)
+
+
+def _url(call):
+    target = call.args[0]
+    return target if isinstance(target, str) else target.full_url
+
+
 class TestTagExistsInGhcr:
     def test_returns_true_when_tag_found(self):
-        with patch("urllib.request.urlopen", return_value=_mock_urlopen(["stable", "latest"])):
+        with patch(
+            "urllib.request.urlopen", side_effect=[_token_response(), _found()]
+        ) as mock_urlopen:
             assert tag_exists_in_ghcr("bluefin", "stable") is True
+            assert mock_urlopen.call_count == 2
 
     def test_returns_false_when_tag_missing(self):
-        with patch("urllib.request.urlopen", return_value=_mock_urlopen(["other-tag"])):
+        with patch(
+            "urllib.request.urlopen", side_effect=[_token_response(), _http_error(404)]
+        ):
             assert tag_exists_in_ghcr("bluefin", "nonexistent") is False
 
-    def test_returns_false_on_404(self):
+    @pytest.mark.parametrize("code", [403, 404])
+    def test_returns_false_when_image_missing(self, code):
+        """GHCR denies an anonymous token for an unknown image with 403."""
         with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.HTTPError(
-                url="", code=404, msg="Not Found", hdrs=None, fp=None
-            ),
-        ):
+            "urllib.request.urlopen", side_effect=_http_error(code)
+        ) as mock_urlopen:
             assert tag_exists_in_ghcr("nonexistent-image", "latest") is False
+            assert mock_urlopen.call_count == 1
+
+    def test_requests_token_then_heads_manifest(self):
+        with patch(
+            "urllib.request.urlopen", side_effect=[_token_response(), _found()]
+        ) as mock_urlopen:
+            tag_exists_in_ghcr("bluefin-lts", "testing")
+        token_call, head_call = mock_urlopen.call_args_list
+        assert _url(token_call) == (
+            "https://ghcr.io/token?scope=repository:projectbluefin/bluefin-lts:pull"
+        )
+        req = head_call.args[0]
+        assert req.get_method() == "HEAD"
+        assert req.full_url == (
+            "https://ghcr.io/v2/projectbluefin/bluefin-lts/manifests/testing"
+        )
+        assert req.get_header("Authorization") == f"Bearer {TOKEN}"
+        accept = req.get_header("Accept")
+        assert "application/vnd.oci.image.index.v1+json" in accept
+        assert "application/vnd.oci.image.manifest.v1+json" in accept
+        assert "application/vnd.docker.distribution.manifest.list.v2+json" in accept
+        assert "application/vnd.docker.distribution.manifest.v2+json" in accept
+        for call in (token_call, head_call):
+            assert call.kwargs["timeout"] == _mod.REQUEST_TIMEOUT_SECONDS
 
     def test_re_raises_non_transient_http_error(self):
         with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.HTTPError(
-                url="", code=422, msg="Unprocessable Entity", hdrs=None, fp=None
-            ),
+            "urllib.request.urlopen", side_effect=[_token_response(), _http_error(422)]
         ):
             with pytest.raises(urllib.error.HTTPError):
                 tag_exists_in_ghcr("bluefin", "stable")
@@ -232,62 +277,82 @@ class TestTagExistsInGhcr:
     def test_401_raises_http_error(self):
         """401 is an authentication error and must raise immediately rather than retry."""
         with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.HTTPError(
-                url="", code=401, msg="Unauthorized", hdrs=None, fp=None
-            ),
+            "urllib.request.urlopen", side_effect=[_token_response(), _http_error(401)]
         ) as mock_urlopen:
             with pytest.raises(urllib.error.HTTPError):
                 tag_exists_in_ghcr("bluefin", "stable")
-            assert mock_urlopen.call_count == 1
+            assert mock_urlopen.call_count == 2
+
+    def test_403_without_rate_limit_header_raises_http_error(self):
+        """403 on a manifest without rate limit headers is a permission error."""
+        hdrs = {"x-ratelimit-remaining": "4676"}
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[_token_response(), _http_error(403, hdrs)],
+        ) as mock_urlopen:
+            with pytest.raises(urllib.error.HTTPError):
+                tag_exists_in_ghcr("bluefin", "stable")
+            assert mock_urlopen.call_count == 2
 
     def test_transient_5xx_retries_then_returns_none(self):
         with patch(
             "urllib.request.urlopen",
-            side_effect=urllib.error.HTTPError(
-                url="", code=500, msg="Server Error", hdrs=None, fp=None
-            ),
+            side_effect=[_token_response()] + [_http_error(500)] * 4,
         ) as mock_urlopen, patch("time.sleep") as mock_sleep:
             assert tag_exists_in_ghcr("bluefin", "stable") is None
-            # MAX_RETRIES=3 retries + the initial attempt = 4 calls total.
-            assert mock_urlopen.call_count == 4
+            # One token request, then MAX_RETRIES=3 retries + the first HEAD.
+            assert mock_urlopen.call_count == 5
             assert mock_sleep.call_count == 3
 
-    def test_transient_403_rate_limit_recovers_on_retry(self):
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = b"[]"
-        mock_resp.__enter__ = lambda s: s
-        mock_resp.__exit__ = MagicMock(return_value=False)
-        hdrs = {"x-ratelimit-remaining": "0"}
+    def test_transient_token_errors_exhausted_return_none(self, capsys):
+        with patch(
+            "urllib.request.urlopen", side_effect=[_http_error(503)] * 4
+        ) as mock_urlopen, patch("time.sleep") as mock_sleep:
+            assert _mod.tags_exist_in_ghcr("bluefin", {"stable", "lts"}) == {
+                "stable": None, "lts": None
+            }
+            assert mock_urlopen.call_count == 4
+            assert mock_sleep.call_count == 3
+        assert "skipping existence check" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            _http_error(403, {"x-ratelimit-remaining": "0"}),
+            _http_error(403, {"retry-after": "1"}),
+            _http_error(429),
+        ],
+        ids=["403-remaining-0", "403-retry-after", "429"],
+    )
+    def test_transient_rate_limit_recovers_on_retry(self, error):
         with patch(
             "urllib.request.urlopen",
-            side_effect=[
-                urllib.error.HTTPError(
-                    url="", code=403, msg="Forbidden", hdrs=hdrs, fp=None
-                ),
-                mock_resp,
-            ],
+            side_effect=[_token_response(), error, _found()],
         ) as mock_urlopen, patch("time.sleep") as mock_sleep:
-            assert tag_exists_in_ghcr("bluefin", "stable") is False
-            assert mock_urlopen.call_count == 2
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+            assert mock_urlopen.call_count == 3
             assert mock_sleep.call_count == 1
 
+    def test_rate_limited_token_request_recovers_on_retry(self):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[_http_error(429), _token_response(), _http_error(404)],
+        ), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "nonexistent") is False
+
     def test_dropped_connection_recovers_on_retry(self):
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = b"[]"
-        mock_resp.__enter__ = lambda s: s
-        mock_resp.__exit__ = MagicMock(return_value=False)
         with patch(
             "urllib.request.urlopen",
             side_effect=[
                 http.client.RemoteDisconnected(
                     "Remote end closed connection without response"
                 ),
-                mock_resp,
+                _token_response(),
+                _found(),
             ],
         ) as mock_urlopen, patch("time.sleep") as mock_sleep:
-            assert tag_exists_in_ghcr("bluefin", "stable") is False
-            assert mock_urlopen.call_count == 2
+            assert tag_exists_in_ghcr("bluefin", "stable") is True
+            assert mock_urlopen.call_count == 3
             assert mock_sleep.call_count == 1
 
     def test_persistent_network_error_returns_none(self):
@@ -298,100 +363,63 @@ class TestTagExistsInGhcr:
             assert tag_exists_in_ghcr("bluefin", "stable") is None
             assert mock_urlopen.call_count == 4
 
-    def test_403_without_rate_limit_header_raises_http_error(self):
-        """403 without rate limit headers indicates missing scope/permission and must raise immediately."""
-        hdrs = {"x-ratelimit-remaining": "4676"}
-        with patch(
-            "urllib.request.urlopen",
-            side_effect=urllib.error.HTTPError(
-                url="", code=403, msg="Forbidden", hdrs=hdrs, fp=None
-            ),
-        ) as mock_urlopen:
-            with pytest.raises(urllib.error.HTTPError):
-                tag_exists_in_ghcr("bluefin", "stable")
-            assert mock_urlopen.call_count == 1
-
-    def test_truncated_body_recovers_on_retry(self):
+    def test_truncated_token_body_recovers_on_retry(self):
         """IncompleteRead from resp.read() (connection dropped mid-body) retries."""
-        truncated = MagicMock()
+        truncated = _response()
         truncated.read.side_effect = http.client.IncompleteRead(
-            partial=b'[{"metadata":', expected=128
+            partial=b'{"tok', expected=128
         )
-        truncated.__enter__ = lambda s: s
-        truncated.__exit__ = MagicMock(return_value=False)
         with patch(
             "urllib.request.urlopen",
-            side_effect=[truncated, _mock_urlopen(["stable"])],
+            side_effect=[truncated, _token_response(), _found()],
         ) as mock_urlopen, patch("time.sleep") as mock_sleep:
             assert tag_exists_in_ghcr("bluefin", "stable") is True
-            assert mock_urlopen.call_count == 2
+            assert mock_urlopen.call_count == 3
             assert mock_sleep.call_count == 1
 
-    def test_persistent_truncated_body_returns_none(self):
-        truncated = MagicMock()
+    def test_persistent_truncated_token_body_returns_none(self):
+        truncated = _response()
         truncated.read.side_effect = http.client.IncompleteRead(
-            partial=b'[{"metadata":', expected=128
+            partial=b'{"tok', expected=128
         )
-        truncated.__enter__ = lambda s: s
-        truncated.__exit__ = MagicMock(return_value=False)
         with patch(
             "urllib.request.urlopen", return_value=truncated
         ) as mock_urlopen, patch("time.sleep"):
             assert tag_exists_in_ghcr("bluefin", "stable") is None
             assert mock_urlopen.call_count == 4
 
-    def test_malformed_json_body_returns_none(self):
-        """A 200 with a body that is not JSON retries, then reports unknown."""
-        garbage = MagicMock()
-        garbage.read.return_value = b"<html>proxy error</html>"
-        garbage.__enter__ = lambda s: s
-        garbage.__exit__ = MagicMock(return_value=False)
+    @pytest.mark.parametrize(
+        "body",
+        [b"<html>proxy error</html>", b'{"message": "unexpected"}', b"[]", b'{"token": ""}'],
+        ids=["not-json", "no-token", "not-object", "empty-token"],
+    )
+    def test_unusable_token_body_returns_none(self, body):
+        """A 200 token response without a usable token retries, then reports unknown."""
         with patch(
-            "urllib.request.urlopen", return_value=garbage
+            "urllib.request.urlopen", return_value=_response(body)
         ) as mock_urlopen, patch("time.sleep"):
             assert tag_exists_in_ghcr("bluefin", "stable") is None
             assert mock_urlopen.call_count == 4
-
-    def test_non_array_json_body_returns_none(self):
-        """A 200 whose JSON body is an object, not a versions array, retries."""
-        obj = MagicMock()
-        obj.read.return_value = b'{"message": "unexpected"}'
-        obj.__enter__ = lambda s: s
-        obj.__exit__ = MagicMock(return_value=False)
-        with patch(
-            "urllib.request.urlopen", return_value=obj
-        ) as mock_urlopen, patch("time.sleep"):
-            assert tag_exists_in_ghcr("bluefin", "stable") is None
-            assert mock_urlopen.call_count == 4
-
-    def test_returns_false_on_empty_versions_list(self):
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = b"[]"
-        mock_resp.__enter__ = lambda s: s
-        mock_resp.__exit__ = MagicMock(return_value=False)
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            assert tag_exists_in_ghcr("bluefin", "stable") is False
 
     @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
     def test_timeout_recovers_on_retry(self, failure):
-        response = _mock_urlopen(["stable"])
         if failure == "read":
-            response.read.side_effect = TimeoutError("read timed out")
-            error = response
+            error = _token_response()
+            error.read.side_effect = TimeoutError("read timed out")
         elif failure == "wrapped":
             error = urllib.error.URLError(TimeoutError("connect timed out"))
         else:
             error = TimeoutError("connect timed out")
         with patch(
             "urllib.request.urlopen",
-            side_effect=[error, _mock_urlopen(["stable"])],
+            side_effect=[error, _token_response(), _found()],
         ), patch("time.sleep"):
             assert tag_exists_in_ghcr("bluefin", "stable") is True
 
     @pytest.mark.parametrize("failure", ["connect", "wrapped", "read"])
     def test_persistent_timeout_is_unknown_not_missing(self, failure, capsys):
-        response = _mock_urlopen(["stable"])
         if failure == "read":
+            response = _token_response()
             response.read.side_effect = TimeoutError("read timed out")
             kwargs = {"return_value": response}
         elif failure == "wrapped":
@@ -402,12 +430,46 @@ class TestTagExistsInGhcr:
             assert tag_exists_in_ghcr("bluefin", "stable") is None
         assert "skipping existence check" in capsys.readouterr().out
 
+    def test_head_timeout_is_unknown_not_missing(self, capsys):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[_token_response()] + [TimeoutError("timed out")] * 4,
+        ), patch("time.sleep"):
+            assert tag_exists_in_ghcr("bluefin", "stable") is None
+        assert "skipping existence check" in capsys.readouterr().out
+
+    def test_one_token_request_per_image_then_one_head_per_tag(self):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[_token_response(), _found(), _http_error(404), _found()],
+        ) as mock_urlopen:
+            assert _mod.tags_exist_in_ghcr("bluefin", {"first", "second", "third"}) == {
+                "first": True, "second": False, "third": True
+            }
+        urls = [_url(call) for call in mock_urlopen.call_args_list]
+        assert urls == [
+            "https://ghcr.io/token?scope=repository:projectbluefin/bluefin:pull",
+            "https://ghcr.io/v2/projectbluefin/bluefin/manifests/first",
+            "https://ghcr.io/v2/projectbluefin/bluefin/manifests/second",
+            "https://ghcr.io/v2/projectbluefin/bluefin/manifests/third",
+        ]
+
+    def test_partial_results_survive_later_transient_error(self):
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=[_token_response(), _found()]
+            + [urllib.error.URLError("offline")] * 4,
+        ), patch("time.sleep"):
+            assert _mod.tags_exist_in_ghcr("bluefin", {"first", "second"}) == {
+                "first": True, "second": None
+            }
+
     def test_stalled_response_body_times_out(self, monkeypatch):
         release = Event()
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
-                body = b'[{"metadata":{"container":{"tags":["stable"]}}}]'
+                body = json.dumps({"token": TOKEN}).encode()
                 self.send_response(200)
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
@@ -422,14 +484,9 @@ class TestTagExistsInGhcr:
 
         server = HTTPServer(("127.0.0.1", 0), Handler)
         thread = Thread(target=server.serve_forever, daemon=True)
-        real_urlopen = _mod.urllib.request.urlopen
-
-        def local_urlopen(request, **kwargs):
-            return real_urlopen(f"http://127.0.0.1:{server.server_port}/", **kwargs)
-
+        monkeypatch.setattr(_mod, "REGISTRY_URL", f"http://127.0.0.1:{server.server_port}")
         monkeypatch.setattr(_mod, "REQUEST_TIMEOUT_SECONDS", 0.025)
         monkeypatch.setattr(_mod, "MAX_RETRIES", 0)
-        monkeypatch.setattr(_mod.urllib.request, "urlopen", local_urlopen)
         thread.start()
         try:
             assert tag_exists_in_ghcr("bluefin", "stable") is None
@@ -438,6 +495,87 @@ class TestTagExistsInGhcr:
             server.shutdown()
             thread.join()
             server.server_close()
+
+
+class _FakeRegistry(BaseHTTPRequestHandler):
+    """Answers like ghcr.io did when probed on 2026-11-14 (see the PR)."""
+
+    images = {
+        "bluefin": {"stable": "application/vnd.oci.image.manifest.v1+json"},
+        "bluefin-lts": {"testing": "application/vnd.oci.image.index.v1+json"},
+    }
+
+    def _send(self, code, content_type="application/json", body=b"", headers=()):
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        for name, value in headers:
+            self.send_header(name, value)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def do_GET(self):
+        image = self.path.split("repository:projectbluefin/", 1)[-1].rsplit(":", 1)[0]
+        if not self.path.startswith("/token?") or image not in self.images:
+            self._send(403, body=b'{"errors":[{"code":"DENIED"}]}')
+            return
+        self._send(200, body=json.dumps({"token": f"{TOKEN}-{image}"}).encode())
+
+    def do_HEAD(self):
+        _, _, _, image, _, tag = self.path.split("/", 5)
+        auth = self.headers.get("Authorization")
+        if auth is None:
+            self._send(401, headers=[("WWW-Authenticate", 'Bearer realm="token"')])
+            return
+        if auth != f"Bearer {TOKEN}-{image}":
+            self._send(403, "text/plain; charset=utf-8")
+            return
+        content_type = self.images.get(image, {}).get(tag)
+        # GHCR 404s an existing tag when the Accept header does not list its type.
+        if content_type is None or content_type not in self.headers.get("Accept", ""):
+            self._send(404)
+            return
+        self._send(200, content_type)
+
+    def log_message(self, *args):
+        pass
+
+
+@pytest.fixture
+def fake_registry(monkeypatch):
+    server = HTTPServer(("127.0.0.1", 0), _FakeRegistry)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    monkeypatch.setattr(_mod, "REGISTRY_URL", f"http://127.0.0.1:{server.server_port}")
+    try:
+        yield
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
+class TestAgainstFakeRegistry:
+    """Real urllib requests against a local registry, no mocks."""
+
+    def test_single_manifest_tag_exists(self, fake_registry):
+        assert tag_exists_in_ghcr("bluefin", "stable") is True
+
+    def test_multi_arch_index_tag_exists(self, fake_registry):
+        assert tag_exists_in_ghcr("bluefin-lts", "testing") is True
+
+    def test_unknown_tag_is_missing(self, fake_registry):
+        assert tag_exists_in_ghcr("bluefin", "no-such-tag") is False
+
+    def test_unknown_image_is_missing(self, fake_registry):
+        assert tag_exists_in_ghcr("no-such-image", "latest") is False
+
+    def test_rejected_token_raises(self, fake_registry):
+        """GHCR answers a bad bearer token with a plain 403: an auth error, not missing."""
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _mod._manifest_exists("bluefin", "stable", "wrong-token")
+        assert excinfo.value.code == 403
 
 
 # ---------------------------------------------------------------------------
@@ -463,67 +601,59 @@ class TestMain:
         (tmp_path / "docs/guide.md").write_text(
             "ghcr.io/projectbluefin/bluefin:stable\n"
         )
-        with patch("urllib.request.urlopen", return_value=_mock_urlopen(["stable"])):
+        with patch("urllib.request.urlopen", side_effect=[_token_response(), _found()]):
             assert main(tmp_path) == 0
 
-    def test_main_missing_tag_returns_one(self, tmp_path):
+    def test_main_missing_tag_returns_one(self, tmp_path, capsys):
         (tmp_path / ".github/workflows").mkdir(parents=True)
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs/guide.md").write_text(
             "ghcr.io/projectbluefin/bluefin:nonexistent-tag\n"
         )
-        with patch("urllib.request.urlopen", return_value=_mock_urlopen(["stable"])):
+        with patch(
+            "urllib.request.urlopen", side_effect=[_token_response(), _http_error(404)]
+        ):
+            assert main(tmp_path) == 1
+        output = capsys.readouterr().out
+        assert "do not exist in GHCR" in output
+        assert "guide.md:1" in output
+
+    def test_main_missing_image_returns_one(self, tmp_path):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs/guide.md").write_text(
+            "ghcr.io/projectbluefin/no-such-image:latest\n"
+        )
+        with patch("urllib.request.urlopen", side_effect=_http_error(403)):
             assert main(tmp_path) == 1
 
+    def test_main_transient_error_warns_and_passes(self, tmp_path, capsys):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs/guide.md").write_text(
+            "ghcr.io/projectbluefin/bluefin:stable\n"
+        )
+        with patch(
+            "urllib.request.urlopen", side_effect=urllib.error.URLError("offline")
+        ), patch("time.sleep"):
+            assert main(tmp_path) == 0
+        output = capsys.readouterr().out
+        assert "skipped, GHCR unreachable" in output
+        assert "Validated 0 of 1" in output
 
-def test_main_pages_each_image_only_once(tmp_path, capsys):
+
+def test_main_requests_one_token_per_image(tmp_path, capsys):
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs/guide.md").write_text(
         "ghcr.io/projectbluefin/bluefin:first\n"
         "ghcr.io/projectbluefin/bluefin:second\n"
         "ghcr.io/projectbluefin/bluefin:third\n"
     )
-    pages = []
-    for tag in ("first", "second", "third"):
-        response = _mock_urlopen([tag])
-        response.read.return_value = json.dumps(
-            [{"metadata": {"container": {"tags": [tag]}}}] + [{}] * 99
-        ).encode()
-        pages.append(response)
-    with patch("urllib.request.urlopen", side_effect=pages) as urlopen:
-        assert main(tmp_path) == 0
-    assert [call.args[0].full_url.rsplit("=", 1)[-1] for call in urlopen.call_args_list] == [
-        "1", "2", "3"
-    ]
-    output = capsys.readouterr().out
-    assert all(f"bluefin:{tag}" in output for tag in ("first", "second", "third"))
-
-
-def test_main_stops_after_all_tags_found(tmp_path):
-    (tmp_path / "docs").mkdir()
-    (tmp_path / "docs/guide.md").write_text(
-        "ghcr.io/projectbluefin/bluefin:first\n"
-        "ghcr.io/projectbluefin/bluefin:second\n"
-        "ghcr.io/projectbluefin/bluefin:third\n"
-    )
-    response = _mock_urlopen([])
-    response.read.return_value = json.dumps(
-        [{"metadata": {"container": {"tags": ["first", "second", "third"]}}}] + [{}] * 99
-    ).encode()
-    with patch("urllib.request.urlopen", return_value=response) as urlopen:
-        assert main(tmp_path) == 0
-    assert urlopen.call_count == 1
-
-
-def test_partial_results_survive_later_transient_error():
-    response = _mock_urlopen([])
-    response.read.return_value = json.dumps(
-        [{"metadata": {"container": {"tags": ["first"]}}}] + [{}] * 99
-    ).encode()
     with patch(
         "urllib.request.urlopen",
-        side_effect=[response] + [urllib.error.URLError("offline")] * 4,
-    ), patch("time.sleep"):
-        assert _mod.tags_exist_in_ghcr("bluefin", {"first", "second"}) == {
-            "first": True, "second": None
-        }
+        side_effect=[_token_response(), _found(), _found(), _found()],
+    ) as urlopen:
+        assert main(tmp_path) == 0
+    token_calls = [c for c in urlopen.call_args_list if "/token?" in _url(c)]
+    assert len(token_calls) == 1
+    assert urlopen.call_count == 4
+    output = capsys.readouterr().out
+    assert all(f"bluefin:{tag}" in output for tag in ("first", "second", "third"))

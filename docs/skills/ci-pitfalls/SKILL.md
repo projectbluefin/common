@@ -109,7 +109,11 @@ infrastructure failure gets a re-run of the failed job, not a code change.
 Both opening a connection and reading its response can time out; catch
 `URLError` and `TimeoutError` inside the existing retry loop. Exhausted
 transient retries return unknown (`None`), not missing (`False`); HTTP 401
-and non-rate-limit 403 still fail immediately. Run the complete
+and non-rate-limit 403 on a manifest still fail immediately. A 403 from
+`ghcr.io/token` is how GHCR denies an anonymous token for an image that does
+not exist, so it means missing. Manifest `HEAD` requests need an `Accept`
+header listing the OCI index and manifest types: without one GHCR answers 404
+even for tags that exist. Run the complete
 `tests/test_check_oci_refs.py` module and exercise a stalled local HTTP server
 when changing this path. A test that only checks the timeout argument does
 not cover recovery or exhaustion.

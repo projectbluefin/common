@@ -6,8 +6,8 @@ Two checks:
   2. Every ghcr.io/projectbluefin/IMAGE:TAG reference in docs/ resolves to a
      real tag that exists in GHCR.
 
-For check 2, run with GITHUB_TOKEN set (or GH_TOKEN) to avoid rate limits.
-In CI, github.token is available automatically.
+Check 2 asks the registry directly: one anonymous pull-token request per
+image, then one manifest HEAD per tag. No GitHub token is needed.
 
 Source of truth for valid image names and tags:
   projectbluefin/bluefin  → .github/workflows/execute-release.yml
@@ -19,7 +19,6 @@ Do not update the allowed list below from memory. Read the workflow files.
 from pathlib import Path
 import http.client
 import json
-import os
 import re
 import sys
 import time
@@ -35,8 +34,24 @@ RETRY_BACKOFF_SECONDS = 2
 REQUEST_TIMEOUT_SECONDS = 30  # Per-request socket timeout.
 
 
+# Registry v2 API. Existence is one HEAD on the manifest, which costs the same
+# no matter how many tags an image has. The images are public, so the check
+# uses an anonymous pull token: that is what a user pulling a documented ref
+# gets, and it keeps the CI token out of the request.
+REGISTRY_URL = "https://ghcr.io"
+GHCR_NAMESPACE = "projectbluefin"
+# Without an Accept header GHCR answers 404 even for tags that exist. List the
+# index types too so multi-arch tags resolve.
+MANIFEST_ACCEPT = ", ".join([
+    "application/vnd.oci.image.index.v1+json",
+    "application/vnd.oci.image.manifest.v1+json",
+    "application/vnd.docker.distribution.manifest.list.v2+json",
+    "application/vnd.docker.distribution.manifest.v2+json",
+])
+
+
 class UnexpectedResponseError(ValueError):
-    """A 200 from the packages API whose JSON body is not a versions array."""
+    """A 200 from the token endpoint whose JSON body carries no token."""
 
 
 # ── Check 1: no ublue-os refs ────────────────────────────────────────────────
@@ -119,86 +134,130 @@ def collect_tag_refs(root=None):
     return refs
 
 
+class RegistryUnavailable(Exception):
+    """A registry request kept failing transiently through every retry."""
+
+    def __init__(self, last_error):
+        super().__init__(last_error)
+        self.last_error = last_error
+
+
+def _is_transient(error: urllib.error.HTTPError) -> bool:
+    if error.code in TRANSIENT_HTTP_STATUSES:
+        return True
+    if error.code == 403 and error.headers is not None:
+        # Treat 403 as transient only if rate-limit headers confirm it.
+        rem = error.headers.get("x-ratelimit-remaining")
+        retry_after = error.headers.get("retry-after")
+        return (rem is not None and rem.strip() == "0") or retry_after is not None
+    return False
+
+
+def _with_retries(request_once):
+    """Run request_once(), retrying transient failures with backoff.
+
+    Non-transient HTTP errors (404, 401, plain 403, 422, ...) are raised to the
+    caller, which decides what they mean. RegistryUnavailable is raised once
+    the retries are used up.
+    """
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            return request_once()
+        except urllib.error.HTTPError as e:
+            if not _is_transient(e):
+                raise
+            last_error = e
+        except (
+            urllib.error.URLError,
+            ConnectionError,
+            TimeoutError,
+            http.client.HTTPException,
+            json.JSONDecodeError,
+            UnexpectedResponseError,
+        ) as e:
+            # Dropped connections, resets, DNS/socket timeouts, bodies cut off
+            # mid-transfer (IncompleteRead), and malformed token bodies never
+            # reach an HTTP status; retry them like a 5xx.
+            last_error = e
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
+    raise RegistryUnavailable(last_error)
+
+
+def _pull_token(image: str) -> str:
+    """Fetch an anonymous pull token for one image (one request)."""
+    url = (
+        f"{REGISTRY_URL}/token?scope=repository:"
+        f"{GHCR_NAMESPACE}/{urllib.request.quote(image, safe='/')}:pull"
+    )
+    with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
+        body = json.loads(resp.read())
+    token = body.get("token") if isinstance(body, dict) else None
+    if not isinstance(token, str) or not token:
+        raise UnexpectedResponseError("token response has no token")
+    return token
+
+
+def _manifest_exists(image: str, tag: str, token: str) -> bool:
+    """HEAD one manifest. True on 2xx; HTTP errors (404 included) raise."""
+    req = urllib.request.Request(
+        f"{REGISTRY_URL}/v2/{GHCR_NAMESPACE}/"
+        f"{urllib.request.quote(image, safe='/')}/manifests/"
+        f"{urllib.request.quote(tag, safe='')}",
+        method="HEAD",
+    )
+    req.add_header("Accept", MANIFEST_ACCEPT)
+    req.add_header("Authorization", f"Bearer {token}")
+    with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
+        return 200 <= resp.status < 300
+
+
+def _describe(error) -> str:
+    if isinstance(error, urllib.error.HTTPError):
+        return f"HTTP {error.code}"
+    return f"{type(error).__name__}: {error}"
+
+
 def tags_exist_in_ghcr(image: str, wanted: set[str]):
-    """Return each requested tag's status; None means the API was unreachable."""
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-    found = set()
-    page = 1
-    while True:
-        url = (
-            f"https://api.github.com/orgs/projectbluefin/packages/container"
-            f"/{urllib.request.quote(image, safe='')}/versions"
-            f"?per_page=100&page={page}"
+    """Return {tag: True | False | None} for the requested tags of one image.
+
+    True means the tag exists, False means it does not (or the image does not
+    exist at all), and None means GHCR could not be reached after retries.
+    Costs one token request per image plus one manifest HEAD per tag.
+    """
+    try:
+        token = _with_retries(lambda: _pull_token(image))
+    except urllib.error.HTTPError as e:
+        if e.code in (403, 404):
+            # GHCR answers an anonymous token request for an image that does
+            # not exist (or is not public) with 403 DENIED.
+            return {tag: False for tag in wanted}
+        raise
+    except RegistryUnavailable as e:
+        print(
+            f"  \u26a0 GHCR token endpoint returned {_describe(e.last_error)} for "
+            f"{image} after {MAX_RETRIES + 1} attempts -- skipping existence "
+            "check for its refs (transient error, not a ref regression)."
         )
-        req = urllib.request.Request(url)
-        req.add_header("Accept", "application/vnd.github+json")
-        req.add_header("X-GitHub-Api-Version", "2022-11-28")
-        if token:
-            req.add_header("Authorization", f"Bearer {token}")
+        return {tag: None for tag in wanted}
 
-        versions = None
-        last_error = None
-        for attempt in range(MAX_RETRIES + 1):
-            try:
-                with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
-                    versions = json.loads(resp.read())
-                if not isinstance(versions, list):
-                    raise UnexpectedResponseError(
-                        f"expected a JSON array, got {type(versions).__name__}"
-                    )
-                last_error = None
-                break
-            except urllib.error.HTTPError as e:
-                if e.code == 404:
-                    return {tag: tag in found for tag in wanted}
-                is_rate_limit_403 = False
-                if e.code == 403 and e.headers is not None:
-                    # Treat 403 as transient only if rate-limit headers confirm it
-                    rem = e.headers.get("x-ratelimit-remaining")
-                    retry_after = e.headers.get("retry-after")
-                    if (rem is not None and rem.strip() == "0") or retry_after is not None:
-                        is_rate_limit_403 = True
-
-                if e.code not in TRANSIENT_HTTP_STATUSES and not is_rate_limit_403:
-                    raise
-                last_error = e
-                if attempt < MAX_RETRIES:
-                    time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
-            except (
-                urllib.error.URLError,
-                ConnectionError,
-                TimeoutError,
-                http.client.HTTPException,
-                json.JSONDecodeError,
-                UnexpectedResponseError,
-            ) as e:
-                # Dropped connections, resets, DNS/socket timeouts, bodies
-                # cut off mid-transfer (IncompleteRead), and malformed or
-                # non-array bodies never reach an HTTP status; retry them
-                # like a 5xx.
-                last_error = e
-                if attempt < MAX_RETRIES:
-                    time.sleep(RETRY_BACKOFF_SECONDS * (2 ** attempt))
-
-        if last_error is not None:
-            reason = (
-                f"HTTP {last_error.code}"
-                if isinstance(last_error, urllib.error.HTTPError)
-                else f"{type(last_error).__name__}: {last_error}"
-            )
+    results = {}
+    for tag in sorted(wanted):
+        try:
+            results[tag] = _with_retries(lambda: _manifest_exists(image, tag, token))
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+            results[tag] = False
+        except RegistryUnavailable as e:
             print(
-                f"  \u26a0 GHCR packages API returned {reason} for "
-                f"{image} after {MAX_RETRIES + 1} attempts -- skipping existence "
-                "check for unresolved refs (transient error, not a ref regression)."
+                f"  \u26a0 GHCR registry returned {_describe(e.last_error)} for "
+                f"{image}:{tag} after {MAX_RETRIES + 1} attempts -- skipping "
+                "existence check for this ref (transient error, not a ref regression)."
             )
-            return {tag: True if tag in found else None for tag in wanted}
-
-        for version in versions:
-            tags = version.get("metadata", {}).get("container", {}).get("tags", [])
-            found.update(wanted.intersection(tags))
-        if found == wanted or len(versions) < 100:
-            return {tag: tag in found for tag in wanted}
-        page += 1
+            results[tag] = None
+    return results
 
 
 def tag_exists_in_ghcr(image: str, tag: str):
