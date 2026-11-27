@@ -215,9 +215,8 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 ### NSL opt-in bundle
 
 `system_files/shared/usr/share/ublue-os/homebrew/nsl.Brewfile` exposes the
-`frostyard/tap/nsl` cask through ChairLift and `ujust bbrew`. Keep it outside
-`preinstall.d/`: NSL is a developer workflow with host virtualization
-prerequisites, not a universal default package.
+`frostyard/tap/nsl` cask through ChairLift. Keep it outside `preinstall.d/`:
+NSL is a developer workflow with host virtualization prerequisites, not a universal default package.
 
 The cask installs only the CLI. The upstream
 [installation guide](https://github.com/frostyard/nsl/blob/v0.7.0/site/content/getting-started/install.md)

@@ -22,8 +22,6 @@ test:
     bats tests/test_ujust_completion.bats
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats
-    bats tests/test_clean_system_podman_path.bats
-    bats tests/test_clean_system_bootc.bats
     bats tests/test_bootc_update_stage.bats
     bats tests/test_default_just.bats
     bats tests/test_justfile_syntax.bats
@@ -33,7 +31,6 @@ test:
     bats tests/test_uwelcome_profile.bats
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
-    bats tests/test_clean_system.bats
     bats tests/test_brew_preinstall.bats
     bats tests/test_ai_tools_brewfile.bats
     bats tests/test_validate_brewfiles.bats
@@ -46,7 +43,6 @@ test:
     bats tests/test_system_just.bats
     bats tests/test_bazaar_preview.bats
     bats tests/test_brew_tap_trust.bats
-    bats tests/test_apps_just.bats
     bats tests/test_image_repo.bats
     bats tests/test_booted_image.bats
     bats tests/test_flatpak_appstream_refresh.bats
@@ -55,7 +51,6 @@ test:
     bats tests/test_pwquality.bats
     bats tests/test_udev_rules.bats
     bats tests/test_projectbluefin_countme.bats
-    bats tests/test_toggle_devmode.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:

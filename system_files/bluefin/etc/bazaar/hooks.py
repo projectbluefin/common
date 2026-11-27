@@ -36,9 +36,6 @@ def make_popup_terminal_argv(cmd):
         'bash', '-c', full_cmd
     ]
 
-def spawn_ujust(command):
-    spawn_and_detach(make_popup_terminal_argv(f'ujust {command}'))
-
 def spawn_chairlift_dx_mode():
     chairlift = '/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper'
     spawn_and_detach(['flatpak-spawn', '--host', chairlift, '--dx-mode'])
@@ -107,10 +104,7 @@ def handle_jetbrains():
             return 'ok' if dialog_id == dialog_for(transaction_appid) else 'pass'
 
         case 'teardown-dialog':
-            if dialog_response_id in ('run-ujust', 'run-devmode'):
-                return 'ok'
-            else:
-                return 'abort'
+            return 'ok' if dialog_response_id == 'run-devmode' else 'abort'
 
         case 'catch':
             return 'abort'
@@ -119,8 +113,6 @@ def handle_jetbrains():
             try:
                 if dialog_response_id == 'run-devmode':
                     spawn_chairlift_dx_mode()
-                else:
-                    spawn_ujust('install-jetbrains-toolbox')
             except:
                 pass
             return ''

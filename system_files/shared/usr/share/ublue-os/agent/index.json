@@ -29,15 +29,6 @@
       "status": "active"
     },
     {
-      "id": "devmode",
-      "name": "devmode",
-      "one_line_purpose": "Configure the Bluefin Developer Mode setup wizard.",
-      "entry_point": "skills/devmode.md",
-      "description": "Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX, tool selection, or the canonical ujust devmode command.",
-      "category": "test-authoring",
-      "status": "active"
-    },
-    {
       "id": "image-identity",
       "name": "image-identity",
       "one_line_purpose": "Decide who owns image-identity and variant metadata across the org.",

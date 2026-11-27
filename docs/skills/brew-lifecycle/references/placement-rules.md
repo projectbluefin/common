@@ -81,10 +81,6 @@ and `trusted: true` in Brewfiles. See https://docs.brew.sh/Tap-Trust.
 
 | File | Expected code |
 |---|---|
-| `system.just` dx recipe | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
-| `system.just` dx recipe | `brew tap ublue-os/experimental-tap` + `brew trust ublue-os/experimental-tap` |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
-| `apps.just` install-asus | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
 | `bazaar/hooks.py` `spawn_brew` | `brew tap ublue-os/tap` + `brew trust ublue-os/tap` |
 
 Regression coverage lives in `tests/test_brew_tap_trust.bats`.

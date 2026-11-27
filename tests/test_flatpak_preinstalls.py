@@ -8,8 +8,7 @@ PREINSTALL_DIR = (
 )
 
 # Apps the image guarantees on every install. Bazaar is preinstalled via its own
-# file; the others are added here so they are present without an explicit
-# `ujust install-system-flatpaks`.
+# file; the others come from the Flatpak preinstall manifests shipped with the image.
 EXPECTED_APPS = {
     "io.github.kolunmi.Bazaar",
     "org.gnome.NautilusPreviewer",

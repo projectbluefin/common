@@ -119,5 +119,7 @@ def test_bazaar_config_valid():
             assert "cancel" in option_ids
             if hook["id"] == "steam":
                 assert "open-chairlift" in option_ids
+            elif hook["id"] == "jetbrains-toolbox":
+                assert option_ids == {"cancel", "run-devmode"}
             else:
                 assert "run-devmode" in option_ids

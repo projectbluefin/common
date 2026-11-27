@@ -205,7 +205,7 @@ assert_no_justfile_matches() {
     listing="$(cd "${REPO_ROOT}" && just --justfile system_files/shared/usr/share/ublue-os/just/default.just --list 2>&1)"
     # Every recipe the E2E suites invoke by name, plus the one the fix touched.
     local recipe
-    for recipe in clean-system check-local-overrides logs-this-boot logs-last-boot bios-info; do
+    for recipe in check-local-overrides bios-info; do
         run grep -Eq "^    ${recipe}([[:space:]]|$)" <<< "${listing}"
         [ "${status}" -eq 0 ]
     done

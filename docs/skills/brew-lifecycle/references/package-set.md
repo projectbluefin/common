@@ -78,7 +78,7 @@ uninstalled on next login after update.**
 - Tool-specific workflows (`ykman` — not everyone has a YubiKey, but it stays
   for now as a low-cost dep carrier; revisit if `python@3.14` becomes a problem)
 - Anything that is naturally opt-in (`k8s-tools`, `cncf`, `ide`, etc.) — those
-  go in the other Brewfiles and are only installed when the user runs `ujust bbrew`
+  go in the other Brewfiles and are installed through ChairLift's Applications page
 - Packages already on the image (`fastfetch`, `gum`, `just`, `gcc`) — no need
   to duplicate them in brew
 
@@ -93,11 +93,11 @@ non-interactive recipes.
 
 ---
 
-## Opt-in Brewfiles (ujust bbrew)
+## Opt-in Brewfiles (ChairLift)
 
 These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
-`preinstall.d/`) and are only installed when the user explicitly runs
-`ujust bbrew` and picks from the menu:
+`preinstall.d/`) and are installed when the user selects them in ChairLift's
+Applications page:
 
 - `ai-tools.Brewfile`
 - `artwork.Brewfile`
@@ -129,16 +129,14 @@ Bluefin-specific (in `system_files/bluefin/`):
 These are validated by the `validate-brewfiles.yaml` CI workflow on every PR
 that touches `system_files/shared/usr/share/ublue-os/homebrew/**`.
 
-### A second consumer: ChairLift `brew_bundles_group`
+### ChairLift `brew_bundles_group`
 
-`ujust bbrew` is not the only reader of this directory. ChairLift's
-`applications_page.brew_bundles_group` in
+ChairLift's `applications_page.brew_bundles_group` in
 `/usr/share/chairlift/config.yml` points `bundles_paths` at
 `/usr/share/ublue-os/homebrew` and renders one installable bundle per
 **immediate** `*.Brewfile` child, naming the bundle after the filename stem.
 So a file added here also appears on ChairLift's Applications page without any
 further wiring — and the filename is user-visible UI text.
-
 Two consequences when adding a bundle:
 
 - The file must be a **direct** child of the directory and carry the exact

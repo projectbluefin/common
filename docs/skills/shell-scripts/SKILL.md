@@ -97,7 +97,7 @@ recipe's attributes.
 Verify the displayed text without running the installer:
 
 ```bash
-just --justfile system_files/shared/usr/share/ublue-os/just/apps.just --list
+just --justfile system_files/bluefin/usr/share/ublue-os/just/system.just --list
 ```
 
 ## Shellcheck Reference

@@ -152,14 +152,6 @@ class TestJetbrainsHook:
             ]
             assert len(shown) == 1, (appid, shown)
 
-    def test_teardown_dialog_run_ujust_returns_ok(self):
-        resp = _load_hooks({
-            "BAZAAR_HOOK_ID": "jetbrains-toolbox",
-            "BAZAAR_HOOK_STAGE": "teardown-dialog",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-ujust",
-        })
-        assert resp == "ok"
-
     def test_teardown_dialog_run_devmode_returns_ok(self):
         resp = _load_hooks({
             "BAZAAR_HOOK_ID": "jetbrains-toolbox",
@@ -189,18 +181,6 @@ class TestJetbrainsHook:
             "BAZAAR_HOOK_STAGE": "teardown",
         })
         assert resp == "deny"
-
-    def test_action_spawns_ujust_install_toolbox(self):
-        resp, calls = _load_hooks_with_mock({
-            "BAZAAR_HOOK_ID": "jetbrains-toolbox",
-            "BAZAAR_HOOK_STAGE": "action",
-            "BAZAAR_HOOK_DIALOG_RESPONSE_ID": "run-ujust",
-        })
-        assert resp == ""
-        assert len(calls) == 1
-        cmd = " ".join(calls[0])
-        assert "ujust install-jetbrains-toolbox" in cmd
-        assert "io.github.kolunmi.Bazaar" in cmd
 
     def test_action_spawns_chairlift_dx_mode(self):
         resp, calls = _load_hooks_with_mock({
